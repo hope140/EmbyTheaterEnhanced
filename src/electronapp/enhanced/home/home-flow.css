@@ -1,4 +1,8 @@
-/* Only the experimental Home owner uses these classes. No global loading/route styles. */
+/* Scoped to the maintained Home owner. No global loading/route styles. */
+/* Preserve legacy Home's inner text visibility for the nested stage. */
+.sections > .homeSectionsContainer .innerCardFooter .cardText.cardTextCentered {
+    display: none;
+}
 .eteHomeFlowPending .itemProgressBar,
 .eteHomeFlowPending .playedIndicator,
 .eteHomeFlowPending .countIndicator,
