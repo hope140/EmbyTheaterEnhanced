@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-26 — 产品504与Native工具后继分开绑定
+
+新包前置由父协调，本地只准备工具PRODUCT_COMMIT和回归预期迁移，不改变产品或尝试获取旧artifact。新artifact必须绑定504的成功手动run及其实际ZIP／installer摘要，继续完整物理／Git源校验。将baseline／natural真实B复用／新进程reopen／held请求cancel的原断言和退出／清理判据明确列出；保留原超时与隔离，不扩测试框架，不把单样本耗时等同用户seek性能通过。
+
 ## 2026-10-26 — 按恢复范围继续同一预载候选
 
 核对干净695ca02及6ec2／bc585本地保存，远端836未漂移。将最新main345bb2c合入试验分支，五处冲突保留两支历史说明、最新Host源链合同及既有严格workflow扩展检查，版本检查改为当前package／lock一致；组件／Native helper／controller／版本文件与新main保持一致。继续单次真实M读取和后台背压，观察器适配Native数值而不改原Promise／超时。按最新恢复规格对齐MiB显示与P字节预算，不新增设置或限速要求。短体／断流／末块写失败明确不ready、不重试且保留所属清理；当前仅本地证据，真实Windows与用户媒体分开，未触115。

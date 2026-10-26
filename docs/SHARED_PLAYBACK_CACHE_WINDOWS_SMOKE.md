@@ -1,5 +1,24 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 新包后的最小执行合同（产品504e2fe）
+
+产品来源固定`504e2feb627f308ddf56a7453fd4772f77419a58`。单独的工具后继提交只更新PRODUCT_COMMIT／对应合同测试与本文，受保护src／native／vendor／installer／package树须与该产品来源相同，且产品提交是工具HEAD祖先。父派包尚未确认时不移动远端ref，避免UI误取工具后继作为另一个包来源。
+
+收到新包后先记录四项：成功手动package run ID、该run的artifact ID、实际ZIP SHA256、ZIP内唯一installer SHA256。artifact必须未过期、head_sha为产品504、名称匹配`ete-test-win-x64-504e2feb627f308ddf56a7453fd4772f77419a58-*`；run须为本仓库public-ci workflow_dispatch成功。ZIP大小／摘要、installer独立摘要、schema1安装回执→schema3物理清单、三provenance、完整Git source／native／Electron关系均由原门禁继续验证。Electron使用original-fs，不忽略ASAR；不手改manifest、不换包身份。过期或获取／权限失败即停止，保留错误，不退回旧2e99或另一个下载入口。
+
+派发仍选`.github/workflows/public-ci.yml`和`experiment/shared-playback-cache`，expected SHA使用已推送的**工具HEAD**：release_package=false、build_input_benchmark=false、shared_cache_smoke=true、shared_cache_diagnostics=false、benchmark_trials=4、benchmark_warm_calls=3；三artifact输入依次填新ID／ZIP SHA／installer SHA。不选both true，不进liveness，不重编包。每worker40秒、controlled work共120秒及原失败清理保持；来源获取／静态核验是其前置，不能把120秒描述为整个CI下载流程上限。
+
+| 阶段 | 必须实际成立的证据 |
+| --- | --- |
+| baseline | 原来源、可信proof、Native彩色解码首帧；前后seek位置／restart／帧、pause=false后新鲜推进；同item／session／MediaSource的原PM Stop回调及Native关闭。 |
+| natural | 真实helper进度→renderer→原PM EOF／next；预载ready，B load proxied=true且B解码；B实际开始后没有源正文重取，只允许fresh1B校验。检查native-node M read结算与B load时序，不能用正常直连当命中。 |
+| reopen | 新Electron／helper／同owned profile，重开前current>0、next=0；实际B走代理并解码，源B请求均仅0–0，不能重取正文。 |
+| cancel | 原自动预载确实到达held B请求；原Stop关闭该请求，迟到write接受0、旧代native事件0。 |
+
+每阶段还须确认匹配spawn/parent PID、Electron自然exit0／无signal／无timeout／streamsClosed、所有helper退出0／管道关闭／pending0、原动作顺序ACK和helper后同frame返回17；非baseline关闭后next／pending／readers／reserved均0，非cancel保留current>0。最终HTTP response／socket／held均0、gRPC停止。任一失败不继续下一阶段，不用workflow绿色代替逐字段判据。server-report仅为原PM调用合成ApiClient，不声称真实Emby HTTP；首帧是隐藏Native解码预览，无音频或可见UI保证。
+
+首帧／前后seek与Stop耗时保留原timingsMs，baseline对比natural仅是单次合成初查，不当作p50／p95或用户硬件延迟验收。所有输入保持loopback／本地小AVI、profile／MPV_HOME／APPDATA／LOCALAPPDATA隔离；实际115请求为0。四阶段先由我读安全回执确认，基础边界不转交用户手测；通过后再处理普通入口共享接线和必要性能样本。
+
 ## 2026-10-26恢复候选：先验证预载两修复
 
 当前候选已跟进main345bb2c／v0.4.4及其新组件；旧2e99试验包只保留历史身份，不提供用户覆盖安装。恢复重点为B的current-probe／timeout与背景流已读未存两项，飞牛与新的暂存扩展不在本轮。M现只调用已有Native get-property一次，类型为安全整数，保留50ms原请求界和外围25ms选择界；固定helper的NODE／INT64路径没有legacy int32缩窄。授权、fresh1B、原source回退及所有真实Native断言不删。

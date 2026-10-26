@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-26 — 新包后Native来源绑定已本地准备
+
+仅工具后继将PRODUCT_COMMIT锁定到504e2fe，并保留全套独立安装器／物理清单／来源门禁；产品树不变。父确认精确504包已派发前不移动远端ref，不自动构建或dispatch。四阶段的字段判据、最小输入和过期／失败停止规则已写入[执行合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)，基础回归由受控runner执行，不要求用户代测；实际新包和Windows结果尚未取得。
+
 ## 2026-10-26 — 恢复预载闭环，独立候选跟进v0.4.4主线
 
 用户恢复下一集预载；暂存不扩展、飞牛仍暂停。试验分支合入main345bb2c，保留v0.4.4／新版组件与更新优化，未写main。已保存的两修复继续验证：后台同Range逐块背压可靠留存；M改为生产Native NODE／INT64单次实际回读，保留25ms、generation/helper守卫和fresh来源／1B验证。真实Windows旧baseline已过，旧natural的B在发网前timeout；新代码尚未Windows复验，不将源码减少两条命令当作问题已解决。
