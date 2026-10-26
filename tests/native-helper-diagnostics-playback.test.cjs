@@ -146,7 +146,7 @@ class FakeIpc extends EventEmitter {
             if (operation === 'command' && Array.isArray(payload.data) && payload.data[0] === 'loadfile') {
                 const entry = {generationId, data: payload.data.slice(), emitted: false};
                 this.loadCalls.push(entry);
-                setImmediate(() => {
+                if (!this.suppressCorePlaying) setImmediate(() => {
                     entry.emitted = true;
                     this.corePlayingEvents.push({generationId, name: 'core-idle', value: false});
                     this.emit(nativeHelperClient.EVENT_CHANNEL, {}, {
@@ -386,3 +386,44 @@ test('ready diagnostics fail open before generation while delayed STRM/CD2 play 
         await new Promise(resolve => server.close(resolve));
     }
 });
+
+for (const phase of ['loading', 'playing']) {
+    test(`synthetic native error reaches playback diagnostics during ${phase} without leaking identity or reloading`, async () => {
+        const ipc = new FakeIpc();
+        ipc.suppressCorePlaying = phase === 'loading';
+        const windowTarget = makeEventTarget();
+        Object.assign(windowTarget, {ipc, platform: 'win32', PlayerWindowId: 1});
+        const resolver = {isStrm: () => false, resolveAsync: async info => ({type: 'native', source: info.nativeSource})};
+        const {player} = makeContext(windowTarget, makeDom(), nativeHelperClient, resolver);
+        const options = makePlayOptions('https://SYNTHETIC_URL_CANARY/?token=SYNTHETIC_TOKEN_CANARY');
+        Object.assign(options.item, {Id: 'SYNTHETIC_ITEM_CANARY', ServerId: 'SYNTHETIC_SERVER_CANARY'});
+        options.mediaSource.Id = 'SYNTHETIC_SOURCE_CANARY';
+        const play = player.play(options);
+        play.catch(() => {});
+        await waitFor(() => ipc.loadCalls.length === 1);
+        if (phase === 'playing') await play;
+        const begin = ipc.calls.find(call => call.request.operation === 'begin-generation').request.payload;
+        assert.deepEqual(JSON.parse(JSON.stringify(begin.diagnosticIdentity)), {
+            serverId: options.item.ServerId, itemId: options.item.Id, mediaSourceId: options.mediaSource.Id
+        });
+        ipc.emit(nativeHelperClient.EVENT_CHANNEL, {}, {type: 'bridge_error', reason: 'load-failed',
+            endReason: 4, mpvErrorCode: -13, log: 'RAW_LOG_CANARY'});
+        if (phase === 'loading') await assert.rejects(play);
+        const errors = ipc.notifications.filter(row => row.channel === 'enhanced-diagnostics-log' &&
+            row.request.event === 'playback-error' && row.request.details.stage === 'player-event');
+        assert.equal(errors.length, 1);
+        assert.equal(errors[0].request.details.mpvErrorCode, -13);
+        assert.equal(errors[0].request.details.endReason, 4);
+        assert.equal(errors[0].request.details.playbackPhase, phase);
+        assert.equal(errors[0].request.details.requestId, begin.label);
+        const diagnostics = () => ipc.notifications.filter(row => row.channel === 'enhanced-diagnostics-log');
+        assert.doesNotMatch(JSON.stringify(diagnostics()), /CANARY/);
+        assert.equal(ipc.loadCalls.length, 1, 'diagnostics must not retry or change playback policy');
+        if (phase === 'playing') {
+            ipc.emit(nativeHelperClient.EVENT_CHANNEL, {}, {type: 'property_change', data: {name: 'eof-reached', value: true}});
+            assert.equal(diagnostics().at(-1).request.details.stopSource, 'native-eof-reached');
+        }
+        await player.stop(true);
+        assert.equal(diagnostics().filter(row => row.request.event === 'stop').at(-1).request.details.stopSource, 'adapter-stop-destroy');
+    });
+}

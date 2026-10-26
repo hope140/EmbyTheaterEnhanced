@@ -45,7 +45,7 @@ function load(rootArg) {
     const root=path.resolve(rootArg),file=path.join(root,MANIFEST_PATH);physical(file,false);
     const manifest=JSON.parse(fs.readFileSync(file,'utf8'));
     if(manifest.schemaVersion!==1||manifest.version!=='snapshot-v2'||manifest.inputRoot!==INPUT_ROOT||
-        !Array.isArray(manifest.files)||!manifest.files.length||manifest.fileCount!==manifest.files.length)throw new Error('Invalid Compatibility snapshot component manifest.');
+        !Array.isArray(manifest.files)||manifest.fileCount!==manifest.files.length)throw new Error('Invalid Compatibility snapshot component manifest.');
     const seen=new Set();
     for(const entry of manifest.files) {
         relative(entry.path);
@@ -60,12 +60,24 @@ function load(rootArg) {
 function paths(root) {return load(root).files.map(entry=>entry.path);}
 function validate(rootArg) {
     const root=path.resolve(rootArg),manifest=load(root);
-    web.verifyTree(path.join(root,INPUT_ROOT),manifest.files);
+    const directory=path.join(root,INPUT_ROOT);
+    // Git stores no empty directories. A fully retired component needs no body
+    // root, but any existing ancestor must still be physical, and a remaining
+    // body tree must be empty. Never fall back to archived resources.
+    let existing=directory;
+    while(true) {
+        try {fs.lstatSync(existing);break;}
+        catch(error) {if(error.code!=='ENOENT')throw error;existing=path.dirname(existing);}
+    }
+    physical(existing,true);
+    if(manifest.files.length||existing===directory)web.verifyTree(directory,manifest.files);
     return {status:'passed',manifestPath:MANIFEST_PATH,manifestSha256:sha(fs.readFileSync(path.join(root,MANIFEST_PATH))),
         version:manifest.version,migration:manifest.migration,provenance:manifest.provenance,fileCount:manifest.fileCount,bytes:manifest.bytes,treeSha256:manifest.treeSha256};
 }
 function importSnapshot(rootArg,sourceArg) {
-    const root=path.resolve(rootArg),manifest=load(root),source=path.resolve(sourceArg);physical(source,true);
+    const root=path.resolve(rootArg),manifest=load(root);
+    if(!manifest.files.length)return validate(root);
+    const source=path.resolve(sourceArg);physical(source,true);
     const buffers=manifest.files.map(entry=>{const file=path.join(source,entry.path);physical(file,false);const bytes=fs.readFileSync(file);
         if(bytes.length!==entry.size||sha(bytes)!==entry.sha256)throw new Error('Compatibility import identity mismatch: '+entry.path);return{entry,bytes};});
     const destination=path.join(root,INPUT_ROOT);if(fs.existsSync(destination))return validate(root);

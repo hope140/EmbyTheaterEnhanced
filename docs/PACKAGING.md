@@ -7,7 +7,7 @@
 - `tools/prepare.ps1` 和独立恢复工具按 manifest／固定 Git 对象准备材料。正常构建不依赖 Carnival／综合补丁目录，也不从旧安装包取回组件。被冻结的来源正文不在准备后手工修改。
 - 官方 Host完整输入保留19文件，runtime排除9个已退役身份，保留10项。两份 EXE/PDB随后替换为已验证的 ETE源码构建产物，并加入固定 Newtonsoft13.0.4 net45 DLL；官方 Model继续独立校验。[Host合同](WINDOWS_HOST_INPUT.md)区分完整来源和运行投影。
 - Electron固定44.4.2 Windows x64完整树。libmpv按固定仓库归档离线恢复；Native Helper读取固定 mpv头文件并从所选提交构建。编译器、解包器及安装器工具按现有锁核验，不自动升级系统工具。
-- 兼容资源39项、小组件2项和Web713项使用当前快照。生产npm依赖从锁文件新建安装树，完整来源1142文件与运行投影1122文件分别验证；LICENSE／NOTICE保留。
+- 兼容资源全部退役，零项清单只校验历史身份和缺席约束，无需恢复 shader 目录；小组件2项和Web713项使用当前快照。生产npm依赖从锁文件新建安装树，完整来源1142文件与运行投影1122文件分别验证；LICENSE／NOTICE保留。
 - 普通产品源码从 `sourceCommit` 的 Git blob物化；preload、Web overlay、模板和Host配置使用固定生成合同。dirty／仅暂存的源码不能冒充所选提交。
 
 ## 两条 Host 准备路径

@@ -17,10 +17,13 @@
         var dto={Id:item.Id,Type:item.Type,Name:item.Name,Overview:overview};
         if(Number.isInteger(item.ProductionYear)&&item.ProductionYear>0&&item.ProductionYear<10000)dto.ProductionYear=item.ProductionYear;
         var tag=item.ImageTags&&item.ImageTags.Primary;if(text(tag,256))dto.PrimaryImageTag=tag;
+        if(Number.isFinite(item.PrimaryImageAspectRatio)&&item.PrimaryImageAspectRatio>0&&item.PrimaryImageAspectRatio<=20)dto.PrimaryImageAspectRatio=item.PrimaryImageAspectRatio;
+        if(text(item.SeriesName,2048))dto.SeriesName=item.SeriesName;
+        for(var field of ['IndexNumber','ParentIndexNumber'])if(Number.isInteger(item[field])&&item[field]>=0&&item[field]<=100000)dto[field]=item[field];
         return dto;
     }
-    function valid(dto){if(!dto||Object.keys(dto).some(k=>!['Id','Type','Name','Overview','ProductionYear','PrimaryImageTag'].includes(k)))return false;
-        var item=project({Id:dto.Id,Type:dto.Type,Name:dto.Name,Overview:'',ProductionYear:dto.ProductionYear,ImageTags:{Primary:dto.PrimaryImageTag}});if(!item||typeof dto.Overview!=='string'||dto.Overview.length>24000)return false;item.Overview=dto.Overview;return JSON.stringify(item)===JSON.stringify(dto);}
+    function valid(dto){if(!dto||Object.keys(dto).some(k=>!['Id','Type','Name','Overview','ProductionYear','PrimaryImageTag','PrimaryImageAspectRatio','SeriesName','IndexNumber','ParentIndexNumber'].includes(k)))return false;
+        var item=project({Id:dto.Id,Type:dto.Type,Name:dto.Name,Overview:'',ProductionYear:dto.ProductionYear,ImageTags:{Primary:dto.PrimaryImageTag},PrimaryImageAspectRatio:dto.PrimaryImageAspectRatio,SeriesName:dto.SeriesName,IndexNumber:dto.IndexNumber,ParentIndexNumber:dto.ParentIndexNumber});if(!item||typeof dto.Overview!=='string'||dto.Overview.length>24000)return false;item.Overview=dto.Overview;return JSON.stringify(item)===JSON.stringify(dto);}
     function size(dto){return new TextEncoder().encode(JSON.stringify(dto)).length;}
     function rowSize(row){return size({key:row.key,dto:row.dto,access:row.access});}
     function validKey(value,dto){try{var parts=JSON.parse(value);return text(value,12000)&&Array.isArray(parts)&&parts.length===6&&parts[0]==='v1'&&parts.slice(1).every(v=>text(v,2048))&&dto&&parts[4]===dto.Id;}catch(_){return false;}}

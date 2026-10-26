@@ -1,5 +1,7 @@
 # Legacy snapshot v2 selection
 
+Subsequent Anime4K retirement: compatibility active selection is now zero files/bytes. Its remaining 39 shader bodies are absent, and the original v1 manifest/hash is unchanged. The 39/2/713 counts and twenty-body evidence below describe the earlier migration stage. Current behavior and user configuration impact follow the [compatibility retirement contract](COMPATIBILITY_RESOURCES_INPUT.md).
+
 This migration removes the twenty specifically reviewed old files from the current source tree: nine compatibility resources, all four old small resources, and CustomCssJS.js plus themes/logo.png, followed by the native-only settings/cameraupload.js/.html pair. Eighteen are retired; the old configuration and Chinese localization are replaced by the already approved maintained outputs. The latest approved addition retires only directorybrowser.css, appstorage-cache.js and serviceworker-app.js; the separate npm projection retains its full source input. [The exact twenty old paths, sizes and hashes](evidence/legacy-snapshot-v2.json) are recorded separately.
 
 | Component | v1 | Active v2 | Current input root |

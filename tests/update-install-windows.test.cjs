@@ -95,6 +95,9 @@ test('actual Windows managed cache retains cancelled verified bytes, retries, an
     assert.deepEqual(fs.readFileSync(path.join(record.directory, asset.name)), f.bytes);
     assert.equal((await store.download(asset, request)).reused, true); assert.equal(transfers, 1);
     assert.equal((await store.reconcile('9.0.0')).removed, 0);
-    assert.deepEqual(await store.reconcile('9.1.0'), {removed: 1, retained: 0});
+    const target = require('../src/electronapp/enhanced/update-install-cache').createStore({
+        profileRoot: profile, executable: process.execPath, handoff: f.handoff});
+    assert.equal(target.recovery('9.1.0'), 'cleanup-pending');
+    assert.deepEqual(await target.reconcile('9.1.0'), {removed: 1, retained: 0});
     assert.equal(fs.existsSync(record.directory), false); assert.equal(fs.existsSync(f.file), true);
 });

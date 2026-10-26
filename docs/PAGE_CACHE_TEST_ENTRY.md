@@ -56,3 +56,5 @@ main仅在该模式给原应用BrowserWindow添加一个内部renderer参数；p
 客户端设置另提供[最小缓存管理](CACHE_MANAGEMENT.md)，不启用缓存或改变实验默认值；后续测试包还将该入口的 main IPC、UI controller 和模板纳入启动来源绑定。现有历史包不能据此宣称带有该入口。
 
 详情缓存独立候选另固定 app／Item 两份原生输出哈希，任何实验模式在创建 profile 前均验证；四份 detail-cache 源码／样式进入关键来源绑定。详情自动持久策略独立于原 Home 布局开关，原四参数只控制 Home 布局；新测试仍强制新 profile，不复用普通账户。跨重启持久性先由独立合成 browser profile 验证；Windows 同 profile 重启体验须在隔离测试安排下补验，不能通过复制登录 profile 验收。见[合同](DETAIL_PAGE_CACHE.md)。
+
+默认 baseline 增加同身份驻留 Home 恢复后，隔离测试启动在所有模式都验证六份 Home 原生输出，而非只在 retain／sections 验证；app／Item 及关键维护源码的绑定保持。缺文件、旧输出或篡改在分配 profile 前拒绝，普通不带测试参数启动的行为不变。

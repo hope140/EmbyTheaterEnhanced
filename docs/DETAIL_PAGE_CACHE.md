@@ -4,7 +4,7 @@
 
 ## 持久范围与所有权
 
-只在用户主动打开 Movie、Series、Season、Episode 后保存有限投影：Id、类型、标题、纯文本简介、有效年份与 Primary 图片 tag。简介去脚本／样式及标签并解常见实体；图片 URL 在当前 API 上按 id/tag 重建，复用现有 HTTP 缓存，未下载或另存海报。没有保存原始 API 响应、UserData／进度、权限、用户资料、Token、Cookie、MediaSource、路径、临时播放 URL 或视频。
+只在用户主动打开 Movie、Series、Season、Episode 后保存有限投影：Id、类型、标题、纯文本简介、有效年份、Primary 图片 tag、可用图片比例、剧集名与季／集序号。简介去脚本／样式及标签并解常见实体；图片 URL 在当前 API 上按 id/tag 重建，复用现有 HTTP 缓存，未下载或另存海报。没有保存原始 API 响应、UserData／进度、权限、用户资料、Token、Cookie、MediaSource、路径、临时播放 URL 或视频。
 
 独立 IndexedDB `ete-detail-page-cache-v1` 的 `entries` 由本模块拥有。缓存键隔离 serverId、去认证信息的服务端 origin/path、userId、itemId、asSeries/context、语言、服务端版本及显示模式；未知查询或不支持的表示沿原流程，不尝试猜测。认证代次和实际 API 实例只用于运行时归属检查，不作为跨重启保存的授权。原生视图仍由原 viewmanager 三槽及 BaseView 拥有，未新增视图池。
 
@@ -58,3 +58,11 @@ node tools/check-home-cache-update-renderer.cjs /absolute/path/to/chromium /new/
 原候选的 Windows 详情入口未通过用户验收。app 的 `getDynamicImport` 会解包默认导出，而 ItemPage 的 AMD 参数消费 namespace；两端错配会在视图切换前抛出构造异常，表现为 URL 已变化但仍显示首页。详情别名现直接返回原 AMD namespace，与 store 保持单一模块身份；Home 别名消费者合同不变。
 
 `node tools/check-detail-entry-renderer.cjs <Chromium绝对路径> <新证据目录>` 从真实 Home 卡片标题点击，经过原 Shortcuts／CommandProcessor、实际 router 取 URL／init／loadContent、viewmanager 和 Alameda Item 依赖。固定旧提交别名作失败对照，电影／剧集均验证首次入口和缓存再次入口的可见性；既有详情 renderer 也使用生产 app 别名，不再手写替代。HTTP／text、输入／scroller、元数据与播放设备边界仍受控，截图中的合成内容与未替换的翻译键不代表完整客户端视觉。该回归不是 Work、Electron 或真实服务验收，原包保留供对照，候选由协调者另排。
+
+## 切页呈现交接修复
+
+详情预览复用原生标题 wrapper、主图槽、CardBuilder 静态图片与原播放按钮，不再将季详情画到不同侧槽或创建另一个紧凑布局。新增可选字段只含有界静态比例／名称／序号；旧 DTO 仍可读，缺比例时从同一预览图片读取 natural ratio，不另发图片探测请求。旧行等待图片定形最多1秒，正常数据完成会立即交还原控制；不存在图片、失败或超时均有退出，不改变数据失效、容量或认证规则。不持久化 DOM、权限、轨道／续播数据或布局高度。
+
+数据完成和视觉交接分开：原 Item/User/媒体源 Promise、播放和 Session 时序保持，主图或 TV 可见背景的已解码旧图由当前详情 owner 临时覆盖。原生容器正常开始刷新，新图 load/decode 与一次 rAF 后撤层；新演员区只按自身图片 load/error 揭示。覆盖从创建起最多1秒，清缓存、身份退休、明确404、离页、销毁或新的加载均撤除自己的监听／observer／计时器。该上限只管理呈现，不延迟请求或播放。新鲜动态轨道／续播字段仍可局部改变几何；不承诺不同内容或不同窗口尺寸下所有像素不变。
+
+`node tools/check-detail-handoff-renderer.cjs <Chromium绝对路径> <新证据目录>` 检查四类详情的 standard／TV 缓存再入、静态几何、慢图、图失败／上限、离页／身份／清理、原生渲染异常、旧行及播放按钮错误恢复。合成 API／图片与平台字体、辅助媒体信息／scroller 边界保持；这不替代 Windows／真实服务／GPU 绘制验收。

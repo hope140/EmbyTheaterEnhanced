@@ -40,7 +40,7 @@ M02 内核候选管理保持 Native Helper 为唯一生产 bridge。包由 main 
 
 内核状态分开显示包内哈希、静态兼容、来源/notice 声明、当前进程 ready 握手和下次启动选择。Helper/DLL映像SHA、来源独立核验、许可审查与可发行性分别保持UNKNOWN或NOT_ASSESSED；静态PE通过和握手通过不等于加载映像哈希证据或许可结论。
 
-构建从固定sourceCommit的Git blobs、生成合同和独立组件清单组装；不读取旧Carnival／综合补丁目录。当前活动快照为兼容39、小组件2、Web713。四份选定API维护AMD模块由源码物化，CM仅应用固定transport变换；普通页面、播放和连接归属保持。Host完整官方来源19项保留，runtime排除9项，余下10项中EXE/PDB替换为当前来源指纹绑定的源码构建产物，另加固定JSON依赖。Model独立固定为官方成员；Electron固定44.4.2。普通已审核锁和runner本次生成锁分别校验，缺材料停止；source／runtime／payload清单分别记录输入、生成关系和最终文件集合。详见[构建](PACKAGING.md)、[Host](WINDOWS_HOST_INPUT.md)及[收尾](SOURCE_CLEANUP_CLOSEOUT.md)。
+构建从固定sourceCommit的Git blobs、生成合同和独立组件清单组装；不读取旧Carnival／综合补丁目录。当前活动快照为小组件2、Web713；兼容资源清单仅保留零项退役记录，Anime4K 不再进入源码活动树或新 runtime。四份选定API维护AMD模块由源码物化，CM仅应用固定transport变换；普通页面、播放和连接归属保持。Host完整官方来源19项保留，runtime排除9项，余下10项中EXE/PDB替换为当前来源指纹绑定的源码构建产物，另加固定JSON依赖。Model独立固定为官方成员；Electron固定44.4.2。普通已审核锁和runner本次生成锁分别校验，缺材料停止；source／runtime／payload清单分别记录输入、生成关系和最终文件集合。详见[构建](PACKAGING.md)、[Host](WINDOWS_HOST_INPUT.md)及[收尾](SOURCE_CLEANUP_CLOSEOUT.md)。
 
 CustomCssJS可选集成、移动端原生相机设置页及已批准残留已从当前活动快照退役；历史manifest/hash与必要声明保留。普通CSS、主题、服务端原生Branding/Css、devices相机管理页及个人storage保持。默认配置与中文维护源依各自合同生成，已有用户配置不覆盖。
 

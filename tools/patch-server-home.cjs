@@ -45,7 +45,7 @@ function patchApp(text) {
 function patchHomeView(text) {
     if (text.includes('eteHomeRestoreState')) throw new Error('Home view anchor mismatch.');
     text = once(text, 'HomeView.prototype.onPause=',
-        'HomeView.prototype.eteHomeRestoreState=function(){var tab=this.tabControllers&&this.tabControllers[0],owner=tab&&tab.eteHome;return owner&&owner.flowEnabled?{enabled:true,allowed:this.currentTabController===tab&&owner.canRestore()}:null},HomeView.prototype.onPause=');
+        'HomeView.prototype.eteHomeRestoreState=function(){var tab=this.tabControllers&&this.tabControllers[0],owner=tab&&tab.eteHome;return owner&&owner.restoreEnabled?{enabled:true,allowed:this.currentTabController===tab&&owner.canRestore()}:null},HomeView.prototype.onPause=');
     return text;
 }
 // Select only from the native three-slot owner. No pinned view, copied DOM or data pool.

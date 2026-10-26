@@ -1,4 +1,4 @@
-param([string]$ArchiveRoot = '', [string]$OfficialElectronSourceRoot = '', [string]$LibmpvSnapshotFile = '', [string]$CompatibilitySnapshotRoot = '', [string]$SmallRuntimeSnapshotRoot = '', [string]$ModelSnapshotRoot = '', [string]$WebSnapshotRoot = '')
+param([string]$ArchiveRoot = '', [string]$OfficialElectronSourceRoot = '', [string]$LibmpvSnapshotFile = '', [string]$SmallRuntimeSnapshotRoot = '', [string]$ModelSnapshotRoot = '', [string]$WebSnapshotRoot = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $archiveBase = if ($ArchiveRoot) { (Resolve-Path -LiteralPath $ArchiveRoot).Path } else { $root }
@@ -34,11 +34,6 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/libmpv/20260809'))) {
 }
 & node (Join-Path $PSScriptRoot 'libmpv-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'libmpv snapshot validation failed.' }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/compatibility-resources/snapshot-v2'))) {
-    if (-not $CompatibilitySnapshotRoot) { throw 'Provide -CompatibilitySnapshotRoot with the exact preserved compatibility resources; no automatic legacy fallback.' }
-    & node (Join-Path $PSScriptRoot 'compatibility-resources-input.cjs') import $root $CompatibilitySnapshotRoot
-    if ($LASTEXITCODE -ne 0) { throw 'Compatibility resource snapshot preparation failed.' }
-}
 & node (Join-Path $PSScriptRoot 'compatibility-resources-input.cjs') validate $root
 if ($LASTEXITCODE -ne 0) { throw 'Compatibility resource snapshot validation failed.' }
 if (-not (Test-Path -LiteralPath (Join-Path $root 'vendor/small-runtime/snapshot-v2'))) {

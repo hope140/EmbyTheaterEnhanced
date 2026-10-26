@@ -1,6 +1,6 @@
 # ETE 手动软件更新
 
-检查、通道、说明链接和校验下载已随 v0.4.2／v0.4.3 整合。本次下载／安装流程优化独立位于 `feature/managed-app-update-install`，直接基于 main `8745493d92fb4348d5af2d86d13797f0a8760e81`；没有重新合入旧更新分支，没有修改已发布版本或 Release。以下新交接合同尚需 Windows 实机验收；已发布包的旧流程见用户指南。
+检查、通道、说明链接和校验下载已随 v0.4.2／v0.4.3 整合。本次下载／安装流程优化独立位于 `feature/managed-app-update-install`，最初基于 main `8745493d92fb4348d5af2d86d13797f0a8760e81`，现正常同步已验收 main（准确同步点以当前提交为准）；没有重新合入旧更新分支，没有修改已发布版本或 Release。以下新交接合同尚需 Windows 实机验收；已发布包的旧流程见用户指南。
 
 ## 现有入口与最小行为
 
@@ -92,6 +92,8 @@ node --test tests/app-update-preferences.test.cjs tests/release-note-links.test.
 
 ## 独立测试包与实机交接
 
+新的分段验收、目标必须包含清理接线及构建版本前置条件见[独立验收清单](MANUAL_APP_UPDATE_ACCEPTANCE.md)。
+
 ### 独立云 Windows 短验证
 
 `managed-update-validation.yml` 仅对本功能分支 PR 的新提交执行独立 `windows-2022` job，不依赖手动 dispatch，不占用正式打包 job。checkout 精确 head SHA、固定 Node24.18.1、只读 token 且不保留 Git 凭据，无 npm 安装、发布或产品安装步骤。原 `public-ci.yml` 保持基线字节不变。
@@ -124,9 +126,9 @@ node --test tests/manual-app-update-package.test.cjs tests/manual-app-update-pac
 
 后者从当前 HEAD Git blobs 物化合成源码投影，使用 PowerShell AST 执行原门禁及回执条件；源码须已提交。它不构建真实 Windows 安装器。
 
-实机最短清单（另行安排隔离 Windows 测试账户／VM）：
+实机最短清单（用户已授权的测试安装；需要保护其它现用状态时才选择隔离环境）：
 
-1. 核对准确分支 SHA／artifact／provenance；不要覆盖正式客户端。profile 使用 `appData`，仅传 Electron `--user-data-dir` 不足以隔离。使用单独 Windows 用户或现有经过来源校验的隔离启动入口，不修改 Work 现用配置。
+1. 核对准确分支 SHA／artifact／provenance，由用户在已授权测试安装上操作并保留可恢复备份。清理验收须保持同一Windows用户、安装位置和profile；不额外强制新VM／账号。若需要隔离其它现用状态，注意profile使用 `appData`，仅传 Electron `--user-data-dir` 不足以隔离。助手不运行或改动Work现用客户端／配置。
 2. 进入 About 不联网；正式／测试通道、说明链接、取消和来源详情保持。测试包版本仍为基线0.4.3，不伪造更高公开版本或降低版本比较。完整真实下载／安装须有官方较高目标；缺少目标时明确无法完成端到端验收，不改生产URL或校验开关。
 3. 有合法更高目标后，点击下载不弹路径；验证进度／取消／断网／空间不足／快速重复点击。官方无法独立确认时停止。完成后应先正常退出 Electron 与同目录 Host，再出现可见安装向导，保留 UAC／SmartScreen，不静默安装。
 4. 取消向导或UAC、启动失败后重开旧版，检查更新再点下载应复核官方身份并复用好包；新版本另有缓存目录，不覆盖旧包。确认旧版启动不会清包。

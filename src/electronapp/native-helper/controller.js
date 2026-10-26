@@ -290,7 +290,7 @@ class NativeHelperClient {
   }
 
   diagnose(name, generationId, disposition, details = {}) {
-    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'end-file'].includes(name)) return;
+    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file'].includes(name)) return;
     try {
       const pending = this.onDiagnostic({name, generationId, disposition, currentGenerationId: this.currentGenerationId, ...details});
       if (pending && typeof pending.catch === 'function') pending.catch(() => {});
@@ -307,6 +307,9 @@ class NativeHelperClient {
   }
 
   dispatch(message) {
+    const endDetails = message.name === 'end-file' && message.value ? {
+      endReason: message.value.reason, mpvErrorCode: message.value.error
+    } : {};
     const base = {
       atParentMicros: monotonicMicros(),
       helperInstanceId: message.helperInstanceId,
@@ -320,12 +323,12 @@ class NativeHelperClient {
     };
     if (this.transportTerminated || this.exited || this.protocolFailure) {
       this.recordTimeline({ ...base, action: 'DROP_TRANSPORT_TERMINAL' });
-      this.diagnose(message.name, message.generationId, 'DROP_TRANSPORT_TERMINAL');
+      this.diagnose(message.name, message.generationId, 'DROP_TRANSPORT_TERMINAL', endDetails);
       return;
     }
     if (message.helperInstanceId !== this.helperInstanceId) {
       this.recordTimeline({ ...base, action: 'DROP_STALE_HELPER' });
-      this.diagnose(message.name, message.generationId, 'DROP_STALE_HELPER');
+      this.diagnose(message.name, message.generationId, 'DROP_STALE_HELPER', endDetails);
       return;
     }
     if (message.type === 'response' || message.type === 'error') {
@@ -351,7 +354,7 @@ class NativeHelperClient {
     if (message.type === 'event') {
       if (message.generationId !== this.currentGenerationId) {
         this.recordTimeline({ ...base, action: 'DROP_STALE_GENERATION', value: message.value });
-        this.diagnose(message.name, message.generationId, 'DROP_STALE_GENERATION');
+        this.diagnose(message.name, message.generationId, 'DROP_STALE_GENERATION', endDetails);
         return;
       }
       if (message.name === 'operation-error') {
@@ -370,7 +373,8 @@ class NativeHelperClient {
         return;
       }
       this.recordTimeline({ ...base, action: 'ACCEPT', value: message.value });
-      this.diagnose(message.name, message.generationId, 'ACCEPT', {endReason: message.name === 'end-file' && message.value ? message.value.reason : null});
+      this.diagnose(message.name, message.generationId, 'ACCEPT', endDetails);
+      if (message.name === 'core-idle' && message.value === false && !this.state.playing) this.diagnose('core-playing', message.generationId, 'ACCEPT');
       if (message.name === 'start-file') this.state.status = 'loading';
       if (message.name === 'file-loaded') { this.state.fileLoaded = true; this.state.status = 'loaded'; }
       if (message.name === 'path') this.state.path = message.value;
@@ -381,13 +385,13 @@ class NativeHelperClient {
     }
   }
 
-  beginGeneration(label, observedProperties = []) {
+  beginGeneration(label, observedProperties = [], diagnosticIdentity) {
     if (this.currentGenerationId !== null) this.retireGeneration('superseded');
     this.currentGenerationId = this.allocateGenerationId();
     this.currentLabel = label;
     this.state = { status: 'loading', path: null, playing: false, fileLoaded: false };
     this.recordTimeline({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: this.currentGenerationId, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-begin', currentAuthoritativeGeneration: this.currentGenerationId, action: 'BEGIN_GENERATION', label });
-    this.diagnose('generation-begin', this.currentGenerationId, 'BEGIN_GENERATION', {label});
+    this.diagnose('generation-begin', this.currentGenerationId, 'BEGIN_GENERATION', {label, diagnosticIdentity});
     this.command('activate-generation', { properties: observedProperties }, this.currentGenerationId);
     return this.currentGenerationId;
   }

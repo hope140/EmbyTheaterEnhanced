@@ -47,6 +47,9 @@
         var savedScroll = null, flowFocus = null, flowRevision = 0, inputRevision = 0;
         function current(ticket) {
             if (!ticket || disposed || !active || ticket.epoch !== epoch || !owner.view || flowing && ticket.flowRevision !== flowRevision) return false;
+            // A retained baseline stage must retire on auth/locale/query changes
+            // even if the corresponding connection event has not arrived yet.
+            if (!flowing && flowTicket && (!validRetentionScope(flowTicket) || !sameScope(flowTicket, identity(epoch)))) { clear(); loading.hide(); return false; }
             try { return connection.currentApiClient() === ticket.client && ticket.client.serverId() === ticket.server && ticket.client.getCurrentUserId() === ticket.user &&
                 (!strictIdentity || ticket.client.isLoggedIn() && (ticket.client._identityEpoch || 0) === ticket.auth &&
                     (ticket.client.getCurrentLocale() || '') === ticket.locale && ticket.client.serverVersion() === ticket.version && queryKey() === ticket.query); }
@@ -64,9 +67,9 @@
                 if (typeof server !== 'string' || !server || typeof user !== 'string' || !user) return null;
                 if (strictIdentity && (!client.isLoggedIn() || !Number.isSafeInteger(client._identityEpoch || 0) || (client._identityEpoch || 0) < 0)) return null;
                 return {epoch: value, client: client, server: server, user: user,
-                    auth: strictIdentity ? client._identityEpoch || 0 : null,
-                    locale: strictIdentity ? client.getCurrentLocale() || '' : null,
-                    version: strictIdentity ? client.serverVersion() : null, query: strictIdentity ? queryKey() : null, flowRevision: flowRevision, fallback: null};
+                    auth: client._identityEpoch || 0,
+                    locale: client.getCurrentLocale() || '',
+                    version: client.serverVersion(), query: queryKey(), flowRevision: flowRevision, fallback: null};
             } catch (_) { return null; }
         }
         function queryKey() {
@@ -79,7 +82,11 @@
             return a && b && a.client === b.client && a.server === b.server && a.user === b.user && a.auth === b.auth &&
                 a.locale === b.locale && a.version === b.version && a.query === b.query;
         }
-        function sameIdentity(a, b) { return sameScope(a, b) && a.query !== null; }
+        function validRetentionScope(ticket) {
+            try { return ticket && ticket.client.isLoggedIn() && Number.isSafeInteger(ticket.auth) && ticket.auth >= 0; }
+            catch (_) { return false; }
+        }
+        function sameIdentity(a, b) { return sameScope(a, b) && a.query !== null && validRetentionScope(a); }
         function scrollState(element) {
             if (!element) return null;
             var value = typeof element.getScrollPosition === 'function' ? element.getScrollPosition() : null;
@@ -91,7 +98,11 @@
             else { value.element.scrollLeft = value.left; value.element.scrollTop = value.top; }
         }
         function rowBusy(row) {
-            if (!row.status) return;
+            if (!row.status) {
+                row.items.inert = true; row.allowed = false; row.items.classList.add('eteHomeFlowPending');
+                if (['onnow', 'activerecordings'].includes(row.section.SectionType)) row.items.classList.add('eteHomeFlowProgramPending');
+                return;
+            }
             if (row.rendered && !row.readCount) row.block.classList.add('hide');
             else row.block.classList.remove('hide');
             row.block.setAttribute('aria-busy', 'true');
@@ -112,7 +123,7 @@
             events.off(eventClient, 'websocketclose', flowChanged); eventClient = null;
         }
         function watchClient(client) {
-            if (!flowing || eventClient === client) return;
+            if (!events || eventClient === client) return;
             unwatchClient(); eventClient = client;
             events.on(client, 'message', flowMessage);
             events.on(client, 'websocketopen', flowChanged);
@@ -124,6 +135,7 @@
             focusedItemId = focusedTitleId = null; focusedSeeAll = false; flowFocus = null;
         }
         function flowMessage(event, message) {
+            if (!flowing && message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) { clear(); flowChanged(); return; }
             if (message && message.MessageType === 'UserPolicyUpdated') {
                 // A policy change may revoke visibility even when the auth string is unchanged.
                 clear(); flowChanged(); return;
@@ -145,7 +157,7 @@
                 return start({refresh: true});
             }).catch(function() {});
         }
-        if (flowing) ['localusersignedin', 'localusersignedout', 'connected'].forEach(function(name) { events.on(connection, name, flowRetire); });
+        if (events) ['localusersignedin', 'localusersignedout', 'connected'].forEach(function(name) { events.on(connection, name, flowRetire); });
         function userMoved() { inputRevision++; if (flowFocus) { flowFocus.done = true; flowFocus.interacted = true; } }
         if (flowing) ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function(name) { owner.view.addEventListener(name, userMoved, {capture: true, passive: true}); });
         function waitForIdentity(value, deadline) {
@@ -282,13 +294,14 @@
                         // The native title adds its own See All anchor. Guard both
                         // links while leaving active clicks/keyboard to its router.
                         title.addEventListener('click', function(event) {
-                            if (!current(lease.ticket) || stage !== next || flowing && !lease.allowed) { event.preventDefault(); event.stopImmediatePropagation(); }
+                            if (!current(lease.ticket) || stage !== next || !lease.allowed) { event.preventDefault(); event.stopImmediatePropagation(); }
                         }, true);
                     }
                 }
-                var items = block.querySelector('.itemsContainer'), lease = {ticket: ticket, section: section, cached: initial[index], block: block, items: items};
+                var items = block.querySelector('.itemsContainer'), lease = {ticket: ticket, section: section, cached: initial[index], block: block, items: items, allowed: !flowing};
+                lease.results = new WeakMap();
+                if (!flowing) flowRows.push(lease);
                 if (flowing) {
-                    lease.results = new WeakMap();
                     lease.status = document.createElement('p'); lease.status.className = 'homeFlowStatus padded-left padded-right'; lease.status.setAttribute('data-home-flow-status', ''); lease.status.setAttribute('role', 'status');
                     block.appendChild(lease.status); flowRows.push(lease);
                     lease.placeholder = document.createElement('div'); lease.placeholder.className = 'homeFlowPlaceholder' + (layoutManager.tv ? ' itemsContainer-tv' : '');
@@ -302,11 +315,11 @@
                         box.appendChild(padder); card.appendChild(box); lease.placeholder.appendChild(card);
                     }
                     items.parentElement.appendChild(lease.placeholder);
-                    items.eteHomeFlowOwns = function(result) { var bound = lease.results.get(result); return bound && current(bound.ticket) &&
-                        bound.ticket === lease.ticket && bound.sequence === lease.readSequence && bound.work === lease.work && stage === next; };
-                    items.eteHomeFlowCanRestore = function(result) { var bound = lease.results.get(result); return items.eteHomeFlowOwns(result) &&
-                        bound.input === inputRevision && !(pending && flowFocus && flowFocus.interacted); };
                 }
+                items.eteHomeFlowOwns = function(result) { var bound = lease.results.get(result); return bound && current(bound.ticket) &&
+                    bound.ticket === lease.ticket && bound.sequence === lease.readSequence && bound.work === lease.work && stage === next; };
+                items.eteHomeFlowCanRestore = function(result) { var bound = lease.results.get(result); return items.eteHomeFlowOwns(result) &&
+                    bound.input === inputRevision && !(pending && flowFocus && flowFocus.interacted); };
                 items.setAttribute('data-monitor', section.Monitor.join(','));
                 items.parentContainer = block;
                 items.getListOptions = function() { return listOptions(lease.section, renderer); };
@@ -314,8 +327,8 @@
                     var ticket = lease.ticket, section = lease.section;
                     var sequence = lease.readSequence = (lease.readSequence || 0) + 1, work = lease.work, input = inputRevision;
                     function delivered(result) {
+                        lease.results.set(result, {ticket: ticket, sequence: sequence, work: work, input: input});
                         if (flowing) {
-                            lease.results.set(result, {ticket: ticket, sequence: sequence, work: work, input: input});
                             if (lease.readSequence === sequence && lease.work === work) { lease.readSucceeded = true; if (start === 0) lease.readCount = result.Items.length; }
                         }
                         return result;
@@ -460,7 +473,9 @@
         async function refresh(options) {
             options = options || {};
             if (!active || disposed || !owner.view) return {status: 'cancelled'};
-            clear();
+            var reuse = stageMode === 'server' && flowLayout !== null && sameIdentity(flowTicket, identity(epoch));
+            if (!reuse) clear();
+            else { epoch++; provider.cancel(); cancelWaits(); pauseItems(stage); flowRows.forEach(rowBusy); }
             var loadEpoch = epoch, identityDeadline = identityClock.now() + 3000, ticket = identity(loadEpoch);
             loading.show();
             try {
@@ -478,6 +493,7 @@
                 return {status: 'error'};
             }
             owner.apiClient = ticket.client;
+            watchClient(ticket.client);
             owner.sectionsRendered = false;
             provider.cancel();
             pauseItems(stage);
@@ -492,14 +508,24 @@
                 var initial = await Promise.all(response.sections.map(function(section) { return provider.loadItems(section, {limit: 12}); }));
                 if (!current(ticket) || initial.some(function(result) { return result.status === 'cancelled'; })) return {status: 'cancelled'};
                 if (initial.some(function(result) { return result.status !== 'server'; })) return await fallback(ticket, options);
-                var next = newStage(), items = render(next, response.sections, initial.map(function(result) { return result.result; }), ticket, options);
-                if (!current(ticket)) return {status: 'cancelled'};
-                attach(next, 'server');
+                var signature = JSON.stringify(response.sections), items;
+                if (reuse && signature === flowLayout) {
+                    flowRows.forEach(function(row, index) { row.ticket = ticket; row.section = response.sections[index]; row.cached = initial[index].result; });
+                    items = flowRows.map(function(row) { return row.items; });
+                } else {
+                    flowRows = [];
+                    var next = newStage();
+                    items = render(next, response.sections, initial.map(function(result) { return result.result; }), ticket, options);
+                    if (!current(ticket)) return {status: 'cancelled'};
+                    attach(next, 'server');
+                }
+                flowTicket = ticket; flowLayout = signature;
                 // The inherited itemscontainer/refresh monitor starts paused.
                 // Resume through its public lifecycle before requesting data.
                 await Promise.all(items.map(function(item) { return item.resume({refresh: true}); }));
                 if (ticket.fallback) return await ticket.fallback;
                 if (!current(ticket)) return {status: 'cancelled'};
+                flowRows.forEach(function(row) { row.allowed = true; row.items.inert = false; row.items.classList.remove('eteHomeFlowPending'); row.items.classList.remove('eteHomeFlowProgramPending'); });
                 ready(ticket, options);
                 return {status: 'server'};
             } catch (_) {
@@ -522,8 +548,9 @@
         }
         return {
             flowEnabled: flowing,
+            restoreEnabled: true,
             canRestore: function() {
-                return flowing && !disposed && !!owner.view && stageMode === 'server' && flowLayout !== null &&
+                return !disposed && !!owner.view && stageMode === 'server' && flowLayout !== null &&
                     sameIdentity(flowTicket, identity(epoch));
             },
             refresh: function(options) { layoutCache.invalidate(); return start(options); },
@@ -533,7 +560,7 @@
                 if (layoutCache.enabled) layoutCache.revalidate();
                 if (active && !options.refresh) {
                     if (pending && pending.epoch === epoch) return pending.promise;
-                    if (owner.sectionsRendered && (!layoutCache.enabled || committedTicket && current(committedTicket))) return Promise.resolve({status: stageMode});
+                    if (owner.sectionsRendered && committedTicket && current(committedTicket)) return Promise.resolve({status: stageMode});
                 }
                 active = true;
                 if (options.refresh) layoutCache.invalidate();
@@ -569,7 +596,7 @@
             clear: function() { layoutCache.invalidate(); clear(); },
             dispose: function() {
                 disposed = true; active = false;
-                if (flowing) {
+                if (events) {
                     unwatchClient();
                     ['localusersignedin', 'localusersignedout', 'connected'].forEach(function(name) { events.off(connection, name, flowRetire); });
                     if (owner.view) ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function(name) { owner.view.removeEventListener(name, userMoved, {capture: true}); });

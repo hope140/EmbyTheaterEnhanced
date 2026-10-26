@@ -42,7 +42,11 @@ test('managed cache is fixed below profile; a verified retry reuses only the sam
     await lease.commit(); assert.equal(f.state.commits, 1); assert.equal(f.store.recovery(), 'pending-install');
     assert.equal((await f.store.reconcile('9.0.0')).removed, 0);
     assert.equal((await f.store.reconcile('invalid')).removed, 0);
-    await f.store.reconcile('9.1.0'); assert.equal(f.state.cleaned.length, 1);
+    // A fresh target startup reads the persisted receipt; it cannot rely on
+    // the source process's in-memory store. These versions are synthetic.
+    const target = cache.createStore(f.settings);
+    assert.deepEqual(await target.reconcile('9.0.0'), {removed: 0, retained: 1});
+    await target.reconcile('9.1.0'); assert.equal(f.state.cleaned.length, 1);
     assert.equal(f.state.cleaned[0].files.at(-1).name, 'receipt.json');
 });
 
