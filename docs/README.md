@@ -11,7 +11,7 @@
 | 各版更新内容 | [变更记录](../CHANGELOG.md) |
 | 项目许可与第三方来源 | [许可说明](LICENSING.md) · [第三方通知](../THIRD_PARTY_NOTICES.md) |
 
-截至 2026-10-25，正式版为 [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，最新测试版为 [v0.4.3](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3)。v0.4.2 已发布页面／详情缓存、缓存管理及手动更新／通道选择，v0.4.3 保留这些并增加系统媒体控制与一秒视频预览。功能是否发布以对应 Release 和 Tag 为准，主分支文档不改变历史安装包。
+截至 2026-10-26，正式版为 [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，最新测试版为 [v0.4.4](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4)。测试版保留页面／详情缓存、缓存管理、手动更新／通道及系统媒体控制与一秒预览；v0.4.4 改善详情与首页返回交接、补充脱敏诊断并退役包内 Anime4K shader。功能是否发布以对应 Release 和 Tag 为准，主分支文档不改变历史安装包。
 
 ## 开发与技术合同
 
@@ -31,6 +31,7 @@
 
 ## 发布记录与后续范围
 
+- [v0.4.4 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4)：详情／首页交接修复、诊断补充与旧 shader 退役；[发行核验](V044_RELEASE_VERIFICATION.md)。
 - [v0.4.3 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3)：系统媒体卡片、一秒预览及退出修复；[接入记录](V043_NATIVE_PREVIEW.md)。
 - [v0.4.2 核验记录](V042_RELEASE_VERIFICATION.md)、[v0.4.1 核验记录](V041_RELEASE_VERIFICATION.md)、[v0.4.0 核验记录](V040_RELEASE_VERIFICATION.md)：保留准备阶段、来源及验证范围，最终附件以各版 Release 为准。
 - [后续范围与实验状态](NEXT_RELEASE_SCOPE.md)、[项目方向与历史计划](ROADMAP.md)。

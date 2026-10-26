@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-26 — v0.4.4 测试版已发布
+
+[v0.4.4 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4) 已于 2026-10-26 00:46:50 UTC 发布为 Pre-release，产品 Tag／sourceCommit 固定为 `b6fe06b984d74f60bdf82527d0666e920449dedb`，包含 PR #80／#81／#82 与版本准备 PR #83。Latest 正式版仍为 v0.4.0，不含 PR #79、FN 或共享媒体缓存实验。
+
+准确 main／Tag CI 各 2080 pass／0 fail／3 skip；标准发行构建 [40248484001](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40248484001) 全套 2178/2178、材料 135/135 通过，Host／runtime 来源及安装器解包比对通过。发布协调端完成五附件下载核对，回读资产与 GitHub 摘要一致；安装器及来源记录见[本版核验](V044_RELEASE_VERIFICATION.md)。用户先前对 f7b60add 包反馈暂未发现问题；新版构建与附件核验不等于追加普通系统安装、真实播放退出或全部 NAS／硬件验收。后续文档 main 不改变产品 Tag 与原始附件。
+
 ## 2026-10-25 — v0.4.4 测试发行准备
 
 用户对 f7b60add 独立包反馈暂未发现问题并批准测试发行。PR #82 按精确 head 合并到 main dd0fd523，承接 PR #80／#81；随后仅同步产品版本 0.4.4 与发行文档，不混入 FN、共享视频缓存或未合并更新优化。旧包 Windows 全回归 2178/2178、0 skip、安装器解包比对及六项受控 Electron 窗口退出探针通过，普通系统安装与真实播放退出仍分开。新版本必须从最终 main 重新构建并核对五附件，不改名旧包；Latest 正式版保持 v0.4.0。准确新来源及发布结果见[本版核验](V044_RELEASE_VERIFICATION.md)，准备阶段不宣称新版已构建或发布。
