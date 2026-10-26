@@ -161,7 +161,7 @@ $updateSelftestText = & node (Join-Path $runtime 'electronapp/enhanced/manual-ap
 if ($LASTEXITCODE -ne 0) { throw 'Packaged manual update offline selftest failed.' }
 $updateSelftest = ($updateSelftestText -join "`n") | ConvertFrom-Json
 if ($updateSelftest.status -ne 'passed' -or $updateSelftest.packageManifestBinding.status -ne 'matched' -or
-    @($updateSelftest.checks).Count -ne 8 -or
+    @($updateSelftest.checks).Count -ne 9 -or
     $updateSelftest.packageManifestBinding.sourceCommit -ne $source -or $updateSelftest.realNetworkRequests -ne 0 -or
     $updateSelftest.appBootstrap -ne $false -or $updateSelftest.profileAccess -ne $false -or
     $updateSelftest.installerExecuted -ne $false -or $updateSelftest.temporaryFilesRemoved -ne $true) {

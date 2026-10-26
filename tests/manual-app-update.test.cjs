@@ -286,7 +286,16 @@ function ipcHarness(overrides = {}) {
         getWebContents: () => sender, getAppInfo: async () => ({appVersion: '0.4.0'}),
         dialog: {showOpenDialog: async () => { pickerCalls++; return {filePaths: ['/synthetic-directory']}; }},
         requestJson: async () => { jsonCalls++; return release(); },
-        downloadInstaller: async (_asset, _root, options) => { downloads++; options.onProgress({bytes: 1, total: 2, source: 'github'}); return {status: 'downloaded'}; },
+        updateCache: {
+            recovery: () => false,
+            download: async (asset, options) => {
+                if (overrides.downloadInstaller) return overrides.downloadInstaller(asset, '/managed-test-cache', options);
+                downloads++; options.onProgress({bytes: 1, total: 2, source: 'github'});
+                return {source: 'github', directory: '/managed-test-cache'};
+            },
+            prepare: async () => ({commit() {}, abort() {}})
+        },
+        quitForUpdate() {},
         ...overrides
     });
     return {handlers, sender, event, sent, unregister, counts: () => ({jsonCalls, pickerCalls, downloads}),
@@ -302,8 +311,8 @@ test('IPC checks only on request, pins official revalidation and accepts no rend
     }
     assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'verification-unavailable');
     assert.equal((await h.invoke(ipc.CHANNELS.CHECK_UPDATE)).status, 'update-available');
-    assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).status, 'downloaded');
-    assert.deepEqual(h.counts(), {jsonCalls: 2, pickerCalls: 1, downloads: 1});
+    assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).status, 'installing');
+    assert.deepEqual(h.counts(), {jsonCalls: 2, pickerCalls: 0, downloads: 1});
     assert.equal(h.sent.length, 1);
     await h.unregister(); assert.equal(h.handlers.size, 0);
 });
@@ -353,14 +362,24 @@ test('concurrent operations are rejected and cancelled checks cannot cache a can
     await h.unregister();
 });
 
-test('shutdown cancels the owner without waiting for a native directory dialog; late result does no work', async () => {
-    let finishPicker;
-    const h = ipcHarness({dialog: {showOpenDialog: () => new Promise(resolve => { finishPicker = resolve; })}});
+test('shutdown cancels official revalidation without any native directory dialog or late work', async () => {
+    let finishRequest;
+    const h = ipcHarness();
     await h.invoke(ipc.CHANNELS.CHECK_UPDATE);
-    const pending = h.invoke(ipc.CHANNELS.DOWNLOAD); await tick();
-    await h.unregister(); assert.equal((await pending).status, 'cancelled');
-    finishPicker({filePaths: ['/late-directory']}); await tick();
-    assert.equal(h.counts().downloads, 0);
+    // The official requester remains abortable during pre-download validation.
+    await h.unregister();
+    const h2 = ipcHarness({requestJson: async (url, {signal}) => {
+        if (url.endsWith('latest')) return release();
+        return new Promise((resolve, reject) => {
+            finishRequest = resolve;
+            signal.addEventListener('abort', () => reject(Error('cancelled')), {once: true});
+        });
+    }});
+    await h2.invoke(ipc.CHANNELS.CHECK_UPDATE);
+    const pending = h2.invoke(ipc.CHANNELS.DOWNLOAD); await tick();
+    await h2.unregister(); assert.equal((await pending).status, 'cancelled');
+    finishRequest(release()); await tick();
+    assert.equal(h2.counts().downloads, 0); assert.equal(h2.counts().pickerCalls, 0);
 });
 
 test('shutdown drains an active cancelled download', async () => {
@@ -376,4 +395,71 @@ test('shutdown drains an active cancelled download', async () => {
     const closing = h.unregister().then(() => { closed = true; }); await tick();
     assert.equal(closed, false); complete(); await closing;
     assert.equal((await pending).status, 'cancelled');
+});
+
+test('explicit download commits one verified handoff then locks all update actions until normal quit', async () => {
+    let commits = 0, quits = 0, transfers = 0;
+    const h = ipcHarness({quitForUpdate: () => { quits++; }, updateCache: {
+        recovery: () => false,
+        download: async () => { transfers++; return {source: 'github', reused: true}; },
+        prepare: async () => ({commit: async () => { commits++; }, abort() { assert.fail('committed handoff aborted'); }})
+    }});
+    await h.invoke(ipc.CHANNELS.CHECK_UPDATE);
+    const first = h.invoke(ipc.CHANNELS.DOWNLOAD);
+    assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'busy');
+    assert.equal((await first).status, 'installing');
+    assert.equal((await h.invoke(ipc.CHANNELS.CHECK_UPDATE)).reason, 'busy');
+    assert.equal((await h.invoke(ipc.CHANNELS.CANCEL)).reason, 'busy');
+    assert.equal((await h.invoke(ipc.CHANNELS.SET_CHANNEL, {channel: 'testing'})).reason, 'busy');
+    await h.unregister(); assert.deepEqual({commits, quits, transfers}, {commits: 1, quits: 1, transfers: 1});
+});
+
+test('cancelling prepared handoff drains its owned helper before releasing the download slot or quitting', async () => {
+    let finishPrepare, finishAbort, commits = 0, quits = 0;
+    const h = ipcHarness({quitForUpdate: () => { quits++; }, updateCache: {recovery: () => false,
+        download: async () => ({source: 'github'}), prepare: async () => {
+            await new Promise(resolve => { finishPrepare = resolve; });
+            return {commit() { commits++; }, abort: () => new Promise(resolve => { finishAbort = resolve; })};
+        }}});
+    await h.invoke(ipc.CHANNELS.CHECK_UPDATE);
+    const pending = h.invoke(ipc.CHANNELS.DOWNLOAD); await tick();
+    await h.invoke(ipc.CHANNELS.CANCEL); finishPrepare(); await tick();
+    assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'busy');
+    let closed = false; const closing = h.unregister().then(() => { closed = true; }); await tick();
+    assert.equal(closed, false); finishAbort(); await closing;
+    assert.equal((await pending).status, 'cancelled'); assert.equal(commits, 0); assert.equal(quits, 0);
+});
+
+test('failed handoff commit leaves the client open and a retryable candidate', async () => {
+    let quits = 0, aborts = 0, attempts = 0;
+    const h = ipcHarness({quitForUpdate: () => { quits++; }, updateCache: {recovery: () => true,
+        download: async () => ({source: 'github', reused: true}), prepare: async () => ({
+            commit() { attempts++; throw Object.assign(Error('not launched'), {code: 'installer-launch-failed'}); },
+            abort() { aborts++; }
+        })}});
+    await h.invoke(ipc.CHANNELS.CHECK_UPDATE);
+    for (let index = 0; index < 2; index++) assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'installer-launch-failed');
+    assert.deepEqual({quits, aborts, attempts}, {quits: 0, aborts: 2, attempts: 2});
+    assert.equal((await h.invoke(ipc.CHANNELS.GET_CHANNEL)).recovery, true); await h.unregister();
+});
+
+for (const [code, reason] of [['ENOSPC', 'disk-full'], ['EDQUOT', 'disk-full'], ['EACCES', 'cache-unwritable'], ['EROFS', 'cache-unwritable']]) {
+    test('managed filesystem ' + code + ' is reported inline and never exits client', async () => {
+        let quits = 0;
+        const h = ipcHarness({quitForUpdate: () => { quits++; }, updateCache: {recovery: () => false,
+            download: async () => { throw Object.assign(Error('synthetic filesystem failure'), {code}); }}});
+        await h.invoke(ipc.CHANNELS.CHECK_UPDATE);
+        assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, reason);
+        assert.equal(quits, 0); await h.unregister();
+    });
+}
+
+test('unavailable cache does not disable reading the channel or manual official checks', async () => {
+    const h = ipcHarness({updateCache: {recovery() { throw Error('cache unavailable'); },
+        download() { throw Object.assign(Error('full'), {code: 'ENOSPC'}); }}});
+    const channel = await h.invoke(ipc.CHANNELS.GET_CHANNEL);
+    assert.equal(channel.status, 'ok'); assert.equal(channel.channel, 'stable'); assert.equal(channel.recovery, 'cache-unavailable');
+    assert.equal((await h.invoke(ipc.CHANNELS.CHECK_UPDATE)).status, 'update-available');
+    assert.equal((await h.invoke(ipc.CHANNELS.DOWNLOAD)).reason, 'disk-full');
+    await h.unregister();
 });

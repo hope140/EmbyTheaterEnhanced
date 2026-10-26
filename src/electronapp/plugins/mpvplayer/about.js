@@ -117,7 +117,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
     };
 
     AboutView.prototype.checkUpdates = function () {
-        if (this.updating || this.changingChannel) return Promise.resolve();
+        if (this.updating || this.changingChannel || this.installing) return Promise.resolve();
         var view = this.view;
         var button = view.querySelector('.btnCheckUpdates');
         var state = view.querySelector('.aboutUpdateState');
@@ -174,9 +174,13 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
             if (!result || result.status !== 'ok' || ['stable', 'testing'].indexOf(result.channel) === -1) throw new Error('channel-unavailable');
             this.updateChannel = result.channel;
             view.querySelector('.selectUpdateChannel').value = result.channel;
-            view.querySelector('.selectUpdateChannel').disabled = this.downloading || this.changingChannel;
-            view.querySelector('.btnCheckUpdates').disabled = this.updating || this.changingChannel;
+            view.querySelector('.selectUpdateChannel').disabled = this.downloading || this.changingChannel || !!this.installing;
+            view.querySelector('.btnCheckUpdates').disabled = this.updating || this.changingChannel || !!this.installing;
             view.querySelector('.about-update-channel').textContent = (result.channel === 'testing' ? '测试通道' : '正式通道') + ' · Windows x64';
+            if (result.recovery) setStatus(view.querySelector('.aboutUpdateState'), result.recovery === 'cache-unavailable' ?
+                '专用更新缓存暂不可用，仍可检查版本；请检查磁盘或当前用户权限后重试下载。' : result.recovery === 'cleanup-pending' ?
+                '新版本已启动，更新缓存仍被占用或无法安全清理；下次启动会再次核验。' :
+                '上次更新尚未确认安装完成。可检查更新后重试，已校验的安装包会复用。', false);
         }.bind(this)).catch(function () {
             if (this.view && requestId === this.channelRequestId) setStatus(view.querySelector('.aboutUpdateState'), '无法读取更新通道，请重新进入本页重试。', true);
         }.bind(this));
@@ -184,7 +188,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
 
     AboutView.prototype.changeChannel = function () {
         var view = this.view, selector = view.querySelector('.selectUpdateChannel'), selected = selector.value;
-        if (this.downloading || this.changingChannel || ['stable', 'testing'].indexOf(selected) === -1) {
+        if (this.downloading || this.changingChannel || this.installing || ['stable', 'testing'].indexOf(selected) === -1) {
             selector.value = this.updateChannel; return Promise.resolve();
         }
         this.retireUpdate();
@@ -227,7 +231,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
     };
 
     AboutView.prototype.downloadUpdate = function () {
-        if (this.updating || this.changingChannel) return Promise.resolve();
+        if (this.updating || this.changingChannel || this.installing) return Promise.resolve();
         var view = this.view;
         var state = view.querySelector('.aboutUpdateState');
         var requestId = ++this.updateRequestId;
@@ -250,17 +254,22 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
         if (window.ipc && typeof window.ipc.on === 'function') window.ipc.on(CHANNELS.progress, this.progressListener);
         return request(CHANNELS.download).then(function (result) {
             if (requestId !== this.updateRequestId) return;
-            if (result && result.status === 'downloaded') {
+            if (result && result.status === 'installing') {
+                this.installing = true;
                 view.querySelector('.aboutDownloadProgress').value = 1;
                 view.querySelector('.aboutDownloadDetails').textContent = '来源：' + result.source + '\n目录：' + result.directory + '\n文件：' + result.fileName + '\nSHA-256：' + result.sha256;
-                setStatus(state, '下载完成，SHA-256 与 GitHub 官方发布值一致。请正常退出客户端，再自行打开下载目录中的安装程序。此校验不代表数字签名；请保留系统与浏览器安全检查。', false);
+                setStatus(state, '校验成功，正在正常退出客户端并打开安装向导。下次启动确认新版本后清理安装包。请保留 Windows 安全检查。', false);
             } else if (result && result.status === 'cancelled') {
                 setStatus(state, '已取消下载。', false);
             } else {
                 var reasons = {
                     'verification-unavailable': '官方源不可达或缺少校验值，无法独立验证。',
                     'release-changed': '官方发布身份已改变，请重新检查更新。',
-                    'file-exists': '目标目录已有同名文件，请选择其他目录；已有文件未覆盖。',
+                    'file-exists': '更新缓存出现同名文件，已停止且未覆盖。',
+                    'cache-unsafe': '更新缓存身份已改变，已拒绝执行；已有文件未覆盖，请检查专用更新缓存。',
+                    'disk-full': '更新缓存所在磁盘空间不足，请释放空间后重试。',
+                    'cache-unwritable': '无法写入专用更新缓存，请检查当前用户权限或磁盘状态后重试。',
+                    'installer-launch-failed': '无法安全准备安装向导，客户端仍保持运行。已校验包保留，可重试；请检查系统策略。',
                     'hash-mismatch': 'SHA-256 不匹配，下载已拒绝。',
                     'http-rejected': '服务器拒绝请求，已停止下载。',
                     'unsafe-redirect': '下载跳转不符合安全规则，已停止。',
@@ -275,9 +284,9 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
             this.removeUpdateProgress();
             this.updating = false;
             this.downloading = false;
-            view.querySelector('.selectUpdateChannel').disabled = false;
-            view.querySelector('.btnCheckUpdates').disabled = false;
-            view.querySelector('.btnDownloadUpdate').disabled = false;
+            view.querySelector('.selectUpdateChannel').disabled = !!this.installing;
+            view.querySelector('.btnCheckUpdates').disabled = !!this.installing;
+            view.querySelector('.btnDownloadUpdate').disabled = !!this.installing;
             setUpdateCancel(view, null);
         }.bind(this));
     };

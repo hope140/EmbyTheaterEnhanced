@@ -1,5 +1,7 @@
 # 20 项旧正文用途与发布选择
 
+后续 Anime4K 清理已将其余39份 shader 从活动树和新包中移除，兼容资源输出为0。本文的39项保留结论及表格是此前审计范围；旧预设退役理由和历史证据继续保留。当前合同见[兼容资源退役](COMPATIBILITY_RESOURCES_INPUT.md)。
+
 Current v2 update: twenty reviewed old bodies are removed from the current tree: eighteen retired resources and two maintained replacements. Active counts are39/2/713. The latest Web/npm scope is described in [the runtime projection contract](SCOPED_RUNTIME_PROJECTION.md); [its desktop-usefulness and server-page regression evidence](MOBILE_CAMERA_SETTINGS_RETIREMENT.md) stays separate from the prior051f990 successful check. Original manifests/hashes and necessary declarations remain. Earlier statements below describe preceding stages.
 
 

@@ -21,7 +21,8 @@ function packageBinding() {
     if (!fs.existsSync(manifestPath)) return {status: 'not-present', sourceCommit: 'UNKNOWN'};
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     assert.match(manifest.sourceCommit, /^[0-9a-f]{40}$/);
-    for (const name of ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'app-update-preferences.js', 'manual-app-update-selftest.js']) {
+    for (const name of ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'app-update-preferences.js', 'manual-app-update-selftest.js',
+        'update-install-cache.js', 'update-install-handoff.js', 'update-install-handoff.ps1', 'update-install-guard.cs', 'update-install-relay.cs']) {
         const relative = 'electronapp/enhanced/' + name;
         const entries = manifest.files.filter(entry => entry.path === relative);
         assert.equal(entries.length, 1);
@@ -117,6 +118,21 @@ async function run() {
             assert.equal((await handlers.get(ipc.CHANNELS.CHECK_UPDATE)(event)).status, 'update-available');
         } finally { await unregister(); }
         checks.push('packaged-ipc-trust-and-input-schema');
+
+        const profile = directory('synthetic-managed-cache'), cacheTransport = mockTransport([{bytes}]);
+        let helperCalls = 0;
+        const managed = require('./update-install-cache').createStore({profileRoot: profile, executable: path.join(profile, 'not-running.exe'),
+            downloadInstaller: (installer, root, settings) => update.downloadInstaller(installer, root, {...settings, get: cacheTransport.get}),
+            handoff: {prepare() { helperCalls++; throw Error('No execution in package selftest'); }, cleanup() { helperCalls++; throw Error('No native cleanup in package selftest'); }}});
+        const request = {currentVersion: '1.2.2', targetVersion: '1.2.3', tag: 'v1.2.3', signal: new AbortController().signal};
+        const stored = await managed.download(asset, request);
+        assert.equal((await managed.download(asset, request)).reused, true);
+        assert.equal(cacheTransport.calls.length, 1);
+        assert.equal((await managed.reconcile('1.2.2')).removed, 0);
+        fs.writeFileSync(path.join(stored.directory, asset.name), Buffer.alloc(bytes.length));
+        await assert.rejects(managed.prepare(stored, request.signal), /cache-unsafe/);
+        assert.equal(helperCalls, 0);
+        checks.push('managed-cache-retry-and-replacement-refusal');
     } finally { fs.rmSync(scratch, {recursive: true, force: true}); }
     return {status: 'passed', scope: 'offline-package-modules-and-synthetic-files-only', packageManifestBinding: binding,
         platform: process.platform, checks, temporaryFilesRemoved: true, realNetworkRequests: 0, appBootstrap: false,

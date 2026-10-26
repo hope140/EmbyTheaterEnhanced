@@ -12,12 +12,16 @@ const options={skip:!haveOfficial||!havePs?'Official55 source is acquired and th
 test('all builder/verifier candidate files, fingerprints, references and inner/outer manifests agree',()=>{
  assert.equal(plan.verifyCandidateContract(root).builderVerifierAgreement,true);
 });
-test('ordinary production orchestrator enforces complete source and verifier gates before compilation and staging',()=>{
+test('short Windows gate uses the unchanged production orchestrator and reaches actual staged receipts without packaging',()=>{
+ const script=fs.readFileSync(path.join(root,'tools/test-host-source-gates.ps1'),'utf8'),workflow=fs.readFileSync(path.join(root,'.github/workflows/host-source-gates.yml'),'utf8');
+ assert.match(script,/'ci-source-built-host\.ps1'/);assert.match(script,/runner-host-receipt\.cjs'\)\.load\(process\.cwd\(\)\)/);
+ assert.match(script,/'prepare-windows-host\.ps1'/);assert.match(script,/verify-file \$root \$archive windows-host/);
+ assert.doesNotMatch(script,/PrepareOnly|prepare-ci-build-inputs|ci-windows-test-package|ExecutionPolicy|Stop-Process|taskkill|npm install/);
+ assert.match(workflow,/branches: \[fix\/host-electron-exit-v043\]/);assert.match(workflow,/contents: read/);assert.match(workflow,/runs-on: windows-2022/);assert.match(workflow,/test-host-source-gates\.ps1/);
  const production=fs.readFileSync(path.join(root,'tools/ci-source-built-host.ps1'),'utf8');
  assert.ok(production.indexOf('verify-verifier $root')<production.indexOf("Start-CIPhase 'host.acquire-packages'"));
  assert.ok(production.indexOf("Start-CIPhase 'host.source-chain'")<production.indexOf("Start-CIPhase 'host.compile'"));
  assert.ok(production.indexOf("Start-CIPhase 'host.probe'")<production.indexOf("Start-CIPhase 'host.envelope-stage'"));
- assert.doesNotMatch(production,/ExecutionPolicy|Stop-Process|taskkill/);
 });
 for(const mutation of ['old-program','duplicate-member','schema','builder','reference','component-fingerprint','inner-manifest'])test('builder/verifier agreement rejects independently stale declaration: '+mutation,t=>{
  const d=work(t);cloneInputs(d);

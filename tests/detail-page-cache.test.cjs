@@ -29,3 +29,10 @@ test('canonical transforms preserve baseline lifecycle and reject repeated cache
 test('unknown/credential query inputs and explicit playback sources never enter cache context',()=>{const {page,api}=pageModule();for(const extra of [{AccessToken:'synthetic'},{mediaSourceId:'source'},{timerId:'timer'},{context:'https://invalid/?token=synthetic'}])assert.equal(page.context(api,{id:'item',...extra}),null);});
 
 test('a cache-ineligible detail keeps the original error path',async()=>{const {page,api}=pageModule();const owner={view:{},params:{id:'item',mediaSourceId:'source'}};const helper=page.create(owner,{});helper.begin(api);assert.equal(await helper.error(response(503,'application/json',{})),false);assert.equal(helper.isCurrent(),true);helper.dispose();});
+
+test('static geometry fields are bounded, optional and do not introduce playback or permission state',()=>{
+ const dto=store.project({...item(),PrimaryImageAspectRatio:16/9,SeriesName:'Synthetic series',IndexNumber:3,ParentIndexNumber:2,MediaSources:[{Path:'private'}],Policy:{EnableMediaPlayback:true}});
+ assert.equal(dto.PrimaryImageAspectRatio,16/9);assert.equal(dto.SeriesName,'Synthetic series');assert.equal(dto.IndexNumber,3);assert.equal(dto.ParentIndexNumber,2);assert.equal(store.valid(dto),true);
+ assert.equal(store.valid({...dto,PrimaryImageAspectRatio:Infinity}),false);assert.equal(store.valid({...dto,IndexNumber:-1}),false);assert.equal(store.valid({...dto,SeriesName:'x'.repeat(2049)}),false);
+ assert.equal(store.valid(store.project(item())),true);assert.equal('MediaSources' in dto,false);assert.equal('Policy' in dto,false);
+});

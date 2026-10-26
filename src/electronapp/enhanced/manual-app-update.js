@@ -181,6 +181,7 @@ async function downloadInstaller(installer, directory, options) {
     try {
         handle = await fs.promises.open(temporary, 'wx', 0o600);
         temporaryIdentity = await handle.stat({bigint: true});
+        if (settings.onTemporary) settings.onTemporary(path.basename(temporary), temporaryIdentity);
         for (let index = 0; index < SOURCES.length; index++) {
             const source = SOURCES[index];
             check(signal, deadline);

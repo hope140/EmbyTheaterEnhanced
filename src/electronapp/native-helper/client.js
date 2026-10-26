@@ -59,7 +59,10 @@
                     (currentGenerationId == null || message.generationId !== currentGenerationId)) return;
                 emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}});
             } else if (message.type === 'bridge_error') {
-                emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated'}});
+                emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated',
+                    endReason: message.endReason === 4 ? 4 : null,
+                    mpvErrorCode: Number.isInteger(message.mpvErrorCode) && message.mpvErrorCode >= -2147483648 &&
+                        message.mpvErrorCode <= 2147483647 ? message.mpvErrorCode : null}});
             }
         };
         ipc.on(EVENT_CHANNEL, this._onIpcEvent);
@@ -82,13 +85,14 @@
             var index = listeners.indexOf(listener);
             if (index >= 0) listeners.splice(index, 1);
         };
-        this.beginGeneration = function (label, presentationToken) {
+        this.beginGeneration = function (label, presentationToken, diagnosticIdentity) {
             if (destroyed) return Promise.reject(new Error('native-helper-destroyed'));
             if (presentationToken != null && !validPresentationToken(presentationToken)) {
                 return Promise.reject(new Error('invalid-presentation-token'));
             }
             var requestEpoch = ++generationEpoch;
             var request = {label: label, requestEpoch: requestEpoch};
+            if (diagnosticIdentity) request.diagnosticIdentity = diagnosticIdentity;
             if (presentationToken != null) request.presentationToken = presentationToken;
             return call('begin-generation', request).then(function (result) {
                 if (destroyed || generationEpoch !== requestEpoch) throw new Error('generation-superseded');
