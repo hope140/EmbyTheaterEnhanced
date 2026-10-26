@@ -79,6 +79,7 @@ async function freshRoot() {
 }
 
 async function fixture(t, options = {}) {
+  const optionsForFixture = options;
   const root = await freshRoot();
   let origin, authority, session;
   t.after(() => cleanup([() => session?.close(), () => authority?.close(), () => origin?.close()],
@@ -99,6 +100,7 @@ async function fixture(t, options = {}) {
       createCount++;
       if (options.slowCreateMs) await delay(options.slowCreateMs);
       cache = await createCache(value, {async createStore(options) {
+        if (optionsForFixture.storeGate) await optionsForFixture.storeGate;
         try {return await createStore(options);}
         catch (error) {
           console.log(JSON.stringify({type: 'owned-session-store-create-failed',
@@ -320,4 +322,44 @@ test('selection assertion messages retain only known diagnostic reasons without 
       return true;
     });
   }
+});
+
+
+test('shared selection includes pending disk recovery in its existing finite prepare budget', async t => {
+  let release; const storeGate = new Promise(resolve => {release = resolve;});
+  const f = await fixture(t, {storeGate}), a = f.candidate('A');
+  try {
+    const before = performance.now();
+    assert.equal(await selectCurrent(f, a), null, 'an unready proxy must not be dispatched as a restored cache');
+    assert.ok(performance.now() - before < 200, 'unreleased disk recovery cannot hold playback indefinitely');
+    assert.equal(f.cache.status().initializing, true);
+    assert.deepEqual(f.session.status().current.diagnostic, {stage:'current-probe',reason:'timeout'});
+    assert.ok(f.origin.requests.every(row => row.start === 0 && row.end === 0));
+  } finally {release();}
+  await f.session.close();
+});
+
+test('fresh application selection reuses retained bytes on its first body without preload or early actual promotion', async t => {
+  const f = await fixture(t), seedCandidate = f.candidate('B');
+  const owner = new AbortController();
+  const transport = f.authority.bind({principal:f.principalA,signal:owner.signal,
+    sourceProof:seedCandidate.sourceProof,source:seedCandidate.source,requestId:'play-A'});
+  const seeded = await createCache(f.config);
+  try {
+    const handle = await seeded.open({source:seedCandidate.source,transport,
+      identity:{serverOrigin:seedCandidate.serverOrigin,serverId:seedCandidate.serverId,accountId:seedCandidate.accountId,
+        itemId:seedCandidate.itemId,mediaSourceId:seedCandidate.mediaSourceId,representation:transport.representation},
+      currentBytes:MEDIA_BUFFER_BYTES,isCurrent:()=>true,signal:owner.signal});
+    await handle.prefetch({maxBytes:BLOCK,signal:owner.signal});
+    await handle.markPlaying();
+  } finally {await seeded.close();}
+  const before=f.origin.requests.length;
+  const selected=await requireSelected(f,selectCurrent(f,f.candidate('B')));
+  assert.equal(f.cache.status().currentBytes,BLOCK,'the new manager recovered the real prior actual object');
+  const response=await getRange(selected.source);
+  assert.equal(response.status,206);
+  assert.equal(digest(response.body),digest(Buffer.alloc(BLOCK,0x42)));
+  const requests=f.origin.requests.slice(before);
+  assert.equal(requests.length,1,'only the fresh authorized one-byte identity probe is allowed');
+  assert.deepEqual([requests[0].start,requests[0].end],[0,0]);
 });

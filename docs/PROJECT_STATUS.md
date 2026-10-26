@@ -1152,6 +1152,7 @@ Apply only the first-parent delta of merged Home PR85 (`e6cc8bf8fd5ec42142a0deff
 
 Combined-source local regression:2,902 tests/2,877 pass/0 fail/25 existing platform or material skips (133.6s); focused Home/cache/source-binding190/190. The unchanged Home renderer check passes18 desktop/TV synthetic comparisons against the pre-sync CSS, with no page errors. JavaScript607/PowerShell55 syntax, finite credential-pattern scan706 and changed documentation checks pass. These results do not substitute for the new exact-commit Windows CI, Native four-phase or ordinary-entry performance evidence.
 
+
 ## Ordinary-entry tools rebound to the Home-inclusive bounded-read product
 
 Merge the reviewed product `b4bd4dd9fe51f93a482c69986fe5e77f7f3503ed` into the separate verification branch, retaining both documentation histories. Set the physical verifier and ordinary app plan to that same exact product. The protected product bytes match that commit;30ms observation is preserved. A future package is consumed by exact successful-run provenance, complete physical manifest and installer/ZIP digests, with no old7a substitution. This is a tool-only successor relative to the reviewed product and does not dispatch, install, publish or alter main.
@@ -1161,3 +1162,15 @@ Home-inclusive tool regression:2,932 tests/2,907 pass/0 fail/25 existing platfor
 ## Separate ordinary-entry prepare control output from preflight diagnostics
 
 The first ordinary-entry attempt failed before launching a sample because path stdout included the port-preflight diagnostic. Introduce a narrow source-bound structured root helper and strict PowerShell consumer; retain diagnostic output on its separate stream, exact path ownership/schema and all package provenance gates. Real PowerShell/Node consumer tests pass5/5 with malformed-output refusal; coordinator-focused coverage passed33/33 before final schema-type assertions. No package modification, Native execution, installer run or source-authentication shortcut is included in this tool-only correction.
+
+## Restored source admission retains the existing bounded selection deadline
+
+After the Home-inclusive Native run passed baseline/natural with zero repeated B body, reopen exposed deferred metadata publication before readiness. Add cancellable shared-handle readiness to the existing50ms session preparation race, preserving direct low-level forwarding, real recovery ownership, fresh authority and30ms block policy. No prefetch or actual promotion substitutes for restored readiness. Local focused35 tests pass, including real retained B's first application body with only the one-byte reauthorization probe and blocked recovery cancellation/deadline coverage. The old source fails the three new pending/readiness regressions. Windows reopen/cancel and ordinary-entry outcomes still require the newly identified source.
+
+Restored-readiness local regression:2,906 total/2,881 pass/0 fail/25 existing platform or material skips (136.1s), focused adapter/session35/35. JavaScript607/PowerShell55 syntax, finite credential-pattern scan706 and patch checks pass. The block-read source hash remains unchanged. New-source Windows reopen/cancel and ordinary entry are pending; previous baseline/natural PASS applies only to the prior b4bd4dd package.
+
+## Rebind prepare tooling to the restored-admission product
+
+Both physical-package and app-performance anchors now identify `04dc9b1e2d0d138d535347147f410f647c836f87`. Merge that product source into the separate verification branch while preserving the structured-root tool correction and both status histories. The protected product tree and30ms block observer must match the new anchor; neither old b4bd4dd nor an arbitrary identical-tree package is accepted. A future single exact-source package may be reused by the tool successor after provenance, complete physical manifest and owned-exit checks. No dispatch or product/main merge is performed here.
+
+Combined restored-admission/tool-control local regression:2,941 total/2,916 pass/0 fail/25 existing platform or material skips (142.5s); focused coordinator/app/cache tests319/319. Real PowerShell/Node structured-consumer tests5/5 include success with separate diagnostics and reject malformed controls without a Windows skip. JavaScript619/PowerShell55 syntax, finite credential-pattern scan718 and protected-tree equality pass. Exact new Windows CI, Native reopen/cancel and ordinary-entry/performance results remain pending.

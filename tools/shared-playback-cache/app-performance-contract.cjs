@@ -1,6 +1,6 @@
 'use strict';
 const path = require('node:path'), crypto = require('node:crypto');
-const BASE = 'b4bd4dd9fe51f93a482c69986fe5e77f7f3503ed';
+const BASE = '04dc9b1e2d0d138d535347147f410f647c836f87';
 const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'uncached-seek', 'boundary-seek', 'far-seek']);
 const TARGETS = Object.freeze({'cached-seek': 0.5, 'uncached-seek': 8, 'boundary-seek': 3, 'far-seek': 14});
 const LIMITS = Object.freeze({warmups: 3, pairs: 20, workerMs: 90000, suiteMs: 5400000,
