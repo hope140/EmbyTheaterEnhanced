@@ -251,7 +251,7 @@ test('foreign principal proof and changed account identity cannot reuse A bytes'
   assert.equal(digest(result.body), digest(changedBody), 'account B gets current origin bytes, never A cached bytes');
 });
 
-test('shared-trial 25 ms deadline retires slow budget, cache initialization, and probe work', async t => {
+test('shared-trial 50 ms deadline retires slow budget, cache initialization, and probe work', async t => {
   await t.test('slow current-byte read', async st => {
     const f = await fixture(st, {slowCurrentBytesMs: 80}), a = f.candidate('A');
     const started = performance.now();

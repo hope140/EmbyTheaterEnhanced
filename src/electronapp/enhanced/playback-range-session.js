@@ -3,6 +3,9 @@ const crypto = require('node:crypto');
 const {createCache} = require('./playback-range-cache');
 const {selection} = require('./playback-range-policy');
 const diagnostics = require('./playback-range-diagnostics');
+// Optional load/replace preparation includes the actual Native budget read,
+// fresh source probe and ready cache key. Steady-state seek does not enter it.
+const SHARED_PREPARE_TIMEOUT_MS = 50;
 const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const contextFields = ['source', 'serverOrigin', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId', 'mode', 'mediaType', 'container', 'live', 'sourceProof'];
 function parseContext(value) {
@@ -114,7 +117,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 let timer;
                 const deadline = new Promise((_resolve, reject) => {timer = setTimeout(() => {
                     selection.abort(); reject(diagnostics.error('timeout', 'range-shared-prepare-timeout'));
-                }, 25);});
+                }, SHARED_PREPARE_TIMEOUT_MS);});
                 const preparing = (async () => {
                     if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
                     budget = await readCurrentBytes(helper, generationId);

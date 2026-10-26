@@ -138,27 +138,27 @@ test('actual load dispatch cancels a selected route that lost its lease before s
   assert.equal((await sandbox.call()).status, 'accepted'); assert.equal(loaded, true);
 });
 
-function virtualSelection(f) {
+function virtualSelection(f, {historicalBudget, openWait} = {}) {
   let now = 0, created = 0, opened = 0;
-  const timers = new Set(), sandbox = {module: {exports: {}}, require: name => require(require.resolve(name, {paths: [require('node:path').dirname(require.resolve('../src/electronapp/enhanced/playback-range-session'))]})),
+  const deadlines = [], timers = new Set(), sandbox = {module: {exports: {}}, require: name => require(require.resolve(name, {paths: [require('node:path').dirname(require.resolve('../src/electronapp/enhanced/playback-range-session'))]})),
     URL, AbortController, AbortSignal,
-    setTimeout(fn, ms) {const timer = {fn, at: now + ms}; timers.add(timer); return timer;}, clearTimeout(timer) {timers.delete(timer);}};
+    setTimeout(fn, ms) {deadlines.push(ms); const timer = {fn, at: now + (historicalBudget ?? ms)}; timers.add(timer); return timer;}, clearTimeout(timer) {timers.delete(timer);}};
   vm.runInNewContext(fs.readFileSync(require.resolve('../src/electronapp/enhanced/playback-range-session'), 'utf8'), sandbox);
   const session = sandbox.module.exports.createSession({config: {kind: 'shared-byte-trial'},
-    readCurrentBytes: (...args) => f.reader.read(...args), async create() {++created; return {async close() {}, async discardNext() {}, async open() {++opened; return {source: 'http://127.0.0.1/local', async stop() {}};}};}});
+    readCurrentBytes: (...args) => f.reader.read(...args), async create() {++created; return {async close() {}, async discardNext() {}, async open() {++opened; if (openWait) await openWait; return {source: 'http://127.0.0.1/local', async stop() {}};}};}});
   const context = {source: 'http://127.0.0.1/source.mkv', serverOrigin: 'http://127.0.0.1', serverId: 'owned', accountId: 'owned', itemId: 'A', mediaSourceId: 'A', playSessionId: 'owned', mode: 'DirectPlay', mediaType: 'Video', container: 'mkv'};
-  return {session, context, counts: () => ({created, opened}), advance(value) {now = value; for (const timer of timers) if (timer.at <= now) {timers.delete(timer); timer.fn();}}};
+  return {session, context, deadlines, counts: () => ({created, opened}), advance(value) {now = value; for (const timer of timers) if (timer.at <= now) {timers.delete(timer); timer.fn();}}};
 }
-test('a 27ms actual read started at the batch tail fits a selection begun 5ms later without extending its 25ms deadline', async t => {
-  const f = fixture(), v = virtualSelection(f); t.after(() => v.session.close());
+test('historical 25ms policy fits a 27ms read only with enough priming lead', async t => {
+  const f = fixture(), v = virtualSelection(f, {historicalBudget: 25}); t.after(() => v.session.close());
   const primed = f.reader.read(f.helper, 1);
   v.advance(5); assert.equal((await v.session.setContext(v.context, f.helper, 1)).state, 'ready');
   const selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
   v.advance(27); f.queue[0].resolve(314572800); await primed;
   assert.ok(await selecting); assert.equal(f.queue.length, 1); assert.deepEqual(v.counts(), {created: 1, opened: 1});
 });
-test('a batch-tail read resolving after the original selection deadline cannot create a route later', async t => {
-  const f = fixture(), v = virtualSelection(f); t.after(() => v.session.close());
+test('historical 25ms selection rejects a late batch-tail read without creating a route', async t => {
+  const f = fixture(), v = virtualSelection(f, {historicalBudget: 25}); t.after(() => v.session.close());
   const primed = f.reader.read(f.helper, 1);
   v.advance(5); assert.equal((await v.session.setContext(v.context, f.helper, 1)).state, 'ready');
   const selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
@@ -167,8 +167,8 @@ test('a batch-tail read resolving after the original selection deadline cannot c
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(v.counts(), {created: 0, opened: 0}); assert.equal(f.queue.length, 1);
 });
-test('priming with only 1ms head start cannot fit a valid 31ms native round trip into the 25ms selection budget', async t => {
-  const f = fixture(), v = virtualSelection(f); t.after(() => v.session.close());
+test('historical 25ms policy fails a valid 31ms read with only 1ms head start', async t => {
+  const f = fixture(), v = virtualSelection(f, {historicalBudget: 25}); t.after(() => v.session.close());
   const primed = f.reader.read(f.helper, 1);
   v.advance(1); assert.equal((await v.session.setContext(v.context, f.helper, 1)).state, 'ready');
   const selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
@@ -177,4 +177,42 @@ test('priming with only 1ms head start cannot fit a valid 31ms native round trip
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(f.queue.length, 1, 'no settings invalidation or duplicate read is needed to reproduce the timeout');
   assert.deepEqual(v.counts(), {created: 0, opened: 0});
+});
+test('measured-shape native read plus required preparation fits 50ms, while the same work misses historical 25ms', async t => {
+  for (const limit of [25, 50]) {
+    const f = fixture(), prepared = deferred(), v = virtualSelection(f, {historicalBudget: limit, openWait: prepared.promise});
+    let selecting;
+    const primed = f.reader.read(f.helper, 1);
+    t.after(async () => {prepared.resolve(); f.queue[0].resolve(314572800); v.advance(100); await Promise.allSettled([primed, selecting]); await v.session.close();});
+    v.advance(0.8453); await v.session.setContext(v.context, f.helper, 1);
+    selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
+    assert.deepEqual(v.deadlines, [50], 'source must use bounded 50ms, not just the comparison clock');
+    v.advance(18.7332); f.queue[0].resolve(314572800); await primed;
+    await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(v.counts(), {created: 1, opened: 1});
+    v.advance(26.7582);
+    if (limit === 25) assert.equal(await selecting, null);
+    prepared.resolve(); assert.equal(!!(await selecting), limit === 50);
+    assert.equal(f.queue.length, 1);
+  }
+});
+test('actual 50ms selection still expires and cannot publish work after its own deadline', async t => {
+  const f = fixture(), v = virtualSelection(f); let selecting;
+  const primed = f.reader.read(f.helper, 1);
+  t.after(async () => {f.queue[0].resolve(314572800); v.advance(100); await Promise.allSettled([primed, selecting]); await v.session.close();});
+  await v.session.setContext(v.context, f.helper, 1);
+  selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
+  assert.deepEqual(v.deadlines, [50]);
+  v.advance(50); assert.equal(await selecting, null);
+  v.advance(51); f.queue[0].resolve(314572800); await primed;
+  await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(v.counts(), {created: 0, opened: 0});
+});
+test('ordinary seek commands do not enter the optional source-selection budget', async () => {
+  const source = fs.readFileSync(require.resolve('../src/electronapp/native-helper/service'), 'utf8');
+  const start = source.indexOf("    if (operation === 'command') {"), end = source.indexOf("    if (operation === 'set-visible') {", start);
+  assert.ok(start > 0 && end > start);
+  const calls = [], sandbox = {operation: 'command', payload: {data: ['seek', '10', 'absolute']},
+    validateCommand: value => value, requireGeneration() {}, active: {submitCommand: data => calls.push(data)},
+    rangeSession: {select() {assert.fail('seek must not reselect source');}}};
+  vm.runInNewContext('call = async function () {' + source.slice(start, end) + '}', sandbox);
+  assert.equal((await sandbox.call()).status, 'accepted'); assert.equal(calls[0], sandbox.payload.data);
 });

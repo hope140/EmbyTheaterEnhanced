@@ -16,7 +16,7 @@
 - 新 route 使用可取消的真实1字节206探测取得 total／HTTP validators，才能重用本地数据；不将 Emby对象 ETag 冒充HTTP ETag。URL／Token／Cookie 不落盘，无浏览器Cookie转发或跨域凭据传播。
 - 无强HTTP校验器仍是已说明的稳定媒体库假设；同身份／同大小／同可用修改时间的替换可能漏检，不承诺内容数学不可变。授权隔离不降级。
 
-恢复候选的M由同generation生产helper直接读取demuxer-max-bytes。既有MPV_FORMAT_NODE／INT64序列化对3072MiB保持精确，删除先清快照／expand／读字符串的旧桥绕路；只接受256KiB至3072MiB的安全整数，缺失、字符串、越界和旧generation均不给缓存配额。不改变helper／内核或权限。来源准备总软期限仍25ms，涵盖实际预算读取、adapter创建、fresh探测及已恢复后端的route key准备；到期仅取消缓存准备，原source继续，不中断播放请求。减少两条命令不等于已实测解决Windows超时。
+恢复候选的M由同generation生产helper直接读取demuxer-max-bytes。既有MPV_FORMAT_NODE／INT64序列化对3072MiB保持精确，删除先清快照／expand／读字符串的旧桥绕路；只接受256KiB至3072MiB的安全整数，缺失、字符串、越界和旧generation均不给缓存配额。不改变helper／内核或权限。来源准备总软期限现为50ms（旧候选为25ms），涵盖实际预算读取、adapter创建、fresh探测及已恢复后端的route key准备；到期仅取消缓存准备，原source继续，不中断播放请求。减少两条命令不等于已实测解决Windows超时。
 
 当前档位按恢复要求为100／300／500MiB（默认300），触发50／60／70／80／90%（默认70）；内部preloadMB字段仅保留兼容名称，不增加新选项。UI和实际P均按1024×1024字节计，旧decimal-MB实验记录不追改。当前仍是默认关闭的隔离共享底层候选；普通入口的next-prefix路径与共享trial分别验收，不能将本候选宣称为普通入口已交付。
 
@@ -28,7 +28,7 @@
 
 恢复只读有界快照／日志并核文件类型、归属、长度，未读取正文SHA的候选仍计入 M+P。span 只是候选范围；第一次本地读取必须完整核长度和SHA，成功后才能交付并计hit。坏块剔除后回源。没有另外累计媒体镜像或降低完整性门禁。
 
-后端已就绪时，adapter等本route的key准备后才发布URL；仍受25ms总期限约束。这样已完成的B预载不会因“key还没返回”而被首个请求跳过。后端尚在恢复时不等待全局ready。Stop仅等待本route的body／预载／写任务及实际源连接关闭，不等待另一个视频仍在播放的HTTP流；全局退出才等待全部初始化和存储释放。
+后端已就绪时，adapter等本route的key准备后才发布URL；受50ms总期限约束。这样已完成的B预载不会因“key还没返回”而被首个请求跳过。后端尚在恢复时不等待全局ready。Stop仅等待本route的body／预载／写任务及实际源连接关闭，不等待另一个视频仍在播放的HTTP流；全局退出才等待全部初始化和存储释放。
 
 ### 3GiB真实文件的新进程对照
 

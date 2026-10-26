@@ -145,14 +145,12 @@ test('an already recovered backend publishes a reopened preloaded route only aft
     entered.catch(() => {});
     const cache = await f.cache({createStore: async options => {
         try {
-            const backend = await createStore({...options, io: {...fs,
-                async writeFile(file, ...args) {
-                    if (hold && path.basename(file).startsWith('.index-')) {enter(); await blocked.wait;}
-                    return fs.writeFile(file, ...args);
-                }
-            }});
+            const backend = await createStore(options);
             return {...backend, async open(...args) {
-                try {return await backend.open(...args);} catch (error) {failGate(error); throw error;}
+                // Readiness belongs to the store operation, not a checkpoint:
+                // an unchanged prepared entry now legitimately needs no write.
+                try {if (hold) {enter(); await blocked.wait;} return await backend.open(...args);}
+                catch (error) {failGate(error); throw error;}
             }};
         } catch (error) {failGate(error); throw error;}
     }});
