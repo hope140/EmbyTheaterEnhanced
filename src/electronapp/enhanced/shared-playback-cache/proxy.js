@@ -5,6 +5,7 @@ const http = require('node:http');
 const https = require('node:https');
 const crypto = require('node:crypto');
 const {once} = require('node:events');
+const {performance} = require('node:perf_hooks');
 const BLOCK = 256 * 1024;
 const IO_HIGH_WATER = 256 * 1024;
 const CAPTURE_JOBS = 8;
@@ -385,18 +386,33 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             await record.keyPromise; continue;
           }
           if (span) {
-            const length = Math.min(BLOCK, span.end - offset, range.end - offset + 1);
             const epoch = record.metadataEpoch, key = record.key;
+            // span merges adjacent blocks; reading across their actual boundary
+            // needlessly reads and hashes the following whole physical block.
+            const boundary = await waitDone(store.nextOffset(key, offset), signal);
+            useRecord(record); if (signal.aborted) throw cancelled();
+            if (epoch !== record.metadataEpoch || key !== record.key) throw problem('stale-read');
+            const length = Math.min(BLOCK, span.end - offset, range.end - offset + 1,
+              boundary === null ? Infinity : boundary - offset);
+            if (!(length > 0)) throw problem('invalid-span');
             let data;
             if (2 * stats.captureBytes + stats.readReservedBytes + 1048576 <= mediaBufferBytes) {
               stats.readReservedBytes += 1048576;
               stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
+              const deadline = performance.now() + 15;
               const read = track(controls, store.read(key, offset, length).finally(() => {stats.readReservedBytes -= 1048576;}));
               let timer;
-              try {data = await Promise.race([read, new Promise(resolve => {timer = setTimeout(() => resolve(null), 15);})]);}
+              try {data = await waitDone(Promise.race([read, new Promise(resolve => {
+                const expire = () => {
+                  const remaining = deadline - performance.now();
+                  if (remaining > 0) {timer = setTimeout(expire, Math.ceil(remaining)); return;}
+                  resolve(null);
+                };
+                timer = setTimeout(expire, 15);
+              })]), signal);}
               finally {clearTimeout(timer);}
             }
-            useRecord(record);
+            useRecord(record); if (signal.aborted) throw cancelled();
             if (epoch !== record.metadataEpoch || key !== record.key) throw problem('stale-read');
             if (data) {stats.hitBytes += data.length; await write(data); offset += data.length; continue;}
             // Invalid/missing local data falls through to ordinary origin IO.

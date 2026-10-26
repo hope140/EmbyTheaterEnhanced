@@ -274,3 +274,11 @@ Native通过判据仍包括真实A基线、70%预载完整ready、原PlaybackMan
 工具在完整来源门禁后再核manifest SHA与物理proxy源成员SHA，临时对该相同源码的真实store.read及15ms timer作观测。回执明确标注 `verified-source-real-read-timer-observation`；不是普通未观测产品的性能证明。安全日志新增 `readObservation` 和 `cacheReadEvidence`，完整有界行仍在worker回执中。原四阶段、零额外正文断言、40秒worker／120秒受控期限、真实Helper/Electron退出及账号/来源归属门禁保持。
 
 优先核对B两段正文范围是否有匹配的read-begin、timer-fired和随后Buffer结果；缺读尝试、空结果或截断分别保持unknown，不猜测为内存不足／损坏。所有正文回源仍使协调器失败。即使本次观测改变时序而未复现，也不能抹去原始523,040B重复正文证据或宣称普通入口/真实服务已验收。真实115请求保持零。
+
+## 按实际块边界读取的后继候选
+
+后继产品修改了proxy：本地读取不跨实际存储块起点，15ms改为单调绝对期限，提前唤醒只重挂剩余时间；读取及metadata取消仍即时停止响应，物理工作继续由原owner收尾。50ms加载准备、M+P、来源／授权／哈希检查和零重复正文断言不变。旧d4e包不能包含这些修改，不能复用其artifact作为后继产品。
+
+下一次先通过新精确HEAD完整WindowsCI，再构建该HEAD的新包，独立核验新artifact／ZIP／EXE摘要；随后同HEAD跑原baseline／natural／reopen／cancel四阶段。natural仍须完整预载ready、自然切B代理命中、无已预载正文重取。readObservation应无未知关联或泄漏，并分别报告timer-rearmed与最终timer-fired；真正单块超过15ms的回源仍使本次零重复断言失败，不用改期限或删断言掩盖。保持40秒worker／120秒受控总期限和原完整来源门禁，不做真实115测试。
+
+本地测试和旧诊断不是普通app入口／首帧／seek性能验收，也不是任意硬盘延迟保证。若仍有完整块读取超时，应依据实测报告延迟与重复流量的取舍，再决定政策，不假称本次边界修正能消除所有慢盘情况。

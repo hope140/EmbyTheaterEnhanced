@@ -14,15 +14,24 @@ const fixture = require('../tools/shared-playback-cache/fixture.cjs');
 
 const filename = path.resolve('/owned/runtime/enhanced/shared-playback-cache/proxy.js');
 const source = Buffer.from(`'use strict';
+const {performance} = require('node:perf_hooks');
 exports.createProxy = function (options) {
   const store = options.store;
   return {
     raw(...args) { return store.read.apply(store, args); },
     observedStore: store,
     race(...args) {
+      const deadline = performance.now() + 15;
       const read = store.read.apply(store, args);
       let timer;
-      const timeout = new Promise(resolve => {timer = setTimeout(() => resolve(null), 15);});
+      const timeout = new Promise(resolve => {
+        const expire = () => {
+          const remaining = deadline - performance.now();
+          if (remaining > 0) {timer = setTimeout(expire, Math.ceil(remaining)); return;}
+          resolve(null);
+        };
+        timer = setTimeout(expire, 15);
+      });
       return Promise.race([read, timeout]).finally(() => clearTimeout(timer));
     },
     forward(callback, ms, ...args) {
@@ -74,7 +83,7 @@ test('verified CJS source and exact 15 ms contract are checked before target mut
   const target = {createProxy: original};
   assert.throws(() => install({target, filename, source, expectedSha256: '0'.repeat(64)}), /read-observer-source-mismatch/);
   assert.strictEqual(target.createProxy, original);
-  const altered = Buffer.from(source.toString().replace('), 15)', '), 14)'));
+  const altered = Buffer.from(source.toString().replace('Math.ceil(remaining)', 'Math.floor(remaining)'));
   assert.throws(() => install({target, filename, source: altered, expectedSha256: sha(altered)}), /read-observer-source-contract/);
   assert.strictEqual(target.createProxy, original);
 });
@@ -109,12 +118,13 @@ test('read returns the exact underlying promise with receiver and arguments pres
 });
 
 test('15 ms timeout reports only timeout observation; late bytes settle without changing the proxy result', async () => {
-  const timers = new ManualTimers(), events = [];
+  const timers = new ManualTimers(), events = []; let now = 0;
   let resolveRead;
   const promise = new Promise(resolve => {resolveRead = resolve;});
-  const {proxy, observer} = harness({read: () => promise, timers, emit: row => events.push(row), clock: (() => {let n = 0; return () => n++;})()});
+  const {proxy, observer} = harness({read: () => promise, timers, emit: row => events.push(row), clock: () => now});
   const pending = proxy.race('private-cache-key', 0, 64);
   const timer = timers.one();
+  now = 15;
   timers.fire(timer);
   assert.equal(await pending, null);
   resolveRead(Buffer.from('private-buffer'));
@@ -125,6 +135,48 @@ test('15 ms timeout reports only timeout observation; late bytes settle without 
   assert.equal(snapshot.pendingTimers, 0);
   assert.ok(events.some(row => row.operation === 'timer-fired'));
   assert.ok(events.some(row => row.operation === 'read-settled' && row.outcome === 'bytes'));
+  observer.restore();
+});
+
+test('an early absolute-deadline wake rearms under the same attempt; a valid read wins and clears the rearm', async () => {
+  const timers = new ManualTimers(), events = []; let now = 0;
+  let resolveRead;
+  const read = new Promise(resolve => {resolveRead = resolve;});
+  const {proxy, observer} = harness({read: () => read, timers, clock: () => now, emit: row => events.push(row)});
+  const pending = proxy.race('opaque-key', 32, 64);
+  const first = timers.one();
+  assert.equal(timers.tasks.get(first).ms, 15);
+  now = 4;
+  timers.fire(first);
+  assert.equal(observer.snapshot().fired, 0, 'an early wake is not a completed timeout');
+  assert.equal(observer.snapshot().pendingTimers, 1, 'the expired handle is replaced by one rearm');
+  const rearmed = timers.one();
+  assert.notStrictEqual(rearmed, first);
+  assert.equal(timers.tasks.get(rearmed).ms, 11);
+  assert.ok(events.some(row => row.operation === 'timer-rearmed' && row.attempt === 1));
+  now = 8;
+  resolveRead(Buffer.from('warm-data'));
+  assert.equal((await pending).toString(), 'warm-data');
+  assert.equal(observer.snapshot().fired, 0);
+  assert.equal(observer.snapshot().activeReads, 0);
+  assert.equal(observer.snapshot().pendingTimers, 0);
+  assert.ok(timers.cleared.includes(rearmed), 'settlement clears the currently armed rearm handle');
+  observer.restore();
+});
+
+test('a rejected read after an early wake clears the rearmed timer and retires the observation', async () => {
+  const timers = new ManualTimers(); let now = 0, rejectRead;
+  const read = new Promise((_resolve, reject) => {rejectRead = reject;});
+  const {proxy, observer} = harness({read: () => read, timers, clock: () => now});
+  const pending = proxy.race('opaque-key', 0, 16);
+  const first = timers.one(); now = 2; timers.fire(first);
+  const rearmed = timers.one();
+  rejectRead(Error('cancelled-read'));
+  await assert.rejects(pending, /cancelled-read/);
+  await Promise.resolve();
+  assert.equal(observer.snapshot().activeReads, 0);
+  assert.equal(observer.snapshot().pendingTimers, 0);
+  assert.ok(timers.cleared.includes(rearmed));
   observer.restore();
 });
 
