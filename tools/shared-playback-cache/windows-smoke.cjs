@@ -9,6 +9,7 @@ const PHASES = Object.freeze(['baseline', 'natural', 'reopen', 'cancel']);
 const TOOL_FILES = Object.freeze(['tools/shared-playback-cache/windows-smoke.cjs',
   'tools/shared-playback-cache/windows-electron.cjs', 'tools/shared-playback-cache/windows-preload.cjs',
   'tools/shared-playback-cache/windows-contract.cjs', 'tools/shared-playback-cache/windows-fixtures.cjs',
+  'tools/shared-playback-cache/windows-read-observer.cjs',
   'tools/shared-playback-cache/windows-run.ps1', 'tools/shared-playback-cache/windows-ci.ps1',
   '.github/workflows/public-ci.yml', 'tests/helpers/next-prefix-alameda.cjs']);
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
@@ -183,6 +184,32 @@ function validatePhaseEvidence(result, events) {
   }
   return null;
 }
+function readEvidence(trace = [], events = [], phase) {
+  const rows = trace.filter(row => row.type === 'cache-read');
+  const load = trace.find(row => row.type === 'load' && row.item === 'B');
+  const allRanges = events.filter(row => load && row.phase === phase && row.type === 'media-open' && row.item === 'B' &&
+    row.wallClockMs >= load.wallClockMs && !(row.start === 0 && row.end === 0));
+  const ranges = allRanges.slice(-16);
+  const selected = new Set(rows.filter(row => row.operation === 'timer-fired' ||
+    row.operation === 'read-settled' && row.outcome !== 'bytes').map(row => row.attempt));
+  for (const row of rows) if (row.operation === 'read-begin' && row.item === 'B' &&
+      ranges.some(range => row.offset <= range.end && row.offset + row.length > range.start)) selected.add(row.attempt);
+  if (!selected.size) for (const row of [...rows.slice(0, 4), ...rows.slice(-4)]) selected.add(row.attempt);
+  const matched = rows.filter(row => selected.has(row.attempt));
+  return {matchedRows: matched.length, truncated: matched.length > 96,
+    sourceRangesTotal: allRanges.length, sourceRangesTruncated: allRanges.length > 16,
+    reads: matched.slice(-96)
+    .map(({operation, attempt, item, generation, offset, length, elapsedMs, outcome, resultBytes, deadlineMs, at}) =>
+      ({operation, attempt, item, generation, offset, length, elapsedMs, outcome, resultBytes, deadlineMs, at})),
+    sourceRanges: ranges.map(row => {
+      const close = events.find(value => value.type === 'media-close' && value.phase === phase && value.requestId === row.requestId);
+      return {requestId: row.requestId, item: 'B', start: row.start, end: row.end,
+        sourceStreamReadBytes: close?.streamReadBytes ?? null, sourceComplete: close?.complete === true,
+        // Range overlap selects candidates; it does not prove a race winner.
+        candidateAttempts: rows.filter(value => value.operation === 'read-begin' && value.item === 'B' &&
+          value.offset <= row.end && value.offset + value.length > row.start).map(value => value.attempt).slice(-16)};
+    })};
+}
 function childEnvironment(profile, inherited = process.env) {
   const env = {...inherited};
   for (const key of Object.keys(env)) if (/^(?:ELECTRON_RUN_AS_NODE|NODE_OPTIONS|NODE_PATH|NODE_USE_ENV_PROXY|HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|GH_TOKEN|GITHUB_TOKEN|ACTIONS_RUNTIME_TOKEN|ACTIONS_ID_TOKEN_REQUEST_TOKEN)$/i.test(key)) delete env[key];
@@ -354,6 +381,8 @@ async function run({planFile}) {
             ({item, generation, requestId, operation, queuedFrames, queuedBytes, writeBlocked, pending, responseKind, at})),
         selectionIpc: (r.receipt?.trace || []).filter(e => e.type === 'selection-ipc').slice(-16)
           .map(({item, generation, phase, operation, at}) => ({item, generation, phase, operation, at})),
+        readObservation: r.receipt?.readObservation || null,
+        cacheReadEvidence: readEvidence(r.receipt?.trace, events, r.phase),
         serverReports: (r.receipt?.trace || []).filter(e => e.type === 'server-report').slice(-12)
           .map(({method, item, session, mediaSource}) => ({method, item, session, mediaSource})),
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)
@@ -375,7 +404,7 @@ function argumentsOf(argv) {
   need(allowed.every(k => values[k]), 'missing-argument');
   return {mode, values};
 }
-module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, cacheSelectionSnapshot, observeCacheBudgetRead, validatePhaseEvidence, safeNativeTags, boundToolBytes};
+module.exports = {OWNER, PHASES, TOOL_FILES, watchdogDelay, within, executeStableFrame, observeExpression, voidCommandExpression, voidCommandAckExpression, executeAcknowledgedVoid, prepare, readPlan, childEnvironment, safeFailure, argumentsOf, validateProfile, coloredFrame, matchesStoppedReport, cacheSelectionSnapshot, observeCacheBudgetRead, validatePhaseEvidence, readEvidence, safeNativeTags, boundToolBytes};
 if (require.main === module) (async () => {
   const {mode, values: v} = argumentsOf(process.argv.slice(2));
   if (mode === 'prepare') {await prepare({repo: v.repo, runtime: v.runtime, installer: v.installer,

@@ -265,3 +265,12 @@ Stop成功还须本次主进程destroy IPC的成功回执、当前媒体在本�
 必须先从最终精确工具HEAD构建新身份包，再用同一HEAD和该新包的真实artifact／ZIP／EXE摘要运行原四阶段。旧b608包不包含这两项产品改动，不能复用为新候选或改写其来源清单；旧诊断数据仍保留。anchor-or-exact-tool-HEAD、产品树一致性及完整来源／运行时／安装包门禁保持。
 
 Native通过判据仍包括真实A基线、70%预载完整ready、原PlaybackManager自然切B命中共享route且无预载正文重取、跨进程重开和取消物理关闭、所属helper及Electron自然退出。对比新旧首帧／seek时应注明原始样本与机器条件，不从一次通过推导p50/p95，也不把50ms名义准备期限当硬实时OS保证。来源仍限合成本地服务器，真实115请求为零；40秒worker和120秒受控总期限不变。
+
+
+## d4e 包的读盘竞速定点观测
+
+本轮显式review anchor为 `d4eec384231f46baf31c6e26b2145882dc682bfa`，受保护产品树不变。复用artifact12645535744／run40309289373；ZIP SHA256 `a690e8b82a96554bc6229b23c8343cf5be4f41d9c38586259f502719cfe6815e`，installer SHA256 `ac5a92d12d1ac7a48d82597a4b4d616e350a006cf30ceeaf18eea733d11dbd76`。工具使用新精确HEAD，不重打包、不改原包清单或身份。
+
+工具在完整来源门禁后再核manifest SHA与物理proxy源成员SHA，临时对该相同源码的真实store.read及15ms timer作观测。回执明确标注 `verified-source-real-read-timer-observation`；不是普通未观测产品的性能证明。安全日志新增 `readObservation` 和 `cacheReadEvidence`，完整有界行仍在worker回执中。原四阶段、零额外正文断言、40秒worker／120秒受控期限、真实Helper/Electron退出及账号/来源归属门禁保持。
+
+优先核对B两段正文范围是否有匹配的read-begin、timer-fired和随后Buffer结果；缺读尝试、空结果或截断分别保持unknown，不猜测为内存不足／损坏。所有正文回源仍使协调器失败。即使本次观测改变时序而未复现，也不能抹去原始523,040B重复正文证据或宣称普通入口/真实服务已验收。真实115请求保持零。

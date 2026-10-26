@@ -41,7 +41,7 @@ async function main() {
   const stages = [], trace = [], clients = [], contexts = new Map();
   const workerDeadline = workerStartedAt + availablePhaseMs - 1000;
   let stage = 'isolated', activeEndpoint, lastGeneration, currentItem, service, authority, cd2Service,
-    mainWindow, indexUrl, originalFrame, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, lateEvents = 0, retiredAt = null;
+    mainWindow, indexUrl, originalFrame, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, readObserver, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
     status: 'FAIL', scope, workerPid: process.pid, workerParentPid: process.ppid, workerType: process.type,
     checks: {}, timingsMs: {candidateVerification: verificationMs}, firstFrameMeaning: 'decoded native preview; hidden carrier',
@@ -119,6 +119,7 @@ async function main() {
       protocolFailure: c.protocolFailure ? 'PROTOCOL_FAILURE' : null}));
   }
   function writeReceipt(origin) {
+    receipt.readObservation = readObserver?.snapshot() || null;
     receipt.trace = trace; receipt.helpers = helperFacts(); receipt.receiptOrigin = origin;
     receipt.ownedHelpersClosed = clients.length > 0 && clients.every(c => c.exited && c.child.exitCode === 0 &&
       c.child.signalCode === null && c.closeSeen && !c.protocolFailure && c.pending.size === 0);
@@ -224,6 +225,7 @@ async function main() {
         ownedSession?.protocol.unhandle('file'); phaseOf('cleanup-protocol-removed');
       });
       lifecycle('before-receipt');
+      await attempt(() => readObserver?.restore());
       if (lifecycleFailed) {failed = true; receipt.cleanupCode ||= 'worker-lifecycle-write-failed';}
       receipt.status = operationsComplete && !failed ? 'PASS' : 'FAIL';
       receipt.stage ||= stage; phaseOf('receipt-write'); writeReceipt('cleanup'); phaseOf('receipt-written');
@@ -288,6 +290,17 @@ async function main() {
     mainWindow.webContents.on('responsive', () => record('renderer-responsive'));
     mainWindow.webContents.on('did-start-navigation', (_event, _url, _inPlace, mainFrame) => record('renderer-navigation', {mainFrame: !!mainFrame}));
     authority = get('enhanced/preload-source-authority').createAuthority();
+    if (phase !== 'baseline') {
+      const physicalFs = contract.selectPhysicalFs(), manifestBytes = physicalFs.readFileSync(path.join(plan.runtime, 'build-manifest.json'));
+      need(sha(manifestBytes) === plan.identity.manifestSha256, 'worker-observer-manifest-changed');
+      const member = 'electronapp/enhanced/shared-playback-cache/proxy.js';
+      const row = JSON.parse(manifestBytes).files.find(value => value.path === member);
+      need(row && /^[a-f0-9]{64}$/i.test(row.sha256), 'worker-observer-source-unbound');
+      const filename = path.join(plan.runtime, member), source = physicalFs.readFileSync(filename);
+      readObserver = require('./windows-read-observer.cjs').install({target: get('enhanced/shared-playback-cache/proxy'),
+        filename, source, expectedSha256: row.sha256, context: () => ({item: currentItem, generation: lastGeneration}),
+        emit: details => record('cache-read', details)});
+    }
     const productClient = get('native-helper/controller').NativeHelperClient;
     class ObservedClient extends productClient {
       constructor(options) {
