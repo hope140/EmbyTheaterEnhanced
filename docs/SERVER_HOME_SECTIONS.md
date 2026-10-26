@@ -51,3 +51,11 @@ renderer使用canonical`modules/approuter.js`的原`getRouteUrl(parent,{section:
 ## 默认返回时的驻留呈现
 
 普通 baseline 保持原模式与布局缓存默认关闭，但允许原生三槽内、同账号／服务器／认证代次／语言／查询且未失效的 Home 驻留页恢复。恢复仍请求新布局和 Items；等待时保留原卡片，布局签名相同则通过原容器交付新内容，身份／数据失效则退休。布局发生变化才更换 stage，未新增视图池或永久 API 缓存。加载中的用户进度、状态和正在播出／录制节目易变字段不继续显示旧值。原请求、导航票据与提交守卫仍有效；失效或槽淘汰后冷加载属正常行为。
+
+## 图片内文字与旧首页样式兼容
+
+旧 CardBuilder 为 `.sections.homeSectionsContainer` 内的 `.innerCardFooter .cardText.cardTextCentered` 注入隐藏规则。维护 Home 将 `homeSectionsContainer` stage 放在原 `.sections` 内，两个类不再属于同一节点，旧规则失配；回退使用 Backdrop 的继续观看卡片会露出原已生成的年份。维护 `home-flow.css` 仅为这层父子结构补回相同隐藏范围，保留普通外层卡片文字、进度及指示器，也不改变非首页的图片内文字。没有改动冻结快照或添加第二个 `sections` 容器。
+
+同根源码审计未发现另一条依赖该组合类的 Home 规则；原生进度／已播／数量／计时器／直播角标和文字间距使用各自类，`.closest('.homeSectionsContainer')` 仍找到 stage。既有 pending 状态规则继续拥有其进度／节目字段遮罩，不因本次 CSS 提前显示陈旧状态。这些审计与受控卡片对照不代表任意服务器自定义 CSS、完整客户端或真实媒体验收。
+
+受控复现命令：`node tools/check-home-card-overlay-renderer.cjs <Chromium绝对路径> <新证据目录绝对路径> <修复前40位commit>`。它使用原 CardBuilder／CSS，覆盖桌面与 TV 的 Backdrop／Thumb、普通海报下年份、非首页、进度和角标，并执行维护 Home owner 建页；拒绝实际网络请求。报告分别记录控制提交与候选样式 SHA-256，未提交样式的测试结果不能仅凭 HEAD 冒充固定来源。图片／API／平台由夹具提供，不构建或启动 Windows 客户端，不读取用户数据。

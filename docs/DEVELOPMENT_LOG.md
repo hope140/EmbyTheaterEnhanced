@@ -12,6 +12,13 @@
 
 核对干净695ca02及6ec2／bc585本地保存，远端836未漂移。将最新main345bb2c合入试验分支，五处冲突保留两支历史说明、最新Host源链合同及既有严格workflow扩展检查，版本检查改为当前package／lock一致；组件／Native helper／controller／版本文件与新main保持一致。继续单次真实M读取和后台背压，观察器适配Native数值而不改原Promise／超时。按最新恢复规格对齐MiB显示与P字节预算，不新增设置或限速要求。短体／断流／末块写失败明确不ready、不重试且保留所属清理；当前仅本地证据，真实Windows与用户媒体分开，未触115。
 
+## 2026-10-26 — 首页图片内文字隐藏恢复（待后续包）
+
+在最新 main `345bb2cb` 上恢复旧首页图片内居中文字的隐藏范围：维护 CSS 只匹配 `.sections > .homeSectionsContainer` 内的 `innerCardFooter`，不改冻结 CardBuilder、不新增年份开关或给 stage 添加通用 `sections` 身份。普通海报下方年份／标题、非首页图片内文字及进度／角标保持旧表现；版本及已发布 Tag／附件不变，合并后等后续包。
+
+同根审计确认旧组合类选择器是本次匹配差异；现有进度、已播／数量／计时器／直播角标、外层文字间距和 `.closest('.homeSectionsContainer')` 钩子未发现该失配。实际 CardBuilder／CSS 与维护 Home owner 的受控 Chromium 18 组对照通过；修改前同一对照复现图片内年份可见，修改后恢复旧隐藏。既有真实组件 Home／设置返回／缓存页路由 15 组通过。Linux 公开离线集 2130 项：2105 pass／0 fail／25 项平台 skip，按现有公开合同排除 6 个材料依赖文件。服务、图片和平台能力由夹具提供，未执行用户 NAS、Windows 完整客户端、播放或新包验收；远端 CI 结果按最终提交另核。方法见[首页合同](SERVER_HOME_SECTIONS.md#图片内文字与旧首页样式兼容)。
+
+
 ## 2026-10-26 — v0.4.4 测试版已发布
 
 [v0.4.4 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4) 已于 2026-10-26 00:46:50 UTC 发布为 Pre-release，产品 Tag／sourceCommit 固定为 `b6fe06b984d74f60bdf82527d0666e920449dedb`，包含 PR #80／#81／#82 与版本准备 PR #83。Latest 正式版仍为 v0.4.0，不含 PR #79、FN 或共享媒体缓存实验。

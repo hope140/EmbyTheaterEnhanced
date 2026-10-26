@@ -16,6 +16,13 @@
 
 恢复规格为70%默认、50至90%档位及100／300／500MiB默认300，UI高级项仍称预载；内部字段名兼容。新Native观察器覆盖直接M数值查询；末块失败、短体、断流、取消和关闭新增边界八项通过。现有共享底层仍默认关闭并限显式隔离试验；普通next-prefix入口不能冒称共享模式已交付。旧包和旧2e99来源绑定只作历史证据，新包须用当前来源并在构建后重新绑定，不重标旧包。
 
+## 2026-10-26 — 首页图片内文字隐藏恢复（待后续包）
+
+在最新 main `345bb2cb` 上恢复旧首页图片内居中文字的隐藏范围：维护 CSS 只匹配 `.sections > .homeSectionsContainer` 内的 `innerCardFooter`，不改冻结 CardBuilder、不新增年份开关或给 stage 添加通用 `sections` 身份。普通海报下方年份／标题、非首页图片内文字及进度／角标保持旧表现；版本及已发布 Tag／附件不变，合并后等后续包。
+
+同根审计确认旧组合类选择器是本次匹配差异；现有进度、已播／数量／计时器／直播角标、外层文字间距和 `.closest('.homeSectionsContainer')` 钩子未发现该失配。实际 CardBuilder／CSS 与维护 Home owner 的受控 Chromium 18 组对照通过；修改前同一对照复现图片内年份可见，修改后恢复旧隐藏。既有真实组件 Home／设置返回／缓存页路由 15 组通过。Linux 公开离线集 2130 项：2105 pass／0 fail／25 项平台 skip，按现有公开合同排除 6 个材料依赖文件。服务、图片和平台能力由夹具提供，未执行用户 NAS、Windows 完整客户端、播放或新包验收；远端 CI 结果按最终提交另核。方法见[首页合同](SERVER_HOME_SECTIONS.md#图片内文字与旧首页样式兼容)。
+
+
 ## 2026-10-26 — v0.4.4 测试版已发布
 
 [v0.4.4 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4) 已于 2026-10-26 00:46:50 UTC 发布为 Pre-release，产品 Tag／sourceCommit 固定为 `b6fe06b984d74f60bdf82527d0666e920449dedb`，包含 PR #80／#81／#82 与版本准备 PR #83。Latest 正式版仍为 v0.4.0，不含 PR #79、FN 或共享媒体缓存实验。
