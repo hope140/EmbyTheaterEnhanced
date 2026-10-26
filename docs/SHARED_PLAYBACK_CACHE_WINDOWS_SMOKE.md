@@ -256,3 +256,12 @@ Stop成功还须本次主进程destroy IPC的成功回执、当前媒体在本�
 本轮仅工具变化，review anchor为 `b608cf2afa67d8d5a76964898c52a334c4a34aa1`，受保护产品树必须仍与它完全相同。使用已核验artifact12637367844，ZIP SHA256 `a030f145e20c329793008b479227d28e840066487f6e62cba027dd9d907be6b9`，installer SHA256 `982682786b69755b35c805fa1b104f5eb2f965008b504b09d1a72ebf94d80edd`；工具使用本次最终精确HEAD。门禁拒绝失效／错源／摘要不符及任意历史替代品，不重打包、不修改原包清单。
 
 原 `shared_cache_smoke=true` 四阶段、来源／进程退出及超时合同不变。日志新增有界 `budgetTransport` 和 `selectionIpc`，与 `cacheBudgetReads`／loads同一时钟比较：设置ACK到上下文／选择的提前量、发送队列是否阻塞、M响应何时进入父进程及原Promise何时结算。未直接采集helper内部getter耗时或私有25ms定时器触发，不能混作已证明。当前不放宽任何断言或期限；先据证据决定是否值得试50ms可选准备上限。仍不接真实115来源。
+
+
+## 新产品候选：touch-only lookup 与50ms准备上限
+
+产品review anchor现为 `24372d55d11e6d168df497d6bfee97497c884c1d`；其父提交 `8c71cc2dadc9c333b8b9b926f8cf2e2808e0a2b0` 单独移除不改变版本／角色的open checkpoint，并保留物理归属和取消检查。后一提交将shared load/replace可选准备上限改为50ms；实际Native读取仍50ms，fresh授权／1B探测及迟到隔离不变，普通seek不进入该准备流程。这不是Windows问题已解决或零延迟承诺。
+
+必须先从最终精确工具HEAD构建新身份包，再用同一HEAD和该新包的真实artifact／ZIP／EXE摘要运行原四阶段。旧b608包不包含这两项产品改动，不能复用为新候选或改写其来源清单；旧诊断数据仍保留。anchor-or-exact-tool-HEAD、产品树一致性及完整来源／运行时／安装包门禁保持。
+
+Native通过判据仍包括真实A基线、70%预载完整ready、原PlaybackManager自然切B命中共享route且无预载正文重取、跨进程重开和取消物理关闭、所属helper及Electron自然退出。对比新旧首帧／seek时应注明原始样本与机器条件，不从一次通过推导p50/p95，也不把50ms名义准备期限当硬实时OS保证。来源仍限合成本地服务器，真实115请求为零；40秒worker和120秒受控总期限不变。
