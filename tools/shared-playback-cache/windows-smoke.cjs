@@ -11,6 +11,7 @@ const TOOL_FILES = Object.freeze(['tools/shared-playback-cache/windows-smoke.cjs
   'tools/shared-playback-cache/windows-contract.cjs', 'tools/shared-playback-cache/windows-fixtures.cjs',
   'tools/shared-playback-cache/windows-read-observer.cjs',
   'tools/shared-playback-cache/windows-run.ps1', 'tools/shared-playback-cache/windows-ci.ps1',
+  'tools/shared-playback-cache/windows-ci-root.cjs',
   '.github/workflows/public-ci.yml', 'tests/helpers/next-prefix-alameda.cjs']);
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const need = (v, c) => {if (!v) throw Error(c);};

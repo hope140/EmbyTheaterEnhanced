@@ -5,7 +5,7 @@ const contract = require('./app-performance-contract.cjs'), metrics = require('.
 const fixed = require('./windows-contract.cjs'), fixtures = require('./windows-fixtures.cjs');
 const {createEmby} = require('./app-emby-fixture.cjs');
 const TOOL_FILES = Object.freeze(['app-performance-contract.cjs','app-performance-metrics.cjs','app-performance-runner.cjs',
-  'app-performance-electron.cjs','app-performance-resources.cjs','app-emby-fixture.cjs','windows-contract.cjs','windows-fixtures.cjs','windows-smoke.cjs','windows-ci.ps1']
+  'app-performance-electron.cjs','app-performance-resources.cjs','app-emby-fixture.cjs','windows-contract.cjs','windows-fixtures.cjs','windows-smoke.cjs','windows-ci.ps1','windows-ci-root.cjs']
   .map(name=>'tools/shared-playback-cache/'+name).concat(['tests/helpers/next-prefix-alameda.cjs',
     'tests/helpers/range-fixture-root.cjs','.github/workflows/public-ci.yml']));
 const OWNER = 'ETE ordinary app performance owned trial v1\n';

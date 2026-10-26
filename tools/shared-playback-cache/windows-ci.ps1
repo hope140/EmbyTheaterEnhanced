@@ -14,6 +14,64 @@ Set-StrictMode -Version Latest
 if (@($LivenessOnly, $NativeLivenessOnly, $AppPerformanceOnly).Where({ $_ }).Count -gt 1) { throw 'Select one exact runtime suite.' }
 if (-not $IsWindows -or $PSVersionTable.PSVersion.Major -lt 7) { throw 'Dedicated Windows PowerShell7 runner required.' }
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+function Get-OwnedFixtureRoot([string]$Kind, [string]$Mode) {
+    $start = [Diagnostics.ProcessStartInfo]::new()
+    $start.FileName = 'node'; $start.UseShellExecute = $false; $start.RedirectStandardOutput = $true; $start.RedirectStandardError = $true
+    $utf8Strict = [Text.UTF8Encoding]::new($false, $true)
+    $start.StandardErrorEncoding = $utf8Strict
+    $start.ArgumentList.Add((Join-Path $PSScriptRoot 'windows-ci-root.cjs'))
+    $start.ArgumentList.Add($Kind)
+    if ($Kind -ceq 'performance') { $start.ArgumentList.Add($Mode) }
+    $process = [Diagnostics.Process]::new(); $process.StartInfo = $start
+    $exit = 1; $stdoutBytes = $null
+    try {
+        if (-not $process.Start()) { throw 'Owned fixture root process did not start.' }
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $stdoutBytes = [IO.MemoryStream]::new(); $buffer = [byte[]]::new(1024); $tooLarge = $false
+        while (($count = $process.StandardOutput.BaseStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            if (-not $tooLarge) {
+                if ($stdoutBytes.Length + $count -gt 8192) {
+                    $tooLarge = $true
+                    try { $process.Kill($true) } catch { if (-not $process.HasExited) { throw } }
+                }
+                else { $stdoutBytes.Write($buffer, 0, $count) }
+            }
+        }
+        $process.WaitForExit()
+        $exit = $process.ExitCode
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        if ($tooLarge) { throw 'Owned fixture root response exceeded its byte bound.' }
+        try { $stdout = $utf8Strict.GetString($stdoutBytes.ToArray()) }
+        catch { throw 'Owned fixture root response was not valid UTF-8.' }
+    } finally { if ($stdoutBytes) { $stdoutBytes.Dispose() }; $process.Dispose() }
+    if ($stderr) { Write-Host -NoNewline $stderr }
+    if ($exit -ne 0) { throw 'Owned fixture root creation failed.' }
+    if (-not $stdout.EndsWith("`n", [StringComparison]::Ordinal)) { throw 'Owned fixture root response size/termination was invalid.' }
+    $line = $stdout.Substring(0, $stdout.Length - 1)
+    if ($line.EndsWith("`r", [StringComparison]::Ordinal)) { $line = $line.Substring(0, $line.Length - 1) }
+    if ([string]::IsNullOrEmpty($line) -or $line[0] -eq [char]0xFEFF -or $line.Contains("`r") -or $line.Contains("`n")) { throw 'Owned fixture root response was not one structured record.' }
+    try { $result = ConvertFrom-Json -InputObject $line -AsHashtable -ErrorAction Stop }
+    catch { throw 'Owned fixture root response was invalid JSON.' }
+    if ($result -isnot [System.Collections.IDictionary] -or @($result.Keys).Count -ne 3 -or
+        -not $result.Contains('schema') -or -not $result.Contains('kind') -or -not $result.Contains('path') -or
+        ($result.schema -isnot [int] -and $result.schema -isnot [long]) -or $result.schema -ne 1 -or $result.kind -cne $Kind -or $result.path -isnot [string] -or
+        [string]::IsNullOrWhiteSpace($result.path) -or $result.path.Trim() -cne $result.path -or $result.path -match '[\r\n\x00]') {
+        throw 'Owned fixture root response failed its schema.'
+    }
+    $path = [string]$result.path
+    if (-not [IO.Path]::IsPathRooted($path) -or [IO.Path]::GetFullPath($path) -ine $path -or -not (Test-Path -LiteralPath $path -PathType Container)) {
+        throw 'Owned fixture root path was not absolute and canonical.'
+    }
+    $resolved = (Resolve-Path -LiteralPath $path -ErrorAction Stop).ProviderPath
+    $prefix = switch ($Kind) { 'performance' {'ete-shared-app-'} 'liveness' {'ete-runtime-win-'} 'smoke' {'ete-shared-win-'} default { throw 'Unknown owned fixture root kind.' } }
+    $tempParentLexical = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $tempParent = (Resolve-Path -LiteralPath $tempParentLexical -ErrorAction Stop).ProviderPath.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    if ($resolved -ine $path -or [IO.Path]::GetDirectoryName($path).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) -ine $tempParent -or
+        -not [IO.Path]::GetFileName($path).StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Owned fixture root escaped its expected temporary location.'
+    }
+    return $path
+}
 if ($ArtifactId -cnotmatch '^[1-9][0-9]{0,17}$' -or $ZipSha256 -cnotmatch '^[a-f0-9]{64}$' -or $InstallerSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ExpectedToolSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Exact artifact/tool identities required.' }
 $actualToolSha = ([string](& git -C $repo rev-parse HEAD)).Trim()
 if ($LASTEXITCODE -ne 0 -or $actualToolSha -cne $ExpectedToolSha -or $env:GITHUB_SHA -cne $ExpectedToolSha -or $env:GITHUB_REPOSITORY -cne 'hope140/EmbyTheaterEnhanced') { throw 'Unexpected repository/tool checkout.' }
@@ -114,9 +172,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Static installer extraction failed.' }
 $sourceReceipt = [ordered]@{schema=1;productCommit=$productSha;toolCommit=$actualToolSha;artifactId=$ArtifactId;runId=$runId;zipSha256=$ZipSha256;installerSha256=$InstallerSha256;installed=$false;source='exact successful manual package, static extraction'}
 $sourceReceipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $safe 'candidate-source.json') -Encoding utf8
 if ($AppPerformanceOnly) {
-    $ownedRoot = [string](& node -e "const h=require(process.argv[1]),c=require(process.argv[2]);console.log(h.temporaryRoot('ete-shared-app-',c.cases(process.argv[3]).map(x=>'performance/profile-'+x.index+'/userdata/shared-playback-byte-cache-v2')));" (Join-Path $repo 'tests/helpers/range-fixture-root.cjs') (Join-Path $PSScriptRoot 'app-performance-runner.cjs') $AppPerformanceMode)
-    if ($LASTEXITCODE -ne 0) { throw 'Owned ordinary app preflight failed.' }
-    $performanceRoot = Join-Path $ownedRoot.Trim() 'performance'
+    $ownedRoot = Get-OwnedFixtureRoot 'performance' $AppPerformanceMode
+    $performanceRoot = Join-Path $ownedRoot 'performance'
     try {
         & node (Join-Path $PSScriptRoot 'app-performance-runner.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$performanceRoot" "--mode=$AppPerformanceMode"
         if ($LASTEXITCODE -ne 0) { throw 'Ordinary main performance failed; no fallback or retry.' }
@@ -130,9 +187,8 @@ if ($AppPerformanceOnly) {
 if ($LivenessOnly -or $NativeLivenessOnly) {
     # Both suites avoid business servers. Native is an explicit separate suite
     # using only one generated local file; default remains strictly no-media.
-    $ownedRoot = [string](& node -e "console.log(require(process.argv[1]).temporaryRoot('ete-runtime-win-'));" (Join-Path $repo 'tests/helpers/range-fixture-root.cjs'))
-    if ($LASTEXITCODE -ne 0) { throw 'Owned liveness root unavailable.' }
-    $auditRoot = Join-Path $ownedRoot.Trim() 'audit'
+    $ownedRoot = Get-OwnedFixtureRoot 'liveness' ''
+    $auditRoot = Join-Path $ownedRoot 'audit'
     $auditExit = 1
     try {
         $suiteArgs = @()
@@ -150,9 +206,8 @@ if ($LivenessOnly -or $NativeLivenessOnly) {
 }
 # Read-only canonical/Windows excluded-port preflight selects a fresh fixture
 # identity BEFORE any fixed guard bind; never retries EACCES or changes its port.
-$ownerRoot = [string](& node -e "const h=require(process.argv[1]); console.log(h.temporaryRoot('ete-shared-win-',['smoke/shared-profile/userdata/shared-playback-byte-cache-v2']));" (Join-Path $repo 'tests/helpers/range-fixture-root.cjs') | Select-Object -Last 1)
-if ($LASTEXITCODE -ne 0) { throw 'Fresh fixture preflight failed.' }
-$smokeRoot = Join-Path $ownerRoot.Trim() 'smoke'
+$ownerRoot = Get-OwnedFixtureRoot 'smoke' ''
+$smokeRoot = Join-Path $ownerRoot 'smoke'
 try {
     & (Join-Path $PSScriptRoot 'windows-run.ps1') -RuntimeRoot (Join-Path $extracted '{app}') -Installer $installers[0].FullName -InstallerSha256 $InstallerSha256 -ProductCommit $productSha -OutputRoot $smokeRoot
 } finally {

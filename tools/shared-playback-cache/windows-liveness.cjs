@@ -10,7 +10,7 @@ const NATIVE_CASES = Object.freeze(['helper-idle', 'helper-playback', 'helper-pr
 const LIMITS = Object.freeze({caseMs: 35000, totalMs: 120000});
 const FILES = ['tools/shared-playback-cache/windows-liveness.cjs', 'tools/shared-playback-cache/windows-liveness-electron.cjs',
   'tools/shared-playback-cache/windows-liveness-preload.cjs', 'tools/shared-playback-cache/windows-contract.cjs',
-  'tools/shared-playback-cache/windows-ci.ps1', '.github/workflows/public-ci.yml'];
+  'tools/shared-playback-cache/windows-ci.ps1', 'tools/shared-playback-cache/windows-ci-root.cjs', '.github/workflows/public-ci.yml'];
 const OWNER = 'ETE no-media runtime liveness v1\n';
 const NATIVE_FILES = ['tools/shared-playback-cache/windows-native-liveness-electron.cjs', 'tools/make-fixture.cjs'];
 const casesFor = plan => plan.suite === 'native' ? NATIVE_CASES : CASES;
@@ -186,6 +186,6 @@ function parseArgs(argv) {
   need(keys.every(k => values[k]) && (values.suite === undefined || values.suite === 'native') && /^[a-f0-9]{64}$/.test(values['installer-sha256']) && /^[a-f0-9]{40}$/.test(values['product-sha']), 'arguments-invalid');
   return {repo: values.repo, runtime: values.runtime, installer: values.installer, installerSha256: values['installer-sha256'], productCommit: values['product-sha'], out: values.out, ...(values.suite ? {suite: values.suite} : {})};
 }
-module.exports = {CASES, NATIVE_CASES, LIMITS, parseArgs, validateResult, validNative, verifyFixture, readPlan, profileFor, createPlan, environment, run, collect};
+module.exports = {CASES, NATIVE_CASES, LIMITS, FILES, parseArgs, validateResult, validNative, verifyFixture, readPlan, profileFor, createPlan, environment, run, collect};
 if (require.main === module) (async () => {const plan = createPlan(parseArgs(process.argv.slice(2))); const report = await run(plan); if (report.status !== 'PASS') process.exitCode = 1;})()
   .catch(error => {console.error('ETE_RUNTIME_LIVENESS_ERROR ' + safe(error)); process.exitCode = 1;});
