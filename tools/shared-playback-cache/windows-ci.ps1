@@ -178,7 +178,7 @@ if ($AppPerformanceOnly) {
         & node (Join-Path $PSScriptRoot 'app-performance-runner.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$performanceRoot" "--mode=$AppPerformanceMode"
         if ($LASTEXITCODE -ne 0) { throw 'Ordinary main performance failed; no fallback or retry.' }
     } finally {
-        foreach ($receipt in @(Get-ChildItem -LiteralPath $performanceRoot -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'app-performance.json' -or $_.Name -match '^case-[0-9]{1,2}\.json$' })) {
+        foreach ($receipt in @(Get-ChildItem -LiteralPath $performanceRoot -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'app-performance.json' -or $_.Name -match '^case-[0-9]{1,2}(?:\.json|\.lifecycle\.jsonl)$' })) {
             Copy-Item -LiteralPath $receipt.FullName -Destination (Join-Path $safe $receipt.Name)
         }
     }

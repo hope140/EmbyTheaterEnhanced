@@ -72,4 +72,73 @@ async function executeAppFrame(contents, entryUrl, script) {
   const value = await frame.executeJavaScript(script);
   need(trusted(), 'app-frame-retired'); return value;
 }
-module.exports = {BASE, SCENARIOS, TARGETS, LIMITS, rendererLogin, rendererAction, frameRange, coverageKind, assertCoverage, assertEntry, executeAppFrame, workerArguments, isMediaA, loadSource};
+// Main registers its start-info injection on dom-ready after BrowserWindow
+// construction. Register the observer at web-contents-created, so its same-frame
+// listener is queued first, before the unchanged product starts Emby.App.
+const READY_LISTENER = `(() => {
+  if (!window.__eteOwnedAppReadiness) {
+    const state = window.__eteOwnedAppReadiness = {installed: true, appReady: false};
+    document.addEventListener('appready', () => {state.appReady = true;}, {once: true});
+  }
+  return window.__eteOwnedAppReadiness.installed === true;
+})()`;
+const READY_SNAPSHOT = `(() => ({
+  markerInstalled: window.__eteOwnedAppReadiness?.installed === true,
+  appReady: window.__eteOwnedAppReadiness?.appReady === true,
+  requireType: typeof window.require, requirejsType: typeof window.requirejs,
+  sameRequire: window.require === window.requirejs,
+  amdDefined: !!window.define?.amd, ipc: !!window.ipc,
+  appStartAvailable: typeof window.Emby?.App?.start === 'function',
+  startInfoAvailable: !!window.appStartInfo,
+  documentReadyState: document.readyState
+}))()`;
+function readinessCode(state) {
+  if (!state?.markerInstalled) return 'app-ready-observer-missing';
+  if (state.requireType !== 'function' || state.requirejsType !== 'function' || !state.sameRequire || !state.amdDefined) return 'app-amd-not-ready';
+  if (!state.ipc) return 'app-preload-ipc-not-ready';
+  if (!state.appReady) return 'app-ready-event-missing';
+  return null;
+}
+function installReadinessObserver(app, entryUrl, mark) {
+  const owned = new Map();
+  const created = (_event, contents) => {
+    const onDom = () => {
+      // Ignore carriers/about:blank and never run code in a different document.
+      if (contents.isDestroyed() || contents.mainFrame?.url.split('#')[0] !== entryUrl) return;
+      mark('ordinary-ready-observer-dispatch', {contentsId: contents.id});
+      executeAppFrame(contents, entryUrl, READY_LISTENER).then(installed => {
+        mark('ordinary-ready-observer-settled', {contentsId: contents.id, installed: installed === true});
+      }, () => mark('ordinary-ready-observer-rejected', {contentsId: contents.id}));
+    };
+    contents.on('dom-ready', onDom); owned.set(contents, onDom);
+  };
+  app.on('web-contents-created', created);
+  return () => {app.removeListener('web-contents-created', created);
+    for (const [contents, listener] of owned) contents.removeListener('dom-ready', listener);
+    owned.clear();};
+}
+// Do not reenter app.quit() from its native will-quit stack just to write a
+// receipt. With no outstanding owned stream closes the event may proceed.
+// If closes remain, prevent once and resume on a fresh event-loop turn.
+function installQuitCollector({app, pending, finalize, mark, onFailure, schedule = setImmediate, timeoutMs = 2000}) {
+  let finalized = false, collecting = false;
+  const failed = () => {try {onFailure();} catch (_) { /* Exit must still proceed; missing/invalid receipt fails the coordinator. */ }};
+  const finish = () => {try {finalize();} catch (_) {failed();} finally {finalized = true;}};
+  const listener = event => {
+    mark('ordinary-will-quit', {finalized, collecting});
+    if (finalized) return;
+    if (collecting) {event.preventDefault(); return;}
+    let work;
+    try {work = pending();} catch (_) {failed(); work = [];}
+    if (!work.length) {finish(); return;}
+    event.preventDefault(); collecting = true;
+    let timer;
+    Promise.race([Promise.all(work), new Promise(resolve => {timer = setTimeout(resolve, timeoutMs);})])
+      .then(() => {clearTimeout(timer); finish(); schedule(() => app.quit());}, () => {
+        clearTimeout(timer); failed(); finish(); schedule(() => app.quit());
+      });
+  };
+  app.on('will-quit', listener);
+  return () => app.removeListener('will-quit', listener);
+}
+module.exports = {READY_LISTENER, READY_SNAPSHOT, readinessCode, installReadinessObserver, installQuitCollector, BASE, SCENARIOS, TARGETS, LIMITS, rendererLogin, rendererAction, frameRange, coverageKind, assertCoverage, assertEntry, executeAppFrame, workerArguments, isMediaA, loadSource};

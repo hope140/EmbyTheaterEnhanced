@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-26 — 普通入口观察与退出仅工具修复
+
+精确949产品已通过合成Native四阶段：切集预载零重复正文、重开保留缓存、新权限探测及取消退出。普通main入口则在认证/播放前就绪检查失败，五场景均为空延迟；其后主进程被外层超时终止，不能当性能结果或自然退出。
+
+独立工具改为在原dom-ready启动前观察真实appready，分开报告AMD、preload IPC与事件标记；不调用start、不注入认证、不改产品。空pending关闭集合不再为写收据拦截will-quit；仍有流待关闭则保持有界等待并下一事件循环恢复quit。工具日志失败不得困住产品退出，成功仍要求真实helper与正常关闭。详见[普通入口合同](SHARED_PLAYBACK_CACHE_APP_PERFORMANCE.md#ordinary-startup-observation-and-natural-exit)。实际Windows普通入口与性能复验仍待执行。
+
 ## 2026-10-26 — 修正Windows路径夹具并统一新包／Native来源
 
 504的WindowsCI唯一失败为Linux端口测试用raw POSIX路径计算hash，却在Windows由host path.join规范后选择根；不是端口避让或媒体逻辑失败。测试改宿主规范根，并用同一helper在POSIX／Windows路径实现下复现旧错及验证避让，原断言不删除、不跳过Windows。504未派包，不重跑原SHA；本地9a工具绑定整合到新候选，artifact来源须经既有reviewedCandidate明确批准（504锚点或当前精确HEAD），run／manifest／摘要继续绑定同一真实来源，不接受任意内容相同提交。

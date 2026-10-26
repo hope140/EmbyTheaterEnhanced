@@ -27,7 +27,7 @@ async function main() {
   need(/^[1-9][0-9]{12}$/.test(args['deadline-ms']), 'app-worker-deadline-argument');
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
-  const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set(), readinessObservers = new Set();
+  const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
   function active() {need(!retired && performance.now() < deadline, 'app-worker-deadline');}
   async function until(test, code, ms = 5000) {
@@ -96,20 +96,30 @@ async function main() {
     tap(value, 'call', (result, values) => {if (values[0] === 'create' && result?.status === 'ok') endpoint = result.endpointId;});
   });
   const expectedUrl = pathToFileURL(path.join(plan.runtime, 'electronapp/www/index.html')).href + '?autostart=false';
-  let readyHookClaimed = false;
+  restores.push(contract.installReadinessObserver(app, expectedUrl, mark));
+  const lifecycleFile = path.join(plan.out, 'case-' + index + '.lifecycle.jsonl');
+  need(!fs.existsSync(lifecycleFile), 'app-worker-preserve-lifecycle');
+  let lifecycleRows = 0;
+  const lifecycle = (type, data = {}) => {
+    mark(type, data);
+    if (++lifecycleRows > 128) {observationErrors++; report.status = 'FAIL'; process.exitCode = 1; if (lifecycleRows === 129) console.error('SHARED_CACHE_APP_EVIDENCE_FAILURE'); return;}
+    try {fs.writeFileSync(lifecycleFile, JSON.stringify({type, at: performance.now() - started, ...data}) + '\n', {flag: lifecycleRows === 1 ? 'wx' : 'a'});}
+    catch (_) {observationErrors++; report.status = 'FAIL'; report.lifecycleWriteFailure = true; process.exitCode = 1; console.error('SHARED_CACHE_APP_EVIDENCE_FAILURE');}
+  };
+  for (const type of ['before-quit', 'will-quit', 'window-all-closed', 'quit']) app.on(type, () => lifecycle('ordinary-' + type));
+  process.once('exit', code => lifecycle('ordinary-process-exit', {code}));
   app.on('web-contents-created', (_event, contents) => {
-    // Observe the ordinary app's own ready event before its scripts execute.
-    // This marker supplies neither modules, session state nor authorization.
-    try {
-      if (!readyHookClaimed) {
-      readyHookClaimed = true;
-      need(!contents.debugger.isAttached(), 'app-ready-probe-owned');
-      contents.debugger.attach('1.3'); readinessObservers.add(contents);
-      contents.debugger.sendCommand('Page.addScriptToEvaluateOnNewDocument', {source:
-        "document.addEventListener('appready',()=>{window.__eteOwnedAppReady=true;},{once:true});"})
-        .catch(() => {observationErrors++;});
-      }
-    } catch (_) {observationErrors++;}
+    const fixedError = error => ['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError'].includes(error?.name) ? error.name : 'OTHER';
+    contents.on('preload-error', (_event, _file, error) => mark('ordinary-preload-error', {contentsId: contents.id, errorName: fixedError(error)}));
+    contents.on('did-fail-load', (_event, code, _description, _url, isMainFrame) => mark('ordinary-did-fail-load', {contentsId: contents.id, code: Number.isInteger(code) ? code : null, isMainFrame: !!isMainFrame}));
+    contents.on('render-process-gone', (_event, details) => mark('ordinary-render-process-gone', {contentsId: contents.id, reason: ['clean-exit', 'abnormal-exit', 'killed', 'crashed', 'oom', 'launch-failed', 'integrity-failure'].includes(details.reason) ? details.reason : 'other'}));
+    contents.on('destroyed', () => lifecycle('ordinary-contents-destroyed', {contentsId: contents.id}));
+    contents.on('console-message', (_event, ...args) => {
+      const message = typeof _event?.message === 'string' ? _event.message : args[1];
+      const label = new Map([['onAppReady', 'app-ready-entered'], ['Loaded dependencies in onAppReady', 'app-ready-dependencies'], ['Defining core routes', 'app-routes'], ['loadExternalScripts', 'app-external-scripts']]).get(message);
+      if (label) mark('ordinary-console-stage', {contentsId: contents.id, stage: label});
+      // Never record raw console text, source URL, stack or exception payload.
+    });
     contents.session.webRequest.onBeforeRequest((request, callback) => {
       let allowed = false;
       try {const u = new URL(request.url);
@@ -129,14 +139,22 @@ async function main() {
   let sampling;
   try {
     mark('ordinary-main-require'); require(path.join(plan.runtime, 'electronapp/main.js'));
-    await app.whenReady();
+    await app.whenReady(); mark('ordinary-app-ready');
     await until(() => {mainWindow = electron.BrowserWindow.getAllWindows().find(w => w.webContents.getURL().includes('/www/index.html')); return !!mainWindow;}, 'app-main-window-missing', 20000);
     const contents = mainWindow.webContents;
+    mark('ordinary-main-window', {contentsId: contents.id});
     await until(() => !contents.isLoadingMainFrame() && contents.mainFrame?.url.split('#')[0] === expectedUrl, 'app-document-not-ready', 20000);
+    mark('ordinary-document-ready', {contentsId: contents.id, loading: contents.isLoadingMainFrame()});
     const evalCode = code => smoke.within(() => contract.executeAppFrame(contents, expectedUrl, code), Math.min(10000, deadline - performance.now()), 'app-renderer-command-timeout');
-    await until(async () => evalCode("window.__eteOwnedAppReady===true && typeof window.require==='function' && !!window.ipc"), 'app-amd-not-ready', 15000);
-    for (const observed of readinessObservers) if (!observed.isDestroyed() && observed.debugger.isAttached()) observed.debugger.detach();
-    readinessObservers.clear();
+    let readiness;
+    try {
+      await until(async () => {readiness = await evalCode(contract.READY_SNAPSHOT); return contract.readinessCode(readiness) === null;}, 'app-startup-not-ready', 15000);
+    } catch (error) {
+      mark('ordinary-readiness', readiness || {});
+      if (error.message === 'app-startup-not-ready') throw Error(contract.readinessCode(readiness));
+      throw error;
+    }
+    mark('ordinary-readiness', readiness);
     const loggedIn = await evalCode(contract.rendererLogin(plan.sources.origin)); need(loggedIn?.signedIn, 'app-login-failed');
     await until(async () => evalCode("require(['pluginManager']).then(v=>(v[0].default||v[0]).ofType('mediaplayer').some(p=>p.id==='libmpvmediaplayer'))"), 'app-player-not-ready', 10000);
     sampling = setInterval(() => {try {resourceSample();} catch (_) {observationErrors++;}}, 100);
@@ -238,26 +256,21 @@ async function main() {
       sourceBodyBytes: 0, overlapBodyBytes: 0, peakRssBytes: peakRss, peakDiskBytes: peakDisk});
     report.samples.sort((a,b)=>contract.SCENARIOS.indexOf(a.scenario)-contract.SCENARIOS.indexOf(b.scenario));
     const finalize = () => {
-      report.ownedHelpersClosed = clientList.length > 0 && clientList.every(c => c.exited && c.pending.size === 0 &&
+      report.nativeHelperStarted = clientList.length > 0;
+      report.ownedHelpersClosed = clientList.every(c => c.exited && c.pending.size === 0 &&
         c.operationErrors.length === 0 && report.helperExits.some(e => e.pid === c.child?.pid && e.exitCode === 0 && e.signal === null && e.streamsClosed && e.pending === 0) &&
         [c.child?.stdin,c.child?.stdout,c.child?.stderr].every(stream => !stream || stream.destroyed));
-      if (!report.ownedHelpersClosed || observationErrors) report.status = 'FAIL';
+      report.helperExitAssessment = clientList.length ? (report.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN') : 'NOT_STARTED';
+      if (!report.ownedHelpersClosed || observationErrors || report.status === 'PASS' && clientList.length !== 1) report.status = 'FAIL';
       report.observationErrors = observationErrors; report.durationMs = performance.now() - started;
-      for (const observed of readinessObservers) {try {if (!observed.isDestroyed() && observed.debugger.isAttached()) observed.debugger.detach();} catch (_) {report.status='FAIL';}}
-      readinessObservers.clear();
       for (const restore of restores.reverse()) {try {restore();} catch (_) {report.status = 'FAIL'; report.restoreFailure = true;}}
       fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
       console.log('SHARED_CACHE_APP_CASE ' + JSON.stringify({index, status: report.status, code: report.code || null, sampleCount: report.samples.length, ownedHelpersClosed: report.ownedHelpersClosed}));
     };
-    let finalized = false, collecting = false;
-    app.on('will-quit', event => {
-      if (finalized) return;
-      event.preventDefault(); if (collecting) return; collecting = true;
-      Promise.race([Promise.all(clientList.map(c => c.ownedClose || Promise.resolve())), delay(2000)]).then(() => {
-        finalize(); finalized = true; app.quit();
-      }).catch(() => {report.status = 'FAIL'; finalize(); finalized = true; app.quit();});
-    });
-    mark('ordinary-quit-request'); app.quit();
+    contract.installQuitCollector({app, finalize, mark: lifecycle, onFailure: () => {report.status = 'FAIL'; report.finalizeFailure = true; process.exitCode = 1; console.error('SHARED_CACHE_APP_EVIDENCE_FAILURE');}, pending: () => clientList
+      .filter(c => !report.helperExits.some(e => e.pid === c.child?.pid && e.streamsClosed))
+      .map(c => c.ownedClose || Promise.resolve())});
+    lifecycle('ordinary-quit-request'); app.quit();
   }
 }
 module.exports = {main};

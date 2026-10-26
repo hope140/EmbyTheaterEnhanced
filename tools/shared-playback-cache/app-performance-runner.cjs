@@ -80,16 +80,22 @@ function runWorker(planFile, planHash, plan, task) {
     const started = Date.now(), child = spawn(path.join(plan.runtime,'x64/electron/electron.exe'),
       [path.join(plan.repo,'tools/shared-playback-cache/app-performance-electron.cjs'), '--plan='+planFile, '--plan-sha256='+planHash, '--case='+task.index,'--deadline-ms='+(Date.now()+contract.LIMITS.workerMs-3000)],
       {cwd:plan.runtime,env,windowsHide:false,stdio:['ignore','pipe','pipe']});
-    let bytes=0,timedOut=false,overflow=false,error=false,done=false,denied=false,finalTimer;
+    let bytes=0,timedOut=false,overflow=false,error=false,done=false,denied=false,finalTimer,evidenceWriteFailed=false;
+    const outputTails = {stdout:'',stderr:''};
     const finish=(exitCode,signal,closed)=>{if(done)return;done=true;clearTimeout(timer);clearTimeout(finalTimer);
       if(!closed){child.stdout.destroy();child.stderr.destroy();child.unref();}
       resolve({index:task.index,spawnPid:child.pid||null,exitCode,signal,
         exitConfirmed:!!child.pid&&!error&&closed,streamsClosed:closed&&child.stdout.destroyed&&child.stderr.destroyed,
-        timedOut,overflow,error,terminationDenied:denied,durationMs:Date.now()-started});};
+        timedOut,overflow,error,evidenceWriteFailed,terminationDenied:denied,durationMs:Date.now()-started});};
     const stop=()=>{if(finalTimer||done)return;try{child.kill('SIGTERM');}catch(e){denied=['EACCES','EPERM'].includes(e.code);}
       finalTimer=setTimeout(()=>finish(null,null,false),2000);};
-    const take=part=>{bytes+=part.length;if(bytes>1048576&&!overflow){overflow=true;stop();}};
-    child.stdout.on('data',take);child.stderr.on('data',take);
+    const take=(part,channel)=>{
+      const text=outputTails[channel]+part.toString('utf8');
+      if(text.includes('SHARED_CACHE_APP_EVIDENCE_FAILURE'))evidenceWriteFailed=true;
+      outputTails[channel]=text.slice(-64);
+      bytes+=part.length;if(bytes>1048576&&!overflow){overflow=true;stop();}
+    };
+    child.stdout.on('data',part=>take(part,'stdout'));child.stderr.on('data',part=>take(part,'stderr'));
     child.stdout.on('error',()=>{error=true;});child.stderr.on('error',()=>{error=true;});
     child.on('error',e=>{error=true;if(['EACCES','EPERM'].includes(e.code))denied=true;if(!child.pid)finish(null,null,false);});
     const timer=setTimeout(()=>{timedOut=true;stop();},contract.LIMITS.workerMs);
@@ -157,7 +163,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
       try{const bytes=fs.readFileSync(path.join(out,'case-'+task.index+'.json'));need(bytes.length<=1048576,'app-receipt-size');receipt=JSON.parse(bytes);}catch(_){}
       const rows = receiptRows(receipt,result,task,productCommit,tools.toolCommit);
       const until=Date.now()+3000;while(observed[task.index].mediaResponses&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,5));
-      const transportGood=result.exitCode===0&&result.exitConfirmed&&result.streamsClosed&&!result.timedOut&&!result.overflow;
+      const transportGood=result.exitCode===0&&result.exitConfirmed&&result.streamsClosed&&!result.timedOut&&!result.overflow&&!result.evidenceWriteFailed;
       const caseEvidenceGood=receipt?.ownedHelpersClosed&&receipt.externalNetworkAttempts===0&&observed[task.index].unknownRoutes===0&&
         observed[task.index].stoppedReports>0&&observed[task.index].unexpectedMedia===0&&observed[task.index].mediaResponses===0;
       const accepted=!!(transportGood&&caseEvidenceGood&&rows&&rows.every(row=>row.status==='PASS')&&receipt.status==='PASS');

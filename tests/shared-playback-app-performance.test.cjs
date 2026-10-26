@@ -82,7 +82,8 @@ test('tool-only wrapper executes ordinary main, preserves its preload/IPC and us
   assert.match(source,/app\.setAppPath\(process\.argv\[1\]\)/);assert.match(source,/app\.quit\(\)/);
   assert.doesNotMatch(source,/rendererBoot|prefixHarness|sourceProof\s*[:=]|webPreferences\s*:/);
   assert.ok(source.indexOf('native.NativeHelperClient = ObservedClient')<source.indexOf("tap(get('native-helper/service')"));
-  assert.match(source,/'electronfile:'/);assert.match(source,/clientList\.length > 0/);
+  assert.match(source,/'electronfile:'/);assert.match(source,/nativeHelperStarted = clientList\.length > 0/);
+  assert.match(source,/report\.status === 'PASS' && clientList\.length !== 1/);
 });
 
 

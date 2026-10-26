@@ -1594,3 +1594,12 @@ Fixture-correction local regression:2,907 total/2,882 pass/0 fail/25 existing pl
 Both verifier and ordinary-app anchors now identify `9492750b2b0e7b3fc81f52b51b61900209ac9aba`. Product runtime content remains identical to04, but the new exact source is required for the corrected package regression. Preserve structured-root preparation and strict post-package Native/entry/matrix source provenance. Original-source fallback is not a shared-cache success, and the existing refusal to preload without a current proxy is explicitly covered rather than changed. No new settings, timeout policy, renderer authorization, kernel or release behavior is introduced.
 
 Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform or material skips (145.3s); focused Alameda/app/physical-source/structured-root194/194. JavaScript619/PowerShell55 syntax, finite credential-pattern scan718, changed documentation and protected-tree equality pass. Windows CI/package/Native and ordinary performance remain separately pending for these exact source identities.
+
+
+## 2026-10-26 — 普通入口就绪/自然退出工具合同
+
+- 保留已通过Native四阶段的949产品字节与来源绑定。首次普通入口在播放前失败；五个null延迟样本及外层SIGTERM保留为失败，不推断缓存性能。
+- 用先登记的同frame dom-ready观察替代未等待ACK且先抢首contents的CDP观察；分别报告真实appready、AMD身份、preload IPC与有限安全阶段，不调用应用start或注入会话。
+- 无pending stream时直接允许will-quit；有pending时仍有界等待，后续quit排到新事件循环。写证据异常标失败而不拦住清理；NOT_STARTED明确区分未建helper和退出未确认。
+- 新定向合同覆盖真实setStartInfo源码的排队顺序、不同首contents/换frame拒绝、各就绪失败类型、空pending及流等待/超时、收据写失败。Windows普通入口仍须独立复验；不把受控队列/退出模型当实际Electron结果。
+- 最终串行全仓回归2951项：2926通过、0失败/取消、25项既有平台/材料跳过，142.1秒；JS620/PS55语法、有限凭证模式719、文档和产品树不变检查通过。一次与全仓重叠的扩展夹具运行发生EADDRINUSE，未修改断言；交付全仓单独串行执行并保留该失败证据，不据此改产品端口或媒体逻辑。最终Windows普通入口仍待复验，性能NOT_ASSESSED。
