@@ -23,7 +23,7 @@ async function main() {
     toolCommit: plan.toolCommit, scope: 'ordinary product main and unchanged web/API/PM; owned loopback fixture; decoded frame not visible presentation',
     resourceAssessment: {electron:'NOT_ASSESSED',native:'NOT_ASSESSED',disk:'NOT_ASSESSED'},
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, pid: process.pid, samples: [], observations: [], helperExits: [],
-    externalNetworkAttempts: 0, unknownFixtureRoutes: 0, memoryScope: 'sum of observed Electron working-set peak and owned Native lifetime PeakWorkingSet; conservative sum, not simultaneous RSS'};
+    externalNetworkAttempts: 0, discoveryOrWakeRequestsBlocked: 0, udpSocketsBlocked: 0, unknownFixtureRoutes: 0, memoryScope: 'sum of observed Electron working-set peak and owned Native lifetime PeakWorkingSet; conservative sum, not simultaneous RSS'};
   need(/^[1-9][0-9]{12}$/.test(args['deadline-ms']), 'app-worker-deadline-argument');
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
@@ -52,6 +52,12 @@ async function main() {
     peakRss = Math.max(peakRss, rss, process.memoryUsage().rss); report.resourceAssessment.electron='OBSERVED_WORKING_SETS';
     if (cacheStore) {const status = cacheStore.status(); peakDisk = Math.max(peakDisk, status.committed || 0);}
   }
+  // All business sources are owned TCP loopback fixtures. Deny Node UDP as
+  // defense in depth even if a custom-scheme request misses webRequest.
+  const datagram = require('node:dgram'), originalDatagram = datagram.createSocket;
+  const denyDatagram = () => {report.udpSocketsBlocked++; throw Object.assign(Error('app-lan-discovery-disabled'), {code:'ENETUNREACH'});};
+  datagram.createSocket = denyDatagram;
+  restores.push(() => {need(datagram.createSocket === denyDatagram, 'app-observer-owner'); datagram.createSocket = originalDatagram;});
   // Read-only observation retains exact arguments, return Promise and side effects.
   tap(get('enhanced/shared-playback-cache/proxy'), 'createProxy', proxy => {cacheProxy = proxy;
     tap(proxy, 'open', (handle, values) => {if (typeof handle?.url === 'string' && contract.isMediaA(values[0], plan.sources.origin)) proxyUrls.add(handle.url);});
@@ -106,8 +112,10 @@ async function main() {
     } catch (_) {observationErrors++;}
     contents.session.webRequest.onBeforeRequest((request, callback) => {
       let allowed = false;
-      try {const u = new URL(request.url); allowed = u.protocol === 'file:' || u.protocol === 'data:' || u.protocol === 'blob:' ||
-        ['electronfile:', 'electronapphost:', 'electronfs:', 'electronserverdiscovery:', 'electronwakeonlan:', 'electronrefreshrate:'].includes(u.protocol) ||
+      try {const u = new URL(request.url);
+        if (['electronserverdiscovery:', 'electronwakeonlan:'].includes(u.protocol)) {report.discoveryOrWakeRequestsBlocked++; callback({cancel:true}); return;}
+        allowed = u.protocol === 'file:' || u.protocol === 'data:' || u.protocol === 'blob:' ||
+        ['electronfile:', 'electronapphost:', 'electronfs:', 'electronrefreshrate:'].includes(u.protocol) ||
         (['http:', 'ws:'].includes(u.protocol) && u.hostname === '127.0.0.1' && [new URL(plan.sources.origin).port, new URL(plan.sources.mediaOrigin).port].includes(u.port));} catch (_) {}
       if (!allowed) report.externalNetworkAttempts++;
       callback({cancel: !allowed});

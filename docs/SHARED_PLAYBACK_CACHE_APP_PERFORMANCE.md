@@ -53,3 +53,9 @@ The performance fixture presents a single A queue with automatic episode expansi
 Native startup approval, if pending or denied, also applies to these ordinary-entry modes. Preparing/pushing tooling or passing local contract tests does not authorize dispatching a different mode to bypass that decision.
 
 Nonzero initial AVI video ranges are covered explicitly: readiness checks the actual cached target frame, not an assumed byte-zero prefix. The source window includes a complete bounded span from that request start so incomplete final blocks cannot masquerade as prepared coverage. Any observed overlapping source body during a B-arm seek fails that sample, even if timing and decoding succeed. Windows execution is still pending.
+
+The test-only request filter cancels LAN discovery and Wake-on-LAN custom-scheme requests before their ordinary main handlers can send broadcasts; their blocked count is reported separately. Protocol registration and explicit real ConnectionManager login to the owned fixture remain normal. LAN discovery/WOL are not part of this loopback verification. No network/firewall/security setting is changed.
+
+As defense in depth, the owned child denies Node UDP socket creation before loading main, preserving a separately reported counter and restoring only its own wrapper at exit. This also prevents LAN discovery/WOL when a custom-scheme request does not traverse the browser request filter. HTTP/CD2/native media still follow real loopback transports and authorization; no OS network or permission setting is changed.
+
+Final egress-guard regression:2,922 tests,2,897 pass,zero fail/cancel,25 existing platform/material skips (137.1s); targeted200/200, JavaScript614/PowerShell55 syntax and finite credential-pattern scan713 pass. These are local tool/contract results, not Windows Native or ordinary-entry performance evidence.

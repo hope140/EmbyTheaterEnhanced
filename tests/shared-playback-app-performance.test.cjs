@@ -136,3 +136,21 @@ test('ordinary seek proof rejects overlap and waits for video coverage rather th
   assert.match(source,/code='app-cache-body-reread'/);
   assert.match(source,/cacheStore\.span\(cacheKey, contract\.frameRange\(plan\.fixture\.media\.A, contract\.TARGETS\['cached-seek'\]\)\.start\)/);
 });
+
+
+test('ordinary loopback verification blocks LAN discovery and wake before native protocol handlers run',async()=>{
+  const source=await fs.readFile(path.join(__dirname,'../tools/shared-playback-cache/app-performance-electron.cjs'),'utf8');
+  assert.match(source,/\['electronserverdiscovery:', 'electronwakeonlan:'\]\.includes\(u\.protocol\)/);
+  assert.match(source,/discoveryOrWakeRequestsBlocked\+\+; callback\(\{cancel:true\}\); return/);
+  assert.ok(source.indexOf('discoveryOrWakeRequestsBlocked++')<source.indexOf("allowed = u.protocol === 'file:'"));
+});
+
+
+test('test-only UDP denial cannot open a socket and restores only its own wrapper',async()=>{
+  const text=await fs.readFile(path.join(__dirname,'../tools/shared-playback-cache/app-performance-electron.cjs'),'utf8');
+  const begin=text.indexOf("  const datagram = require('node:dgram')"),end=text.indexOf('  // Read-only observation',begin);
+  assert.ok(begin>0&&end>begin);let opened=0;const original=()=>opened++,datagram={createSocket:original},restores=[],report={udpSocketsBlocked:0};
+  vm.runInNewContext(text.slice(begin,end),{require:name=>{assert.equal(name,'node:dgram');return datagram;},restores,report,need:(value,code)=>{assert.ok(value,code);}});
+  assert.throws(()=>datagram.createSocket('udp4'),{code:'ENETUNREACH'});assert.equal(opened,0);assert.equal(report.udpSocketsBlocked,1);
+  restores[0]();assert.equal(datagram.createSocket,original);
+});
