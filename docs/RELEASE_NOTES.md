@@ -1,19 +1,28 @@
-# v0.4.3
+# v0.4.4 测试版
 
-Windows x64。本批将已验收的一秒原生预览和系统媒体控制接入普通安装入口，继续保留v0.4.2的页面缓存、缓存管理和手动更新/通道功能。
+Windows x64 **Pre-release 测试版**。可手动下载，或在“关于 Enhanced”选择测试通道后主动检查更新；下载后仍需自行退出并安装。当前正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)。
 
 ## 本次更新
 
-- Windows任务栏缩略图及Peek可显示当前视频画面；保持一秒采样预算，切换媒体、停止和退出时退休所属画面。
-- 控制集中到Windows系统媒体卡片：播放、暂停、停止、上一项、下一项；上一/下一按真实队列启用，播放暂停按状态切换。
-- 移除原任务栏缩略图下的两个控制按钮。
-- 缓存管理清理按钮文字居中；设置菜单展示名简化为“智能解析”，说明保留STRM。
-- 修复退出时访问已销毁窗口对象的异常，并使普通主窗口关闭进入原清理流程，保留页面缓存关闭前flush。
+- 改善再次进入详情时的布局与海报交接，减少简版内容跳变及图片短暂空白，不增加播放前等待。
+- 返回首页时保留同账号、服务器与查询下可复用的驻留卡片，同时读取最新内容；页面淘汰或数据失效后正常加载。
+- 补充脱敏播放诊断关联和 mpv 数字错误码，便于定位播放失败；不调整播放重试、回退或超时策略。
+- 移除不再使用的包内 Anime4K shader。个人配置如引用旧包内路径需自行调整，个人 shader 与配置不会被清理。
 
-## 使用提醒
+## 已知问题
 
-预览是低频截图，不等同于连续视频；不合成字幕。系统决定媒体卡片布局，停止不一定显示独立图标。普通安装无需试验环境变量或专用启动脚本。
+缓存不替代服务器授权、最新播放进度或真实播放数据。图片过慢或失败时仍可能显示占位；本版不承诺所有服务器与硬件组合通过。任务栏预览沿用一秒采样，不是连续视频，也不合成字幕。安装、真实播放及硬件证据边界见[本版核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V044_RELEASE_VERIFICATION.md)。
 
-从本Release实际附件区下载Windows x64安装包及对应SHA-256文件，勿将源码压缩包当作安装包。先正常退出客户端再安装；应用不会自动检查或安装更新，登录、个人配置及原缓冲设置保持。
+## 下载安装
 
-非官方社区维护项目，与Emby官方无隶属或认可关系。许可及第三方来源情况见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。
+- [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.4/EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe)
+- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.4/EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe.sha256)
+- [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.4/EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe.provenance.json)
+
+安装器未签名。请核对同版本 SHA-256，正常退出客户端后再安装；具体步骤见[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/USER_GUIDE.md)。应用不会自动检查或安装更新。
+
+## 项目说明
+
+非官方社区维护项目，与 Emby 官方无隶属或认可关系。许可与第三方材料情况见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。
+
+[版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md)

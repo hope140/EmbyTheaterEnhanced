@@ -60,7 +60,7 @@ test('formal Windows wiring uses no trial flag and keeps one-second capture, mai
  assert.match(main,/runCleanup\('windows-media'/);assert.match(adapter,/\}, 1000\)/);assert.doesNotMatch(adapter,/550|PREVIEW_INTERVAL|previewSavings|preview-performance|configuredIntervalMs/);
  for(const name of ['tools/build.ps1','tools/package.ps1'])assert.match(read(name),/windows-native-media-input.cjs/);
  const contract=require('../tools/build-input-contract.cjs');for(const name of tool.INPUTS)assert.ok(contract.INPUT_PATHS.includes(name));
- assert.equal(require('../package.json').version,'0.4.3');assertCheckoutBytes(fs.readFileSync(path.join(root,'src/config/system-defaults.json')),cp.execFileSync('git',['-C',root,'show','ff92bead:src/config/system-defaults.json']));
+ const productVersion=require('../package.json').version,productLock=require('../package-lock.json');assert.equal(productLock.version,productVersion);assert.equal(productLock.packages[''].version,productVersion);assertCheckoutBytes(fs.readFileSync(path.join(root,'src/config/system-defaults.json')),cp.execFileSync('git',['-C',root,'show','ff92bead:src/config/system-defaults.json']));
  assertCheckoutBytes(fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml')),cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml']));
 });
 
