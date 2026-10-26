@@ -3,7 +3,22 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const {createWindowsPortPreflight, selectRoot, guardPort} = require('./helpers/range-fixture-root.cjs');
+const {createWindowsPortPreflight, selectRoot, guardPort, linuxOccupiedPorts} = require('./helpers/range-fixture-root.cjs');
+
+test('Linux read-only port table includes listeners and TIME_WAIT without process or remote-address data', () => {
+  const header = '  sl  local_address rem_address   st\n';
+  const table = header + ' 0: 0100007F:C350 00000000:0000 0A other\n' +
+    ' 1: 0100007F:C351 0100007F:C352 06 other\n' +
+    ' 2: 00000000000000000000000000000000:C350 00000000:0000 0A other\n';
+  assert.deepEqual(linuxOccupiedPorts(table), new Set([50000, 50001]));
+  for (const invalid of ['', 'unknown table', header + 'bad row\n', header + 'x'.repeat(2 * 1024 * 1024)])
+    assert.throws(() => linuxOccupiedPorts(invalid), /invalid-Linux-test-port-table/);
+  const root = '/owned/fresh-fixture', port = guardPort(root, 'linux');
+  const occupied = linuxOccupiedPorts(header + ' 0: 0100007F:' + port.toString(16).padStart(4, '0') + ' 00000000:0000 06 unused\n');
+  const selected = selectRoot(root, [''], [], occupied, 'linux');
+  assert.notEqual(selected, root);
+  assert.equal(occupied.has(guardPort(selected, 'linux')), false);
+});
 
 const SNAPSHOT = 'ETE_TEST_WINDOWS_PORT_SNAPSHOT';
 const validJson = JSON.stringify({schema: 1, ranges: [{start: 40000, end: 40020}], occupied: [40100, 40101]});

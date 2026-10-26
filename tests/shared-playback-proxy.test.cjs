@@ -18,10 +18,10 @@ function ownedRoot(t, prefix) {
 }
 async function setup(t, sourceOptions = {}, io) {
   const {root, own} = ownedRoot(t, 'ete-shared-proxy-');
-  const origin = await source(sourceOptions);
-  own(() => origin.close());
   const store = await createStore({root, currentBytes: 2 * 1024 * 1024, nextBytes: 512 * 1024, maxPendingBytes: 256 * 1024, io});
   own(() => store.close());
+  const origin = await source(sourceOptions);
+  own(() => origin.close());
   let grants = 0;
   const proxy = await createProxy({store, authorize: async () => {grants++; return origin.grant();}});
   own(() => proxy.close());

@@ -54,7 +54,7 @@
         var text = labels[state] || '未预载';
         if (diagnostic) text += '：' + diagnostics.text(diagnostic);
         if (next && next.bytes > 0) {
-            var mb = function (n) {return Number.isFinite(n) && n >= 0 ? (n / 1000000).toFixed(1) + ' MB' : '未知';};
+            var mb = function (n) {return Number.isFinite(n) && n >= 0 ? (n / (1024 * 1024)).toFixed(1) + ' MiB' : '未知';};
             text += ' · ' + mb(next.bytes) + ' / ' + mb(next.targetBytes);
         }
         return {type: 'enhanced', name: 'Emby Theater Enhanced', stats: [{label: '预载:', value: text}]};

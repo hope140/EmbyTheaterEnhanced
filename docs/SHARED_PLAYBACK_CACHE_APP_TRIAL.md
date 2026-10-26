@@ -16,7 +16,9 @@
 - 新 route 使用可取消的真实1字节206探测取得 total／HTTP validators，才能重用本地数据；不将 Emby对象 ETag 冒充HTTP ETag。URL／Token／Cookie 不落盘，无浏览器Cookie转发或跨域凭据传播。
 - 无强HTTP校验器仍是已说明的稳定媒体库假设；同身份／同大小／同可用修改时间的替换可能漏检，不承诺内容数学不可变。授权隔离不降级。
 
-M由同generation helper已有精确 mpv-text 诊断路径读取，先清快照值、固定 expand-properties、再读字符串；3072MiB不会走legacy int32。缺失、数值而非精确字符串、越界、旧generation均不给缓存配额。来源准备总软期限25ms，涵盖预算读取、adapter创建、探测及已恢复后端的route key准备；到期仅取消缓存准备，原source继续，不中断播放请求。
+恢复候选的M由同generation生产helper直接读取demuxer-max-bytes。既有MPV_FORMAT_NODE／INT64序列化对3072MiB保持精确，删除先清快照／expand／读字符串的旧桥绕路；只接受256KiB至3072MiB的安全整数，缺失、字符串、越界和旧generation均不给缓存配额。不改变helper／内核或权限。来源准备总软期限仍25ms，涵盖实际预算读取、adapter创建、fresh探测及已恢复后端的route key准备；到期仅取消缓存准备，原source继续，不中断播放请求。减少两条命令不等于已实测解决Windows超时。
+
+当前档位按恢复要求为100／300／500MiB（默认300），触发50／60／70／80／90%（默认70）；内部preloadMB字段仅保留兼容名称，不增加新选项。UI和实际P均按1024×1024字节计，旧decimal-MB实验记录不追改。当前仍是默认关闭的隔离共享底层候选；普通入口的next-prefix路径与共享trial分别验收，不能将本候选宣称为普通入口已交付。
 
 该上限不是零开销承诺；事件循环调度与真实Native首帧仍待验。来源在被接管后发生授权拒绝会终止该route，不继续交付旧缓存；没有添加可能串代次的同generation自动重载。缓存块损坏／缺失则在代理内部回原源取对应缺口。
 

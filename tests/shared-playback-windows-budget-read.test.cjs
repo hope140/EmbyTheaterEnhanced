@@ -84,10 +84,10 @@ test('throwing observers cannot alter resolved or rejected read outcomes', async
   await tick();
 });
 
-test('shape validation reports only whether a bounded decimal string is valid', async () => {
+test('shape validation accepts bounded Native integers and legacy decimal snapshots', async () => {
   for (const [value, expected] of [
     ['262144', true], ['3221225472', true], ['262143', false], ['3221225473', false],
-    ['not-a-size-private', false], [3221225472, false], [null, false],
+    ['not-a-size-private', false], [3221225472, true], [null, false],
   ]) {
     const events = [];
     const pending = Promise.resolve(value);
@@ -155,4 +155,17 @@ test('ObservedClient budget instrumentation preserves the original three proxy m
   assert.deepEqual(client.calls.slice(-3), [
     ['setProperty', ...setArgs], ['submitCommand', commandArgs], ['getProperty', cacheKey, 456],
   ]);
+
+  const directRecords = [], directClient = new (makeObserved(ControlledBase, smoke, new Map([[9, 'A']]),
+    (type, data) => directRecords.push({type, ...data}), false))();
+  directClient.readResult = Promise.resolve(3221225472);
+  assert.strictEqual(directClient.getProperty('demuxer-max-bytes', 50), directClient.readResult);
+  await directClient.readResult;
+  await tick();
+  assert.deepEqual(directClient.calls, [['getProperty', 'demuxer-max-bytes', 50]], 'direct Native budget uses one read and no legacy commands');
+  assert.deepEqual(directRecords.map(row => [row.type, row.property, row.operation]), [
+    ['cache-budget', 'native-node', 'read-begin'], ['cache-budget', 'native-node', 'read-settled'],
+  ]);
+  assert.equal(directRecords[1].shapeValid, true);
+  assert.doesNotMatch(JSON.stringify(directRecords), /3221225472/);
 });

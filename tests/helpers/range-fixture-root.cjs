@@ -25,6 +25,17 @@ function selectRoot(root, relatives, ranges, occupied = new Set(), platform = pr
     }
     throw Error('no-admissible-fixture-guard-root');
 }
+function linuxOccupiedPorts(text) {
+    if (typeof text !== 'string' || Buffer.byteLength(text) > 2 * 1024 * 1024 || !/^\s*sl\s+local_address\s+/i.test(text)) throw Error('invalid-Linux-test-port-table');
+    const ports = new Set();
+    for (const line of text.trim().split(/\r?\n/).slice(1)) {
+        if (!line.trim()) continue;
+        const match = /^\s*\d+:\s+(?:[0-9a-f]{8}|[0-9a-f]{32}):([0-9a-f]{4})\s+/i.exec(line);
+        if (!match) throw Error('invalid-Linux-test-port-table');
+        const port = parseInt(match[1], 16); if (port) ports.add(port);
+    }
+    return ports;
+}
 const SNAPSHOT_ENV = 'ETE_TEST_WINDOWS_PORT_SNAPSHOT';
 const SNAPSHOT_LIMIT = 8192;
 function validateSnapshot(value) {
@@ -83,8 +94,16 @@ function temporaryRoot(prefix, relatives = []) {
     const original = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
     let selected = original, moved = false;
     try {
-        if (process.platform !== 'win32' || !relatives.length) return original;
-        const {ranges, occupied} = preflight.read(); selected = selectRoot(original, relatives, ranges, occupied);
+        if (!relatives.length || !['win32', 'linux'].includes(process.platform)) return original;
+        let ports;
+        if (process.platform === 'win32') ports = preflight.read();
+        else {
+            const occupied = linuxOccupiedPorts(fs.readFileSync('/proc/net/tcp', 'utf8'));
+            try {for (const port of linuxOccupiedPorts(fs.readFileSync('/proc/net/tcp6', 'utf8'))) occupied.add(port);}
+            catch (error) {if (error.code !== 'ENOENT') throw error;}
+            ports = {ranges: [], occupied};
+        }
+        const {ranges, occupied} = ports; selected = selectRoot(original, relatives, ranges, occupied);
         if (selected !== original) {
             // Both names are freshly owned temporary siblings; never overwrite.
             if (fs.existsSync(selected)) throw Error('fixture-root-collision');
@@ -93,4 +112,4 @@ function temporaryRoot(prefix, relatives = []) {
         return fs.realpathSync.native(selected);
     } catch (error) {fs.rmSync(moved ? selected : original, {recursive: true, force: true}); throw error;}
 }
-module.exports = {temporaryRoot, guardPort, excludedRanges, selectRoot, createWindowsPortPreflight, testEnvironment};
+module.exports = {temporaryRoot, guardPort, excludedRanges, selectRoot, createWindowsPortPreflight, testEnvironment, linuxOccupiedPorts};

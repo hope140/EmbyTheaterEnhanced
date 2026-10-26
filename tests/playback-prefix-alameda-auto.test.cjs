@@ -309,7 +309,7 @@ async function automaticCase(t, scenario) {
         await manager.stop(); record('manual-next-play');
         const items = await Promise.all(['A', 'B'].map(id => fetch(origin.origin + '/Users/anonymous/Items/' + id).then(response => response.json())));
         await manager.play({items, startIndex: 0, startPositionTicks: 0, fullscreen: false});
-        assert.equal(service.rangeStatus().enabled, true); assert.equal(service.rangeStatus().maxBytes, 300000000);
+        assert.equal(service.rangeStatus().enabled, true); assert.equal(service.rangeStatus().maxBytes, (300 * 1024 * 1024));
         assert.equal(service.rangeStatus().preloadMB, 300); assert.equal(service.rangeStatus().progressPercent, 70);
         assert.notEqual(clients.at(-1).currentGenerationId, before);
         const userAfter = await (await fetch(origin.origin + '/Users/anonymous')).json();
@@ -426,7 +426,7 @@ async function automaticCase(t, scenario) {
         await service.destroy();
         const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
         const recovered = await createStore({root: path.join(root, 'shared-byte-cache'),
-            currentBytes: 300 * 1024 * 1024, nextBytes: 100000000, recoveryMode: 'on-demand'});
+            currentBytes: 300 * 1024 * 1024, nextBytes: (100 * 1024 * 1024), recoveryMode: 'on-demand'});
         try {
             assert.equal(recovered.status().current, 40);
             assert.equal(recovered.status().next, 0);
@@ -495,7 +495,7 @@ async function automaticCase(t, scenario) {
     assert(trace.some(row => row.type === 'prefix-read' && row.itemId === 'B' && row.start === 0 && row.seq > b.seq), details());
     const fresh = trace.filter(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq);
     assert(fresh.length > 0 && fresh.every(row => row.start === 0 && row.end === 0), details());
-    assert(service.rangeStatus().diskBytes <= 100000000);
+    assert(service.rangeStatus().diskBytes <= (100 * 1024 * 1024));
     if (trustedCd2) {
         const negotiation = trace.find(row => row.type === 'next-playback-info' && row.item === 'B');
         const resolvedB = trace.find(row => row.type === 'synthetic-cd2-rpc' && row.item === 'B' && row.method === 'GetDownloadUrlPath');
@@ -511,7 +511,7 @@ async function automaticCase(t, scenario) {
         assert(headers.length > 0 && headers.every(row => row.validUserAgent && row.anonymous), details());
         assert(!trace.some(row => row.type === 'unexpected-emby-media'), details());
         assert(trace.filter(row => row.type === 'origin-client-open' && row.item !== 'A').every(row => row.backgroundActive <= 1), details());
-        assert(trace.filter(row => row.type === 'trusted-cache-occupancy').every(row => row.bytes >= 0 && row.bytes <= 100000000), details());
+        assert(trace.filter(row => row.type === 'trusted-cache-occupancy').every(row => row.bytes >= 0 && row.bytes <= (100 * 1024 * 1024)), details());
         assert.equal(trace.filter(row => row.type === 'load').length, 2);
         assert.equal(trace.filter(row => row.type === 'manager-next-track').length, 1);
 

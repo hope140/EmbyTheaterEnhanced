@@ -16,7 +16,8 @@ const deadline = async (predicate, message, timeoutMs = 3000) => {
   assert(predicate(), message);
 };
 
-async function fixture(t, {writeFile, total = 11 * MiB, nextBytes = 12 * MiB, paceMs = 0, releaseGate} = {}) {
+async function fixture(t, {writeFile, total = 11 * MiB, nextBytes = 12 * MiB, paceMs = 0,
+  releaseGate, originFactory} = {}) {
   const root = temporaryRoot('ete-preload-backpressure-', ['']);
   let origin, store, proxy;
   t.after(async () => {
@@ -34,7 +35,7 @@ async function fixture(t, {writeFile, total = 11 * MiB, nextBytes = 12 * MiB, pa
   store = await createStore({root, currentBytes: MiB, nextBytes, maxPendingBytes: 512 * 1024,
     maxEntries: 256, io});
   // Reserve the actual fixed guard before any ephemeral HTTP listener.
-  origin = await source({bytes: total, firstDelay: 0, tailDelay: 0,
+  origin = originFactory ? await originFactory(total) : await source({bytes: total, firstDelay: 0, tailDelay: 0,
     chunkBytes: paceMs ? 64 * 1024 : 1024 * 1024, paceMs});
   proxy = await createProxy({store, authorize: async () => origin.grant(), mediaBufferBytes: 2 * MiB});
   return {root, origin, store, proxy};
@@ -49,6 +50,62 @@ function gateFirstBlock() {
     return fs.writeFile(file, ...args);
   };
   return {writeFile, get didStart() {return didStart;}, release: () => release()};
+}
+
+const BLOCK = 256 * 1024;
+
+async function bounded(promise, message, timeoutMs = 3000) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(Error(message)), timeoutMs);
+    })]);
+  } finally {clearTimeout(timer);}
+}
+
+async function controlledOrigin(total, mode) {
+  const http = require('node:http');
+  const bytes = Buffer.allocUnsafe(total);
+  for (let index = 0; index < bytes.length; index++) bytes[index] = (index * 13 + (index >>> 8)) & 255;
+  const requests = [], sockets = new Set();
+  const server = http.createServer((req, res) => {
+    const match = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
+    const start = match ? Number(match[1]) : 0, end = match ? Number(match[2]) : total - 1;
+    const row = {start, end, sent: 0, closed: false}; requests.push(row);
+    res.once('close', () => {row.closed = true;});
+    if (!match || start !== 0 || end !== total - 1) {res.writeHead(416).end(); return;}
+    res.writeHead(206, {'Content-Type': 'application/octet-stream', 'Content-Length': total,
+      'Content-Range': `bytes ${start}-${end}/${total}`, 'Last-Modified': 'Wed, 21 Oct 2026 08:00:00 GMT'});
+    const fragment = bytes.subarray(0, BLOCK + 17);
+    row.sent = fragment.length;
+    res.write(fragment);
+    if (mode === 'short') {res.end(); return;}
+    if (mode === 'disconnect') {setImmediate(() => res.destroy()); return;}
+    // The abort/close variants intentionally leave the declared body open.
+  });
+  server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
+  await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
+  const url = `http://127.0.0.1:${server.address().port}/controlled-binary`;
+  return {url, bytes, requests,
+    grant: () => ({url, origin: new URL(url).origin, metadata: {total, lastModified: 'Wed, 21 Oct 2026 08:00:00 GMT'}}),
+    close: async () => {for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve));}};
+}
+
+async function noLateReady(handle, origin, store, proxy, key) {
+  const outcome = await handle.preload({maxBytes: origin.bytes.length, signal: new AbortController().signal})
+    .then(value => ({ok: true, value}), error => ({ok: false, error}));
+  assert.equal(outcome.ok, false, 'truncated or interrupted origin cannot publish preload readiness');
+  assert.equal(origin.requests.length, 1, 'failed body is never retried from the source');
+  assert.equal(origin.requests[0].closed, true, 'the physical source response must be closed');
+  await proxy.drain();
+  const coverage = await store.coverage(key);
+  assert.equal(coverage.bytes % BLOCK, 0, 'only complete store blocks may commit');
+  assert.equal(coverage.bytes, BLOCK, 'the first complete block survives; the in-flight partial block is discarded');
+  assert.equal(coverage.verifiedBytes, BLOCK);
+  assert.equal(proxy.status().activeOrigins, 0);
+  assert.equal(proxy.status().captureBytes, 0);
+  assert.equal(proxy.status().writes, 0);
+  assert.equal(store.status().pending, 0);
 }
 
 test('background preload backpressures one 11 MiB Range with bounded capture and complete durable coverage', {timeout: 15000}, async t => {
@@ -146,3 +203,81 @@ test('real quota and block IO failures reject or mark preload explicitly partial
     assert.equal(store.status().pending, 0);
   }
 });
+
+test('a failed final full-block write after the complete source body preserves earlier blocks but cannot become ready', {timeout: 12000}, async t => {
+  const total = 3 * BLOCK;
+  let blockWrites = 0;
+  const writeFile = async (file, ...args) => {
+    if (path.basename(file).startsWith('.block-') && ++blockWrites === 3) throw Error('owned-final-block-write-failure');
+    return fs.writeFile(file, ...args);
+  };
+  const {root, origin, store, proxy} = await fixture(t, {total, nextBytes: 4 * BLOCK, writeFile});
+  const handle = await proxy.open(identity('B'), 'next'), key = await handle.ready();
+  const outcome = await handle.preload({maxBytes: total, signal: new AbortController().signal})
+    .then(value => ({ok: true, value}), error => ({ok: false, error}));
+  assert.equal(origin.requests.length, 1, 'the final disk failure cannot trigger a source refetch');
+  assert.deepEqual([origin.requests[0].start, origin.requests[0].end], [0, total - 1]);
+  assert.equal(origin.requests[0].closed, true);
+  assert.equal(proxy.status().receivedBytes, total, 'the complete upstream body was consumed before the last durable write failed');
+  assert.equal(blockWrites, 3);
+  assert.equal(store.status().faulted, true, 'the failed write retires storage availability instead of claiming readiness');
+  assert.equal(store.status().next, 2 * BLOCK);
+  assert.equal(store.status().blocks, 2);
+  const durableFiles = (await fs.readdir(path.join(root, 'blocks'))).filter(name => name.startsWith(key + '-') && name.endsWith('.bin'));
+  assert.equal(durableFiles.length, 2, 'the previous complete block payloads remain on disk after the last block fails');
+  for (const name of durableFiles) {
+    const start = Number(name.split('-').at(-3));
+    assert.ok(start === 0 || start === BLOCK);
+    assert.deepEqual(await fs.readFile(path.join(root, 'blocks', name)), origin.data.subarray(start, start + BLOCK));
+  }
+  assert.equal(outcome.ok, true, 'write refusal is an explicit partial outcome, not a cache hit');
+  assert.equal(outcome.value.ready, false);
+  assert.equal(outcome.value.partial, true);
+  await proxy.drain();
+  assert.equal(proxy.status().activeOrigins, 0);
+  assert.equal(proxy.status().captureBytes, 0);
+  assert.equal(proxy.status().writes, 0);
+  assert.equal(store.status().pending, 0);
+});
+
+for (const mode of ['short', 'disconnect']) test('background ' + mode + ' response discards the incomplete block and never hangs or reports ready',
+  {timeout: 12000}, async t => {
+    const total = 2 * BLOCK;
+    const {origin, store, proxy} = await fixture(t, {total,
+      originFactory: requestedTotal => controlledOrigin(requestedTotal, mode)});
+    const handle = await proxy.open(identity('B'), 'next'), key = await handle.ready();
+    await noLateReady(handle, origin, store, proxy, key);
+  });
+
+for (const ending of ['abort', 'close']) test('a stalled partial background body settles on ' + ending + ' and closes every owner',
+  {timeout: 12000}, async t => {
+    const total = 2 * BLOCK;
+    const {origin, store, proxy} = await fixture(t, {total,
+      originFactory: requestedTotal => controlledOrigin(requestedTotal, 'stall')});
+    const handle = await proxy.open(identity('B'), 'next'), key = await handle.ready();
+    const controller = new AbortController();
+    const warming = handle.preload({maxBytes: total, signal: controller.signal})
+      .then(value => ({ok: true, value}), error => ({ok: false, error}));
+    await deadline(() => origin.requests.length === 1 && proxy.status().receivedBytes >= BLOCK + 17 &&
+      store.status().committed === BLOCK && store.status().pending === 0,
+    'stalled response must durably persist exactly its first full block');
+    if (ending === 'abort') controller.abort();
+    else {
+      await bounded(proxy.close(), 'proxy close hung while a background origin was stalled');
+    }
+    const outcome = await bounded(warming, 'background preload did not settle after ' + ending);
+    assert.equal(outcome.ok, false, 'an interrupted partial body cannot resolve as ready');
+    await deadline(() => origin.requests[0].closed, 'interrupted origin response did not physically close');
+    if (ending === 'abort') {
+      assert.equal((await store.coverage(key)).bytes, BLOCK, 'only the complete preceding block remains committed: ' + JSON.stringify(store.status()));
+    }
+    if (ending === 'abort') await bounded(proxy.close(), 'proxy close hung after cancellation');
+    else assert.equal(store.status().closed, true);
+    assert.equal(proxy.status().activeOrigins, 0);
+    assert.equal(proxy.status().captureBytes, 0);
+    assert.equal(proxy.status().writes, 0);
+    assert.equal(proxy.status().jobs, 0);
+    assert.equal(store.status().pending, 0);
+    assert.equal(store.status().readers, 0);
+    if (ending === 'abort') await handle.stop();
+  });

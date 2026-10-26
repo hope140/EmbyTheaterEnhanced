@@ -7,9 +7,9 @@ const {createSession} = require('../src/electronapp/enhanced/playback-range-sess
 const policy = require('../src/electronapp/enhanced/playback-range-policy');
 
 test('ordinary next-only policy keeps all confirmed choices and defaults without resource prompts', () => {
-    assert.deepEqual(policy.selection(), {progressPercent: 70, preloadMB: 300, prefetchBytes: 300000000});
+    assert.deepEqual(policy.selection(), {progressPercent: 70, preloadMB: 300, prefetchBytes: (300 * 1024 * 1024)});
     for (const progressPercent of [50, 60, 70, 80, 90]) for (const preloadMB of [100, 300, 500]) {
-        assert.equal(policy.selection({progressPercent, preloadMB}).prefetchBytes, preloadMB * 1000000);
+        assert.equal(policy.selection({progressPercent, preloadMB}).prefetchBytes, preloadMB * 1024 * 1024);
     }
     assert.throws(() => policy.selection({progressPercent: 75}));
     assert.throws(() => policy.selection({preloadMB: 200}));
@@ -18,7 +18,7 @@ test('ordinary next-only policy keeps all confirmed choices and defaults without
 test('a legacy persistence policy cannot create a store through the integrated next-only entry', async () => {
     const parent = temporaryRoot('ete-next-only-refusal-'), root = path.join(parent, 'must-not-create');
     try {
-        const config = {kind: 'legacy-range-trial', root, maxBytes: 100000000, minFreeBytes: 0, timeoutMs: 1000};
+        const config = {kind: 'legacy-range-trial', root, maxBytes: (100 * 1024 * 1024), minFreeBytes: 0, timeoutMs: 1000};
         await assert.rejects(createCache(config), /next-prefix-required/);
         assert.throws(() => createSession({config}), /next-prefix-required/);
         assert.equal(fs.existsSync(root), false);

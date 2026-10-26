@@ -14,6 +14,7 @@ const {performance} = require('node:perf_hooks');
 const {createAuthority} = require('../src/electronapp/enhanced/preload-source-authority');
 const {createSession} = require('../src/electronapp/enhanced/playback-range-session');
 const {createCache} = require('../src/electronapp/enhanced/shared-playback-cache/adapter');
+const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
 const diagnostics = require('../src/electronapp/enhanced/playback-range-diagnostics');
 
 const BLOCK = 256 * 1024;
@@ -97,7 +98,14 @@ async function fixture(t, options = {}) {
     async create(value) {
       createCount++;
       if (options.slowCreateMs) await delay(options.slowCreateMs);
-      cache = await createCache(value);
+      cache = await createCache(value, {async createStore(options) {
+        try {return await createStore(options);}
+        catch (error) {
+          console.log(JSON.stringify({type: 'owned-session-store-create-failed',
+            code: ['EADDRINUSE', 'EACCES', 'EPERM', 'ENOENT', 'EBUSY'].includes(error?.code) ? error.code : 'unknown'}));
+          throw error;
+        }
+      }});
       return cache;
     },
     authorize(value, role, signal) {
@@ -165,7 +173,7 @@ test('strict load binding replaces the source with the loopback cache route and 
   assert.equal(digest(result.body), digest(Buffer.alloc(BLOCK, 0x41)));
   assert.ok(f.origin.requests.some(row => row.item === 'A'), 'HTTP bytes came from the owned synthetic source');
   assert.deepEqual(f.currentBytesReads, [1], 'M comes from the explicit test-only injection');
-  assert.equal(f.cache.status().maxBytes, MEDIA_BUFFER_BYTES + PRELOAD_MB * 1_000_000);
+  assert.equal(f.cache.status().maxBytes, MEDIA_BUFFER_BYTES + PRELOAD_MB * 1024 * 1024);
 });
 
 test('preparing B preserves A, actual B promotes its warmed bytes, and close discards unplayed C', async t => {
@@ -200,7 +208,7 @@ test('preparing B preserves A, actual B promotes its warmed bytes, and close dis
   assert.ok(f.cache.status().currentBytes >= BLOCK, 'the last played B remains in the owned cache');
   const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
   const recovered = await createStore({root: f.root, currentBytes: MEDIA_BUFFER_BYTES,
-    nextBytes: PRELOAD_MB * 1_000_000, recoveryMode: 'on-demand'});
+    nextBytes: PRELOAD_MB * 1024 * 1024, recoveryMode: 'on-demand'});
   try {
     assert.ok(recovered.status().current >= BLOCK);
     assert.equal(recovered.status().next, 0);

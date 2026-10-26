@@ -191,7 +191,7 @@ async function main() {
         phaseOf('cleanup-store');
         const cacheRoot = path.join(profile, 'userdata/shared-playback-byte-cache-v2');
         const status = await inspectOwnedStore({root: cacheRoot,
-          currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'}, budget(1500), 'worker-store-open-timeout', value => value, true);
+          currentBytes: plan.limits.cacheBytes, nextBytes: (300 * 1024 * 1024), recoveryMode: 'on-demand'}, budget(1500), 'worker-store-open-timeout', value => value, true);
         receipt.afterClose = {current: status.current, next: status.next,
           pending: status.pending, readers: status.readers, reserved: status.reserved, entries: status.entries};
         need(status.next === 0 && status.pending === 0 && status.readers === 0 && status.reserved === 0, 'worker-store-not-drained');
@@ -318,10 +318,11 @@ async function main() {
         return super.submitCommand(args);
       }
       getProperty(name, timeoutMs) {
-        if (name !== 'user-data/emby-theater-enhanced/diagnostics/cache-bytes') return super.getProperty(name, timeoutMs);
+        const property = name === 'demuxer-max-bytes' ? 'native-node' : name === 'user-data/emby-theater-enhanced/diagnostics/cache-bytes' ? 'legacy-text' : null;
+        if (!property) return super.getProperty(name, timeoutMs);
         const generation = this.currentGenerationId, item = contexts.get(generation);
         return driver.observeCacheBudgetRead(() => super.getProperty(name, timeoutMs), data => {
-          if (!receiptWritten) record('cache-budget', {generation, item, ...data});
+          if (!receiptWritten) record('cache-budget', {generation, item, property, ...data});
         });
       }
       load(args) {
@@ -401,7 +402,7 @@ async function main() {
     phaseOf('renderer');
     if (phase === 'reopen') {
       receipt.beforeReopen = await inspectOwnedStore({root: cacheRoot,
-        currentBytes: plan.limits.cacheBytes, nextBytes: 300000000, recoveryMode: 'on-demand'},
+        currentBytes: plan.limits.cacheBytes, nextBytes: (300 * 1024 * 1024), recoveryMode: 'on-demand'},
       Math.max(1, workerDeadline - now() - 5000), 'worker-reopen-store-timeout', status => status);
       active();
       need(receipt.beforeReopen.current > 0 && receipt.beforeReopen.next === 0, 'worker-reopen-no-retained-cache');

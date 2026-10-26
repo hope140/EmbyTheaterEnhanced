@@ -73,10 +73,10 @@ test('raw renderer network errors become a fixed reason instead of leaking or as
     const f=rendererFixture(t,null,true),controller=await renderer.bind(f.input);t.after(()=>controller.close());controller.started();await controller.tick();await new Promise(setImmediate);
     const result=await controller.category();assert(result.stats[0].value.includes('network-failed'));assert(!JSON.stringify([result,f.events]).includes('raw error'));assert(!JSON.stringify(result).includes('metadata-redirect'));
 });
-test('preload status shares one Enhanced group, retains route/MB data and does not mutate route snapshot',()=>{
-    const route=routeStats.makeStats({isStrm:true,route:'cd2-http'}),before=JSON.stringify(route),status=renderer.category('warming',null,{bytes:120000000,targetBytes:300000000});
+test('preload status shares one Enhanced group, retains route/MiB data and does not mutate route snapshot',()=>{
+    const route=routeStats.makeStats({isStrm:true,route:'cd2-http'}),before=JSON.stringify(route),status=renderer.category('warming',null,{bytes:120*1024*1024,targetBytes:300*1024*1024});
     const merged=routeStats.mergePreload(route,status);assert.equal(merged.type,'enhanced');assert.equal(merged.name,'Emby Theater Enhanced');
-    assert.equal(merged.stats.filter(row=>row.label==='预载:').length,1);assert(merged.stats.at(-1).value.includes('120.0 MB / 300.0 MB'));assert.equal(JSON.stringify(route),before);
+    assert.equal(merged.stats.filter(row=>row.label==='预载:').length,1);assert(merged.stats.at(-1).value.includes('120.0 MiB / 300.0 MiB'));assert.equal(JSON.stringify(route),before);
 });
 test('getStats discards delayed old-request preload results, while disabled playback stays explicit',async()=>{
     const body=fs.readFileSync(path.join(__dirname,'../src/electronapp/plugins/libmpv.js'),'utf8'),start=body.indexOf('        self.getStats = function () {'),end=body.indexOf('\n        function mapRange(',start);

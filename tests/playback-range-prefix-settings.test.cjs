@@ -76,7 +76,7 @@ test('runtime config is default-off and otherwise exposes only the isolated next
         root: path.join(profileRoot, 'next-episode-prefix-v1'),
         progressPercent: 60,
         preloadMB: 100,
-        prefetchBytes: 100000000,
+        prefetchBytes: (100 * 1024 * 1024),
         timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false, 'configuration lookup creates no cache');

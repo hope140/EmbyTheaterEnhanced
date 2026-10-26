@@ -54,7 +54,7 @@ test('store clones snapshots, atomically persists enabled choices, reopens, and 
     assert.deepEqual(settings.createStore({profileRoot}).get(), saved);
     assert.deepEqual(store.runtimeConfig(), {
         kind: 'next-prefix', root: path.join(profileRoot, 'next-episode-prefix-v1'),
-        progressPercent: 60, preloadMB: 100, prefetchBytes: 100000000, timeoutMs: 30000
+        progressPercent: 60, preloadMB: 100, prefetchBytes: (100 * 1024 * 1024), timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false);
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),

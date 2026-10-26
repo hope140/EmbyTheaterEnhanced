@@ -265,7 +265,7 @@ test('changing M with active routes falls back and an idle owner can reopen with
     while (cache.status().unavailable && Date.now() < deadline) await delay(1);
     const b = await cache.open({...f.source('B'), currentBytes: 3 * 1024 * 1024});
     assert.equal((await get(b.source, 0, 1024)).hash, hash(f.data.subarray(0, 1024)));
-    assert.equal(cache.status().maxBytes, 3 * 1024 * 1024 + 100000000);
+    assert.equal(cache.status().maxBytes, 3 * 1024 * 1024 + (100 * 1024 * 1024));
 });
 
 test('uncached actual intent is deferred without granting access and same media alone preserves recovered bytes', async t => {
@@ -359,8 +359,8 @@ test('deferred close joins resource release and preserves an actual cleanup fail
     const options = {root: path.join(parent, 'cache'), currentBytes: 1024, nextBytes: 1024};
     let backend, reopened;
     t.after(() => cleanup([() => backend?.close(), () => reopened?.close()], () => fs.rm(parent, {recursive: true, force: true})));
-    const store = createDeferredStore(options, {create: async value => {
-        backend = await createStore(value);
+    backend = await createStore(options);
+    const store = createDeferredStore(options, {create: async () => {
         return {...backend, async close() {await backend.close(); throw Error('owned-close-failure');}};
     }});
     await assert.rejects(store.close(), /owned-close-failure/);

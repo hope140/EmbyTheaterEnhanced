@@ -203,7 +203,7 @@ function observeCacheBudgetRead(read, report, clock = () => performance.now()) {
     shapeValid, elapsedMs: Math.max(0, clock() - started), ...(state ? {requestState: state} : {})});
   let pending;
   try {pending = read();} catch (error) {settled('threw'); throw error;}
-  pending.then(value => settled('resolved', typeof value === 'string' && /^\d+$/.test(value) &&
+  pending.then(value => settled('resolved', (typeof value === 'number' || typeof value === 'string' && /^\d+$/.test(value)) &&
     Number.isSafeInteger(Number(value)) && Number(value) >= 256 * 1024 && Number(value) <= 3072 * 1024 * 1024),
   error => settled('rejected', false, requestState(error)));
   return pending;
@@ -348,7 +348,7 @@ async function run({planFile}) {
         cacheSelections: (r.receipt?.trace || []).filter(e => e.type === 'load' || e.type === 'preload').slice(-8)
           .map(({type, item, generation, proxied, state, bytes, cache, at}) => ({type, item, generation, proxied, state, bytes, cache, at})),
         cacheBudgetReads: (r.receipt?.trace || []).filter(e => e.type === 'cache-budget').slice(-12)
-          .map(({item, generation, operation, outcome, shapeValid, requestState, elapsedMs, at}) => ({item, generation, operation, outcome, shapeValid, requestState, elapsedMs, at})),
+          .map(({item, generation, property, operation, outcome, shapeValid, requestState, elapsedMs, at}) => ({item, generation, property, operation, outcome, shapeValid, requestState, elapsedMs, at})),
         serverReports: (r.receipt?.trace || []).filter(e => e.type === 'server-report').slice(-12)
           .map(({method, item, session, mediaSource}) => ({method, item, session, mediaSource})),
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)

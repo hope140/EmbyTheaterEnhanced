@@ -10,7 +10,7 @@
         var progressPercent = options.progressPercent == null ? 70 : options.progressPercent;
         var preloadMB = options.preloadMB == null ? 300 : options.preloadMB;
         if (progressChoices.indexOf(progressPercent) < 0 || preloadChoicesMB.indexOf(preloadMB) < 0) throw Error('range-selection-invalid');
-        return Object.freeze({progressPercent: progressPercent, preloadMB: preloadMB, prefetchBytes: preloadMB * 1000000});
+        return Object.freeze({progressPercent: progressPercent, preloadMB: preloadMB, prefetchBytes: preloadMB * 1024 * 1024});
     }
     return {selection: selection, progressChoices: progressChoices, preloadChoicesMB: preloadChoicesMB};
 }));

@@ -1,5 +1,15 @@
 # 共享播放缓存：独立Windows合成验收
 
+## 2026-10-26恢复候选：先验证预载两修复
+
+当前候选已跟进main345bb2c／v0.4.4及其新组件；旧2e99试验包只保留历史身份，不提供用户覆盖安装。恢复重点为B的current-probe／timeout与背景流已读未存两项，飞牛与新的暂存扩展不在本轮。M现只调用已有Native get-property一次，类型为安全整数，保留50ms原请求界和外围25ms选择界；固定helper的NODE／INT64路径没有legacy int32缩窄。授权、fresh1B、原source回退及所有真实Native断言不删。
+
+工具现在分别标记native-node和legacy-text读，直接数值M也进入原Promise观察；数值不输出。P按100／300／500MiB，默认300／70%，与现有M总占用仍M+P。后台只有一条原范围响应，磁盘写入形成有限背压，前台仍原有可放弃写盘的流式路径。新增末块写失败／短响应／中断／abort／close测试；即使响应完整也不能以计划字节数代替实际持久覆盖或ready。
+
+本轮需要新包后执行原baseline／natural／reopen／cancel。baseline历史通过不替代新包；natural必须实际B代理命中且无已预读正文重取，reopen／cancel历史尚未完成。当前windows-contract的旧PRODUCT_COMMIT明确不能验证已变更产品树；父先协调精确当前来源的CI／独立包，记录新artifact与摘要后，再做仅工具来源绑定并派一次Native验收。不得手改旧manifest、以过期包换名、降低完整性或自行重复dispatch。
+
+恢复后的完整验证采用CI同样的文件串行：2847项，2822通过、0失败、25项平台／材料条件跳过，约131秒。先前并行两项EADDRINUSE、首次串行两项deferred初始化／关闭前提失败均保留，不能删掉当作从未发生；旧初始化原错未保留，不能追认所有失败同因。新增测试侧Linux端口表只读预检（含TIME_WAIT）、guard先于HTTP、明确关闭错误用例的真实backend前提，并对未知初始化记录固定错误码。仍不重试bind、不改变生产guard；新快照不是未来端口预留。相关56项通过，恢复核心110项中107通过、3项材料跳过；真正Windows路径尚待新候选执行。
+
 ## 当前：B timeout已确认，测量预算回读的实际剩余时间
 
 [Windows40245606297](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40245606297)的baseline完整通过；natural已自然切B，但generation103的原load未选共享代理，固定拒绝为current-probe／timeout。resolver hit至原load约33.19ms，源事件没有该次选择的新0–0探测；预载此前的partial2,621,440B是另一条next-prefix／cache-quota记录。helper和Electron终态正常、无timeout；不把已修的退出链重新当作问题，不宣称后两阶段已过。
