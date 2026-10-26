@@ -27,6 +27,10 @@ node --test --test-concurrency=1 tests/*-material-selftest.cjs
 
 详情页菜单材料自测需显式运行 `node --test tests/item-select-menus-material-selftest.cjs`；它直接读取固定 vendor HTML、布局 CSS 与冻结 Emby select 模块，不属于公开离线自动发现集合。外置播放器详情页合同需运行 `node tests/external-player-item-material-selftest.cjs`，覆盖原控件退役和详情菜单 overlay 输出哈希。首页固定材料自测需运行 `node tests/home-server-rendering-material-selftest.cjs`，覆盖冻结 HomeTab 与首页 overlay 接线合同。
 
-验收分层记录：单元/假服务验证逻辑；隔离 runtime 验证打包组件；真实 Emby/CD2 验证媒体、Session、远控；可见呈现验证视频区域；Windows 安装生命周期验证安装/升级/卸载/重装及权限。各层不能替代。
+## 证据与失败记录
 
-每次报告绑定源码与运行时身份、实际命令、结果和未覆盖项。原始日志与真实环境细节保存在仓库外，公开只提交可复现方法、合成 fixture 和必要脱敏结论。v0.3.0 的用户反馈和限制见 [项目状态](PROJECT_STATUS.md)。
+验收分层记录：单元/假服务验证逻辑；隔离 runtime 验证打包组件；真实 Emby/CD2 验证媒体、Session、远控；可见呈现验证视频区域；Windows 安装生命周期验证安装/升级/卸载/重装及权限。各层不能替代。真实组件配合合成服务或受控浏览器的测试仍须说明夹具边界，不能写成完整客户端或真实 NAS 验收。
+
+每次报告绑定准确源码 SHA、未提交差异、运行时／包身份、实际命令、环境、结果和未覆盖项；CI 另按[准确来源要求](PUBLIC_CI.md#result-identity-and-handoff)核对。失败分别说明产品行为、测试夹具、环境／材料或权限原因；根因未确认时保留未知，不把推测写成结论。保留初次失败与修正后的独立复验，不以删断言、放宽生产守卫、替换未核验来源或降低门禁掩盖失败。平台跳过与材料排除分别列出，均不计为通过。
+
+代理分工和交接见[协作细则](AGENT_WORKFLOW.md)。原始日志与真实环境细节保存在仓库外，公开只提交可复现方法、合成 fixture 和必要脱敏结论。历史用户反馈和限制见[项目状态](PROJECT_STATUS.md)；用户反馈保留其来源，不能改记为独立机器实测。

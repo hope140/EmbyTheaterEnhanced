@@ -29,6 +29,12 @@ node --test tests/ci-change-scope.test.cjs tests/ci-diff-check.test.cjs tests/ci
 
 For a local routing dry run, supply `CI_EVENT_NAME` and the full exact SHAs in `CI_PULL_REQUEST_BASE` / `CI_PULL_REQUEST_HEAD`, or `CI_PUSH_BEFORE` / `CI_PUSH_HEAD`, then run `node tools/ci-change-scope.cjs`. Missing values safely print `mode: full`. With a documentation-only result, `node tools/ci-docs-check.cjs` runs the lightweight gate against the checked-out files.
 
+## Result identity and handoff
+
+Report the run URL/ID, event, exact source/head SHA, checked-out SHA and terminal job conclusion. A PR head run, a synthetic merge checkout, a post-merge main run and a tag run are different evidence; record which was checked. Resolve branch names to full SHAs and recheck after changes. Success on an older commit does not validate a newer head, and a packaging or benchmark job does not replace the required public job.
+
+For artifacts, also bind the producing run and sourceCommit to the package/provenance identity required by the [build contract](PACKAGING.md). Read actual test counts, skips, material exclusions and the selected route; a green documentation route does not mean product regressions ran. Pending, cancelled, failed or unavailable checks remain explicit. Local checks do not establish a remote CI result. Evidence layers and failure attribution are defined in [testing](TESTING.md#证据与失败记录); agent responsibilities and the handoff checklist are in the [collaboration guide](AGENT_WORKFLOW.md).
+
 ## Checks
 
 The public runner discovers `tests/*.test.cjs` and retains the following six exclusions. Their old missing-Carnival explanations are historical: current contracts use fixed components and generated artifacts. This documentation update does not change the exclusion list or claim those tests execute on the public route. They remain reported as `material-required` / `NOT EXECUTED`; the prepared manual Windows route separately executes all test files.
