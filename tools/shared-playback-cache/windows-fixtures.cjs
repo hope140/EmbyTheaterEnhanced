@@ -117,7 +117,7 @@ function closeHttp(server, sockets) {
     for (const socket of sockets) socket.destroy();
     return Promise.all([stopped, ...closing]);
 }
-async function createMediaServer(root, files, expectedAgent, record, pacing) {
+async function createMediaServer(root, files, expectedAgent, record, pacing, createReadStream = fs.createReadStream) {
     if (pacing) need(pacing.chunkBytes === 16384 && pacing.chunkDelayMs === 8 && pacing.firstByteDelayMs === 20 && pacing.prefixBytes === 2097152 && pacing.gapBytes === 262144, 'fixture-pacing-contract');
     const sockets = new Set(), active = new Set(), held = new Set(), closedHeld = [];
     let holdNextItem = null, requestSequence = 0, openedRequests = 0;
@@ -155,7 +155,9 @@ async function createMediaServer(root, files, expectedAgent, record, pacing) {
             record('media-held', {requestId, item: match[1], start, end, firstByteSent: true});
             return;
         }
-        const stream = fs.createReadStream(path.join(root, file.file), {start, end, ...(pacing ? {highWaterMark: pacing.chunkBytes} : {})});
+        const streamLimit = start < pacing?.prefixBytes ? pacing.prefixBytes : pacing?.gapBytes;
+        const streamEnd = pacing ? Math.min(end, start + streamLimit - 1) : end;
+        const stream = createReadStream(path.join(root, file.file), {start, end: streamEnd, ...(pacing ? {highWaterMark: pacing.chunkBytes} : {})});
         stream.on('data', part => {const at = start + state.streamReadBytes; state.streamReadBytes += part.length;
             record('media-bytes', {requestId, item: match[1], start: at, length: part.length});});
         stream.on('error', () => res.destroy()); res.once('close', () => stream.destroy());
@@ -168,11 +170,11 @@ async function createMediaServer(root, files, expectedAgent, record, pacing) {
                 if (res.destroyed) break;
                 // Keep the initial forward stream bounded while allowing a real
                 // later Range/seek to request the missing body. Closing it aborts this wait.
-                if (start + state.streamReadBytes > (start < pacing.prefixBytes ? start + pacing.prefixBytes : start + pacing.gapBytes)) {await closed; break;}
                 if (!res.write(part)) await Promise.race([new Promise(resolve => res.once('drain', resolve)), closed]);
                 await wait(pacing.chunkDelayMs);
             }
-            if (!res.destroyed) res.end();
+            if (!res.destroyed && start + state.streamReadBytes <= end) await closed;
+            if (!res.destroyed && start + state.streamReadBytes > end) res.end();
         })().catch(() => res.destroy());}
 
     });
@@ -284,4 +286,5 @@ async function createWindowsFixtures(options = {}) {
     return {plan, files: plan.media, ...sources};
 }
 
-module.exports = {WIDTH, HEIGHT, FPS, DURATIONS, USER_AGENT, generateFixtures, startWindowsSources, createWindowsFixtures};
+module.exports = {WIDTH, HEIGHT, FPS, DURATIONS, USER_AGENT, generateFixtures, startWindowsSources, createWindowsFixtures,
+    __testOnlyCreateMediaServer: createMediaServer};

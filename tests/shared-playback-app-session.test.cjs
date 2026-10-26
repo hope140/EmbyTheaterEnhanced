@@ -10,7 +10,9 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const crypto = require('node:crypto');
-const {performance} = require('node:perf_hooks');
+const path = require('node:path');
+const {readFileSync} = require('node:fs');
+const {createRequire} = require('node:module');
 const {createAuthority} = require('../src/electronapp/enhanced/preload-source-authority');
 const {createSession} = require('../src/electronapp/enhanced/playback-range-session');
 const {createCache} = require('../src/electronapp/enhanced/shared-playback-cache/adapter');
@@ -23,6 +25,26 @@ const PRELOAD_MB = 100;
 const UA = 'OwnedSynthetic/1.0';
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+// Functional ownership cases must not assert a 50ms cold-filesystem SLA.
+// Load the exact maintained CJS in Node's own realm and control ONLY its one
+// lexical preparation timer; HTTP, FS, authority and adapter code remain real.
+function controlledSessionClock() {
+  const file = require.resolve('../src/electronapp/enhanced/playback-range-session');
+  const source = readFileSync(file, 'utf8');
+  assert.match(source, /const SHARED_PREPARE_TIMEOUT_MS = 50;/);
+  assert.equal((source.match(/\bsetTimeout\s*\(/g) || []).length, 1);
+  assert.equal((source.match(/\bclearTimeout\s*\(/g) || []).length, 1);
+  const pending = new Map(), known = new Set(); let created = 0, fired = 0, cleared = 0;
+  const arm = (fn, ms) => {assert.equal(ms, 50); const timer = {fn, ms}; pending.set(timer, timer); known.add(timer); created++; return timer;};
+  const disarm = timer => {assert.ok(known.has(timer)); known.delete(timer); pending.delete(timer); cleared++;};
+  const loaded = {exports: {}};
+  new Function('exports', 'require', 'module', '__filename', '__dirname', 'setTimeout', 'clearTimeout', source)(
+    loaded.exports, createRequire(file), loaded, file, path.dirname(file), arm, disarm);
+  return {createSession: loaded.exports.createSession,
+    status: () => ({created, fired, cleared, pending: pending.size}),
+    expire() {assert.equal(pending.size, 1); const timer = pending.keys().next().value; pending.delete(timer); fired++; timer.fn();}};
+}
+function gate() {let release; const promise = new Promise(resolve => {release = resolve;}); return {promise, release};}
 function selectionMessage(session, events, error) {
   const current = session.status().current?.diagnostic;
   return JSON.stringify({current: current ? diagnostics.snapshot(current) : null,
@@ -43,7 +65,7 @@ async function cleanup(actions, remove) {
   if (errors.length) throw new AggregateError(errors, 'owned-session-fixture-cleanup-failed');
 }
 
-async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.alloc(BLOCK, 0x42), delayMs = 0} = {}) {
+async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.alloc(BLOCK, 0x42), delayMs = 0, responseGate} = {}) {
   const objects = new Map([['A', aBytes], ['B', bBytes], ['C', aBytes]]);
   const requests = [], sockets = new Set();
   const server = http.createServer((req, res) => {
@@ -65,7 +87,7 @@ async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.
         ETag: '"owned-synthetic-v1"'});
       res.end(data.subarray(start, end + 1));
     };
-    if (delayMs) setTimeout(send, delayMs); else send();
+    if (responseGate) responseGate.then(send); else if (delayMs) setTimeout(send, delayMs); else send();
   });
   server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -82,8 +104,13 @@ async function fixture(t, options = {}) {
   const optionsForFixture = options;
   const root = await freshRoot();
   let origin, authority, session;
-  t.after(() => cleanup([() => session?.close(), () => authority?.close(), () => origin?.close()],
-    () => fs.rm(root, {recursive: true, force: true})));
+  const clock = controlledSessionClock();
+  t.after(async () => {
+    await cleanup([() => session?.close(), () => authority?.close(), () => origin?.close()],
+      () => fs.rm(root, {recursive: true, force: true}));
+    assert.equal(clock.status().pending, 0, 'no test-owned prepare timer survives cleanup');
+    assert.equal(clock.status().cleared, clock.status().created);
+  });
   origin = await localOrigin(options.origin);
   authority = createAuthority();
   const webA = new EventEmitter(), webB = new EventEmitter();
@@ -94,10 +121,11 @@ async function fixture(t, options = {}) {
   const currentBytesReads = [];
   const selectionDiagnostics = [];
   const config = {kind: 'shared-byte-trial', root, progressPercent: 50, preloadMB: PRELOAD_MB, timeoutMs: 1000};
-  session = createSession({config,
+  session = clock.createSession({config,
     onDiagnostic(value) {selectionDiagnostics.push(diagnostics.snapshot(value));},
     async create(value) {
       createCount++;
+      if (options.createGate) await options.createGate;
       if (options.slowCreateMs) await delay(options.slowCreateMs);
       cache = await createCache(value, {async createStore(options) {
         if (optionsForFixture.storeGate) await optionsForFixture.storeGate;
@@ -116,6 +144,7 @@ async function fixture(t, options = {}) {
     },
     async readCurrentBytes(_helper, generationId) {
       currentBytesReads.push(generationId);
+      if (options.currentBytesGate) await options.currentBytesGate;
       if (options.slowCurrentBytesMs) await delay(options.slowCurrentBytesMs);
       return {bytes: MEDIA_BUFFER_BYTES, isCurrent: () => true, commit() {}};
     }});
@@ -130,7 +159,7 @@ async function fixture(t, options = {}) {
       container: 'mkv', live: false};
   }
   const loadOptions = value => ['loadfile', value.source, 'replace', '-1', `user-agent=${UA}`];
-  return {root, origin, authority, principalA, principalB, helper, session, config, candidate, loadOptions,
+  return {root, origin, authority, principalA, principalB, helper, session, config, candidate, loadOptions, clock,
     webA, webB,
     get cache() {return cache;}, get createCount() {return createCount;}, currentBytesReads, selectionDiagnostics,
     setBindingPrincipal(value) {bindingPrincipal = value;}, setCurrentRequestId(value) {currentRequestId = value;},
@@ -159,7 +188,7 @@ async function selectCurrent(f, value) {
   return f.session.select(value.source, f.helper, f.helper.currentGenerationId, f.loadOptions(value));
 }
 
-test('strict load binding replaces the source with the loopback cache route and streams actual bytes', async t => {
+test('strict load binding replaces the source with the loopback cache route and streams actual bytes', {timeout:10000}, async t => {
   const f = await fixture(t), a = f.candidate('A');
   await f.session.setContext(a, f.helper, 1);
   const altered = f.loadOptions(a).slice(); altered[4] = 'user-agent=Wrong/1.0';
@@ -178,7 +207,7 @@ test('strict load binding replaces the source with the loopback cache route and 
   assert.equal(f.cache.status().maxBytes, MEDIA_BUFFER_BYTES + PRELOAD_MB * 1024 * 1024);
 });
 
-test('preparing B preserves A, actual B promotes its warmed bytes, and close discards unplayed C', async t => {
+test('preparing B preserves A, actual B promotes its warmed bytes, and close discards unplayed C', {timeout:10000}, async t => {
   const f = await fixture(t), a = f.candidate('A');
   const selectedA = await requireSelected(f, selectCurrent(f, a));
   await f.session.started(f.helper, 1);
@@ -217,7 +246,7 @@ test('preparing B preserves A, actual B promotes its warmed bytes, and close dis
   } finally {await recovered.close();}
 });
 
-test('document navigation revokes the transport and prevents a cached local hit', async t => {
+test('document navigation revokes the transport and prevents a cached local hit', {timeout:10000}, async t => {
   const f = await fixture(t), a = f.candidate('A');
   const selected = await requireSelected(f, selectCurrent(f, a));
   await f.session.started(f.helper, 1);
@@ -232,7 +261,7 @@ test('document navigation revokes the transport and prevents a cached local hit'
   assert.equal(f.origin.requests.length, upstreamBefore, 'revocation cannot fall back to or reuse the source');
 });
 
-test('foreign principal proof and changed account identity cannot reuse A bytes', async t => {
+test('foreign principal proof and changed account identity cannot reuse A bytes', {timeout:10000}, async t => {
   const f = await fixture(t), a = f.candidate('A');
   const selectedA = await requireSelected(f, selectCurrent(f, a));
   await f.session.started(f.helper, 1);
@@ -253,42 +282,46 @@ test('foreign principal proof and changed account identity cannot reuse A bytes'
   assert.equal(digest(result.body), digest(changedBody), 'account B gets current origin bytes, never A cached bytes');
 });
 
-test('shared-trial 50 ms deadline retires slow budget, cache initialization, and probe work', async t => {
-  await t.test('slow current-byte read', async st => {
-    const f = await fixture(st, {slowCurrentBytesMs: 80}), a = f.candidate('A');
-    const started = performance.now();
-    assert.equal(await selectCurrent(f, a), null);
-    assert.ok(performance.now() - started < 75, 'selection returns on the soft deadline');
-    assert.equal(f.origin.requests.length, 0, 'a budget wait can exhaust selection before the fresh HTTP probe begins');
-    assert.deepEqual(f.session.status().current.diagnostic, {stage: 'current-probe', reason: 'timeout'});
-    await delay(100);
-    assert.equal(f.createCount, 0, 'late M resolution cannot continue to cache creation');
-    assert.equal(f.origin.requests.length, 0, 'a late budget read cannot issue a retired probe');
-    assert.deepEqual(f.currentBytesReads, [1]);
+test('shared-trial exact 50ms logical deadline retires gated budget, initialization, and probe work', {timeout:10000}, async t => {
+  await t.test('gated current-byte read', async st => {
+    const hold = gate(), f = await fixture(st, {currentBytesGate: hold.promise}), a = f.candidate('A');
+    try {
+      const selecting = selectCurrent(f, a);
+      assert.ok(await waitFor(() => f.clock.status().pending === 1)); f.clock.expire();
+      assert.equal(await selecting, null);
+      assert.equal(f.origin.requests.length, 0, 'expiry precedes any fresh source probe');
+      assert.deepEqual(f.session.status().current.diagnostic, {stage:'current-probe',reason:'timeout'});
+    } finally {hold.release();}
+    await f.session.close(); await delay(0);
+    assert.equal(f.createCount, 0, 'late M cannot initialize a cache or issue a probe');
+    assert.equal(f.origin.requests.length, 0); assert.deepEqual(f.currentBytesReads,[1]);
+    assert.equal(f.clock.status().fired, 1); assert.equal(f.clock.status().pending, 0);
   });
-  await t.test('slow cache initialization', async st => {
-    const f = await fixture(st, {slowCreateMs: 80}), a = f.candidate('A');
-    const started = performance.now();
-    assert.equal(await selectCurrent(f, a), null);
-    assert.ok(performance.now() - started < 75);
-    await delay(100);
-    assert.equal(f.createCount, 1);
-    await f.session.close();
-    assert.equal(f.cache.status().unavailable, false);
+  await t.test('gated cache initialization', async st => {
+    const hold = gate(), f = await fixture(st, {createGate:hold.promise}), a = f.candidate('A');
+    try {
+      const selecting = selectCurrent(f,a);
+      assert.ok(await waitFor(() => f.createCount === 1)); f.clock.expire();
+      assert.equal(await selecting,null); assert.equal(f.origin.requests.length,0);
+    } finally {hold.release();}
+    await f.session.close(); assert.equal(f.cache.status().unavailable,false);
+    assert.equal(f.cache.status().routes,0); assert.equal(f.clock.status().pending,0);
   });
-  await t.test('slow origin probe is cancelled and joined', async st => {
-    const f = await fixture(st, {origin: {delayMs: 100}}), a = f.candidate('A');
-    const started = performance.now();
-    assert.equal(await selectCurrent(f, a), null);
-    assert.ok(performance.now() - started < 75);
-    assert.ok(await waitFor(() => f.origin.requests.length > 0));
-    await f.session.close();
-    assert.ok(f.origin.requests[0].closed, 'the timed-out one-byte probe has physically closed');
-    assert.equal(f.cache.status().routes, 0);
+  await t.test('gated origin probe is cancelled and joined', async st => {
+    const hold = gate(), f = await fixture(st,{origin:{responseGate:hold.promise}}), a = f.candidate('A');
+    try {
+      const selecting = selectCurrent(f,a);
+      assert.ok(await waitFor(() => f.origin.requests.length > 0)); f.clock.expire();
+      assert.equal(await selecting,null);
+      await f.session.close();
+      assert.ok(await waitFor(() => f.origin.requests[0].closed), 'the one-byte HTTP request physically closes before releasing its response');
+      assert.equal(f.cache.status().routes,0);
+    } finally {hold.release();}
+    assert.equal(f.clock.status().pending,0);
   });
 });
 
-test('default next-prefix session mode still selects a same-origin source route', async t => {
+test('default next-prefix session mode still selects a same-origin source route', {timeout:10000}, async t => {
   const root = await freshRoot();
   let origin, session;
   t.after(() => cleanup([() => session?.close(), () => origin?.close()], () => fs.rm(root, {recursive: true, force: true})));
@@ -325,13 +358,14 @@ test('selection assertion messages retain only known diagnostic reasons without 
 });
 
 
-test('shared selection includes pending disk recovery in its existing finite prepare budget', async t => {
+test('shared selection includes pending disk recovery in its existing finite prepare budget', {timeout:10000}, async t => {
   let release; const storeGate = new Promise(resolve => {release = resolve;});
   const f = await fixture(t, {storeGate}), a = f.candidate('A');
   try {
-    const before = performance.now();
-    assert.equal(await selectCurrent(f, a), null, 'an unready proxy must not be dispatched as a restored cache');
-    assert.ok(performance.now() - before < 200, 'unreleased disk recovery cannot hold playback indefinitely');
+    const selecting = selectCurrent(f,a);
+    assert.ok(await waitFor(() => f.cache?.status().initializing === true));
+    f.clock.expire();
+    assert.equal(await selecting, null, 'an unready proxy must not be dispatched as a restored cache');
     assert.equal(f.cache.status().initializing, true);
     assert.deepEqual(f.session.status().current.diagnostic, {stage:'current-probe',reason:'timeout'});
     assert.ok(f.origin.requests.every(row => row.start === 0 && row.end === 0));
@@ -339,7 +373,7 @@ test('shared selection includes pending disk recovery in its existing finite pre
   await f.session.close();
 });
 
-test('fresh application selection reuses retained bytes on its first body without preload or early actual promotion', async t => {
+test('fresh application selection reuses retained bytes on its first body without preload or early actual promotion', {timeout:10000}, async t => {
   const f = await fixture(t), seedCandidate = f.candidate('B');
   const owner = new AbortController();
   const transport = f.authority.bind({principal:f.principalA,signal:owner.signal,
@@ -362,4 +396,17 @@ test('fresh application selection reuses retained bytes on its first body withou
   const requests=f.origin.requests.slice(before);
   assert.equal(requests.length,1,'only the fresh authorized one-byte identity probe is allowed');
   assert.deepEqual([requests[0].start,requests[0].end],[0,0]);
+});
+
+test('strict shared assertions still reject an original-source fallback at the controlled 50ms expiry', {timeout:10000}, async t => {
+  const hold = gate(), f = await fixture(t, {createGate:hold.promise}), a = f.candidate('A');
+  try {
+    const selecting = selectCurrent(f,a);
+    assert.ok(await waitFor(() => f.createCount === 1)); f.clock.expire();
+    await assert.rejects(requireSelected(f,selecting), error => {
+      assert.match(error.message, /"reason":"timeout"/); return true;
+    });
+    assert.equal(f.origin.requests.length,0);
+    assert.equal(f.session.status().current.state,'original');
+  } finally {hold.release();}
 });

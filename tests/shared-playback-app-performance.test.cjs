@@ -2,6 +2,7 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs/promises'), path = require('node:path'), vm = require('node:vm');
 const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
+const {performance} = require('node:perf_hooks');
 const c = require('../tools/shared-playback-cache/app-performance-contract.cjs');
 const runner = require('../tools/shared-playback-cache/app-performance-runner.cjs');
 const fixtures = require('../tools/shared-playback-cache/windows-fixtures.cjs');
@@ -61,19 +62,45 @@ test('worker rows require PID/source/task and exactly five unique valid samples;
   }
 });
 
-test('real generated AVI layout and paced loopback sources close held windows without outside media', {timeout:10000}, async t=>{
-  const root=temporaryRoot('ete-app-source-', ['']);let sources;
-  t.after(async()=>{if(sources)await sources.close();await fs.rm(root,{recursive:true,force:true});});
-  const plan=await fixtures.generateFixtures(root);
+async function pacedFixture(t, prefix) {
+  const began = performance.now(), root = temporaryRoot(prefix, ['']), events = []; let sources;
+  t.diagnostic(JSON.stringify({type:'paced-fixture-stage',stage:'setup-begin'}));
+  t.after(async () => {
+    const before = performance.now();
+    try {if (sources) {const result = await sources.close(); t.diagnostic(JSON.stringify({type:'paced-fixture-stage',stage:'cleanup',elapsedMs:performance.now()-before,...result}));
+      assert.equal(result.activeMediaResponses,0); assert.equal(result.mediaSockets,0); assert.equal(result.heldRequests,0); assert.equal(result.grpcStopped,true);}}
+    finally {await fs.rm(root,{recursive:true,force:true});}
+  });
+  const plan = await fixtures.generateFixtures(root);
+  sources = await fixtures.startWindowsSources({plan,createEmby,pacing:c.LIMITS,record:(type,row)=>events.push({type,...row})});
+  t.diagnostic(JSON.stringify({type:'paced-fixture-stage',stage:'setup-complete',elapsedMs:performance.now()-began}));
+  return {root,plan,sources,events};
+}
+async function readPacedWindow(t, sources, start, events) {
+  const began = performance.now(), abort = new AbortController(); let bytes = 0;
+  try {
+    const response = await fetch(sources.mediaOrigin+'/Videos/A/stream.avi', {
+      headers:{'User-Agent':fixtures.USER_AGENT,Range:'bytes='+start+'-'}, signal:AbortSignal.any([abort.signal,t.signal])});
+    assert.equal(response.status,206);
+    try {for await (const part of response.body) {bytes+=part.length; if(bytes>=c.LIMITS.prefixBytes) {abort.abort(); break;}}}
+    catch(error) {if(t.signal.aborted || !abort.signal.aborted) throw error; assert.equal(error.name,'AbortError');}
+    assert.equal(bytes,c.LIMITS.prefixBytes,'a nonzero video offset must not truncate the final complete cache block');
+    assert.ok(events.some(row=>row.type==='media-bytes'),'the real source stream produced bytes');
+  } finally {
+    abort.abort();
+    const closeDeadline = performance.now()+2000;
+    while(sources.snapshot().activeMediaResponses && performance.now()<closeDeadline) await new Promise(resolve=>setTimeout(resolve,5));
+    assert.equal(sources.snapshot().activeMediaResponses,0,'abort must physically close the paced response');
+    t.diagnostic(JSON.stringify({type:'paced-fixture-stage',stage:'transfer',elapsedMs:performance.now()-began,receivedBytes:bytes,testAborted:t.signal.aborted}));
+  }
+}
+
+test('real generated AVI layout and paced loopback sources close held windows without outside media', {timeout:20000}, async t=>{
+  const {root,plan,sources,events} = await pacedFixture(t,'ete-app-source-');
   const file=await fs.open(path.join(root,plan.media.A.file),'r');try{const header=Buffer.alloc(8);await file.read(header,0,8,plan.media.A.dataStart);assert.equal(header.toString('ascii',0,4),'00db');assert.equal(header.readUInt32LE(4),57600);}finally{await file.close();}
-  const events=[];sources=await fixtures.startWindowsSources({plan,createEmby,pacing:c.LIMITS,record:(type,data)=>events.push({type,...data})});
   const info=await fetch(sources.origin+'/System/Info/Public');assert.equal((await info.json()).Id,'prefix-server');
   const denied=await fetch(sources.origin+'/Videos/A/stream.avi');assert.equal(denied.status,403);
-  const abort=new AbortController();const response=await fetch(sources.mediaOrigin+'/Videos/A/stream.avi',{headers:{'User-Agent':fixtures.USER_AGENT,Range:'bytes=0-'},signal:abort.signal});
-  assert.equal(response.status,206);let bytes=0;try{for await(const part of response.body){bytes+=part.length;if(bytes>=c.LIMITS.prefixBytes){abort.abort();break;}}}catch(error){assert.equal(error.name,'AbortError');}
-  assert.equal(bytes,c.LIMITS.prefixBytes);await new Promise(resolve=>setTimeout(resolve,30));
-  assert.ok(events.some(e=>e.type==='media-bytes'));assert.equal(sources.snapshot().activeMediaResponses,0);
-  const cleanup=await sources.close();sources=null;assert.equal(cleanup.mediaSockets,0);assert.equal(cleanup.grpcStopped,true);
+  await t.test('paced transfer only, independently bounded after material setup',{timeout:10000},st=>readPacedWindow(st,sources,0,events));
 });
 
 test('tool-only wrapper executes ordinary main, preserves its preload/IPC and uses normal quit', async()=>{
@@ -127,15 +154,11 @@ test('actual Native source is exact A or an A-bound owned proxy; unrelated loopb
 });
 
 
-test('paced initial video Range preserves a full bounded window from a real AVI payload offset', {timeout:10000}, async t=>{
-  const root=temporaryRoot('ete-app-unaligned-source-', ['']);let sources;
-  t.after(async()=>{if(sources)await sources.close();await fs.rm(root,{recursive:true,force:true});});
-  const plan=await fixtures.generateFixtures(root);const start=plan.media.A.dataStart;
+test('paced initial video Range preserves a full bounded window from a real AVI payload offset', {timeout:20000}, async t=>{
+  const {plan,sources,events} = await pacedFixture(t,'ete-app-unaligned-source-');
+  const start=plan.media.A.dataStart;
   assert.ok(start>0&&start<c.LIMITS.prefixBytes);
-  sources=await fixtures.startWindowsSources({plan,createEmby,pacing:c.LIMITS});
-  const abort=new AbortController();const response=await fetch(sources.mediaOrigin+'/Videos/A/stream.avi',{headers:{'User-Agent':fixtures.USER_AGENT,Range:'bytes='+start+'-'},signal:abort.signal});
-  let bytes=0;try{for await(const part of response.body){bytes+=part.length;if(bytes>=c.LIMITS.prefixBytes){abort.abort();break;}}}catch(error){assert.equal(error.name,'AbortError');}
-  assert.equal(bytes,c.LIMITS.prefixBytes,'a nonzero video offset must not truncate the final complete cache block');
+  await t.test('actual nonzero-offset paced transfer',{timeout:10000},st=>readPacedWindow(st,sources,start,events));
 });
 
 test('ordinary seek proof rejects overlap and waits for video coverage rather than assuming byte-zero cache',async()=>{

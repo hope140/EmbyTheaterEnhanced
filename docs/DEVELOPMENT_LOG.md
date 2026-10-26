@@ -1611,3 +1611,12 @@ Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform
 - 用维护ApiClient.getIntros原方法、固定PM playWithIntrosInternal原函数和真实认证loopback响应复现旧数组导致的TypeError；A/B/C返回Items集合后通过，Latest仍数组。下游仅为unit checkpoint，不当Native/普通入口通过。
 - Cold失败保留firstFailure后停止pause/seek；undefined/null/无message/私有错误文本只输出固定码、类型及枚举name。正常play仍须player/source成立并通过真实decode/Native来源门禁。产品949及包来源保持不变，不另打包。
 - 最终完整串行回归2954项：2929通过、0失败/取消、25项既有平台/材料跳过（143.5秒）；定向34/34。JS620、PS55、有限凭证模式719、文档及949产品树不变检查通过。安全失败码为显式固定词表，message/name只读一次，拒绝未知app前缀私有文本和变化getter泄漏。Windows普通入口仍须按新工具复验。
+
+
+## 2026-10-26 — 确定性session期限和paced窗口
+
+- Windows回归失败保留：三项current-probe timeout涵盖准备总链，测试时长含setup/cleanup；不归因为特定HTTP/FS延迟或并行测试。错误UA诊断来自原负向断言。
+- 功能session同realm加载原CJS，仅控制唯一50ms词法timer；真实授权、源读取、磁盘、复用/切换/导航断言保持。gate预算/初始化/probe/ready到期仍fallback并取消，额外严格负向确认不能把回原源算共享成功；测试有独立真实hang边界。
+- 固定旧工具源码的受控coalescing反例实读2100000、交付2080000、应交付2097152；新工具限定实际read end消除丢跨界块。非零起点精确正文、source-read计数、长请求取消与短Range正常结束/资源清零通过。这不是实际Windows超时根因已定位的声明。
+- 实际AVI/HTTP的8ms/20ms pacing保留；setup与10秒传输子测试、cleanup分别记有限安全阶段，测试取消连接fetch。实际media-bytes、abort后response0及close后socket/held0和gRPC停止仍必须断言。产品949、缓存预算、认证与真实Windows/普通入口门禁未变。
+- 最终串行全仓2958项：2933通过、0失败/取消、25项既有平台/材料跳过（146.9秒）；定向31/31。JS621/PS55、有限凭证模式720、文档、产品949不变检查通过。此前Windows失败不改记成功；新工具仍须精确SHA的Windows CI及真实普通入口复验。
