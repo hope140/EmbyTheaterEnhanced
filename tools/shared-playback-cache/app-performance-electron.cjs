@@ -1,11 +1,12 @@
 'use strict';
 // Test entry wrapper: execute the verified, unchanged ordinary product main.
 // No alternate renderer, API client, PlaybackManager or source proof is supplied.
-const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
+const fs = require('node:fs'), path = require('node:path');
 const {performance} = require('node:perf_hooks');
 const {pathToFileURL} = require('node:url');
 const contract = require('./app-performance-contract.cjs'), fixed = require('./windows-contract.cjs');
 const smoke = require('./windows-smoke.cjs');
+const previewEvidence = require('./app-preview-observer.cjs');
 const need = (value, code) => {if (!value) throw Error(code);};
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function main() {
@@ -29,10 +30,14 @@ async function main() {
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
+  let scenario = 'startup';
+  const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: smoke.coloredFrame,
+    current: owner => !!service && owner.endpointId === endpoint && owner.generationId === client?.currentGenerationId && service.isPreviewOwner(owner),
+    observe: row => mark('preview-observation', {...row, requestedAt: row.requestedAt - started, resolvedAt: row.resolvedAt - started, scenario})});
   function active() {need(!retired && performance.now() < deadline, 'app-worker-deadline');}
   async function until(test, code, ms = 5000) {
     const end = Math.min(deadline, performance.now() + ms);
-    while (performance.now() < end) {active(); if (await test()) return; await delay(10);}
+    while (performance.now() < end) {active(); const found = await test(); active(); if (found && performance.now() < end) return; await delay(10);}
     throw Error(code);
   }
   function tap(object, name, settled) {
@@ -70,7 +75,11 @@ async function main() {
   class ObservedClient extends OriginalClient {
     constructor(options) {
       super({...options, onEvent: event => {
-        if (['time-pos', 'playback-restart', 'pause', 'eof-reached'].includes(event.name)) {if (events.length < 8192) events.push({name: event.name, value: event.value, generation: event.generationId, at: performance.now()}); else observationErrors++;}
+        if (['time-pos', 'playback-restart', 'pause', 'eof-reached', 'core-idle'].includes(event.name)) {
+          const value = typeof event.value === 'boolean' || typeof event.value === 'number' && Number.isFinite(event.value) ? event.value : null;
+          if (events.length < 8192) events.push({name: event.name, value, generation: event.generationId, at: performance.now()}); else observationErrors++;
+          mark('native-property', {name: event.name, value, generation: event.generationId, scenario});
+        }
         options.onEvent(event);
       }});
       client = this; clientList.push(this);
@@ -88,11 +97,32 @@ async function main() {
       mark('native-load', {generation, proxied: selected.proxied});
       return super.load(values);
     }
+    submitCommand(values) {
+      if (values[0] === 'seek') mark('native-seek-submit', {generation: this.currentGenerationId, scenario,
+        seconds: Number.isFinite(Number(values[1])) ? Number(values[1]) : null,
+        mode: values.slice(2).every(v => ['absolute', 'exact', 'absolute+exact'].includes(v)) ? values.slice(2).join(' ') : 'other'});
+      return super.submitCommand(values);
+    }
+    setProperty(name, value) {
+      if (name === 'pause') mark('native-pause-submit', {generation: this.currentGenerationId, scenario, value: typeof value === 'boolean' ? value : null});
+      return super.setProperty(name, value);
+    }
+    request(method, params, options) {
+      const promise = super.request(method, params, options);
+      if (method === 'preview-snapshot') {
+        const reasons = new Set(['preview-not-ready-or-busy', 'preview-queue-failed', 'preview-owner-unavailable', 'preview-frame-unavailable', 'preview-generation-retired', 'preview-media-ended', 'preview-deadline']);
+        promise.then(result => mark('preview-native-reply', {scenario, generation: options?.generationId ?? null,
+          ready: result?.ready === true, reason: reasons.has(result?.reason) ? result.reason : result?.ready === true ? 'ready' : 'other'}),
+        () => mark('preview-native-reply', {scenario, generation: options?.generationId ?? null, ready: false, reason: 'request-rejected'})).catch(() => {});
+      }
+      return promise;
+    }
   }
   native.NativeHelperClient = ObservedClient;
   restores.push(() => {need(native.NativeHelperClient === ObservedClient, 'app-observer-owner'); native.NativeHelperClient = OriginalClient;});
   tap(get('native-helper/service'), 'createService', value => {
     service = value;
+    restores.push(preview.install(value));
     tap(value, 'call', (result, values) => {if (values[0] === 'create' && result?.status === 'ok') endpoint = result.endpointId;});
   });
   const expectedUrl = pathToFileURL(path.join(plan.runtime, 'electronapp/www/index.html')).href + '?autostart=false';
@@ -159,14 +189,18 @@ async function main() {
     await until(async () => evalCode("require(['pluginManager']).then(v=>(v[0].default||v[0]).ofType('mediaplayer').some(p=>p.id==='libmpvmediaplayer'))"), 'app-player-not-ready', 10000);
     sampling = setInterval(() => {try {resourceSample();} catch (_) {observationErrors++;}}, 100);
     let lastFrameHash = null;
-    async function decoded(previousHash = null) {
-      let result;
+    async function decoded(previousHash = null, after = performance.now(), owner = {endpointId: endpoint, generationId: client?.currentGenerationId}) {
+      let result; const frameDeadline = Math.min(deadline, performance.now() + 5000);
       await until(async () => {
         if (!service || !endpoint || !client?.currentGenerationId) return false;
-        result = await service.capturePreview({endpointId: endpoint, generationId: client.currentGenerationId});
-        return smoke.coloredFrame(result) && (!previousHash || crypto.createHash('sha256').update(result.pixels).digest('hex') !== previousHash);
+        need(endpoint === owner.endpointId && client.currentGenerationId === owner.generationId && service.isPreviewOwner(owner), 'app-preview-owner-retired');
+        result = preview.frame(owner, after, previousHash, frameDeadline);
+        if (result) return true;
+        if (preview.probeDue()) await service.capturePreview(owner);
+        need(endpoint === owner.endpointId && client.currentGenerationId === owner.generationId && service.isPreviewOwner(owner), 'app-preview-owner-retired');
+        result = preview.frame(owner, after, previousHash, frameDeadline); return !!result;
       }, 'app-decoded-frame-missing');
-      lastFrameHash = crypto.createHash('sha256').update(result.pixels).digest('hex'); return lastFrameHash;
+      lastFrameHash = result.hash; return lastFrameHash;
     }
     async function snapshot() {
       resourceSample();
@@ -195,7 +229,8 @@ async function main() {
       // Ask only the local owned coordinator; never origin credentials or URLs.
       const r = await fetch(plan.controlOrigin + '/snapshot/' + index, {signal: AbortSignal.timeout(2000)}); need(r.ok, 'app-source-observation'); return r.json();
     }
-    async function measure(scenario, operation, prepare = async () => {}) {
+    async function measure(sampleScenario, operation, prepare = async () => {}) {
+      scenario = sampleScenario;
       let latencyMs = null, status = 'FAIL', code = null, rejection = null;
       let before = await observedBytes(), hitBefore = 0;
       try {await prepare(); before = await observedBytes(); hitBefore = cacheProxy?.status().hitBytes || 0; const initial = performance.now();
@@ -221,17 +256,22 @@ async function main() {
       await decoded();
       need(report.observations.some(r => r.type === 'native-load' && r.proxied === (task.arm === 'B')), 'app-shared-selection');});
     need(cold.status === 'PASS', cold.code || 'app-cold-playback-failed');
+    // First seek must move away from the actual paused reference, rather than
+    // comparing the target against a cold preview that may already show it.
+    await until(async () => client && await client.getProperty('time-pos', 1000) >= contract.TARGETS['cached-seek'] + 1, 'app-initial-position');
     await evalCode(contract.rendererAction('pause'));
     await until(async () => client && await client.getProperty('pause', 1000) === true, 'app-initial-pause');
+    await decoded(null, performance.now()); mark('initial-paused-frame');
     if (task.arm === 'B') await until(async () => {const s = await snapshot(); return s.span?.end >= contract.LIMITS.prefixBytes;}, 'app-prefix-coverage-missing', 10000);
     for (const scenario of contract.SCENARIOS.slice(1)) {
       const target = contract.TARGETS[scenario];
       await measure(scenario, async () => {
-        const start = events.length, owner = generation, previousHash = lastFrameHash;
+        const start = events.length, owner = generation, frameOwner = {endpointId: endpoint, generationId: generation}, previousHash = lastFrameHash;
         await evalCode(contract.rendererAction('seek', target));
-        await until(() => events.slice(start).some(e => e.name === 'time-pos' && e.generation === owner && typeof e.value === 'number' && Math.abs(e.value - target) < 0.2) &&
-          events.slice(start).some(e => e.name === 'playback-restart' && e.generation === owner), 'app-seek-position-restart');
-        const nextHash = await decoded(previousHash); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
+        let signals;
+        await until(() => (signals = previewEvidence.seekSignals(events, start, owner, target)), 'app-seek-position-restart');
+        mark('seek-native-confirmed', {scenario, generation: owner, positionAt: signals.positionAt - started, restartAt: signals.restartAt - started});
+        const nextHash = await decoded(previousHash, signals.after, frameOwner); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
         await evalCode(contract.rendererAction('unpause'));
         const at = await client.getProperty('time-pos', 1000);
         await until(async () => (await client.getProperty('time-pos', 1000)) > at + 0.05, 'app-seek-no-resume');
@@ -250,14 +290,16 @@ async function main() {
       });
     }
     need(clientList.length === 1 && client && !client.exited, 'app-owned-memory-single-helper');
-    report.nativeHelperPeakWorkingSetBytes = await require('./app-performance-resources.cjs').nativePeak({child: client.child, systemRoot: process.env.SystemRoot});
+    scenario = 'owned-memory';
+    report.nativeHelperPeakWorkingSetBytes = await require('./app-performance-resources.cjs').nativePeak({child: client.child, systemRoot: process.env.SystemRoot,
+      onObservation: row => mark('owned-memory-query', row)});
     report.resourceAssessment.native='OBSERVED_OWNED_LIFETIME_PEAK';
     report.electronPeakWorkingSetBytes = peakRss;
     for (const row of report.samples) row.peakRssBytes = Math.max(row.peakRssBytes, peakRss) + report.nativeHelperPeakWorkingSetBytes;
     await evalCode(contract.rendererAction('stop'));
     need(report.samples.length === contract.SCENARIOS.length, 'app-sample-count');
     report.status = report.samples.every(s => s.status === 'PASS') && !observationErrors && report.externalNetworkAttempts === 0 ? 'PASS' : 'FAIL';
-  } catch (error) {report.code = contract.failureCode(error, 'app-worker-failed'); report.failure = contract.rejectionFacts(error);}
+  } catch (error) {contract.recordTerminalFailure(report, error);}
   finally {
     clearTimeout(timeout); clearInterval(sampling); retired = true;
     for (const scenario of contract.SCENARIOS) if (!report.samples.some(row => row.scenario === scenario)) report.samples.push({
@@ -265,7 +307,9 @@ async function main() {
       sourceBodyBytes: 0, overlapBodyBytes: 0, peakRssBytes: peakRss, peakDiskBytes: peakDisk});
     report.samples.sort((a,b)=>contract.SCENARIOS.indexOf(a.scenario)-contract.SCENARIOS.indexOf(b.scenario));
     const finalize = () => {
+      report.code ||= report.firstFailure?.code;
       report.nativeHelperStarted = clientList.length > 0;
+      report.helperOperationErrors = clientList.map(c => ({count: c.operationErrors.length, rows: previewEvidence.operationFacts(c.operationErrors)}));
       report.ownedHelpersClosed = clientList.every(c => c.exited && c.pending.size === 0 &&
         c.operationErrors.length === 0 && report.helperExits.some(e => e.pid === c.child?.pid && e.exitCode === 0 && e.signal === null && e.streamsClosed && e.pending === 0) &&
         [c.child?.stdin,c.child?.stdout,c.child?.stderr].every(stream => !stream || stream.destroyed));

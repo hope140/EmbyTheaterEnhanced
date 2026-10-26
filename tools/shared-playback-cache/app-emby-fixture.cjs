@@ -84,6 +84,7 @@ async function createEmby({plan = {}, record = () => {}} = {}) {
     if (path === '/Sessions/Logout') return 'logout';
     if (path === '/Sessions') return 'sessions';
     if (path === '/System/Endpoint') return 'endpoint';
+    if (path === '/System/WakeOnLanInfo') return 'wake-on-lan-info';
     if (path === '/DisplayPreferences/usersettings') return 'display-preferences';
     if ([`/Users/${USER}/Views`, `/Users/${USER}/Items/Resume`, '/LiveTv/Channels', '/LiveTv/Programs/Recommended',
       '/Channels', '/Genres', '/MusicGenres', '/Studios', '/Artists', '/Artists/AlbumArtists'].includes(path)) return 'empty-collection';
@@ -163,6 +164,7 @@ async function createEmby({plan = {}, record = () => {}} = {}) {
       else if (category === 'next-up') value = collection(['B', 'C'].map(item));
       else if (category === 'sessions') value = [{Id: 'synthetic-app-session', UserId: USER}];
       else if (category === 'endpoint') value = {IsLocal: true, IsInNetwork: true};
+      else if (category === 'wake-on-lan-info') value = [];
       else if (category === 'display-preferences') value = displayPreferences;
       else value = category === 'empty-array' ? [] : collection([]);
       send(200, value);

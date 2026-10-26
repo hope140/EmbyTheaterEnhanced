@@ -83,8 +83,10 @@ const SAFE_FAILURE_CODES = new Set([
   'app-initial-pause', 'app-lan-discovery-disabled', 'app-login-failed',
   'app-main-window-missing', 'app-observation-window', 'app-observer-owner',
   'app-observer-target', 'app-owned-memory-query-failed', 'app-owned-memory-result',
+  'app-owned-memory-query-denied', 'app-owned-memory-query-timeout', 'app-owned-memory-query-unknown', 'app-owned-memory-target-exited',
   'app-owned-memory-single-helper', 'app-owned-memory-target', 'app-play-not-established',
   'app-player-not-ready', 'app-prefix-coverage-missing', 'app-preload-ipc-not-ready',
+  'app-preview-owner-retired', 'app-initial-position',
   'app-ready-dependencies', 'app-ready-entered', 'app-ready-event-missing',
   'app-ready-observer-missing', 'app-renderer-command-timeout', 'app-routes',
   'app-sample-count', 'app-sample-failed', 'app-seek-coverage-mismatch',
@@ -102,6 +104,11 @@ function rejectionFacts(error) {
   const result = {type: error === null ? 'null' : typeof error, name: null};
   try {const name = error?.name; if (['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'AbortError', 'TimeoutError'].includes(name)) result.name = name;} catch (_) {}
   return result;
+}
+function recordTerminalFailure(report, error) {
+  report.terminalFailure = {code: failureCode(error, 'app-worker-failed'), failure: rejectionFacts(error)};
+  report.code = report.firstFailure?.code || report.terminalFailure.code;
+  report.failure = report.firstFailure?.rejection || report.terminalFailure.failure;
 }
 // Main registers its start-info injection on dom-ready after BrowserWindow
 // construction. Register the observer at web-contents-created, so its same-frame
@@ -172,4 +179,4 @@ function installQuitCollector({app, pending, finalize, mark, onFailure, schedule
   app.on('will-quit', listener);
   return () => app.removeListener('will-quit', listener);
 }
-module.exports = {failureCode, rejectionFacts, READY_LISTENER, READY_SNAPSHOT, readinessCode, installReadinessObserver, installQuitCollector, BASE, SCENARIOS, TARGETS, LIMITS, rendererLogin, rendererAction, frameRange, coverageKind, assertCoverage, assertEntry, executeAppFrame, workerArguments, isMediaA, loadSource};
+module.exports = {recordTerminalFailure, failureCode, rejectionFacts, READY_LISTENER, READY_SNAPSHOT, readinessCode, installReadinessObserver, installQuitCollector, BASE, SCENARIOS, TARGETS, LIMITS, rendererLogin, rendererAction, frameRange, coverageKind, assertCoverage, assertEntry, executeAppFrame, workerArguments, isMediaA, loadSource};

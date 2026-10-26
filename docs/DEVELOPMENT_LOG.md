@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-26 — 普通入口有限帧证据与首错保留
+
+普通main链已实际到Native彩色帧；seek首次缺新帧与之后的资源查询分开处理。新增仅测试service预览观察器，保持原receiver/Promise、owner和decode验证，只留单份摘要；每秒至多一个主动探针，并可观察原taskbar请求。事件与新帧绑定固定generation，目标事件前的请求、换代、迟到或同hash不能通过。初始参考先确认实际播放离开首seek目标，再暂停并抓取，避免拿恰在目标的冷帧要求不同hash。5秒期限不延长；该每秒预览接口不能作为亚秒级可见延迟仪表。
+
+末尾单owned PID PeakWorkingSet查询保留原3秒/单次/无提权，安全分类timeout/denied/exited/unknown；拒绝不因同时退出被覆盖，不重试或以零替代。精确WakeOnLanInfo夹具复用维护SDK真实消费者，返回空数组且不生成MAC或UDP。保留实际普通入口失败、全部失败样本及949包来源；产品未改，Windows复验由协调方派发。
+
 ## 2026-10-26 — Windows测试路径身份对齐与同HEAD包绑定
 
 保留504CI失败：2746项中2739通过、1失败、6跳过；失败在Linux端口fixture的notStrictEqual，媒体未进入。用exact helper源配POSIX／win32 path注入确定性复现raw路径hash与host规范identity不一致；修测试根拼接，不改helper／产品guard。结合已有9a工具，CI先核兼容锚点／产品树，artifact metadata来源再用既有reviewedCandidate白名单核对，之后所有run/name/provenance仍使用选定精确SHA；支持本次HEAD打包和本次HEAD验证，旧包不重标，未来工具变动仍须重新审阅来源。

@@ -31,6 +31,55 @@ test('real login returns a synthetic session used by actual authenticated metada
   assert.equal((await fetch(server.origin + '/' + playback.MediaSources[0].DirectStreamUrl, {headers})).status, 403);
   await server.close(); assert.equal(server.snapshot().sockets, 0); assert.equal(server.snapshot().activeBodies, 0);
 });
+test('maintained WakeOnLan API consumes an authenticated empty array without broadcast capability', async t => {
+  const fs = require('node:fs'), vm = require('node:vm');
+  const {server, rows} = await setup(t), auth = await login(server), headers = {'X-Emby-Token': auth.AccessToken};
+  const sdk = fs.readFileSync(require.resolve('../src/electronapp/www/modules/emby-apiclient/mit-apiclient.js'), 'utf8');
+  const extract = (startText, endText) => {
+    const start = sdk.indexOf(startText), end = sdk.indexOf(endText, start);
+    assert.ok(start >= 0 && end > start, 'maintained SDK method boundaries must exist');
+    return sdk.slice(start, end);
+  };
+  const helpers = extract('function getCachedWakeOnLanInfo(instance) {', 'function compareVersions(');
+  const methods = [
+    extract('    getWakeOnLanInfo() {', '    getLatestItems('),
+    extract('    supportsWakeOnLan() {', '    wakeOnLan() {'),
+    extract('    wakeOnLan() {', '    setSystemInfo(')
+  ].join('\n');
+  assert.match(methods, /getJSON\(this\.getUrl\('System\/WakeOnLanInfo'\)\)/);
+  const context = {console: {log() {}}};
+  const loaded = vm.runInNewContext(`(function () { ${helpers} return {Api: class { ${methods} }, refreshWakeOnLanInfo}; })()`, context);
+  const api = new loaded.Api();
+  const stored = new Map(); let sends = 0;
+  api.appStorage = {getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value)};
+  api.serverId = () => auth.ServerId;
+  api._wakeOnLan = {isSupported: () => true, send: () => {sends++; return Promise.resolve();}};
+  api.getUrl = path => server.origin + '/emby/' + path;
+  api.getJSON = async url => {const response = await fetch(url, {headers}); assert.equal(response.status, 200); return response.json();};
+
+  assert.deepEqual(await api.getWakeOnLanInfo(), []);
+  loaded.refreshWakeOnLanInfo.call(api);
+  const deadline = Date.now() + 1000;
+  while (stored.get('server-' + auth.ServerId + '-wakeonlaninfo') !== '[]' && Date.now() < deadline)
+    await new Promise(resolve => setTimeout(resolve, 2));
+  assert.equal(stored.get('server-' + auth.ServerId + '-wakeonlaninfo'), '[]');
+  assert.equal(api.supportsWakeOnLan(), false);
+  await api.wakeOnLan();
+  assert.equal(sends, 0, 'an empty response cannot create MAC entries or send a wake-on-LAN broadcast');
+
+  const preflight = await fetch(server.origin + '/emby/System/WakeOnLanInfo', {method: 'OPTIONS', headers: {
+    Origin: 'null', 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'X-Emby-Token'
+  }});
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('access-control-allow-origin'), 'null');
+  assert.equal((await fetch(server.origin + '/emby/System/WakeOnLanInfo')).status, 403);
+  assert.equal((await fetch(server.origin + '/emby/System/WakeOnLanInfo', {method: 'POST', headers})).status, 405);
+  const unknownBefore = server.snapshot().unknown;
+  assert.equal((await fetch(server.origin + '/emby/System/WakeOnLanInfo/extra', {headers})).status, 404);
+  assert.equal(server.snapshot().unknown, unknownBefore + 1);
+  assert.deepEqual(rows.filter(row => row.category === 'wake-on-lan-info').map(row => row.method), ['GET', 'GET', 'GET', 'POST']);
+  assert.equal(rows.find(row => row.category === 'unknown' && row.pathname === '/System/WakeOnLanInfo/extra')?.category, 'unknown');
+});
 test('unknown routes, external credentials and wrong login fail closed without recording secrets', async t => {
   const {server, rows} = await setup(t), auth = await login(server);
   assert.equal((await fetch(server.origin + '/unknown?secret=never-log', {headers: {'X-Emby-Token': auth.AccessToken}})).status, 404);
