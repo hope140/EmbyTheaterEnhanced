@@ -1,6 +1,6 @@
 'use strict';
 const test = require('node:test'), assert = require('node:assert/strict');
-const {createPreviewObserver, seekSignals, operationFacts} = require('../tools/shared-playback-cache/app-preview-observer.cjs');
+const {createPreviewObserver, seekSignals, operationFacts, propertyName} = require('../tools/shared-playback-cache/app-preview-observer.cjs');
 const contract = require('../tools/shared-playback-cache/app-performance-contract.cjs');
 const owner = {endpointId: 'owned', generationId: 17};
 const tick = async () => {await Promise.resolve(); await Promise.resolve();};
@@ -36,6 +36,7 @@ test('only a colored current-owner request starting after target events confirms
   f.setClock(10); const early = f.service.capturePreview(owner);
   f.setClock(30); f.pending[0].resolve(f.frame('a')); await early; await tick();
   const initial = f.observer.frame(owner, 0, null); assert.ok(initial);
+  assert.equal(f.observations[0].hash, initial.hash);
   assert.equal(f.observer.frame(owner, 20, null), null, 'late completion does not make an early request fresh');
   f.setClock(40); const unchanged = f.service.capturePreview(owner); f.pending[1].resolve(f.frame('a')); await unchanged; await tick();
   assert.equal(f.observer.frame(owner, 20, initial.hash), null);
@@ -80,6 +81,15 @@ test('operation error summary is bounded and excludes arbitrary native content',
   const rows = operationFacts(Array.from({length:70}, () => ({generationId:17,operation:'private command',property:'private source',errorCode:-9,error:'private url'})));
   assert.equal(rows.length,64); assert.deepEqual(rows[0], {generation:17,operation:'other',property:'other',errorCode:-9});
   assert.doesNotMatch(JSON.stringify(rows), /private/);
+});
+
+test('known property diagnostics name the existing exact service vocabulary without granting more', () => {
+  const source = require('node:fs').readFileSync(require.resolve('../src/electronapp/native-helper/service.js'),'utf8');
+  const list = /const SET_PROPERTIES = new Set\(\[([\s\S]*?)\]\);/.exec(source);assert.ok(list);
+  for(const match of list[1].matchAll(/'([^']+)'/g))assert.equal(propertyName(match[1]),match[1]);
+  assert.equal(propertyName('private unknown path'),'other');
+  assert.deepEqual(operationFacts([{generationId:131,operation:'set-property',property:'audio-channels',errorCode:-9}]),
+    [{generation:131,operation:'set-property',property:'audio-channels',errorCode:-9}]);
 });
 
 test('later resource failure retains the first actual seek failure and records both safe causes', () => {

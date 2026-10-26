@@ -1,72 +1,101 @@
 'use strict';
-const path=require('node:path'),{execFile}=require('node:child_process');
-const execute=(file,args,options)=>new Promise((resolve,reject)=>execFile(file,args,options,(error,stdout,stderr)=>{
-  if(error){error.stderr=stderr;reject(error);}else resolve(stdout);
-}));
-const ACCESS_DENIED_MARKER='ETE_ACCESS_DENIED';
+const {performance}=require('node:perf_hooks');
+const PROCESS_QUERY_LIMITED_INFORMATION=0x1000;
+const MEMORY_COUNTERS_BYTES=72;
+const MEMORY_COUNTERS_PEAK_WORKING_SET_OFFSET=8;
+const ACCEPT_MS=3000;
 const CHILD_STATE=Object.freeze({LIVE:'live',EXITED:'exited',UNKNOWN:'unknown'});
 function childState(child){
-  if(!child||!Number.isSafeInteger(child.pid)||child.pid<=0)return CHILD_STATE.UNKNOWN;
+  if(!child||!Number.isSafeInteger(child.pid)||child.pid<=0||child.pid>0xffffffff)return CHILD_STATE.UNKNOWN;
   return child.exitCode===null?CHILD_STATE.LIVE:CHILD_STATE.EXITED;
 }
 function observe(callback,stage,reason,details={}){
   if(typeof callback!=='function')return;
-  const safeCode=['EACCES','EPERM','ETIMEDOUT','AccessDenied'].includes(details.code)?details.code:
-    Number.isInteger(details.code)&&details.code>=0&&details.code<=255?'EXIT_'+details.code:null;
-  const safeSignal=['SIGTERM','SIGKILL','SIGINT'].includes(details.signal)?details.signal:null;
-  const record=Object.freeze({stage,reason,exit:Number.isInteger(details.exit)&&details.exit>=0&&details.exit<=255?details.exit:null,
-    code:safeCode,signal:safeSignal,childBefore:details.childBefore||CHILD_STATE.UNKNOWN,
-    childAfter:details.childAfter||CHILD_STATE.UNKNOWN});
+  const code=Number.isInteger(details.code)&&details.code>=0&&details.code<=65535?'WIN32_'+details.code:null;
+  const record=Object.freeze({stage,reason,exit:null,code,signal:null,
+    childBefore:details.childBefore||CHILD_STATE.UNKNOWN,childAfter:details.childAfter||CHILD_STATE.UNKNOWN,
+    handleOpened:details.handleOpened===true,handleClosed:details.handleClosed===true});
   try{callback(record);}catch(_){}
 }
 function failureCode(reason){
   return reason==='target-exited'?'app-owned-memory-target-exited':
     reason==='denied'?'app-owned-memory-query-denied':
-      reason==='timeout'?'app-owned-memory-query-timeout':
-        reason==='unknown'?'app-owned-memory-query-unknown':'app-owned-memory-query-failed';
+      reason==='timeout'?'app-owned-memory-query-timeout':'app-owned-memory-query-unknown';
 }
-function classifyError(error){
-  const code=error&&error.code, signal=error&&error.signal;
-  if(code==='EACCES'||code==='EPERM'||code==='AccessDenied'||
-    error&&typeof error.message==='string'&&error.message==='AccessDenied'||
-    error&&typeof error.stderr==='string'&&error.stderr.includes(ACCESS_DENIED_MARKER))return 'denied';
-  if(code==='ETIMEDOUT'||error&&error.killed===true&&['SIGTERM','SIGKILL'].includes(signal))return 'timeout';
-  return 'unknown';
-}
-// Called once after timed operations, only for the actual still-live owned child.
-// No process enumeration, elevation, permission change or retry is performed.
-async function nativePeak({child,systemRoot,run=execute,onObservation}={}) {
+function isNullHandle(handle){return handle===null||handle===undefined||handle===0||handle===0n;}
+function nativePeak({child,koffi,onObservation,now=()=>performance.now()}={}){
   const before=childState(child);
-  if(before!==CHILD_STATE.LIVE||typeof systemRoot!=='string'||!path.win32.isAbsolute(systemRoot)||/[\x00-\x1f]/.test(systemRoot)){
+  if(before!==CHILD_STATE.LIVE||!koffi||typeof koffi.load!=='function'||typeof now!=='function'){
     const reason=before===CHILD_STATE.EXITED?'target-exited':'unknown';
     observe(onObservation,'target',reason,{childBefore:before,childAfter:before});
     throw Error(failureCode(reason));
   }
-  const executable=path.win32.join(systemRoot,'System32','WindowsPowerShell','v1.0','powershell.exe');
-  const command='$ErrorActionPreference="Stop"; try { $p=Get-Process -Id '+child.pid+' -ErrorAction Stop; [Console]::Write([string]$p.PeakWorkingSet64) } catch { if ($_.Exception -is [System.UnauthorizedAccessException] -or $_.FullyQualifiedErrorId -like "*AccessDenied*") { [Console]::Error.Write("'+ACCESS_DENIED_MARKER+'"); exit 4 }; exit 3 }';
-  let text;
-  try{text=await run(executable,['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:3000,maxBuffer:1024,encoding:'utf8'});}
-  catch(error){
-    const reason=classifyError(error), after=childState(child);
-    const finalReason=reason==='denied'?'denied':after===CHILD_STATE.EXITED?'target-exited':reason;
-    observe(onObservation,'query',finalReason,{exit:error&&error.code,code:error&&error.code,signal:error&&error.signal,childBefore:before,childAfter:after});
-    throw Error(failureCode(finalReason));
+  let started;
+  try{started=now();}catch(_){started=NaN;}
+  if(!Number.isFinite(started)){
+    observe(onObservation,'target','unknown',{childBefore:before,childAfter:childState(child)});
+    throw Error(failureCode('unknown'));
   }
+
+  let stage='load', win32Error=null, reason='unknown', handle=null, counters=null, peak=0,
+    querySucceeded=false, closeSucceeded=true, denied=false, kernel=null, closeHandleFn=null, lastErrorFn=null;
+  try{
+    // Kernel32 is a Windows KnownDLL. This query opens only the validated owned PID and never enumerates processes.
+    kernel=koffi.load('kernel32.dll');
+    if(!kernel||typeof kernel.func!=='function')throw Error('binding-unavailable');
+    const openProcess=kernel.func('void * __stdcall OpenProcess(uint32_t dwDesiredAccess, int bInheritHandle, uint32_t dwProcessId)');
+    const getProcessMemoryInfo=kernel.func('int __stdcall K32GetProcessMemoryInfo(void *process, void *counters, uint32_t cb)');
+    closeHandleFn=kernel.func('int __stdcall CloseHandle(void *object)');
+    // Bind before the failing call: resolving a new function afterwards must
+    // not clobber the thread's last-error state before it is read.
+    lastErrorFn=kernel.func('uint32_t __stdcall GetLastError(void)');
+    stage='open';
+    handle=openProcess(PROCESS_QUERY_LIMITED_INFORMATION,0,child.pid);
+    if(isNullHandle(handle)){
+      win32Error=lastErrorFn(); denied=win32Error===5; reason=denied?'denied':'unknown';
+    }else{
+      counters=Buffer.alloc(MEMORY_COUNTERS_BYTES);
+      counters.writeUInt32LE(MEMORY_COUNTERS_BYTES,0);
+      stage='read';
+      const result=getProcessMemoryInfo(handle,counters,MEMORY_COUNTERS_BYTES);
+      if(!result){
+        win32Error=lastErrorFn(); denied=win32Error===5; reason=denied?'denied':'unknown';
+      }else if(counters.readUInt32LE(0)!==MEMORY_COUNTERS_BYTES){
+        reason='unknown';
+      }else{
+        const peakBig=counters.readBigUInt64LE(MEMORY_COUNTERS_PEAK_WORKING_SET_OFFSET);
+        if(peakBig>0n&&peakBig<=BigInt(Number.MAX_SAFE_INTEGER)){peak=Number(peakBig);querySucceeded=true;reason='measured';}
+      }
+    }
+  }catch(_){reason='unknown';}
+  finally{
+    if(!isNullHandle(handle)){
+      try{
+        stage='close';
+        closeSucceeded=!!closeHandleFn(handle);
+        if(!closeSucceeded){
+          // Do not overwrite an earlier access denial with cleanup failure.
+          if(!denied){win32Error=lastErrorFn();denied=win32Error===5;} reason='unknown'; querySucceeded=false;
+        }
+      }catch(_){closeSucceeded=false;reason='unknown';querySucceeded=false;}
+    }
+  }
+
+  let ended;
+  try{ended=now();}catch(_){ended=NaN;}
   const after=childState(child);
-  if(after!==CHILD_STATE.LIVE){
-    const reason=after===CHILD_STATE.EXITED?'target-exited':'unknown';
-    observe(onObservation,'result',reason,{childBefore:before,childAfter:after});
-    throw Error(failureCode(reason));
-  }
-  if(!/^[1-9][0-9]{0,14}$/.test(String(text))){
-    observe(onObservation,'result','unknown',{childBefore:before,childAfter:after});
-    throw Error(failureCode('unknown'));
-  }
-  const bytes=Number(text);if(!Number.isSafeInteger(bytes)){
-    observe(onObservation,'result','unknown',{childBefore:before,childAfter:after});
-    throw Error(failureCode('unknown'));
-  }
-  observe(onObservation,'result','measured',{exit:0,childBefore:before,childAfter:after});
-  return bytes;
+  if(denied)reason='denied';
+  // Synchronous FFI cannot be killed by a 3-second timer. This accepts a value
+  // only within 3 seconds, closes the handle first, and relies on the outer
+  // owned-worker deadline as the hard stop if the Win32 call itself stalls.
+  if(reason!=='denied'&&after===CHILD_STATE.EXITED)reason='target-exited';
+  else if(reason!=='denied'&&(after!==CHILD_STATE.LIVE||!Number.isFinite(ended)||ended<started))reason='unknown';
+  else if(reason!=='denied'&&ended-started>=ACCEPT_MS)reason='timeout';
+  else if(!closeSucceeded||!querySucceeded)reason=reason==='denied'?'denied':'unknown';
+  const finalStage=reason==='timeout'?'deadline':stage;
+  observe(onObservation,finalStage,reason,{code:win32Error,childBefore:before,childAfter:after,
+    handleOpened:!isNullHandle(handle),handleClosed:!isNullHandle(handle)&&closeSucceeded});
+  if(reason!=='measured')throw Error(failureCode(reason));
+  return peak;
 }
 module.exports={nativePeak};

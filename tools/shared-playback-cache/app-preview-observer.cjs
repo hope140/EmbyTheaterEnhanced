@@ -2,6 +2,13 @@
 // A test-only observer of the service's already validated, owner-bound frames.
 // It retains a digest, never pixel buffers, and never substitutes for a capture.
 const crypto = require('node:crypto');
+// Diagnostic vocabulary only; it grants no new service/native capability.
+const properties = new Set(['volume','audio-display','keep-open','speed','sub-delay','hwdec','gpu-api','wid','fullscreen',
+  'demuxer-max-bytes','vo','video-output-levels','profile','video-sync','interpolation','demuxer-readahead-secs',
+  'sub-font-size','sub-back-color','sub-color','sub-create-cc-track','deinterlace','audio-delay','af','audio-channels',
+  'audio-spdif','ad-lavc-ac3drc','audio-exclusive','start','pause','mute','video-unscaled','video-aspect','panscan','sid',
+  'teletext-page','aid','user-data/emby-theater-enhanced/diagnostics/cache-bytes']);
+const propertyName = name => properties.has(name) ? name : name ? 'other' : null;
 const sameOwner = (a, b) => !!a && !!b && a.endpointId === b.endpointId && a.generationId === b.generationId;
 function createPreviewObserver({now, colored, current, observe = () => {}}) {
   let candidate = null, nextProbeAt = -Infinity;
@@ -14,17 +21,17 @@ function createPreviewObserver({now, colored, current, observe = () => {}}) {
       // Return the exact original Promise, including rejection and receiver semantics.
       Promise.resolve(promise).then(frame => {
         const resolvedAt = now();
-        let category = 'empty';
+        let category = 'empty', hash = null;
         if (frame) {
           if (!sameOwner(owned, frame.owner) || !current(owned)) category = 'stale-owner';
           else if (!colored(frame)) category = 'uncolored';
           else {
-            const hash = crypto.createHash('sha256').update(frame.pixels).digest('hex');
+            hash = crypto.createHash('sha256').update(frame.pixels).digest('hex');
             category = candidate && candidate.hash === hash ? 'same-frame' : 'new-frame';
             if (!candidate || requestedAt >= candidate.requestedAt) candidate = {hash, owner: owned, requestedAt, resolvedAt};
           }
         }
-        safeObserve({category, generation: owned?.generationId ?? null, requestedAt, resolvedAt});
+        safeObserve({category, hash, generation: owned?.generationId ?? null, requestedAt, resolvedAt});
       }, () => safeObserve({category: 'rejected', generation: owned?.generationId ?? null, requestedAt, resolvedAt: now()})).catch(() => {});
       return promise;
     };
@@ -50,9 +57,8 @@ function seekSignals(events, start, owner, target) {
 }
 function operationFacts(rows) {
   const operations = new Set(['command', 'set-property', 'get-property', 'load', 'set-option']);
-  const properties = new Set(['pause', 'time-pos', 'ao', 'volume', 'speed']);
   return rows.slice(-64).map(row => ({generation: Number.isSafeInteger(row.generationId) ? row.generationId : null,
-    operation: operations.has(row.operation) ? row.operation : 'other', property: properties.has(row.property) ? row.property : row.property ? 'other' : null,
+    operation: operations.has(row.operation) ? row.operation : 'other', property: propertyName(row.property),
     errorCode: Number.isInteger(row.errorCode) ? row.errorCode : null}));
 }
-module.exports = {createPreviewObserver, seekSignals, operationFacts};
+module.exports = {createPreviewObserver, seekSignals, operationFacts, propertyName};

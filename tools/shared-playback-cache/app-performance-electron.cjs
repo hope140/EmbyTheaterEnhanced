@@ -80,6 +80,7 @@ async function main() {
           if (events.length < 8192) events.push({name: event.name, value, generation: event.generationId, at: performance.now()}); else observationErrors++;
           mark('native-property', {name: event.name, value, generation: event.generationId, scenario});
         }
+        if (event.name === 'operation-error') mark('native-operation-error', {...previewEvidence.operationFacts([event])[0], scenario});
         options.onEvent(event);
       }});
       client = this; clientList.push(this);
@@ -104,7 +105,8 @@ async function main() {
       return super.submitCommand(values);
     }
     setProperty(name, value) {
-      if (name === 'pause') mark('native-pause-submit', {generation: this.currentGenerationId, scenario, value: typeof value === 'boolean' ? value : null});
+      mark('native-property-submit', {generation: this.currentGenerationId, scenario, property: previewEvidence.propertyName(name),
+        valueType: value === null ? 'null' : typeof value, value: typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value) ? value : null});
       return super.setProperty(name, value);
     }
     request(method, params, options) {
@@ -229,6 +231,63 @@ async function main() {
       // Ask only the local owned coordinator; never origin credentials or URLs.
       const r = await fetch(plan.controlOrigin + '/snapshot/' + index, {signal: AbortSignal.timeout(2000)}); need(r.ok, 'app-source-observation'); return r.json();
     }
+    async function seekFailureControl(evalCode) {
+      // This runs only AFTER a failed sample. It cannot convert that sample or
+      // the case to PASS, and its bytes/timing are not performance samples.
+      const owner = {endpointId: endpoint, generationId: generation}, controlClient = client;
+      const owned = () => client === controlClient && endpoint === owner.endpointId && controlClient?.currentGenerationId === owner.generationId && service?.isPreviewOwner(owner);
+      const snapshotState = async phase => {
+        const row = {phase, generation: owner.generationId};
+        for (const property of ['pause','time-pos','core-idle','current-vo','frame-drop-count','decoder-frame-drop-count']) {
+          need(owned(), 'app-preview-owner-retired');
+          try {const value = await controlClient.getProperty(property, 1000);
+            row[property] = typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value) ? value :
+              property === 'current-vo' && value === 'gpu-next' ? 'gpu-next' : null;
+          } catch (_) {row[property] = null;}
+          need(owned(), 'app-preview-owner-retired');
+        }
+        const video = service?.getVideoWindow();
+        row.mainVisible = !!mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible();
+        row.mainMinimized = !!mainWindow && !mainWindow.isDestroyed() && mainWindow.isMinimized();
+        row.videoVisible = !!video && !video.isDestroyed() && video.isVisible();
+        mark('seek-failure-state', row); return row;
+      };
+      const sourceBefore = await observedBytes();
+      mark('seek-failure-control-start', {generation: owner.generationId});
+      try {
+        need(owned(), 'app-preview-owner-retired');
+        const paused = await snapshotState('paused');
+        need(paused.pause === true && Number.isFinite(paused['time-pos']), 'app-between-seek-pause');
+        const pausedHash = await decoded(null, performance.now(), owner);
+        need(owned(), 'app-preview-owner-retired');
+        const stillPaused = await controlClient.getProperty('pause',1000);
+        need(owned() && stillPaused === true, 'app-between-seek-pause');
+        mark('seek-failure-control-paused-frame', {generation:owner.generationId,hash:pausedHash});
+        need(owned(), 'app-preview-owner-retired');
+        await evalCode(contract.rendererAction('unpause'));
+        need(owned(), 'app-preview-owner-retired');
+        await until(async () => {need(owned(), 'app-preview-owner-retired');
+          const pause = await controlClient.getProperty('pause',1000);need(owned(), 'app-preview-owner-retired');
+          const position = await controlClient.getProperty('time-pos',1000);need(owned(), 'app-preview-owner-retired');
+          return pause === false && position > paused['time-pos'] + .25;
+        }, 'app-seek-no-resume');
+        const hash = await decoded(null, performance.now(), owner);
+        await snapshotState('resumed');
+        mark('seek-failure-control-frame', {generation: owner.generationId, hash, changedFromPaused: hash !== pausedHash});
+      } catch (error) {mark('seek-failure-control-error', {code: contract.failureCode(error,'app-worker-failed')});}
+      finally {
+        if (owned()) {
+          try {need(owned(), 'app-preview-owner-retired');await evalCode(contract.rendererAction('pause'));need(owned(), 'app-preview-owner-retired');
+            await until(async () => {need(owned(), 'app-preview-owner-retired');const pause = await controlClient.getProperty('pause',1000);
+              need(owned(), 'app-preview-owner-retired');return pause === true;}, 'app-between-seek-pause');
+            mark('seek-failure-control-paused', {generation: owner.generationId});
+          } catch (error) {mark('seek-failure-control-error', {code: contract.failureCode(error,'app-worker-failed')});}
+        }
+        const after = await observedBytes();
+        mark('seek-failure-control-end', {generation: owner.generationId, sourceBodyBytes: Math.max(0,after.bodyBytes-sourceBefore.bodyBytes),
+          overlapBodyBytes: Math.max(0,after.overlapBytes-sourceBefore.overlapBytes)});
+      }
+    }
     async function measure(sampleScenario, operation, prepare = async () => {}) {
       scenario = sampleScenario;
       let latencyMs = null, status = 'FAIL', code = null, rejection = null;
@@ -265,7 +324,7 @@ async function main() {
     if (task.arm === 'B') await until(async () => {const s = await snapshot(); return s.span?.end >= contract.LIMITS.prefixBytes;}, 'app-prefix-coverage-missing', 10000);
     for (const scenario of contract.SCENARIOS.slice(1)) {
       const target = contract.TARGETS[scenario];
-      await measure(scenario, async () => {
+      const measured = await measure(scenario, async () => {
         const start = events.length, owner = generation, frameOwner = {endpointId: endpoint, generationId: generation}, previousHash = lastFrameHash;
         await evalCode(contract.rendererAction('seek', target));
         let signals;
@@ -288,16 +347,24 @@ async function main() {
         const request = await fetch(plan.controlOrigin + '/window/' + index, {method: 'POST', signal: AbortSignal.timeout(2000), headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ranges: task.arm === 'B' ? await cachedRanges() : []})});
         need(request.ok, 'app-observation-window');
       });
+      if (measured.status === 'FAIL') {
+        if (scenario === 'cached-seek') await seekFailureControl(evalCode);
+        report.unexecutedAfterFailure = scenario; break;
+      }
     }
     need(clientList.length === 1 && client && !client.exited, 'app-owned-memory-single-helper');
     scenario = 'owned-memory';
-    report.nativeHelperPeakWorkingSetBytes = await require('./app-performance-resources.cjs').nativePeak({child: client.child, systemRoot: process.env.SystemRoot,
-      onObservation: row => mark('owned-memory-query', row)});
+    const memoryStarted = performance.now();
+    report.nativeMemoryMethod = 'single-owned-pid-kernel32-peak-working-set';
+    mark('owned-memory-query-start', {method:report.nativeMemoryMethod});
+    report.nativeHelperPeakWorkingSetBytes = await require('./app-performance-resources.cjs').nativePeak({child: client.child,
+      koffi: get('enhanced/native-media/node_modules/koffi'),
+      onObservation: row => mark('owned-memory-query', {...row, elapsedMs:performance.now()-memoryStarted})});
     report.resourceAssessment.native='OBSERVED_OWNED_LIFETIME_PEAK';
     report.electronPeakWorkingSetBytes = peakRss;
     for (const row of report.samples) row.peakRssBytes = Math.max(row.peakRssBytes, peakRss) + report.nativeHelperPeakWorkingSetBytes;
     await evalCode(contract.rendererAction('stop'));
-    need(report.samples.length === contract.SCENARIOS.length, 'app-sample-count');
+    need(report.samples.length === contract.SCENARIOS.length || report.firstFailure, 'app-sample-count');
     report.status = report.samples.every(s => s.status === 'PASS') && !observationErrors && report.externalNetworkAttempts === 0 ? 'PASS' : 'FAIL';
   } catch (error) {contract.recordTerminalFailure(report, error);}
   finally {

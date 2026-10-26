@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-26 — 同图 seek 的有限失败对照
+
+普通入口实际收到四次ready同图，不是预览busy/空/换代；后续只有目标位置，不能冒称restart。失败样本保持失败，工具只在首个cached-seek失败后沿原PM做一次同owner短恢复对照，记录暂停/推进后的真实摘要与源字节，再恢复暂停，停止余下性能动作并补FAIL行。所有await前后检查owner，操作错误仅限原service固定属性词汇，-9真实属性待Windows证据。
+
+末尾采样以固定Koffi调用KnownDLL Kernel32的OpenProcess(QUERY_LIMITED_INFORMATION)、K32GetProcessMemoryInfo和CloseHandle，精确x64计数结构读取PeakWorkingSetSize，未添加依赖或修改生产FFI/内核。GetLastError预绑定、拒绝锁存、句柄关闭失败/坏计数/迟到皆失败；不沿用已超时PowerShell作为第二路径。3秒不是可中断同步调用的硬上限，需精确新Windows工具回执证明；不能用单元mock当真实峰值/seek通过。
+
 ## 2026-10-26 — 普通入口有限帧证据与首错保留
 
 普通main链已实际到Native彩色帧；seek首次缺新帧与之后的资源查询分开处理。新增仅测试service预览观察器，保持原receiver/Promise、owner和decode验证，只留单份摘要；每秒至多一个主动探针，并可观察原taskbar请求。事件与新帧绑定固定generation，目标事件前的请求、换代、迟到或同hash不能通过。初始参考先确认实际播放离开首seek目标，再暂停并抓取，避免拿恰在目标的冷帧要求不同hash。5秒期限不延长；该每秒预览接口不能作为亚秒级可见延迟仪表。
