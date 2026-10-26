@@ -2,7 +2,7 @@
 // Causal local experiment: real store/HTTP, explicit delayed FileHandle callbacks.
 // It is not a disk benchmark or Native/ordinary-app latency measurement.
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto'),os=require('node:os');
-const {execFileSync}=require('node:child_process'),{createRequire}=require('node:module');
+const {createRequire}=require('node:module');
 const {performance}=require('node:perf_hooks');
 const {createStore}=require('./store.cjs'),{source,get,identity,hash,delay}=require('./fixture.cjs');
 const {temporaryRoot}=require('../../tests/helpers/range-fixture-root.cjs');
@@ -21,6 +21,30 @@ function perBlockPolicy(bytes, allowance = 10) {
   return Buffer.from(text.replace('// Additional waiting is shared by this response, not granted per block.\n        // Fast/missing reads spend none; another seek owns a separate cancellable response.',
     '// Each physical block has a finite read window. Fast/missing reads do not wait.\n        // Another seek owns a separate cancellable response; late IO retains its owner.')
     .replace('let readGraceRemaining = 10;','const readGracePerBlock = '+allowance+';').replaceAll('readGraceRemaining','readGracePerBlock').replace('readGracePerBlock -= spent; ',''));
+}
+const SHARED_TIMER = "              const readStarted = performance.now();\n              const deadline = readStarted + 15 + readGraceRemaining;\n              const read = track(controls, store.read(key, offset, length).finally(() => {stats.readReservedBytes -= 1048576;}));\n              let timer;\n              try {\n                const result = await waitDone(Promise.race([read.then(value => ({data: value, timedOut: false})), new Promise(resolve => {\n                  const expire = () => {\n                    const remaining = deadline - performance.now();\n                    if (remaining > 0) {timer = setTimeout(expire, Math.ceil(remaining)); return;}\n                    resolve({data: null, timedOut: true});\n                  };\n                  timer = setTimeout(expire, Math.max(1, Math.ceil(deadline - performance.now())));\n                })]), signal);\n                data = result.data;\n                if (result.timedOut) stats.localReadTimeouts++;\n                else if (!data) stats.localReadRefusals++;\n              } finally {\n                clearTimeout(timer);\n                const spent = Math.min(readGraceRemaining, Math.max(0, performance.now() - readStarted - 15));\n                readGraceRemaining -= spent; stats.localReadGraceMs += spent;\n              }";
+const BASE_TIMER = "              const deadline = performance.now() + 15;\n              const read = track(controls, store.read(key, offset, length).finally(() => {stats.readReservedBytes -= 1048576;}));\n              let timer;\n              try {data = await waitDone(Promise.race([read, new Promise(resolve => {\n                const expire = () => {\n                  const remaining = deadline - performance.now();\n                  if (remaining > 0) {timer = setTimeout(expire, Math.ceil(remaining)); return;}\n                  resolve(null);\n                };\n                timer = setTimeout(expire, 15);\n              })]), signal);}\n              finally {clearTimeout(timer);}";
+function sourceBinding(current) {
+  need(Buffer.isBuffer(current),'probe-current-source');
+  const expected='e12d4939498354bddfe19b608084328f51e666ecfd8f01a31a4a3e9caff8ee6e';
+  if(sha(current)===expected)return {bytes:current,relation:'git-blob',checkoutSha256:sha(current)};
+  const text=current.toString('utf8'),canonical=Buffer.from(text.replace(/\r\n/g,'\n'));
+  need(Buffer.from(text,'utf8').equals(current)&&sha(canonical)===expected&&
+    Buffer.from(canonical.toString('utf8').replace(/\n/g,'\r\n')).equals(current),'probe-current-source');
+  return {bytes:canonical,relation:'exact-crlf-checkout',checkoutSha256:sha(current)};
+}
+function sourceVariants(current) {
+  current=sourceBinding(current).bytes; const text=current.toString('utf8');
+  const shared=Buffer.from(text.replace('// Each physical block has a finite read window. Fast/missing reads do not wait.\n        // Another seek owns a separate cancellable response; late IO retains its owner.',
+    '// Additional waiting is shared by this response, not granted per block.\n        // Fast/missing reads spend none; another seek owns a separate cancellable response.')
+    .replace('const readGracePerBlock = 15;','let readGraceRemaining = 10;').replaceAll('readGracePerBlock','readGraceRemaining')
+    .replace('stats.localReadGraceMs += spent;','readGraceRemaining -= spent; stats.localReadGraceMs += spent;'));
+  need(sha(shared)==='3d5900a0fed1688d7c97e4e62525048de3b45d4a42ba274c6a48e74491ce31f2','probe-shared-source');
+  const old=Buffer.from(shared.toString('utf8').replace('localReadTimeouts: 0, localReadRefusals: 0, localReadGraceMs: 0, ','')
+    .replace('        // Additional waiting is shared by this response, not granted per block.\n        // Fast/missing reads spend none; another seek owns a separate cancellable response.\n        let readGraceRemaining = 10;\n','')
+    .replace(SHARED_TIMER,BASE_TIMER));
+  need(sha(old)==='ac9b3b267d3e2643fe0d4fe876d0de90dcda2395497337a1840d3971eff98349','probe-base-source');
+  return {A:old,B:shared,C:perBlockPolicy(shared),D:current};
 }
 async function sample(factory,scenario){
   const spec=SCENARIOS[scenario],bytes=spec.blocks*BLOCK,root=temporaryRoot('ete-read-grace-ab-',['']);
@@ -57,11 +81,10 @@ async function sample(factory,scenario){
 }
 async function run(out){
   need(typeof out==='string'&&path.isAbsolute(out),'probe-output');await fs.mkdir(out,{recursive:false});
-  const file=require.resolve('../../src/electronapp/enhanced/shared-playback-cache/proxy'),repo=path.resolve(__dirname,'../..');
-  const old=execFileSync('git',['show',BASE+':src/electronapp/enhanced/shared-playback-cache/proxy.js'],{cwd:repo,maxBuffer:1048576});
-  const shared=execFileSync('git',['show',SHARED+':src/electronapp/enhanced/shared-playback-cache/proxy.js'],{cwd:repo,maxBuffer:1048576}),perBlock=perBlockPolicy(shared),bounded30=perBlockPolicy(shared,15);
-  const factories={A:load(old,file),B:load(shared,file),C:load(perBlock,file),D:load(bounded30,file)},scenarios={};
-  const report={schema:1,baseCommit:BASE,sharedAllowanceCommit:SHARED,policies:{A:'15ms per block',B:'15ms +10ms shared response allowance',C:'25ms per block',D:'30ms per block'},sourceSha256:{A:sha(old),B:sha(shared),C:sha(perBlock),D:sha(bounded30)},node:process.version,platform:process.platform,os:os.release(),
+  const file=require.resolve('../../src/electronapp/enhanced/shared-playback-cache/proxy');
+  const checkout=await fs.readFile(file),binding=sourceBinding(checkout),variants=sourceVariants(checkout),old=variants.A,shared=variants.B,perBlock=variants.C,bounded30=variants.D;
+  const factories=Object.fromEntries(Object.entries(variants).map(([arm,source])=>[arm,load(source,file)])),scenarios={};
+  const report={schema:1,baseCommit:BASE,sharedAllowanceCommit:SHARED,checkoutBinding:{relation:binding.relation,sha256:binding.checkoutSha256},policies:{A:'15ms per block',B:'15ms +10ms shared response allowance',C:'25ms per block',D:'30ms per block'},sourceSha256:{A:sha(old),B:sha(shared),C:sha(perBlock),D:sha(bounded30)},node:process.version,platform:process.platform,os:os.release(),
     conditions:'real owned filesystem/HTTP; explicit FileHandle.read delay;20ms or0ms configured origin first-byte delay;no Native/Emby/115;not hardware latency',
     pairedSamples:20,warmupPairs:3,order:'ABCD/DCBA alternating from warmup-3',scenarios};
   for(const name of Object.keys(SCENARIOS)){
@@ -85,5 +108,5 @@ async function run(out){
   }
   return report;
 }
-module.exports={BASE,SHARED,SCENARIOS,perBlockPolicy,run};
+module.exports={BASE,SHARED,SCENARIOS,perBlockPolicy,sourceVariants,sourceBinding,run};
 if(require.main===module){const args=process.argv.slice(2);need(args.length===1&&args[0].startsWith('--out='),'probe-argument');run(args[0].slice(6)).catch(()=>{console.error('SHARED_CACHE_READ_GRACE_ERROR probe-failed');process.exitCode=1;});}
