@@ -117,3 +117,22 @@ test('actual Native source is exact A or an A-bound owned proxy; unrelated loopb
   const proxy='http://127.0.0.1:34567/'+ 'a'.repeat(48);assert.equal(c.loadSource(proxy,media,new Set([proxy])).proxied,true);
   for(const url of [media+'/Videos/B/stream.avi?fixture=synthetic',origin+'/Videos/A/stream.avi?fixture=synthetic',proxy,media+'/Videos/A/stream.avi?api_key=other'])assert.throws(()=>c.loadSource(url,media,new Set()),/app-native-source-identity/);
 });
+
+
+test('paced initial video Range preserves a full bounded window from a real AVI payload offset', {timeout:10000}, async t=>{
+  const root=temporaryRoot('ete-app-unaligned-source-', ['']);let sources;
+  t.after(async()=>{if(sources)await sources.close();await fs.rm(root,{recursive:true,force:true});});
+  const plan=await fixtures.generateFixtures(root);const start=plan.media.A.dataStart;
+  assert.ok(start>0&&start<c.LIMITS.prefixBytes);
+  sources=await fixtures.startWindowsSources({plan,createEmby,pacing:c.LIMITS});
+  const abort=new AbortController();const response=await fetch(sources.mediaOrigin+'/Videos/A/stream.avi',{headers:{'User-Agent':fixtures.USER_AGENT,Range:'bytes='+start+'-'},signal:abort.signal});
+  let bytes=0;try{for await(const part of response.body){bytes+=part.length;if(bytes>=c.LIMITS.prefixBytes){abort.abort();break;}}}catch(error){assert.equal(error.name,'AbortError');}
+  assert.equal(bytes,c.LIMITS.prefixBytes,'a nonzero video offset must not truncate the final complete cache block');
+});
+
+test('ordinary seek proof rejects overlap and waits for video coverage rather than assuming byte-zero cache',async()=>{
+  const source=await fs.readFile(path.join(__dirname,'../tools/shared-playback-cache/app-performance-electron.cjs'),'utf8');
+  assert.match(source,/scenario !== 'cold-first-frame' && after\.overlapBytes > before\.overlapBytes/);
+  assert.match(source,/code='app-cache-body-reread'/);
+  assert.match(source,/cacheStore\.span\(cacheKey, contract\.frameRange\(plan\.fixture\.media\.A, contract\.TARGETS\['cached-seek'\]\)\.start\)/);
+});

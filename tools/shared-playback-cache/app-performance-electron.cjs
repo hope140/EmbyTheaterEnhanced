@@ -145,7 +145,7 @@ async function main() {
     async function snapshot() {
       resourceSample();
       return {hit: cacheProxy?.status().hitBytes ?? null,
-        span: cacheStore && cacheKey ? await cacheStore.span(cacheKey, 0) : null};
+        span: cacheStore && cacheKey ? await cacheStore.span(cacheKey, contract.frameRange(plan.fixture.media.A, contract.TARGETS['cached-seek']).start) : null};
     }
     async function cachedRanges() {
       const ranges = []; let offset = 0;
@@ -176,6 +176,7 @@ async function main() {
         await operation(); latencyMs = performance.now() - initial; status = 'PASS';}
       catch (error) {code = /^[a-z0-9-]{1,100}$/.test(error.message) ? error.message : 'app-sample-failed';}
       const after = await observedBytes(); resourceSample(); diskSample();
+      if (task.arm === 'B' && scenario !== 'cold-first-frame' && after.overlapBytes > before.overlapBytes) {status='FAIL';code='app-cache-body-reread';}
       const localHitBytes = Math.max(0,(cacheProxy?.status().hitBytes||0)-hitBefore);
       mark('sample-path', {scenario,localHitBytes,sourceStreamReadBytes:Math.max(0,after.bodyBytes-before.bodyBytes),
         assessment:localHitBytes?'shared-cache-read':after.bodyBytes>before.bodyBytes?'source-read':'native-demux-or-no-body'});

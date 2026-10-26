@@ -168,7 +168,7 @@ async function createMediaServer(root, files, expectedAgent, record, pacing) {
                 if (res.destroyed) break;
                 // Keep the initial forward stream bounded while allowing a real
                 // later Range/seek to request the missing body. Closing it aborts this wait.
-                if (start + state.streamReadBytes > (start < pacing.prefixBytes ? pacing.prefixBytes : start + pacing.gapBytes)) {await closed; break;}
+                if (start + state.streamReadBytes > (start < pacing.prefixBytes ? start + pacing.prefixBytes : start + pacing.gapBytes)) {await closed; break;}
                 if (!res.write(part)) await Promise.race([new Promise(resolve => res.once('drain', resolve)), closed]);
                 await wait(pacing.chunkDelayMs);
             }
