@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-26 — 真实端口 admission 的本地兼容入口
+
+前台准备仅遇netsh helper不可用，未启动播放器。显式bind-guards只支持performance entry，独立新建空根、复用生产acquireGuard的同路径hash/127.0.0.1/排他/无reusePort设置，所有guard先关闭才输出唯一JSON。占用、拒绝、未知失败与关闭不确定均不输出成功，不重试或切换端口；媒体服务原有port0保持。真实产品锁在实际打开时再检查，预检不是永久预留。正向真实绑定/重取、真实第二锁冲突、拒绝与关闭失败负向覆盖；没有注册netsh helper、改系统或注入snapshot。
+
 ## 2026-10-26 — 前台观察停留点（仅测试）
 
 基于4f工具独立分支增加默认关闭的visual-holds=true，仅entry接受，不增加workflow参数或改变产品。真实main窗口本已show，驱动仍windowsHide=false；在初始暂停参考与目标暂停帧留8秒，严格owner与90秒外层期限保持，visual JSONL只记合成预览SHA、代次和原生位置。原新帧失败保持失败，允许观察真实窗口是否随位置改变；该模式明确VISUAL_CONTROL_NOT_PERFORMANCE，不能用于20对性能结论。原4f工作流与949包保持不动。

@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-26 — 本地无 netsh helper 的真实 guard 准备
+
+本地前台环境的netsh没有IPv4 helper，命令不可用，尚非权限拒绝或timeout。工具新增显式performance entry --bind-guards：全新空白临时根上，调用原产品对两个未来缓存路径的固定排他loopback guard，确认全部关闭才返回目录。不是伪造排除表或把跨进程锁改成port0；实际应用仍重新取得原锁。任何绑定/关闭失败停止、不换根重试、不修改系统；默认CI预检路径不变，949产品和包不改。
+
 ## 2026-10-26 — 独立前台对照工具
 
 独立verify分支仅增加显式visual-holds参数：普通产品main本来可见，无隐藏窗口改造；参数只允许entry、禁止matrix，在约1.5秒暂停参考与0.5秒目标暂停阶段各留8秒，并写owned目录的visual JSONL供截图对照。默认关闭，产品949、来源校验及原失败断言不变；视觉停留明确不是性能样本，不覆盖正式安装或账号。详见[普通入口合同](SHARED_PLAYBACK_CACHE_APP_PERFORMANCE.md)。
