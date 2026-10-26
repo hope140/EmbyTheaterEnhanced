@@ -1620,3 +1620,11 @@ Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform
 - 固定旧工具源码的受控coalescing反例实读2100000、交付2080000、应交付2097152；新工具限定实际read end消除丢跨界块。非零起点精确正文、source-read计数、长请求取消与短Range正常结束/资源清零通过。这不是实际Windows超时根因已定位的声明。
 - 实际AVI/HTTP的8ms/20ms pacing保留；setup与10秒传输子测试、cleanup分别记有限安全阶段，测试取消连接fetch。实际media-bytes、abort后response0及close后socket/held0和gRPC停止仍必须断言。产品949、缓存预算、认证与真实Windows/普通入口门禁未变。
 - 最终串行全仓2958项：2933通过、0失败/取消、25项既有平台/材料跳过（146.9秒）；定向31/31。JS621/PS55、有限凭证模式720、文档、产品949不变检查通过。此前Windows失败不改记成功；新工具仍须精确SHA的Windows CI及真实普通入口复验。
+
+
+## 2026-10-26 — 短Range同轮end与完成收据
+
+- Windows上一轮session及完整前缀通过；唯一短Range在客户端收齐1000字节后close.complete仍false。旧循环末块后仍等8ms，Content-Length客户端可先完成/关闭；不把收齐正文等同服务端end/finish。
+- 工具采用独立writtenBytes，只有准确请求长度与未受窗口截断的末块才同步res.end(part)。complete仍为实际writableEnded，增加真实finish事件/finished快照；长请求和partial仍不end。
+- 真实HTTP旧固定源码受控反例：body1000、client end/close真、server end/finish假。新实现4轮普通/4轮仅受控尾部wait均通过，实际文件/HTTP/首字节延迟保留；400字节断开仍false/迟到正文0，并确认输入源关闭。没有修改产品949或任何真实播放预算。
+- 最终全仓串行2959项：2934通过、0失败/取消、25项既有平台/材料跳过（142.3秒）；定向32/32，含8轮短响应和400/1000字节中断负向。JS622/PS55、有限凭证模式721、文档及949产品树不变检查通过。真实Windows新普通入口与性能仍未执行。

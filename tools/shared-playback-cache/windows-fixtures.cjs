@@ -138,12 +138,13 @@ async function createMediaServer(root, files, expectedAgent, record, pacing, cre
         const state = {requestId, item: match[1], start, end, streamReadBytes: 0, held: false, closed: false, response: res};
         record('media-open', {requestId, item: match[1], start, end, range: !!range});
         active.add(res);
+        res.once('finish', () => record('media-finish', {requestId, item: match[1], start, end, finished: res.writableFinished}));
         res.once('close', () => {
             if (state.closed) return;
             state.closed = true; active.delete(res); held.delete(state);
             if (state.held) rememberClosedHold(state);
             record('media-close', {requestId, item: match[1], start, end, actualResponseClosed: true,
-                complete: res.writableEnded, streamReadBytes: state.streamReadBytes});
+                complete: res.writableEnded, finished: res.writableFinished, streamReadBytes: state.streamReadBytes});
         });
         res.writeHead(range ? 206 : 200, headers);
         if (holdNextItem === match[1] && range && end > start) {
@@ -163,18 +164,28 @@ async function createMediaServer(root, files, expectedAgent, record, pacing, cre
         stream.on('error', () => res.destroy()); res.once('close', () => stream.destroy());
         if (!pacing) stream.pipe(res);
         else {stream.pause(); (async () => {
-            let timer; const closed = new Promise(resolve => res.once('close', resolve));
+            let timer, writtenBytes = 0; const requestedBytes = end-start+1;
+            const closed = new Promise(resolve => res.once('close', resolve));
             const wait = ms => Promise.race([new Promise(resolve => {timer = setTimeout(resolve, ms);}), closed]).finally(() => clearTimeout(timer));
             await wait(pacing.firstByteDelayMs);
             for await (const part of stream) {
                 if (res.destroyed) break;
                 // Keep the initial forward stream bounded while allowing a real
                 // later Range/seek to request the missing body. Closing it aborts this wait.
+                const nextWritten = writtenBytes + part.length;
+                need(nextWritten <= requestedBytes, 'fixture-paced-response-overrun');
+                // End the exact short response in the same turn as its last
+                // bytes. Content-Length lets a client finish/close before an
+                // artificial post-body pacing delay would call end(). Count
+                // submitted bytes independently of source prefetch/read events.
+                if (streamEnd === end && nextWritten === requestedBytes) {
+                    res.end(part); writtenBytes = nextWritten; return;
+                }
                 if (!res.write(part)) await Promise.race([new Promise(resolve => res.once('drain', resolve)), closed]);
+                writtenBytes = nextWritten;
                 await wait(pacing.chunkDelayMs);
             }
-            if (!res.destroyed && start + state.streamReadBytes <= end) await closed;
-            if (!res.destroyed && start + state.streamReadBytes > end) res.end();
+            if (!res.destroyed && writtenBytes < requestedBytes) await closed;
         })().catch(() => res.destroy());}
 
     });
