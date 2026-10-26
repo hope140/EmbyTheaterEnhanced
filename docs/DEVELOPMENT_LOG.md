@@ -1603,3 +1603,11 @@ Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform
 - 无pending stream时直接允许will-quit；有pending时仍有界等待，后续quit排到新事件循环。写证据异常标失败而不拦住清理；NOT_STARTED明确区分未建helper和退出未确认。
 - 新定向合同覆盖真实setStartInfo源码的排队顺序、不同首contents/换frame拒绝、各就绪失败类型、空pending及流等待/超时、收据写失败。Windows普通入口仍须独立复验；不把受控队列/退出模型当实际Electron结果。
 - 最终串行全仓回归2951项：2926通过、0失败/取消、25项既有平台/材料跳过，142.1秒；JS620/PS55语法、有限凭证模式719、文档和产品树不变检查通过。一次与全仓重叠的扩展夹具运行发生EADDRINUSE，未修改断言；交付全仓单独串行执行并保留该失败证据，不据此改产品端口或媒体逻辑。最终Windows普通入口仍待复验，性能NOT_ASSESSED。
+
+
+## 2026-10-26 — Intros集合响应与冷样本首错
+
+- 实际Windows普通入口本轮就绪各项与自然退出通过，冷播放未建立且无媒体请求。原工具继续pause使首错被初始暂停超时覆盖；未改真实暂停逻辑或时限。
+- 用维护ApiClient.getIntros原方法、固定PM playWithIntrosInternal原函数和真实认证loopback响应复现旧数组导致的TypeError；A/B/C返回Items集合后通过，Latest仍数组。下游仅为unit checkpoint，不当Native/普通入口通过。
+- Cold失败保留firstFailure后停止pause/seek；undefined/null/无message/私有错误文本只输出固定码、类型及枚举name。正常play仍须player/source成立并通过真实decode/Native来源门禁。产品949及包来源保持不变，不另打包。
+- 最终完整串行回归2954项：2929通过、0失败/取消、25项既有平台/材料跳过（143.5秒）；定向34/34。JS620、PS55、有限凭证模式719、文档及949产品树不变检查通过。安全失败码为显式固定词表，message/name只读一次，拒绝未知app前缀私有文本和变化getter泄漏。Windows普通入口仍须按新工具复验。

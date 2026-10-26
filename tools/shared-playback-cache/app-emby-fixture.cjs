@@ -87,8 +87,8 @@ async function createEmby({plan = {}, record = () => {}} = {}) {
     if (path === '/DisplayPreferences/usersettings') return 'display-preferences';
     if ([`/Users/${USER}/Views`, `/Users/${USER}/Items/Resume`, '/LiveTv/Channels', '/LiveTv/Programs/Recommended',
       '/Channels', '/Genres', '/MusicGenres', '/Studios', '/Artists', '/Artists/AlbumArtists'].includes(path)) return 'empty-collection';
-    if ([`/Users/${USER}/Items/Latest`, `/Users/${USER}/Items/A/Intros`, `/Users/${USER}/Items/B/Intros`,
-      `/Users/${USER}/Items/C/Intros`, '/Notifications/' + USER, '/Plugins', '/Devices/CameraUploads'].includes(path)) return 'empty-array';
+    if (['A', 'B', 'C'].some(id => path === `/Users/${USER}/Items/${id}/Intros`)) return 'intros';
+    if ([`/Users/${USER}/Items/Latest`, '/Notifications/' + USER, '/Plugins', '/Devices/CameraUploads'].includes(path)) return 'empty-array';
     return 'unknown';
   }
   const server = http.createServer((req, res) => {
@@ -157,6 +157,7 @@ async function createEmby({plan = {}, record = () => {}} = {}) {
       else if (category === 'notification-summary') value = {UnreadCount: 0, MaxUnreadNotificationLevel: 'Normal'};
       else if (category === 'item') value = item(pathname.split('/').at(-1));
       else if (category === 'playback-info') {const id = pathname.split('/')[2]; value = {MediaSources: [media(id)], PlaySessionId: 'synthetic-session-' + id};}
+      else if (category === 'intros') value = collection([]);
       else if (category === 'items') {const ids = url.searchParams.get('Ids') || url.searchParams.get('ids') || 'A,B,C'; if (!/^[ABC](?:,[ABC])*$/.test(ids)) {send(400); return;} value = collection(ids.split(',').map(item));}
       else if (category === 'episodes') value = collection(['A', 'B', 'C'].map(item));
       else if (category === 'next-up') value = collection(['B', 'C'].map(item));

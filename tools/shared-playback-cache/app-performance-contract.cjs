@@ -72,6 +72,37 @@ async function executeAppFrame(contents, entryUrl, script) {
   const value = await frame.executeJavaScript(script);
   need(trusted(), 'app-frame-retired'); return value;
 }
+// Rejection values can be undefined or arbitrary objects. Do not coerce them
+// through RegExp or expose server/renderer error payloads in safe receipts.
+const SAFE_FAILURE_CODES = new Set([
+  'app-amd-not-ready', 'app-between-seek-pause', 'app-cache-body-reread',
+  'app-cache-disk-layout', 'app-cache-next', 'app-cache-owner-missing',
+  'app-cache-ranges-limit', 'app-cache-span', 'app-cold-playback-failed',
+  'app-connect-state', 'app-decoded-frame-missing', 'app-document-not-ready',
+  'app-external-scripts', 'app-frame-retired', 'app-frame-untrusted',
+  'app-initial-pause', 'app-lan-discovery-disabled', 'app-login-failed',
+  'app-main-window-missing', 'app-observation-window', 'app-observer-owner',
+  'app-observer-target', 'app-owned-memory-query-failed', 'app-owned-memory-result',
+  'app-owned-memory-single-helper', 'app-owned-memory-target', 'app-play-not-established',
+  'app-player-not-ready', 'app-prefix-coverage-missing', 'app-preload-ipc-not-ready',
+  'app-ready-dependencies', 'app-ready-entered', 'app-ready-event-missing',
+  'app-ready-observer-missing', 'app-renderer-command-timeout', 'app-routes',
+  'app-sample-count', 'app-sample-failed', 'app-seek-coverage-mismatch',
+  'app-seek-no-resume', 'app-seek-position-restart', 'app-session-missing',
+  'app-shared-selection', 'app-source-observation', 'app-startup-not-ready',
+  'app-windows-electron-required', 'app-worker-case', 'app-worker-deadline',
+  'app-worker-deadline-argument', 'app-worker-failed', 'app-worker-preserve-lifecycle',
+  'app-worker-preserve-receipt',
+]);
+function failureCode(error, fallback) {
+  try {const message = error?.message; if (typeof message === 'string' && SAFE_FAILURE_CODES.has(message)) return message;} catch (_) {}
+  return fallback;
+}
+function rejectionFacts(error) {
+  const result = {type: error === null ? 'null' : typeof error, name: null};
+  try {const name = error?.name; if (['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'AbortError', 'TimeoutError'].includes(name)) result.name = name;} catch (_) {}
+  return result;
+}
 // Main registers its start-info injection on dom-ready after BrowserWindow
 // construction. Register the observer at web-contents-created, so its same-frame
 // listener is queued first, before the unchanged product starts Emby.App.
@@ -141,4 +172,4 @@ function installQuitCollector({app, pending, finalize, mark, onFailure, schedule
   app.on('will-quit', listener);
   return () => app.removeListener('will-quit', listener);
 }
-module.exports = {READY_LISTENER, READY_SNAPSHOT, readinessCode, installReadinessObserver, installQuitCollector, BASE, SCENARIOS, TARGETS, LIMITS, rendererLogin, rendererAction, frameRange, coverageKind, assertCoverage, assertEntry, executeAppFrame, workerArguments, isMediaA, loadSource};
+module.exports = {failureCode, rejectionFacts, READY_LISTENER, READY_SNAPSHOT, readinessCode, installReadinessObserver, installQuitCollector, BASE, SCENARIOS, TARGETS, LIMITS, rendererLogin, rendererAction, frameRange, coverageKind, assertCoverage, assertEntry, executeAppFrame, workerArguments, isMediaA, loadSource};

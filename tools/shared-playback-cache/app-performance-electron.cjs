@@ -196,11 +196,11 @@ async function main() {
       const r = await fetch(plan.controlOrigin + '/snapshot/' + index, {signal: AbortSignal.timeout(2000)}); need(r.ok, 'app-source-observation'); return r.json();
     }
     async function measure(scenario, operation, prepare = async () => {}) {
-      let latencyMs = null, status = 'FAIL', code = null;
+      let latencyMs = null, status = 'FAIL', code = null, rejection = null;
       let before = await observedBytes(), hitBefore = 0;
       try {await prepare(); before = await observedBytes(); hitBefore = cacheProxy?.status().hitBytes || 0; const initial = performance.now();
         await operation(); latencyMs = performance.now() - initial; status = 'PASS';}
-      catch (error) {code = /^[a-z0-9-]{1,100}$/.test(error.message) ? error.message : 'app-sample-failed';}
+      catch (error) {code = contract.failureCode(error, 'app-sample-failed'); rejection = contract.rejectionFacts(error);}
       const after = await observedBytes(); resourceSample(); diskSample();
       if (task.arm === 'B' && scenario !== 'cold-first-frame' && after.overlapBytes > before.overlapBytes) {status='FAIL';code='app-cache-body-reread';}
       const localHitBytes = Math.max(0,(cacheProxy?.status().hitBytes||0)-hitBefore);
@@ -208,10 +208,19 @@ async function main() {
         assessment:localHitBytes?'shared-cache-read':after.bodyBytes>before.bodyBytes?'source-read':'native-demux-or-no-body'});
       report.samples.push({scenario, pair: task.pair, arm: task.arm, status, latencyMs,
         sourceBodyBytes: Math.max(0, after.bodyBytes - before.bodyBytes), overlapBodyBytes: Math.max(0, after.overlapBytes - before.overlapBytes), peakRssBytes: peakRss, peakDiskBytes: peakDisk});
-      if (code) mark('sample-failed', {scenario, code});
+      if (status === 'FAIL') {
+        code ||= 'app-sample-failed';
+        const failure = {scenario, code, rejection};
+        report.firstFailure ||= failure; mark('sample-failed', failure);
+      }
+      return {status, code};
     }
-    await measure('cold-first-frame', async () => {await evalCode(contract.rendererAction('play')); await decoded();
+    const cold = await measure('cold-first-frame', async () => {
+      const playing = await evalCode(contract.rendererAction('play'));
+      need(playing?.player === true && playing.source === true, 'app-play-not-established');
+      await decoded();
       need(report.observations.some(r => r.type === 'native-load' && r.proxied === (task.arm === 'B')), 'app-shared-selection');});
+    need(cold.status === 'PASS', cold.code || 'app-cold-playback-failed');
     await evalCode(contract.rendererAction('pause'));
     await until(async () => client && await client.getProperty('pause', 1000) === true, 'app-initial-pause');
     if (task.arm === 'B') await until(async () => {const s = await snapshot(); return s.span?.end >= contract.LIMITS.prefixBytes;}, 'app-prefix-coverage-missing', 10000);
@@ -248,7 +257,7 @@ async function main() {
     await evalCode(contract.rendererAction('stop'));
     need(report.samples.length === contract.SCENARIOS.length, 'app-sample-count');
     report.status = report.samples.every(s => s.status === 'PASS') && !observationErrors && report.externalNetworkAttempts === 0 ? 'PASS' : 'FAIL';
-  } catch (error) {report.code = /^[a-z0-9-]{1,100}$/.test(error.message) ? error.message : 'app-worker-failed';}
+  } catch (error) {report.code = contract.failureCode(error, 'app-worker-failed'); report.failure = contract.rejectionFacts(error);}
   finally {
     clearTimeout(timeout); clearInterval(sampling); retired = true;
     for (const scenario of contract.SCENARIOS) if (!report.samples.some(row => row.scenario === scenario)) report.samples.push({

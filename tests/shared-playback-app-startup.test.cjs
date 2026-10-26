@@ -141,3 +141,56 @@ test('Windows safe receipt export includes only bounded case JSON and the new fi
   for (const name of ['case-0.json', 'case-45.json', 'case-0.lifecycle.jsonl', 'case-45.lifecycle.jsonl']) assert.equal(allowed.test(name), true, name);
   for (const name of ['app-plan.json', 'case-1.raw.json', 'case-1.lifecycle.log', 'case-100.json', 'profile-1', '../case-1.json']) assert.equal(allowed.test(name), false, name);
 });
+
+test('cold measure retains the first safe rejection including undefined instead of silently omitting it', async () => {
+  const source = fs.readFileSync(require.resolve('../tools/shared-playback-cache/app-performance-electron.cjs'), 'utf8');
+  const begin = source.indexOf('    async function measure('), end = source.indexOf('    const cold =', begin);
+  assert.ok(begin > 0 && end > begin);
+  for (const rejected of [undefined, null, {message: undefined}, new TypeError('account-and-server-private-payload')]) {
+    const report = {samples: []}, marks = [];
+    const measure = vm.runInNewContext('(' + source.slice(begin,end) + ')', {
+      contract: c, report, task: {arm: 'A', pair:-3}, performance,
+      observedBytes: async () => ({bodyBytes:0,overlapBytes:0}), cacheProxy:null,
+      resourceSample() {}, diskSample() {}, peakRss:0, peakDisk:0, mark:(type,data) => marks.push({type,...data})
+    });
+    const result = await measure('cold-first-frame', () => Promise.reject(rejected));
+    assert.equal(result.status, 'FAIL'); assert.equal(result.code, 'app-sample-failed');
+    assert.equal(report.firstFailure.code, 'app-sample-failed');
+    assert.equal(report.firstFailure.rejection.type, rejected === null ? 'null' : typeof rejected);
+    assert.equal(report.samples[0].latencyMs, null); assert.equal(report.samples[0].status, 'FAIL');
+    assert.ok(marks.some(row => row.type === 'sample-failed' && row.code === 'app-sample-failed'));
+    assert.equal(JSON.stringify({report, marks}).includes('private-payload'), false);
+  }
+  assert.equal(c.failureCode(Error('app-decoded-frame-missing'), 'app-sample-failed'), 'app-decoded-frame-missing');
+  assert.equal(c.failureCode(Error('user-account-identifier'), 'app-sample-failed'), 'app-sample-failed');
+  assert.equal(c.failureCode(Error('app-user-private-identifier'), 'app-sample-failed'), 'app-sample-failed');
+  const throwing = new Proxy({}, {get() {throw Error('private-payload');}});
+  assert.equal(c.failureCode(throwing, 'app-sample-failed'), 'app-sample-failed');
+  assert.deepEqual(c.rejectionFacts(throwing), {type:'object',name:null});
+  let messageReads = 0, nameReads = 0;
+  const changing = {get message() {return ++messageReads === 1 ? 'app-decoded-frame-missing' : 'private-payload';}, get name() {return ++nameReads === 1 ? 'TypeError' : 'private-payload';}};
+  assert.equal(c.failureCode(changing, 'app-sample-failed'), 'app-decoded-frame-missing');
+  assert.deepEqual(c.rejectionFacts(changing), {type:'object',name:'TypeError'});
+  assert.equal(messageReads, 1); assert.equal(nameReads, 1);
+});
+
+test('failed cold start never dispatches pause or later seek and cannot conceal its code', async () => {
+  const source = fs.readFileSync(require.resolve('../tools/shared-playback-cache/app-performance-electron.cjs'), 'utf8');
+  const begin = source.indexOf('    const cold ='), end = source.indexOf("    if (task.arm === 'B') await until", begin);
+  assert.ok(begin > 0 && end > begin);
+  const commands = [];
+  await assert.rejects(vm.runInNewContext('(async()=>{' + source.slice(begin,end) + '})()', {
+    measure: async () => ({status:'FAIL',code:'app-sample-failed'}),
+    evalCode: async code => commands.push(code), until: async () => {}, contract:c,
+    need(value,code) {if(!value)throw Error(code);}
+  }), /app-sample-failed/);
+  assert.equal(commands.length, 0, 'no command can make a missing player appear paused');
+  let decoded = 0;
+  await assert.rejects(vm.runInNewContext('(async()=>{' + source.slice(begin,end) + '})()', {
+    measure: async (_scenario, operation) => {try {await operation(); return {status:'PASS'};} catch(error) {return {status:'FAIL',code:c.failureCode(error,'app-sample-failed')};}},
+    evalCode: async code => {commands.push(code); return {player:false,source:false};},
+    decoded: async () => decoded++, contract:c,
+    need(value,code) {if(!value)throw Error(code);}
+  }), /app-play-not-established/);
+  assert.equal(commands.length, 1); assert.equal(decoded, 0);
+});

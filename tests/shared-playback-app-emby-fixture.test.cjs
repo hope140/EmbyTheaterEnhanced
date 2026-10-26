@@ -104,3 +104,41 @@ test('file renderer CORS preflight permits only known routes methods headers and
   const denied = await fetch(server.origin + '/System/Info/Public', {headers: {Origin: 'https://foreign.invalid'}});
   assert.equal(denied.status, 403); assert.equal(denied.headers.get('access-control-allow-origin'), null);
 });
+
+test('fresh ordinary cinema-mode playback consumes authenticated Intros as the real PM collection contract', async t => {
+  const fs = require('node:fs'), vm = require('node:vm');
+  const {server, rows} = await setup(t), auth = await login(server);
+  const headers = {'X-Emby-Token': auth.AccessToken};
+  // Execute the maintained ApiClient method, then the fixed PM's actual intro
+  // consumer. Only the downstream playback implementation is a unit checkpoint;
+  // this test is not a Native or ordinary-main execution claim.
+  const sdk = fs.readFileSync(require.resolve('../src/electronapp/www/modules/emby-apiclient/apiclient.js'), 'utf8');
+  const method = sdk.slice(sdk.indexOf('    getIntros(itemId, signal) {'), sdk.indexOf('    getNextUpEpisodes(', sdk.indexOf('    getIntros(itemId, signal) {')));
+  assert.match(method, /getJSON/);
+  const Api = vm.runInNewContext('(class {' + method + '})');
+  const api = new Api();
+  api.getCurrentUserId = () => auth.User.Id;
+  api.getUrl = route => server.origin + '/emby/' + route;
+  api.getJSON = async (url, signal) => {const response = await fetch(url, {headers, signal}); assert.equal(response.status, 200); return response.json();};
+  const pm = fs.readFileSync(require.resolve('../vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), 'utf8');
+  const begin = pm.indexOf('    function playWithIntrosInternal('), end = pm.indexOf('    function playWithIntros(', begin);
+  assert.ok(begin > 0 && end > begin);
+  let entered = 0;
+  const consume = vm.runInNewContext('(' + pm.slice(begin,end) + ')', {
+    _usersettings: {default: {enableCinemaMode: () => true}},
+    _loading: {default: {show() {}, hide() {}}}, self: {},
+    getDefaultIntros() {throw Error('the ordinary enabled-cinema branch must request actual fixture Intros');},
+    playInternal(item, options) {entered++; return Promise.resolve({id: item.Id, count: options.items.length});}
+  });
+  for (const id of ['A', 'B', 'C']) {
+    const item = await (await fetch(server.origin + '/emby/Users/' + auth.User.Id + '/Items/' + id, {headers})).json();
+    const result = await consume([item], item, api, 0, {fullscreen: true});
+    assert.equal(result.id, id); assert.equal(result.count, 1);
+    assert.deepEqual(await api.getIntros(id), {Items: [], TotalRecordCount: 0});
+  }
+  assert.equal(entered, 3);
+  assert.ok(rows.some(row => row.category === 'intros'), 'intros has a dedicated safe route category');
+  assert.equal((await fetch(server.origin + '/Users/fixture-user/Items/A/Intros')).status, 403);
+  assert.equal((await fetch(server.origin + '/Users/fixture-user/Items/Latest', {headers})).status, 200);
+  assert.deepEqual(await (await fetch(server.origin + '/Users/fixture-user/Items/Latest', {headers})).json(), [], 'SDK Latest array keeps its separate contract');
+});
