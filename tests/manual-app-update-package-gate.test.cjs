@@ -60,7 +60,7 @@ for (const mutation of ['none', 'source', 'module', 'manifest']) {
         const receipt = JSON.parse(fs.readFileSync(path.join(output, 'manual-app-update-selftest.json'), 'utf8'));
         assert.equal(receipt.status, 'passed');
         assert.deepEqual(receipt.packageManifestBinding, {status: 'matched', sourceCommit: source});
-        assert.equal(receipt.checks.length, 8);
+        assert.equal(receipt.checks.length, 9);
         assert.equal(receipt.platform, process.platform);
         assert.equal(receipt.realNetworkRequests, 0);
         assert.equal(receipt.appBootstrap, false);

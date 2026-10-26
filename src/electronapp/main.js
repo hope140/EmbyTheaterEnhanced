@@ -1061,11 +1061,26 @@
         ipcMain: ipcMain, getWebContents: getWebContents
     });
     unregisterMaintenanceIpc = maintenanceIpc.register({
+        updateCache: (function () {
+            var store = require('./enhanced/update-install-cache').createStore({
+                profileRoot: appBootstrapState.profileRoot, executable: process.execPath,
+                handoff: require('./enhanced/update-install-handoff').createHandoff()
+            });
+            // Local-only reconciliation never checks for releases or starts an installer.
+            var reconciled = Promise.resolve().then(function () { return store.reconcile(getAppVersion()); })
+                .catch(function () { enhancedLog({category: 'app', event: 'update-cache-retained'}); });
+            return {
+                download: async function (installer, options) { await reconciled; return store.download(installer, options); },
+                prepare: function (record, signal) { return store.prepare(record, signal); },
+                recovery: async function () { await reconciled; return store.recovery(getAppVersion()); },
+                close: function () { return reconciled; }
+            };
+        })(),
+        quitForUpdate: function () { setImmediate(function () { app.quit(); }); },
         preferences: require('./enhanced/app-update-preferences').createStore(appBootstrapState.configDirectory),
         ipcMain: ipcMain,
         getWebContents: getWebContents,
         getBrowserWindow: function () { return mainWindow; },
-        dialog: electron.dialog,
         getAppInfo: getCurrentEnhancedAppInfo,
         getPlatformInfo: getPlatformInfo,
         getDisplayInfo: getDisplayInfo,

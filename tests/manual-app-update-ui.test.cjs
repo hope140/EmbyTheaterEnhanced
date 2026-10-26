@@ -86,11 +86,13 @@ test('download displays progress and actual source in details, cancels only on e
     assert.equal(h.view.querySelector('.btnCancelUpdate').hidden, true);
 });
 
-test('download completion provides manual instructions and never invokes shell or installation', async () => {
+test('verified handoff explains normal quit and wizard, with all update controls locked', async () => {
     const h = harness(), work = h.controller.downloadUpdate();
-    h.pending[0].resolve({status: 'downloaded', source: 'github', directory: '/test', fileName: 'fixture.exe', sha256: 'a'.repeat(64)}); await work;
-    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /自行打开/);
-    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /不代表数字签名/);
+    h.pending[0].resolve({status: 'installing', source: 'github', directory: '/test', fileName: 'fixture.exe', sha256: 'a'.repeat(64)}); await work;
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /正常退出.*安装向导/);
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /Windows 安全检查/);
+    for (const selector of ['.selectUpdateChannel', '.btnCheckUpdates', '.btnDownloadUpdate']) assert.equal(h.view.querySelector(selector).disabled, true);
+    await h.controller.downloadUpdate(); await h.controller.checkUpdates(); await h.controller.changeChannel();
     assert.equal(h.pending.length, 1); assert.equal(h.listeners.size, 0);
     assert.equal(h.view.querySelector('.btnCancelUpdate').hidden, true);
 });
@@ -227,6 +229,15 @@ test('reading the saved channel is local only and does not start a check', async
     assert.equal(h.view.querySelector('.selectUpdateChannel').value, 'testing');
     assert.equal(h.pending.length, 1);
 });
+
+for (const [recovery, message] of [['pending-install', /尚未确认安装完成/], ['cleanup-pending', /新版本已启动.*无法安全清理/], ['cache-unavailable', /缓存暂不可用.*仍可检查版本/]]) {
+    test('local recovery distinguishes ' + recovery + ' without a check or popup', async () => {
+        const h = harness(), reading = h.controller.loadChannel();
+        h.pending[0].resolve({status: 'ok', channel: 'stable', recovery}); await reading;
+        assert.match(h.view.querySelector('.aboutUpdateState').textContent, message);
+        assert.equal(h.pending.length, 1);
+    });
+}
 
 test('switching while checking retires old results, saves the channel and requires another manual click', async () => {
     const h = harness(), old = h.controller.checkUpdates();
