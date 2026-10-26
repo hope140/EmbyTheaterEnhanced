@@ -6,12 +6,12 @@
 
 ## 下载安装
 
-截至 2026-10-25，正式版与测试版如下。只需使用客户端时，下载安装包即可，无需准备源码和构建工具。
+截至 2026-10-26，正式版与测试版如下。只需使用客户端时，下载安装包即可，无需准备源码和构建工具。
 
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.4.3（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.3/EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.3/EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.4.4（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.4/EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.4/EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe.sha256) |
 
 从同一 Release 下载安装包和校验文件，核对 SHA-256 后，正常退出客户端再安装。`Source code` 压缩包不是安装包。安装程序未签名，Windows 可能提示未知发布者；校验值用于核对下载字节。
 
@@ -30,6 +30,7 @@
 - **v0.4.2 手动更新与通道选择**：保存正式／测试通道，主动检查和下载更新。
 - **v0.4.3 Windows 媒体集成**：任务栏缩略图和 Peek 显示一秒采样的视频预览，控制集中到系统媒体卡片；原任务栏两个控制按钮已移除。预览是低频截图，不承诺连续流畅视频，也不合成字幕。
 - **v0.4.3 使用修正**：修复退出异常及 Host 残留，缓存清理按钮文字居中，设置展示名简化为“智能解析”。
+- **v0.4.4 浏览与诊断修正**：改善详情布局和海报交接、返回首页时的驻留内容复用，补充脱敏播放诊断；移除不再使用的包内 Anime4K shader。
 
 各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预加载、缓冲暂存和飞牛认证仍是[独立实验](docs/NEXT_RELEASE_SCOPE.md#未发布实验)，不属于上述已发布功能。
 

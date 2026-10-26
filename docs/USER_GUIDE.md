@@ -2,13 +2,13 @@
 
 ## 选择版本与校验下载
 
-版本与下载入口集中在[项目首页](../README.md#下载安装)。截至 2026-10-25，正式版为 v0.4.0，最新测试版为 v0.4.3，两者均面向 Windows x64。测试版含较新的功能，适合愿意试用并反馈的用户。
+版本与下载入口集中在[项目首页](../README.md#下载安装)。截至 2026-10-26，正式版为 v0.4.0，最新测试版为 v0.4.4，两者均面向 Windows x64。测试版含较新的功能，适合愿意试用并反馈的用户。
 
-从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.4.3 为例：
+从同一个 Release 下载 `.exe` 与对应 `.exe.sha256` 文件；`Source code` 压缩包用于源码，不是客户端安装包。将两个文件放在同一目录，在该目录打开 PowerShell。以 v0.4.4 为例：
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath '.\EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe'
-Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.4.3-win-x64-setup.exe.sha256'
+Get-FileHash -Algorithm SHA256 -LiteralPath '.\EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe'
+Get-Content -LiteralPath '.\EmbyTheaterEnhanced-0.4.4-win-x64-setup.exe.sha256'
 ```
 
 比较第一条命令的 `Hash` 与校验文件里的 64 位十六进制值，大小写不影响比较。选择其他版本时使用该版实际文件名。哈希不一致时停止安装并重新核对下载；哈希一致仅说明文件与发布校验值相符。安装包未签名，Windows 可能显示未知发布者提示。
