@@ -4,6 +4,8 @@
 
 修改前阅读根目录 [AGENTS.md](../AGENTS.md)、[架构](ARCHITECTURE.md)、[项目状态](PROJECT_STATUS.md)和[维护注意事项](LESSONS_LEARNED.md)，核对最新远端分支、工作区及相关源码。保留已有工作，产品改动与文档整理分开。
 
+代理参与时，从 [AGENTS.md](../AGENTS.md)进入[协作细则](AGENT_WORKFLOW.md)：模型建议、主／子代理边界和交接格式在该页统一维护。任务授权与环境权限以当前会话为准。
+
 ## 项目结构
 
 | 目录 | 用途 |
