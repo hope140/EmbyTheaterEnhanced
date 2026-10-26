@@ -607,6 +607,16 @@ async function createStore({
       if (!isLive(isCurrent)) throw new Error('cache request retired');
       let entry = entries.get(key);
       if (entry && !sameMetadata(entry.meta, meta)) throw new Error('cache version collision');
+      // A prepared next-source hit needs its existing key, not a new durable
+      // checkpoint just to touch recency. Keep the queue/liveness and physical
+      // ownership barriers; role/version/actual changes still persist below.
+      if (entry && entry.role === effectiveRole && entry.mediaKey === mediaKey(identity) &&
+          !retiredVersion && !retainActual && !retired.size && !orphans.size && !indexOrphans.size) {
+        try {await assertOwnedPaths();} catch (error) {faulted = true; throw error;}
+        if (!isLive(isCurrent)) throw new Error('cache request retired');
+        entry.touched = Date.now();
+        return key;
+      }
       if (!entry) {
         while (entries.size + blockCount() >= maxEntries) {
           const candidate = [...entries.values()]

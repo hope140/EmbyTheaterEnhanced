@@ -61,6 +61,66 @@ function blockHandleIo({corrupt = () => false, beforeRead = async () => {}} = {}
     };
 }
 
+test('same-version same-role open is a guarded lookup without another checkpoint', async t => {
+    let denyCheckpoint = false;
+    const {store, root} = await fixture(t, {}, {async writeFile(file, ...args) {
+        if (denyCheckpoint && path.basename(file).startsWith('.index-')) throw Error('touch-checkpoint-forbidden');
+        return fs.writeFile(file, ...args);
+    }});
+    const a = await store.open(identity('account-a', 'actual-A'), metadata(), 'current');
+    await store.actual(a); await store.put(a, 0, Buffer.from('actual'));
+    const bIdentity = identity('account-a', 'next-B');
+    const b = await store.open(bIdentity, metadata(), 'next'); await store.put(b, 0, Buffer.from('next'));
+    const before = store.status(), index = await fs.readFile(path.join(root, 'index.json'));
+    const journal = await fs.readFile(path.join(root, 'index.log'));
+    denyCheckpoint = true;
+    try {
+        assert.equal(await store.open(bIdentity, metadata(), 'next'), b);
+        assert.equal(store.status().indexMetrics.checkpointWrites, before.indexMetrics.checkpointWrites);
+        assert.equal(store.status().currentKey, a, 'preparing B must not retire actual A');
+        assert.deepEqual(await store.read(b, 0, 4), Buffer.from('next'));
+        assert.deepEqual(await fs.readFile(path.join(root, 'index.json')), index);
+        assert.deepEqual(await fs.readFile(path.join(root, 'index.log')), journal, 'touch does not alter committed journal/roles');
+    } finally {denyCheckpoint = false;}
+});
+test('touch lookup still checks physical ownership and disables a substituted path', async t => {
+    let denyOwnership = false;
+    const {store} = await fixture(t, {}, {async lstat(...args) {
+        if (denyOwnership) throw Error('owned-path-unavailable');
+        return fs.lstat(...args);
+    }});
+    await store.open(identity(), metadata(), 'next');
+    denyOwnership = true;
+    try {await assert.rejects(store.open(identity(), metadata(), 'next')); assert.equal(store.status().faulted, true);}
+    finally {denyOwnership = false;}
+});
+test('role and version changes still checkpoint and retire the old version', async t => {
+    const {store} = await fixture(t);
+    const key = await store.open(identity(), metadata({etag: 'v1'}), 'next');
+    const first = store.status().indexMetrics.checkpointWrites;
+    assert.equal(await store.open(identity(), metadata({etag: 'v1'}), 'current'), key);
+    assert.ok(store.status().indexMetrics.checkpointWrites > first);
+    const second = store.status().indexMetrics.checkpointWrites;
+    const changed = await store.open(identity(), metadata({etag: 'v2'}), 'current');
+    assert.notEqual(changed, key); assert.ok(store.status().indexMetrics.checkpointWrites > second);
+    assert.equal(store.coverage(key).bytes, 0);
+});
+test('a cancelled queued same-version lookup cannot bypass execution-time ownership', async t => {
+    const blocked = gate(); let hold = false;
+    const {store} = await fixture(t, {}, {async writeFile(file, ...args) {
+        if (hold && path.basename(file).startsWith('.index-')) {hold = false; blocked.entered(); await blocked.wait;}
+        return fs.writeFile(file, ...args);
+    }});
+    const source = identity('account-a', 'next-B'); await store.open(source, metadata(), 'next');
+    hold = true; const blocker = store.open(identity('account-a', 'other-C'), metadata(), 'next');
+    try {
+        await blocked.ready; let live = true;
+        const obsolete = store.open(source, metadata(), 'next', {isCurrent: () => live});
+        live = false; blocked.release(); await blocker;
+        await assert.rejects(obsolete, /retired/);
+    } finally {blocked.release(); await blocker.catch(() => {});}
+});
+
 test('foreground and preload share one identity and overlapping bytes are stored once', async t => {
     const {store} = await fixture(t);
     const nextKey = await store.open(identity(), metadata(), 'next');
