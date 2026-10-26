@@ -304,6 +304,28 @@ async function main() {
       }
       async start() {active(); const starting = super.start(); this.child?.once('close', () => {this.closeSeen = true;}); await starting; active();
         record('native-ready', {pid: this.child.pid}); return this;}
+      sendEnvelope(message) {
+        const budget = message.type === 'request' && message.method === 'get-property' && message.params?.name === 'demuxer-max-bytes';
+        if (!budget) return super.sendEnvelope(message);
+        this.budgetRequestIds ||= new Map(); this.budgetRequestIds.set(message.requestId, message.generationId);
+        const observe = operation => {
+          try {record('budget-transport', {operation, generation: message.generationId, requestId: message.requestId,
+            item: ['A', 'B', 'C'].includes(contexts.get(message.generationId)) ? contexts.get(message.generationId) : null, queuedFrames: this.outboundQueue.length,
+            queuedBytes: this.outboundBytes, writeBlocked: this.writeBlocked === true});} catch (_) {}
+        };
+        observe('request-send-begin');
+        try {return super.sendEnvelope(message);} finally {observe('request-send-return');}
+      }
+      dispatch(message) {
+        const generation = this.budgetRequestIds?.get(message.requestId);
+        if (!this.budgetRequestIds?.has(message.requestId) || generation !== message.generationId || message.helperInstanceId !== this.helperInstanceId || !['response', 'error'].includes(message.type)) return super.dispatch(message);
+        const observe = operation => {
+          try {record('budget-transport', {operation, generation, requestId: message.requestId,
+            item: ['A', 'B', 'C'].includes(contexts.get(generation)) ? contexts.get(generation) : null, pending: this.pending.has(message.requestId), responseKind: message.type});} catch (_) {}
+        };
+        this.budgetRequestIds.delete(message.requestId); observe('response-enter');
+        try {return super.dispatch(message);} finally {observe('response-dispatched');}
+      }
       setProperty(name, value) {
         if (name === 'user-data/emby-theater-enhanced/diagnostics/cache-bytes' && value === '') {
           try {record('cache-budget', {operation: 'clear-submit', item: contexts.get(this.currentGenerationId), generation: this.currentGenerationId});} catch (_) {}
@@ -350,9 +372,21 @@ async function main() {
       config: {enabled: true, origin: sources.cd2Endpoint, token: 'synthetic-only-token', rules: [rule], directUrlEnabled: true}});
     const boundary = get('enhanced/renderer-boundary');
     const observedIpc = {handle(channel, fn) {ipcMain.handle(channel, async (event, payload) => {
-      const observeDestroy = channel === 'enhanced-native-helper-call' && payload?.operation === 'destroy' && boundary.isTrusted(event, mainWindow.webContents);
+      const trustedNative = channel === 'enhanced-native-helper-call' && boundary.isTrusted(event, mainWindow.webContents);
+      const observeDestroy = trustedNative && payload?.operation === 'destroy';
+      const budgetBatch = trustedNative && payload?.operation === 'set-properties' &&
+        Array.isArray(payload.payload?.entries) && payload.payload.entries.some(entry => ['demuxer-max-bytes', 'profile'].includes(entry?.name));
+      const selectionCall = trustedNative && (payload?.operation === 'range-context' ||
+        payload?.operation === 'command' && Array.isArray(payload.payload?.data) && payload.payload.data[0] === 'loadfile');
+      const observeSelection = operation => {
+        try {record('selection-ipc', {operation, generation: payload.payload?.generationId,
+          item: ['A', 'B', 'C'].includes(contexts.get(payload.payload?.generationId)) ? contexts.get(payload.payload?.generationId) : null, phase: budgetBatch ? 'settings-batch' : payload.operation === 'range-context' ? 'range-context' : 'load-selection'});} catch (_) {}
+      };
       if (observeDestroy) record('destroy-ipc', {operation: 'begin'});
-      const result = await fn(event, payload);
+      if (budgetBatch || selectionCall) observeSelection('entered');
+      let result, completed = false;
+      try {result = await fn(event, payload); completed = true;}
+      finally {if (budgetBatch || selectionCall) observeSelection(completed ? 'returned' : 'rejected');}
       if (observeDestroy) record('destroy-ipc', {operation: 'complete', ok: result?.status === 'ok'});
       if (boundary.isTrusted(event, mainWindow.webContents)) {
         if (channel === 'enhanced-native-helper-call' && result?.status !== 'error') {

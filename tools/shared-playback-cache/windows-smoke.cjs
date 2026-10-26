@@ -349,6 +349,11 @@ async function run({planFile}) {
           .map(({type, item, generation, proxied, state, bytes, cache, at}) => ({type, item, generation, proxied, state, bytes, cache, at})),
         cacheBudgetReads: (r.receipt?.trace || []).filter(e => e.type === 'cache-budget').slice(-12)
           .map(({item, generation, property, operation, outcome, shapeValid, requestState, elapsedMs, at}) => ({item, generation, property, operation, outcome, shapeValid, requestState, elapsedMs, at})),
+        budgetTransport: (r.receipt?.trace || []).filter(e => e.type === 'budget-transport').slice(-16)
+          .map(({item, generation, requestId, operation, queuedFrames, queuedBytes, writeBlocked, pending, responseKind, at}) =>
+            ({item, generation, requestId, operation, queuedFrames, queuedBytes, writeBlocked, pending, responseKind, at})),
+        selectionIpc: (r.receipt?.trace || []).filter(e => e.type === 'selection-ipc').slice(-16)
+          .map(({item, generation, phase, operation, at}) => ({item, generation, phase, operation, at})),
         serverReports: (r.receipt?.trace || []).filter(e => e.type === 'server-report').slice(-12)
           .map(({method, item, session, mediaSource}) => ({method, item, session, mediaSource})),
         receiptOrigin: r.receipt?.receiptOrigin || null, evaluationTrace: (r.receipt?.trace || []).filter(e => e.type === 'evaluation-probe').slice(-24)

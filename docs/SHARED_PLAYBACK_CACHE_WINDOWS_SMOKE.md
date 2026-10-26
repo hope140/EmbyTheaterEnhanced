@@ -249,3 +249,10 @@ Stop成功还须本次主进程destroy IPC的成功回执、当前媒体在本�
 新产品基点为 `6ba43044897274f35dcf5cdb3c0b2c2a344204cc`：完整设置批次末尾异步读取实际 Native M，同代选择复用该请求；仍使用原50ms请求和25ms可选选择期限。M/profile修改使尚未派发选择失效，已派发预算持有到Stop/退休；未派发句柄在原源回退前同步脱离。原候选的预载完整ready已得到Windows证据，但B实际M回读27.37ms晚于选择期限，故不能把旧包当修复后的验证包。
 
 工具仅将显式review anchor提升至上述产品提交，保留原anchor-or-exact-tool-HEAD、祖先、受保护产品树一致性及全部包／runtime来源门禁。先以最终工具HEAD构建新身份包，再以同一HEAD及该新包实际artifact/ZIP/EXE摘要执行既有四阶段；不复用旧包身份，不延长40秒worker或120秒受控期限。来源门禁本身没有放宽，普通启动／真实媒体／性能边界仍单独验收。
+
+
+## 预算收发短诊断（复用 b608 包）
+
+本轮仅工具变化，review anchor为 `b608cf2afa67d8d5a76964898c52a334c4a34aa1`，受保护产品树必须仍与它完全相同。使用已核验artifact12637367844，ZIP SHA256 `a030f145e20c329793008b479227d28e840066487f6e62cba027dd9d907be6b9`，installer SHA256 `982682786b69755b35c805fa1b104f5eb2f965008b504b09d1a72ebf94d80edd`；工具使用本次最终精确HEAD。门禁拒绝失效／错源／摘要不符及任意历史替代品，不重打包、不修改原包清单。
+
+原 `shared_cache_smoke=true` 四阶段、来源／进程退出及超时合同不变。日志新增有界 `budgetTransport` 和 `selectionIpc`，与 `cacheBudgetReads`／loads同一时钟比较：设置ACK到上下文／选择的提前量、发送队列是否阻塞、M响应何时进入父进程及原Promise何时结算。未直接采集helper内部getter耗时或私有25ms定时器触发，不能混作已证明。当前不放宽任何断言或期限；先据证据决定是否值得试50ms可选准备上限。仍不接真实115来源。

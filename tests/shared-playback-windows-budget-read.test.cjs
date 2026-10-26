@@ -169,3 +169,75 @@ test('ObservedClient budget instrumentation preserves the original three proxy m
   assert.equal(directRecords[1].shapeValid, true);
   assert.doesNotMatch(JSON.stringify(directRecords), /3221225472/);
 });
+
+function transportProbe(record, item = 'B') {
+  const source = fs.readFileSync(path.join(__dirname, '../tools/shared-playback-cache/windows-electron.cjs'), 'utf8');
+  const begin = source.indexOf('      sendEnvelope(message) {'), end = source.indexOf('      setProperty(name, value) {', begin);
+  assert.ok(begin > 0 && end > begin);
+  class Base {
+    constructor() {this.helperInstanceId = 'owned-helper'; this.outboundQueue = []; this.outboundBytes = 0; this.pending = new Map(); this.calls = []; this.writeBlocked = false; this.returned = {owned: true};}
+    sendEnvelope(message) {this.calls.push(['send', message]); if (this.fail) throw this.fail; return this.returned;}
+    dispatch(message) {this.calls.push(['dispatch', message]); this.pending.delete(message.requestId); if (this.fail) throw this.fail; return this.returned;}
+  }
+  const make = new Function('productClient', 'contexts', 'record', 'return class extends productClient {' + source.slice(begin, end) + '};');
+  const Observed = make(Base, new Map([[103, item]]), record);
+  return new Observed();
+}
+test('actual transport observer binds one budget request and response without changing traffic or exposing payload', () => {
+  const events = [], client = transportProbe((type, data) => events.push({type, ...data}));
+  const message = {type: 'request', requestId: 7, generationId: 103, method: 'get-property', params: {name: 'demuxer-max-bytes', private: 'PRIVATE_REQUEST_VALUE'}};
+  client.pending.set(7, {});
+  assert.equal(client.sendEnvelope(message), client.returned);
+  const wrong = {type: 'response', helperInstanceId: 'owned-helper', requestId: 7, generationId: 101, result: 'PRIVATE_RESPONSE_VALUE'};
+  assert.equal(client.dispatch(wrong), client.returned);
+  assert.equal(events.length, 2, 'a stale generation cannot be labeled the current budget response');
+  assert.equal(client.dispatch({...wrong, generationId: 103, helperInstanceId: 'stale-helper'}), client.returned);
+  assert.equal(events.length, 2, 'a foreign helper cannot be labeled the current budget response');
+  client.pending.set(7, {});
+  const response = {...wrong, generationId: 103};
+  assert.equal(client.dispatch(response), client.returned);
+  assert.deepEqual(events.map(x => x.operation), ['request-send-begin', 'request-send-return', 'response-enter', 'response-dispatched']);
+  assert.deepEqual(events.slice(2).map(x => x.pending), [true, false]);
+  assert.equal(client.calls[0][1], message); assert.equal(client.calls[3][1], response);
+  assert.doesNotMatch(JSON.stringify(events), /PRIVATE|demuxer-max-bytes/);
+  assert.equal(client.budgetRequestIds.size, 0);
+  assert.equal(client.dispatch({type: 'event', name: 'time-pos'}), client.returned, 'untracked messages still dispatch unchanged');
+  const privateEvents = [], privateClient = transportProbe((type, data) => privateEvents.push(data), 'PRIVATE_ITEM');
+  privateClient.sendEnvelope(message);
+  assert.deepEqual(privateEvents.map(event => event.item), [null, null]);
+  assert.doesNotMatch(JSON.stringify(privateEvents), /PRIVATE/);
+});
+test('throwing diagnostics cannot change actual transport return values or exceptions', () => {
+  const client = transportProbe(() => {throw Error('observer-failed');});
+  const message = {type: 'request', requestId: 9, generationId: 103, method: 'get-property', params: {name: 'demuxer-max-bytes'}};
+  assert.equal(client.sendEnvelope(message), client.returned);
+  assert.equal(client.dispatch({type: 'response', helperInstanceId: 'owned-helper', requestId: 9, generationId: 103}), client.returned);
+  client.fail = Error('owned-transport-failure');
+  assert.throws(() => client.sendEnvelope({...message, requestId: 10}), error => error === client.fail);
+  assert.throws(() => client.dispatch({type: 'error', helperInstanceId: 'owned-helper', requestId: 10, generationId: 103}), error => error === client.fail);
+});
+test('actual IPC observer records batch acceptance, context and load boundaries without delaying or changing handler values', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '../tools/shared-playback-cache/windows-electron.cjs'), 'utf8');
+  const begin = source.indexOf('    const observedIpc ='), end = source.indexOf('    unregisterNative =', begin);
+  const handlers = new Map(), events = [], contexts = new Map([[103, 'B']]);
+  const sandbox = {ipcMain: {handle(channel, fn) {handlers.set(channel, fn);}}, boundary: {isTrusted: event => event.trusted},
+    mainWindow: {webContents: {}}, contexts, record: (type, data) => events.push({type, ...data}), currentItem: null, lastGeneration: null};
+  require('node:vm').runInNewContext(source.slice(begin, end) + '\napi = observedIpc;', sandbox);
+  const result = {status: 'accepted'}; let finish;
+  sandbox.api.handle('enhanced-native-helper-call', () => new Promise(resolve => {finish = () => resolve(result);}));
+  const invoke = handlers.get('enhanced-native-helper-call');
+  const pending = invoke({trusted: true}, {operation: 'set-properties', payload: {generationId: 103, entries: [{name: 'profile', value: 'PRIVATE_PROFILE'}]}});
+  assert.deepEqual(events.map(x => x.operation), ['entered']); finish(); assert.equal(await pending, result);
+  assert.deepEqual(events.map(x => [x.phase, x.operation]), [['settings-batch', 'entered'], ['settings-batch', 'returned']]);
+  contexts.set(103, 'PRIVATE_ITEM');
+  for (const [operation, extra] of [['range-context', {context: {itemId: 'B'}}], ['command', {data: ['loadfile', 'PRIVATE_URL']}]]) {
+    const work = invoke({trusted: true}, {operation, payload: {generationId: 103, ...extra}}); finish(); assert.equal(await work, result);
+  }
+  assert.deepEqual(events.filter(x => x.type === 'selection-ipc').map(x => x.phase), ['settings-batch', 'settings-batch', 'range-context', 'range-context', 'load-selection', 'load-selection']);
+  assert.doesNotMatch(JSON.stringify(events), /PRIVATE/);
+  const handlerError = Error('PRIVATE_HANDLER_ERROR');
+  sandbox.api.handle('enhanced-native-helper-call', () => {throw handlerError;});
+  await assert.rejects(handlers.get('enhanced-native-helper-call')({trusted: true}, {operation: 'range-context', payload: {generationId: 103}}), error => error === handlerError);
+  assert.equal(events.at(-1).operation, 'rejected');
+  assert.doesNotMatch(JSON.stringify(events), /PRIVATE/);
+});

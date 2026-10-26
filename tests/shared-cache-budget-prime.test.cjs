@@ -167,3 +167,14 @@ test('a batch-tail read resolving after the original selection deadline cannot c
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(v.counts(), {created: 0, opened: 0}); assert.equal(f.queue.length, 1);
 });
+test('priming with only 1ms head start cannot fit a valid 31ms native round trip into the 25ms selection budget', async t => {
+  const f = fixture(), v = virtualSelection(f); t.after(() => v.session.close());
+  const primed = f.reader.read(f.helper, 1);
+  v.advance(1); assert.equal((await v.session.setContext(v.context, f.helper, 1)).state, 'ready');
+  const selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
+  v.advance(26); assert.equal(await selecting, null);
+  v.advance(31); f.queue[0].resolve(314572800); await primed;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.queue.length, 1, 'no settings invalidation or duplicate read is needed to reproduce the timeout');
+  assert.deepEqual(v.counts(), {created: 0, opened: 0});
+});
