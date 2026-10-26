@@ -137,21 +137,20 @@ function createService(options) {
     return authority.bind({sourceProof: value.sourceProof, source: value.source, principal: owner.principal, signal,
       ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
   }
-  async function readSharedCurrentBytes(helper, generationId) {
-    const owns = () => !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId;
-    if (!owns()) throw Error('shared-cache-generation-retired');
-    // The production helper reads MPV_FORMAT_NODE and serializes safe INT64
-    // values without narrowing. No legacy bridge/text snapshot is involved.
-    const bytes = await helper.getProperty('demuxer-max-bytes', 50);
-    if (!owns() || !Number.isSafeInteger(bytes) || bytes < 256 * 1024 || bytes > 3072 * 1024 * 1024) throw Error('shared-cache-budget-unavailable');
-    return bytes;
+  const sharedBudget = require('./shared-cache-budget').createBudgetReader((helper, generationId) =>
+    !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId);
+  function readSharedCurrentBytes(helper, generationId) {return sharedBudget.read(helper, generationId);}
+  function primeSharedBudget(helper) {
+    if (rangeSession && rangeConfigKind === 'shared-byte-trial') sharedBudget.read(helper, helper.currentGenerationId);
   }
+  function changesSharedBudget(name) {return name === 'demuxer-max-bytes' || name === 'profile';}
   function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
     ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes} : {}),
     authorize: settings.sourceAuthority ? authorizeRange : undefined});}
   function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();
   let rangeSession = initialRangeConfig ? createRangeSession(initialRangeConfig) : null;
+  let rangeConfigKind = initialRangeConfig && initialRangeConfig.kind;
   let rangeConfigKey = rangeKey(initialRangeConfig), rangeApplyTail = Promise.resolve(), rangeCloseFailure = null;
   const electron = settings.electron;
   const BrowserWindow = electron && electron.BrowserWindow;
@@ -711,7 +710,7 @@ function createService(options) {
   }
 
   function retireRangeSession() {
-    ++rangePreloadEpoch; rangeGenerationOwner = null;
+    ++rangePreloadEpoch; rangeGenerationOwner = null; sharedBudget.retire();
     const owned = rangeSession; return owned ? owned.retire() : Promise.resolve();
   }
 
@@ -730,7 +729,7 @@ function createService(options) {
       // Save can finish while the old readers close: publish only the latest config.
       const latest = readRangeConfig();
       rangeSession = latest ? createRangeSession(latest) : null;
-      rangeConfigKey = rangeKey(latest);
+      rangeConfigKey = rangeKey(latest); rangeConfigKind = latest && latest.kind;
     });
     rangeApplyTail = job.catch(function () {}); return job;
   }
@@ -866,21 +865,33 @@ function createService(options) {
         if (!fixedSettingLogged.has(name)) { fixedSettingLogged.add(name); log('render-setting-fixed', {property: name}); }
         return {status: 'ok', handledBy: 'native-helper-render-path'};
       }
-      active.setProperty(name, validateScalar(payload.value));
+      const value = validateScalar(payload.value);
+      if (changesSharedBudget(name)) sharedBudget.beforeWrite();
+      active.setProperty(name, value);
+      if (changesSharedBudget(name)) primeSharedBudget(active);
       return {status: 'accepted'};
     }
     if (operation === 'set-properties') {
       requireGeneration(active, payload);
       if (!Array.isArray(payload.entries) || payload.entries.length > 64) throw new Error('property-batch-invalid');
-      payload.entries.forEach(function (entry) {
+      // Preflight the whole batch before any native write. A rejected batch may
+      // not partially change a budget already leased to a dispatched source.
+      const entries = payload.entries.map(entry => {
         const name = validatePropertyName(entry && entry.name, SET_PROPERTIES);
+        return {name, value: ['wid', 'fullscreen', 'vo', 'gpu-api'].includes(name) ? entry.value : validateScalar(entry.value)};
+      });
+      if (entries.some(entry => changesSharedBudget(entry.name))) sharedBudget.beforeWrite();
+      entries.forEach(function ({name, value}) {
         if (name === 'wid' || name === 'fullscreen') return;
         if (name === 'vo' || name === 'gpu-api') {
           if (!fixedSettingLogged.has(name)) { fixedSettingLogged.add(name); log('render-setting-fixed', {property: name}); }
           return;
         }
-        active.setProperty(name, validateScalar(entry.value));
+        active.setProperty(name, value);
       });
+      // FIFO tail read is not awaited by this settings IPC. The subsequent
+      // range bind can overlap actual native completion without delaying load.
+      primeSharedBudget(active);
       return {status: 'accepted'};
     }
     if (operation === 'get-property') {
@@ -904,7 +915,10 @@ function createService(options) {
           if (selected) await selected.cancel();
           throw new Error('stale-generation');
         }
-        const loadArgs = selected && selected.canDispatch() ? [args[0], selected.source].concat(args.slice(2)) : args;
+        const dispatchShared = selected && selected.canDispatch();
+        if (selected && !dispatchShared) selected.cancel().catch(function () {log('range-cache-unavailable', {});});
+        if (dispatchShared && selected.commit) selected.commit();
+        const loadArgs = dispatchShared ? [args[0], selected.source].concat(args.slice(2)) : args;
         const load = active.load(loadArgs);
         load.promise.catch(function (error) {
           if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||
@@ -967,6 +981,7 @@ function createService(options) {
   }
 
   async function destroyClient(reason) {
+    sharedBudget.retire();
     ++generationEpoch;
     clearPresentation(presentation);
     lastVisibleMedia = null;

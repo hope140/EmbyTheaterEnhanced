@@ -106,7 +106,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             }
         }
         try {
-            let handle;
+            let handle, budget;
             if (config.kind === 'shared-byte-trial') {
                 // Optional cache preparation must not hold loadfile behind a
                 // slow backend/property read. The original source stays owned.
@@ -117,14 +117,16 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 }, 25);});
                 const preparing = (async () => {
                     if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
-                    const currentBytes = await readCurrentBytes(helper, generationId);
+                    budget = await readCurrentBytes(helper, generationId);
+                    if (!budget || typeof budget.isCurrent !== 'function' || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-budget-retired');
+                    const currentBytes = budget.bytes;
                     if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
                     record.currentBytes = currentBytes;
                     const cache = await ensure();
                     if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
                     const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
-                        currentBytes, isCurrent: () => owns(record) && !signal.aborted, signal});
-                    if (!owns(record) || signal.aborted) {await value.stop(); throw diagnostics.error('generation-retired', 'range-shared-retired');}
+                        currentBytes, isCurrent: () => owns(record) && !signal.aborted && budget.isCurrent(), signal});
+                    if (!owns(record) || signal.aborted || !budget.isCurrent()) {await value.stop(); throw diagnostics.error('generation-retired', 'range-shared-retired');}
                     return value;
                 })();
                 try {handle = await Promise.race([preparing, deadline]);}
@@ -134,9 +136,17 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 const cache = await ensure(); if (!owns(record)) return null;
                 handle = await cache.open({source, identity: record.value.identity, transport: record.value.transport, isCurrent: () => owns(record), signal: record.controller.signal});
             }
-            if (!owns(record)) {await handle.stop(); return null;}
+            if (!owns(record) || budget && !budget.isCurrent()) {await handle.stop(); return null;}
             record.handle = handle;
-            return {source: handle.source, canDispatch: () => owns(record), cancel: () => handle.stop()};
+            let cancelling;
+            function cancel() {
+                // Clear synchronously: original-source fallback must not later
+                // mark this un-dispatched proxy as the actually playing route.
+                if (record.handle === handle) record.handle = null;
+                return cancelling ||= track(Promise.resolve().then(() => handle.stop()));
+            }
+            return {source: handle.source, canDispatch: () => owns(record) && (!budget || budget.isCurrent()),
+                ...(budget ? {commit: () => budget.commit()} : {}), cancel};
         } catch (error) {if (owns(record)) record.diagnostic = report(diagnostics.fromError(error, 'current-probe', 'cache-unavailable')); return null;}
     }
     function unproxied(reason, helper, generationId) {

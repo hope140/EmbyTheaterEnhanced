@@ -57,14 +57,14 @@ function exactBudgetReader(value, mutate) {
         setProperty: (...args) => calls.push(['set', ...args]),
         submitCommand: args => calls.push(['command', ...args]),
         async getProperty(...args) {calls.push(['get', ...args]); if (mutate) mutate(helper); return value;}};
-    const start = service.indexOf('async function readSharedCurrentBytes(');
+    const start = service.indexOf('  const sharedBudget =');
     const end = service.indexOf('function createRangeSession(', start);
-    const sandbox = {client: helper, destroyed: false};
+    const sandbox = {client: helper, destroyed: false, require: name => name === './shared-cache-budget' ? require('../src/electronapp/native-helper/shared-cache-budget') : require(name)};
     vm.runInNewContext(service.slice(start, end) + '\nreader = readSharedCurrentBytes;', sandbox);
     return {calls, read: () => sandbox.reader(helper, 7)};
 }
 for (const bytes of [256 * 1024, 300 * 1024 * 1024, 3072 * 1024 * 1024]) test('actual service reads precise Native NODE budget in one request: ' + bytes, async () => {
-    const f = exactBudgetReader(bytes); assert.equal(await f.read(), bytes);
+    const f = exactBudgetReader(bytes); assert.equal((await f.read()).bytes, bytes);
     assert.equal(f.calls.length, 1, 'no clear/expand commands may precede the Native property request');
     assert.deepEqual(Array.from(f.calls[0]), ['get', 'demuxer-max-bytes', 50]);
 });

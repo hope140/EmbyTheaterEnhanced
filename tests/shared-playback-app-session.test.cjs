@@ -115,7 +115,7 @@ async function fixture(t, options = {}) {
     async readCurrentBytes(_helper, generationId) {
       currentBytesReads.push(generationId);
       if (options.slowCurrentBytesMs) await delay(options.slowCurrentBytesMs);
-      return MEDIA_BUFFER_BYTES;
+      return {bytes: MEDIA_BUFFER_BYTES, isCurrent: () => true, commit() {}};
     }});
 
   function candidate(item, {principal = principalA, accountId = 'account-A', requestId = 'play-A', playSessionId = 'session-A'} = {}) {

@@ -357,6 +357,12 @@ async function main() {
       if (boundary.isTrusted(event, mainWindow.webContents)) {
         if (channel === 'enhanced-native-helper-call' && result?.status !== 'error') {
           if (payload.operation === 'create') activeEndpoint = result.endpointId;
+          // Budget priming now precedes range-context. Label only this fixture's
+          // fixed item IDs from the accepted original generation request.
+          if (payload.operation === 'begin-generation' && Number.isSafeInteger(result.generationId) &&
+              ['A', 'B', 'C'].includes(payload.payload?.diagnosticIdentity?.itemId)) {
+            contexts.set(result.generationId, payload.payload.diagnosticIdentity.itemId);
+          }
           if (payload.operation === 'range-context' && payload.payload?.context) {
             const context = payload.payload.context; contexts.set(payload.payload.generationId, context.itemId);
             currentItem = context.itemId; lastGeneration = payload.payload.generationId;
