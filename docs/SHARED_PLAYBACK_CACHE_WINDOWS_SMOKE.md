@@ -282,3 +282,7 @@ Native通过判据仍包括真实A基线、70%预载完整ready、原PlaybackMan
 下一次先通过新精确HEAD完整WindowsCI，再构建该HEAD的新包，独立核验新artifact／ZIP／EXE摘要；随后同HEAD跑原baseline／natural／reopen／cancel四阶段。natural仍须完整预载ready、自然切B代理命中、无已预载正文重取。readObservation应无未知关联或泄漏，并分别报告timer-rearmed与最终timer-fired；真正单块超过15ms的回源仍使本次零重复断言失败，不用改期限或删断言掩盖。保持40秒worker／120秒受控总期限和原完整来源门禁，不做真实115测试。
 
 本地测试和旧诊断不是普通app入口／首帧／seek性能验收，也不是任意硬盘延迟保证。若仍有完整块读取超时，应依据实测报告延迟与重复流量的取舍，再决定政策，不假称本次边界修正能消除所有慢盘情况。
+
+本次新产品审阅锚点为`371fbf0caf91420727273f99e8fdd06805dfc7f8`。工具后继仅更新此绑定及合同测试／说明，受保护产品树须与锚点严格一致且锚点为HEAD祖先；只接受锚点或当时精确工具HEAD。父可在完整CI成功后直接打最终工具HEAD的新包，再以同HEAD和新artifact摘要做Native，不需要为写入工具自身SHA再生成另一包。旧d4e及其artifact不在本候选允许来源中。
+
+绑定更新后的flow／observer／Windows contract／smoke子集73项全过；锚点后的受保护产品树不变。新的Windows完整CI、打包和Native结果尚待执行；本地绿灯不替代其门禁。
