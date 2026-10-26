@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-26 — 修正Windows路径夹具并统一新包／Native来源
+
+504的WindowsCI唯一失败为Linux端口测试用raw POSIX路径计算hash，却在Windows由host path.join规范后选择根；不是端口避让或媒体逻辑失败。测试改宿主规范根，并用同一helper在POSIX／Windows路径实现下复现旧错及验证避让，原断言不删除、不跳过Windows。504未派包，不重跑原SHA；本地9a工具绑定整合到新候选，artifact来源须经既有reviewedCandidate明确批准（504锚点或当前精确HEAD），run／manifest／摘要继续绑定同一真实来源，不接受任意内容相同提交。
+
+用户已纠正范围：预载与暂存一起完成，沿用一套共享磁盘层、现有M＋独立P、仅最后实际播放缓存保留及未播next退出丢弃；早先“只预载”限制已撤销。飞牛仍暂停。新候选先CI再单次新包和Native四阶段；共享层普通入口接线与延迟验收仍未完成。
+
 ## 2026-10-26 — 新包后Native来源绑定已本地准备
 
 仅工具后继将PRODUCT_COMMIT锁定到504e2fe，并保留全套独立安装器／物理清单／来源门禁；产品树不变。父确认精确504包已派发前不移动远端ref，不自动构建或dispatch。四阶段的字段判据、最小输入和过期／失败停止规则已写入[执行合同](SHARED_PLAYBACK_CACHE_WINDOWS_SMOKE.md)，基础回归由受控runner执行，不要求用户代测；实际新包和Windows结果尚未取得。

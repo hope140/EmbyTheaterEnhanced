@@ -1,6 +1,16 @@
 # 共享播放缓存：独立Windows合成验收
 
-## 新包后的最小执行合同（产品504e2fe）
+## 当前：504未派包，修正测试后用同一新HEAD构建与验证
+
+[504CI40279839873](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/40279839873)最终失败：2746项，2739通过、1失败、6跳过；Linux端口fixture在Windows把raw POSIX路径与host规范路径的hash混用。修正仅测试根身份，另在exact helper的POSIX／win32路径实现下复现旧差异并保留真实避让断言，未改产品guard。父未派504包，也不盲重跑旧SHA。
+
+新候选包含已本地准备的9a工具。PRODUCT_COMMIT504现在是产品一致性审阅锚点；CI先核锚点祖先／产品树，再将artifact metadata的source SHA交给既有reviewedCandidate，只接受锚点或当前精确工具HEAD。run、artifact name、安装器回执、物理清单和所有Git／native／Electron来源均绑定该真实选定SHA；不能把不同提交产物视为天然逐字相同，不接受任意历史提交或改旧manifest。这样父可先构建本次新HEAD，随后仍用同HEAD及新artifact摘要跑四阶段，避免为写入自身SHA追加工具提交。若HEAD后来变动，包来源不在允许集合则必须停止并重新审阅绑定。
+
+CI通过后，父单次新包使用本分支新HEAD，release_package／build_input_benchmark／shared_cache_smoke／shared_cache_diagnostics全false、expected SHA为该HEAD、artifact三项空。包成功后同HEAD只改smoke=true、填该包的新ID／实际ZIP SHA／installer SHA，其余trials4／warm3／diagnostics=false保持。新Native门禁与下表四阶段判据不删；用户明确预载与暂存一起做，reopen／Stop保留／next丢弃都属于同一方案，飞牛仍暂停。
+
+本地路径／来源门禁定向49项通过；完整文件串行2848项中2823通过、0失败、25项平台／材料条件跳过，约134秒。JS600／PowerShell55、有限699文件模式扫描及文档链接／格式通过；exact helper的win32 path注入是确定性模拟，不冒称真实Windows执行。新的WindowsCI和实际Native结果须继续单独读取。
+
+## 历史504／9a准备合同（504CI失败，未派包）
 
 产品来源固定`504e2feb627f308ddf56a7453fd4772f77419a58`。单独的工具后继提交只更新PRODUCT_COMMIT／对应合同测试与本文，受保护src／native／vendor／installer／package树须与该产品来源相同，且产品提交是工具HEAD祖先。父派包尚未确认时不移动远端ref，避免UI误取工具后继作为另一个包来源。
 

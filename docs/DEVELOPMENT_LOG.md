@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-26 — Windows测试路径身份对齐与同HEAD包绑定
+
+保留504CI失败：2746项中2739通过、1失败、6跳过；失败在Linux端口fixture的notStrictEqual，媒体未进入。用exact helper源配POSIX／win32 path注入确定性复现raw路径hash与host规范identity不一致；修测试根拼接，不改helper／产品guard。结合已有9a工具，CI先核兼容锚点／产品树，artifact metadata来源再用既有reviewedCandidate白名单核对，之后所有run/name/provenance仍使用选定精确SHA；支持本次HEAD打包和本次HEAD验证，旧包不重标，未来工具变动仍须重新审阅来源。
+
 ## 2026-10-26 — 产品504与Native工具后继分开绑定
 
 新包前置由父协调，本地只准备工具PRODUCT_COMMIT和回归预期迁移，不改变产品或尝试获取旧artifact。新artifact必须绑定504的成功手动run及其实际ZIP／installer摘要，继续完整物理／Git源校验。将baseline／natural真实B复用／新进程reopen／held请求cancel的原断言和退出／清理判据明确列出；保留原超时与隔离，不扩测试框架，不把单样本耗时等同用户seek性能通过。

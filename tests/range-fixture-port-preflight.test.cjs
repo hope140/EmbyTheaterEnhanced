@@ -3,6 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
+const vm = require('node:vm');
 const {createWindowsPortPreflight, selectRoot, guardPort, linuxOccupiedPorts} = require('./helpers/range-fixture-root.cjs');
 
 test('Linux read-only port table includes listeners and TIME_WAIT without process or remote-address data', () => {
@@ -13,11 +15,33 @@ test('Linux read-only port table includes listeners and TIME_WAIT without proces
   assert.deepEqual(linuxOccupiedPorts(table), new Set([50000, 50001]));
   for (const invalid of ['', 'unknown table', header + 'bad row\n', header + 'x'.repeat(2 * 1024 * 1024)])
     assert.throws(() => linuxOccupiedPorts(invalid), /invalid-Linux-test-port-table/);
-  const root = '/owned/fresh-fixture', port = guardPort(root, 'linux');
+  const root = path.join(path.parse(process.cwd()).root, 'owned', 'fresh-fixture'), port = guardPort(root, 'linux');
   const occupied = linuxOccupiedPorts(header + ' 0: 0100007F:' + port.toString(16).padStart(4, '0') + ' 00000000:0000 06 unused\n');
   const selected = selectRoot(root, [''], [], occupied, 'linux');
   assert.notEqual(selected, root);
   assert.equal(occupied.has(guardPort(selected, 'linux')), false);
+});
+
+test('occupied-root fixture uses the same host-normalized identity as selectRoot on POSIX and Windows', () => {
+  const source = fs.readFileSync(require.resolve('./helpers/range-fixture-root.cjs'), 'utf8');
+  for (const paths of [path.posix, path.win32]) {
+    const module = {exports: {}};
+    const load = name => name === 'node:path' ? paths : require(name);
+    vm.runInNewContext(source, {require: load, module, process: {env: {}, platform: 'linux'}, Buffer, console});
+    const helper = module.exports;
+    const root = paths.join(paths.parse('/owned').root, 'owned', 'fresh-fixture');
+    const port = helper.guardPort(root, 'linux');
+    const selected = helper.selectRoot(root, [''], [], new Set([port]), 'linux');
+    assert.notEqual(selected, root, 'an occupied normalized root must be avoided on either host');
+    assert.notEqual(helper.guardPort(paths.join(selected, ''), 'linux'), port);
+    const rawLinuxPath = '/owned/fresh-fixture';
+    if (paths === path.win32) {
+      assert.notEqual(helper.guardPort(rawLinuxPath, 'linux'), helper.guardPort(paths.join(rawLinuxPath, ''), 'linux'),
+        'the old Linux spelling hashed a different Windows normalized identity');
+      assert.equal(helper.selectRoot(rawLinuxPath, [''], [], new Set([helper.guardPort(rawLinuxPath, 'linux')]), 'linux'), rawLinuxPath,
+        'reproduces the old failing fixture without changing the product or selection algorithm');
+    }
+  }
 });
 
 const SNAPSHOT = 'ETE_TEST_WINDOWS_PORT_SNAPSHOT';

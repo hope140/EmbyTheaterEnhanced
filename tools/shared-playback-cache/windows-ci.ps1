@@ -15,11 +15,11 @@ $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if ($ArtifactId -cnotmatch '^[1-9][0-9]{0,17}$' -or $ZipSha256 -cnotmatch '^[a-f0-9]{64}$' -or $InstallerSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ExpectedToolSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Exact artifact/tool identities required.' }
 $actualToolSha = ([string](& git -C $repo rev-parse HEAD)).Trim()
 if ($LASTEXITCODE -ne 0 -or $actualToolSha -cne $ExpectedToolSha -or $env:GITHUB_SHA -cne $ExpectedToolSha -or $env:GITHUB_REPOSITORY -cne 'hope140/EmbyTheaterEnhanced') { throw 'Unexpected repository/tool checkout.' }
-# Reuse the one reviewed package; later tooling has its own exact checkout SHA.
-# Check protected product bytes/ancestry before acquiring anything. Candidate
-# provenance and every runtime hash remain bound to this fixed package SHA.
-$productSha = [string](& node -e "const c=require(process.argv[1]); console.log(c.reviewedCandidate({repo:process.argv[2],candidateCommit:c.PRODUCT_COMMIT}).productCommit);" (Join-Path $PSScriptRoot 'windows-contract.cjs') $repo)
-if ($LASTEXITCODE -ne 0 -or $productSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Reviewed package compatibility failed.' }
+# Check protected product bytes/ancestry before acquiring anything. The exact
+# artifact may be the reviewed product anchor or this same tooling HEAD; the
+# latter permits one source commit for package and Native verification.
+$reviewedProduct = [string](& node -e "const c=require(process.argv[1]); console.log(c.reviewedCandidate({repo:process.argv[2],candidateCommit:c.PRODUCT_COMMIT}).productCommit);" (Join-Path $PSScriptRoot 'windows-contract.cjs') $repo)
+if ($LASTEXITCODE -ne 0 -or $reviewedProduct -cnotmatch '^[a-f0-9]{40}$') { throw 'Reviewed package compatibility failed.' }
 if (Test-Path -LiteralPath $OutputRoot) { throw 'Preserve previous smoke output.' }
 New-Item -ItemType Directory -Path $OutputRoot | Out-Null
 $safe = Join-Path $OutputRoot 'safe-receipts'
@@ -30,6 +30,10 @@ $api = 'https://api.github.com/repos/hope140/EmbyTheaterEnhanced'
 try {
     $artifact = Invoke-RestMethod -Uri "$api/actions/artifacts/$ArtifactId" -Headers $headers -Method Get
     $runId = [string]$artifact.workflow_run.id
+    $candidateSource = [string]$artifact.workflow_run.head_sha
+    if ($candidateSource -cnotmatch '^[a-f0-9]{40}$') { throw 'identity' }
+    $productSha = [string](& node -e "const c=require(process.argv[1]); console.log(c.reviewedCandidate({repo:process.argv[2],candidateCommit:process.argv[3]}).productCommit);" (Join-Path $PSScriptRoot 'windows-contract.cjs') $repo $candidateSource)
+    if ($LASTEXITCODE -ne 0 -or $productSha -cne $candidateSource) { throw 'identity' }
     if ($runId -cnotmatch '^[1-9][0-9]{0,17}$' -or $artifact.expired -or $artifact.workflow_run.head_sha -cne $productSha -or $artifact.name -notlike "ete-test-win-x64-$productSha-*" -or $artifact.size_in_bytes -gt 400MB) { throw 'identity' }
     $run = Invoke-RestMethod -Uri "$api/actions/runs/$runId" -Headers $headers -Method Get
     if ($run.head_sha -cne $productSha -or $run.conclusion -cne 'success' -or $run.event -cne 'workflow_dispatch' -or $run.path -cne '.github/workflows/public-ci.yml') { throw 'identity' }
