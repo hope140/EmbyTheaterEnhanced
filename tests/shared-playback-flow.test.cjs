@@ -17,18 +17,24 @@ async function cleanup(actions, remove) {
 }
 
 // These functional capture/ownership cases need a deterministic disk deadline, not a
-// promise that a Windows filesystem callback always arrives within 15ms.
-// Load the maintained proxy unchanged; intercept only its one read timer.
+// promise that a Windows filesystem callback always arrives within its per-block grace.
+// Load the maintained proxy unchanged; control only timers causally scheduled by store.read.
 async function controlledReadClock() {
   const file = require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
   const source = await fs.readFile(file, 'utf8');
-  assert.equal((source.match(/timer = setTimeout\(expire, 15\)/g) || []).length, 1);
-  const pending = new Set(), timers = new Set(); let fired = 0, now = 0, firing = false;
+  assert.match(source, /const readGracePerBlock = 15/);
+  assert.match(source, /const deadline = readStarted \+ 15 \+ readGracePerBlock/);
+  assert.match(source, /Math\.max\(1, Math\.ceil\(deadline - performance\.now\(\)\)\)/);
+  const pending = new Map(), timerOwners = new Map(); let created = 0, fired = 0, early = 0, now = 0, firing = null, slot = null, reads = 0;
   const readSetTimeout = (fn, ms, ...args) => {
-    if (ms !== 15 && !firing) return setTimeout(fn, ms, ...args);
-    const timer = {fn, due: now + ms}; timers.add(timer); pending.add(timer); return timer;
+    let attempt = null;
+    if (firing) {attempt = firing.attempt; firing.rearmed = true;}
+    else if (slot && ms >= 1 && ms <= 30) {attempt = slot; slot = null;}
+    if (!attempt) return setTimeout(fn, ms, ...args);
+    const owner = {attempt, rearmed: false}, timer = {fn, ms, args, due: now + ms};
+    created++; timerOwners.set(timer, owner); pending.set(timer, owner); return timer;
   };
-  const readClearTimeout = timer => {if (timers.has(timer)) pending.delete(timer); else clearTimeout(timer);};
+  const readClearTimeout = timer => {if (timerOwners.has(timer)) {timerOwners.delete(timer); pending.delete(timer);} else clearTimeout(timer);};
   const loaded = {exports: {}};
   // Keep Node's own realm (Error/Array/Promise identity); only the two lexical
   // timer dependencies differ from the standard CommonJS wrapper.
@@ -36,16 +42,61 @@ async function controlledReadClock() {
   const realRequire = createRequire(file);
   const clockRequire = name => name === 'node:perf_hooks' ? {performance: {now: () => now}} : realRequire(name);
   load(loaded.exports, clockRequire, loaded, file, path.dirname(file), readSetTimeout, readClearTimeout);
-  return {createProxy: loaded.exports.createProxy,
-    status: () => ({created: timers.size, pending: pending.size, fired}),
+  function createProxy(options) {
+    const originalStore = options.store;
+    const observedStore = {...originalStore, read(...args) {
+      reads++; const attempt = {number: reads}; slot = attempt;
+      try {return originalStore.read.apply(originalStore, args);}
+      catch (error) {if (slot === attempt) slot = null; throw error;}
+    }};
+    return loaded.exports.createProxy({...options, store: observedStore});
+  }
+  return {createProxy,
+    status: () => ({created, reads, pending: pending.size, fired, early, now}),
+    advance(ms) {assert.ok(Number.isFinite(ms) && ms >= 0); now += ms;},
     expireRead(elapsed = 15) {
       assert.equal(pending.size, 1, 'exactly one owned local read must be waiting');
-      const timer = [...pending][0]; pending.delete(timer); fired++; now += elapsed;
-      firing = true; try {timer.fn();} finally {firing = false;}
+      const [timer, owner] = [...pending.entries()][0]; pending.delete(timer); timerOwners.delete(timer); now += elapsed;
+      const previous = firing; firing = owner;
+      try {timer.fn.apply(undefined, timer.args);}
+      finally {firing = previous; if (owner.rearmed) early++; else fired++;}
     }};
 }
 async function createProxy(options) {
   return (await controlledReadClock()).createProxy(options);
+}
+
+function gatedBlockReads() {
+  let holding = false;
+  const entered = [];
+  return {
+    io: {...fs, async open(file, flags, ...args) {
+      const handle = await fs.open(file, flags, ...args);
+      if (!String(file).endsWith('.bin') || flags !== 'r') return handle;
+      let gated = false;
+      return {stat: (...params) => handle.stat(...params), close: (...params) => handle.close(...params),
+        async read(...params) {
+          if (holding && !gated) {
+            gated = true;
+            let release;
+            const gate = new Promise(resolve => {release = resolve;});
+            entered.push({file: String(file), release});
+            await gate;
+          }
+          return handle.read(...params);
+        }};
+    }},
+    hold(value) {holding = value;},
+    async waitFor(count) {
+      const end = Date.now() + 1500;
+      while (entered.length < count && Date.now() < end) await delay(1);
+      assert.ok(entered.length >= count, 'the expected actual block read reached its FileHandle gate');
+      return entered[count - 1];
+    },
+    release(index) {entered[index]?.release();},
+    releaseAll() {for (const row of entered) row.release();},
+    get count() {return entered.length;}
+  };
 }
 
 async function setup(t, {policy = 'coherent', bytes = 512 * 1024, origin: supplied, onOriginChunk} = {}) {
@@ -424,7 +475,9 @@ test('an already received two-MiB cold response survives a blocked disk tap for 
   assert.equal(origin.requests.length, 1, 'the second playback cannot reread an origin gap');
   assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
   assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
-  assert.deepEqual(clock.status(), {created: 8, pending: 0, fired: 0}, 'all eight actual disk reads finish before the controlled deadline');
+  assert.equal(clock.status().created, 8, 'all eight actual disk reads were observed');
+  assert.equal(clock.status().pending, 0, 'all eight actual disk reads finish before the controlled deadline');
+  assert.equal(clock.status().fired, 0);
   assert.ok(proxy.status().peakWriteJobs <= 8);
   assert.ok(store.status().peak <= bytes);
   assert.ok(proxy.status().peakMediaReservedBytes <= 8 * 1024 * 1024);
@@ -455,10 +508,14 @@ test('a committed local block exceeding its read deadline falls back and retains
   const second = get(handle.url, 0, bytes);
   await entered;
   assert.equal(origin.requests.length, 1, 'the committed block is still being read locally before the timeout');
-  assert.deepEqual(clock.status(), {created: 1, pending: 1, fired: 0});
-  clock.expireRead(14.294);
+  assert.equal(clock.status().created, 1);
+  assert.equal(clock.status().reads, 1);
+  assert.equal(clock.status().pending, 1);
+  assert.equal(clock.status().fired, 0);
+  assert.equal(clock.status().now, 0);
+  clock.expireRead(29.294);
   await delay(5);
-  assert.equal(origin.requests.length, 1, 'an early timer callback must not refetch a committed block');
+  assert.equal(origin.requests.length, 1, 'an early callback must rearm without refetching a committed block');
   assert.equal(clock.status().pending, 1, 'the remaining absolute deadline is rearmed');
   clock.expireRead(0.706);
   const result = await second;
@@ -471,9 +528,223 @@ test('a committed local block exceeding its read deadline falls back and retains
   await new Promise(resolve => setImmediate(resolve)); assert.equal(drained, false);
   hold = false; release(); await draining;
   assert.equal(store.status().readers, 0); assert.equal(proxy.status().readReservedBytes, 0);
-  assert.deepEqual(clock.status(), {created: 2, pending: 0, fired: 2});
+  assert.equal(clock.status().created, 2, 'the early callback created one owned rearm');
+  assert.equal(clock.status().pending, 0);
+  assert.equal(clock.status().fired, 1, 'only the final absolute deadline is a timeout');
+  assert.equal(clock.status().early, 1);
+  assert.equal(proxy.status().localReadTimeouts, 1);
+  assert.equal(proxy.status().localReadGraceMs, 15);
   assert.deepEqual(await store.read(key, 0, bytes), origin.data);
 });
+
+test('a valid twenty millisecond local read uses per-block grace without any source request', async t => {
+  const bytes = 64 * 1024, root = temporaryRoot('ete-shared-read-grace-valid-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.deepEqual(await store.span(key, 0), {start: 0, end: bytes});
+
+  const before = proxy.status(); gate.hold(true);
+  const warmPending = get(handle.url, 0, bytes);
+  await gate.waitFor(1);
+  assert.equal(clock.status().pending, 1);
+  clock.advance(20);
+  gate.hold(false); gate.release(0);
+  const warm = await warmPending; await proxy.drain();
+  assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
+  assert.equal(origin.requests.length, 1, 'a read completed inside its 30ms per-block window never refetches');
+  assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
+  assert.equal(proxy.status().localReadTimeouts, 0);
+  assert.equal(proxy.status().localReadRefusals, 0);
+  assert.equal(proxy.status().localReadGraceMs, 5);
+  assert.equal(clock.status().pending, 0);
+});
+
+test('two twenty millisecond block reads each use per-block grace without source fallback', async t => {
+  const bytes = 2 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-pair-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.deepEqual(await store.span(key, 0), {start: 0, end: bytes});
+
+  const before = proxy.status(); gate.hold(true);
+  const warmPending = get(handle.url, 0, bytes);
+  await gate.waitFor(1);
+  clock.advance(20); gate.release(0);
+  await gate.waitFor(2);
+  assert.equal(clock.status().now, 20);
+  clock.advance(20); gate.release(1);
+  gate.hold(false);
+  const warm = await warmPending;
+  assert.equal(clock.status().pending, 0);
+  assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
+  assert.equal(origin.requests.length, 1, 'both reads finish within their individual deadlines');
+  assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
+  assert.equal(proxy.status().localReadGraceMs, 10, 'each block accounts for its five milliseconds beyond the old deadline');
+  assert.equal(proxy.status().localReadTimeouts, 0);
+  assert.equal(proxy.status().localReadRefusals, 0);
+  gate.releaseAll(); await proxy.drain();
+  assert.equal(store.status().readers, 0);
+});
+
+test('multiple twenty eight millisecond block reads each stay within the thirty millisecond bound', async t => {
+  const bytes = 3 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-many-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.equal(cold.hash, hash(origin.data));
+
+  const before = proxy.status(); gate.hold(true);
+  const warmPending = get(handle.url, 0, bytes);
+  for (let index = 0; index < 3; index++) {
+    await gate.waitFor(index + 1);
+    clock.advance(28);
+    gate.release(index);
+  }
+  gate.hold(false);
+  const warm = await warmPending;
+  gate.releaseAll(); await proxy.drain();
+  assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
+  assert.equal(origin.requests.length, 1);
+  assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
+  assert.equal(proxy.status().localReadTimeouts, 0);
+  assert.equal(proxy.status().localReadGraceMs, 39);
+  assert.equal(clock.status().pending, 0);
+  assert.equal(store.status().readers, 0);
+});
+
+test('an over-deadline block falls back only for its range gap while later blocks hit locally', async t => {
+  const bytes = 3 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-gap-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.equal(cold.hash, hash(origin.data));
+
+  const before = proxy.status(); gate.hold(true);
+  const warmPending = get(handle.url, 0, bytes);
+  await gate.waitFor(1);
+  clock.expireRead(30);
+  gate.hold(false);
+  const warm = await warmPending;
+  gate.releaseAll(); await proxy.drain();
+  assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
+  assert.equal(origin.requests.length, 2, 'only the timed-out first gap is fetched from origin');
+  assert.deepEqual(origin.requests[1] && {start: origin.requests[1].start, end: origin.requests[1].end},
+    {start: 0, end: 256 * 1024 - 1});
+  assert.equal(proxy.status().hitBytes - before.hitBytes, 2 * 256 * 1024);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 256 * 1024);
+  assert.equal(proxy.status().localReadTimeouts, 1);
+  assert.equal(proxy.status().localReadGraceMs, 15);
+  assert.equal(clock.status().pending, 0);
+  assert.equal(store.status().readers, 0);
+});
+
+test('a missing verified block is an immediate local refusal with zero grace before ordinary source fallback', async t => {
+  const bytes = 64 * 1024, root = temporaryRoot('ete-shared-read-miss-', ['']);
+  let origin, store, proxy;
+  t.after(async () => cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true})));
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const first = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.deepEqual(await store.span(key, 0), {start: 0, end: bytes});
+  const blocks = await fs.readdir(path.join(root, 'blocks'));
+  const block = blocks.find(name => name.endsWith('.bin'));
+  assert.ok(block);
+  await fs.unlink(path.join(root, 'blocks', block));
+
+  const before = proxy.status();
+  const result = await get(handle.url, 0, bytes); await proxy.drain();
+  assert.equal(result.status, 206); assert.equal(result.hash, first.hash);
+  assert.equal(origin.requests.length, 2, 'a missing local file falls through immediately without waiting for grace');
+  assert.equal(proxy.status().localReadRefusals, 1);
+  assert.equal(proxy.status().localReadTimeouts, 0);
+  assert.equal(proxy.status().localReadGraceMs, 0);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, bytes);
+  assert.equal(clock.status().created, 1);
+  assert.equal(clock.status().pending, 0);
+  assert.equal(clock.status().fired, 0);
+});
+
+test('a new seek owns its local read after an older rearmed response is cancelled', async t => {
+  const bytes = 2 * 256 * 1024, root = temporaryRoot('ete-shared-read-seek-owner-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.equal(cold.hash, hash(origin.data));
+  assert.deepEqual(await store.span(key, 0), {start: 0, end: bytes});
+
+  gate.hold(true);
+  const client = new AbortController();
+  const oldResponse = get(handle.url, 0, 256 * 1024, {signal: client.signal}).catch(() => null);
+  await gate.waitFor(1);
+  clock.expireRead(10);
+  assert.equal(clock.status().pending, 1);
+  assert.equal(clock.status().early, 1);
+  gate.hold(false);
+  client.abort();
+  const old = await oldResponse;
+  if (old) assert.equal(old.status, 502);
+  const deadline = Date.now() + 1000;
+  while (proxy.status().activeBodies && Date.now() < deadline) await delay(1);
+  assert.equal(proxy.status().activeBodies, 0, 'the retired response cancels before the rearmed deadline');
+  assert.equal(clock.status().pending, 0);
+
+  const beforeSeek = proxy.status();
+  const seek = await get(handle.url, 256 * 1024, 256 * 1024);
+  assert.equal(seek.status, 206);
+  assert.equal(seek.hash, hash(origin.data.subarray(256 * 1024, bytes)));
+  assert.equal(origin.requests.length, 1, 'the new target is served by its own local cache read');
+  const hitAfterSeek = proxy.status().hitBytes;
+  assert.equal(hitAfterSeek - beforeSeek.hitBytes, 256 * 1024);
+
+  gate.release(0); await proxy.drain();
+  assert.equal(proxy.status().hitBytes, hitAfterSeek, 'the old late FileHandle result never becomes a hit in the new seek');
+  assert.equal(proxy.status().readReservedBytes, 0);
+  assert.equal(store.status().readers, 0);
+});
+
 
 test('cold overlapping probes stay on one origin response until actual playback enables cache reads', async t => {
   const origin = await source({bytes: 256 * 1024, firstDelay: 20, tailDelay: 100});
@@ -613,6 +884,11 @@ for (const phase of ['boundary', 'read']) for (const cancel of ['retirement', 'c
     const client = new AbortController();
     const pending = get(handle.url, 0, bytes, {signal: client.signal}).catch(() => null);
     await waiting;
+    if (phase === 'read') {
+      clock.expireRead(10);
+      assert.equal(clock.status().early, 1, 'the deadline woke early and rearmed on the same owned read');
+      assert.equal(clock.status().pending, 1);
+    }
     if (cancel === 'retirement') handle.retire(); else client.abort();
     const response = await pending;
     if (response) {assert.equal(response.status, 502); assert.equal(response.body.length, 0);}
@@ -621,7 +897,12 @@ for (const phase of ['boundary', 'read']) for (const cancel of ['retirement', 'c
     assert.equal(proxy.status().activeBodies, 0, 'the cancelled body relinquishes its local wait');
     assert.equal(origin.requests.length, requestCount, 'cancellation cannot become a source gap request');
     assert.equal(proxy.status().hitBytes, before.hitBytes);
-    if (phase === 'read') assert.equal(proxy.status().readReservedBytes, 1048576, 'unfinished physical work remains owned');
+    if (phase === 'read') {
+      assert.equal(proxy.status().readReservedBytes, 1048576, 'unfinished physical work remains owned');
+      assert.equal(clock.status().pending, 0, 'cancellation clears the rearmed timer without waiting for it');
+      assert.equal(proxy.status().localReadTimeouts, 0);
+      assert.equal(proxy.status().localReadGraceMs, 0);
+    }
     release(); await proxy.drain();
     assert.equal(proxy.status().readReservedBytes, 0); assert.equal(clock.status().pending, 0);
     assert.equal(proxy.status().hitBytes, before.hitBytes);

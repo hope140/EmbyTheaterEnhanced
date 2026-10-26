@@ -286,3 +286,10 @@ Native通过判据仍包括真实A基线、70%预载完整ready、原PlaybackMan
 本次新产品审阅锚点为`371fbf0caf91420727273f99e8fdd06805dfc7f8`。工具后继仅更新此绑定及合同测试／说明，受保护产品树须与锚点严格一致且锚点为HEAD祖先；只接受锚点或当时精确工具HEAD。父可在完整CI成功后直接打最终工具HEAD的新包，再以同HEAD和新artifact摘要做Native，不需要为写入工具自身SHA再生成另一包。旧d4e及其artifact不在本候选允许来源中。
 
 绑定更新后的flow／observer／Windows contract／smoke子集73项全过；锚点后的受保护产品树不变。新的Windows完整CI、打包和Native结果尚待执行；本地绿灯不替代其门禁。
+
+
+## Bounded30ms block-read candidate
+
+Review anchor `abb3f2970be5df9d4c5ee44b44ec47163c4dffe5` contains the measured per-block30ms source; the following tool-only binding commit must keep its protected product tree identical. Accept only this anchor or the exact current tool HEAD and preserve complete artifact/manifest/native identities. The old7a package does not contain this correction. No package/Native dispatch is performed in this local step. Baseline/natural/reopen/cancel and zero repeated body remain unchanged: a true read beyond the finite window can still trigger a failure, never a weakened success. See [the comparison, wait bounds and performance limitations](SHARED_PLAYBACK_CACHE_READ_POLICY.md).
+
+The final source-binding/flow/observer/probe subset passes66/66. Protected product trees are identical to the new anchor. This local binding does not reuse the7a artifact or claim a new Windows/Native result; remote publication/package/dispatch remain separately coordinated.

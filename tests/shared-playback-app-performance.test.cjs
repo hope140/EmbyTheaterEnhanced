@@ -7,6 +7,13 @@ const runner = require('../tools/shared-playback-cache/app-performance-runner.cj
 const fixtures = require('../tools/shared-playback-cache/windows-fixtures.cjs');
 const {createEmby} = require('../tools/shared-playback-cache/app-emby-fixture.cjs');
 
+test('ordinary app and physical-package verifier share the exact reviewed product anchor', () => {
+  const physical = require('../tools/shared-playback-cache/windows-contract.cjs');
+  assert.equal(c.BASE, physical.PRODUCT_COMMIT);
+  assert.equal(runner.BASE, c.BASE);
+  assert.notEqual(c.BASE, '7a569c8e36f3d26f65d71aead369f0e6e9f70aad');
+});
+
 test('fixed app matrix is 46 isolated arms and 230 outcomes, with entry preflight separate', () => {
   const rows=runner.cases('matrix'); assert.equal(rows.length,46);
   assert.deepEqual(rows.slice(0,4),[{index:0,pair:-3,arm:'A'},{index:1,pair:-3,arm:'B'},{index:2,pair:-2,arm:'B'},{index:3,pair:-2,arm:'A'}]);

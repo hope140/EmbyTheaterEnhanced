@@ -12,6 +12,13 @@
 
 核对干净695ca02及6ec2／bc585本地保存，远端836未漂移。将最新main345bb2c合入试验分支，五处冲突保留两支历史说明、最新Host源链合同及既有严格workflow扩展检查，版本检查改为当前package／lock一致；组件／Native helper／controller／版本文件与新main保持一致。继续单次真实M读取和后台背压，观察器适配Native数值而不改原Promise／超时。按最新恢复规格对齐MiB显示与P字节预算，不新增设置或限速要求。短体／断流／末块写失败明确不ready、不重试且保留所属清理；当前仅本地证据，真实Windows与用户媒体分开，未触115。
 
+## 2026-10-26 — 首页图片内文字隐藏恢复（待后续包）
+
+在最新 main `345bb2cb` 上恢复旧首页图片内居中文字的隐藏范围：维护 CSS 只匹配 `.sections > .homeSectionsContainer` 内的 `innerCardFooter`，不改冻结 CardBuilder、不新增年份开关或给 stage 添加通用 `sections` 身份。普通海报下方年份／标题、非首页图片内文字及进度／角标保持旧表现；版本及已发布 Tag／附件不变，合并后等后续包。
+
+同根审计确认旧组合类选择器是本次匹配差异；现有进度、已播／数量／计时器／直播角标、外层文字间距和 `.closest('.homeSectionsContainer')` 钩子未发现该失配。实际 CardBuilder／CSS 与维护 Home owner 的受控 Chromium 18 组对照通过；修改前同一对照复现图片内年份可见，修改后恢复旧隐藏。既有真实组件 Home／设置返回／缓存页路由 15 组通过。Linux 公开离线集 2130 项：2105 pass／0 fail／25 项平台 skip，按现有公开合同排除 6 个材料依赖文件。服务、图片和平台能力由夹具提供，未执行用户 NAS、Windows 完整客户端、播放或新包验收；远端 CI 结果按最终提交另核。方法见[首页合同](SERVER_HOME_SECTIONS.md#图片内文字与旧首页样式兼容)。
+
+
 ## 2026-10-26 — v0.4.4 测试版已发布
 
 [v0.4.4 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4) 已于 2026-10-26 00:46:50 UTC 发布为 Pre-release，产品 Tag／sourceCommit 固定为 `b6fe06b984d74f60bdf82527d0666e920449dedb`，包含 PR #80／#81／#82 与版本准备 PR #83。Latest 正式版仍为 v0.4.0，不含 PR #79、FN 或共享媒体缓存实验。
@@ -1526,6 +1533,7 @@ Regression includes actual filesystem byte accounting, nonstandard stored blocks
 
 Local final serial regression:2,893 total,2,868 pass,0 fail/cancel,25 existing platform/material skips (133.7s); focused flow/observer32 pass. JavaScript604/PowerShell55 syntax, finite credential-pattern703 and changed-doc checks pass. Windows CI, newly identified package and Native/ordinary-entry outcomes remain pending.
 
+
 ## 2026-10-26 — Ordinary-entry shared-cache performance harness
 
 Prepare a separate tool-only branch from frozen7a569c8. Keep the real main/preload/document/authentication/PM/resolver/Native path and normal quit, using only finite authenticated loopback Emby/CD2 fixtures and deterministic AVI. A/B preflight precedes a fixed20-pair+3-warmup matrix over cold first frame and cached/uncached/boundary/far seek. Classification, actual decoded updates, per-sample failures, case-owned source ranges and resource-scope limits are explicit. The original product branch/package/four-phase workflow stays frozen; new manual mode never builds or self-dispatches. Windows execution remains pending, rather than inferred from local contract tests.
@@ -1538,3 +1546,21 @@ Tool-only follow-up verifies a full paced window from a real nonzero AVI data of
 Add test-process-only LAN discovery/wake cancellation plus an ownership-checked UDP denial/restoration wrapper. Preserve ordinary connection, API authentication, PlaybackManager and source authority; no synthetic authorization proof is injected. Deterministic tests check that the UDP wrapper never opens a socket and restores only its owned function. The protected product tree remains byte-identical to the reviewed package source; no Native execution, package build, real-media access or system setting change is implied by local tests.
 
 Final egress-guard regression:2,922 tests,2,897 pass,zero fail/cancel,25 existing platform/material skips (137.1s); targeted200/200, JavaScript614/PowerShell55 syntax and finite credential-pattern scan713 pass. These are local tool/contract results, not Windows Native or ordinary-entry performance evidence.
+
+## 2026-10-26 — Distinguish valid slow reads from refusals and bound the wait
+
+A real7a Native20ms valid block still lost the15ms race. Compare old15ms, response-shared10ms allowance, fixed25ms and fixed30ms against actual owned files/HTTP with explicit delayed callbacks and exact received body chunks. Preserve every round; do not count Range size as received bytes. The selected30ms per-block source is byte-identical to the measured variant. It removes repeats in the tested20ms scenes while retaining a finite50ms-stall fallback and all source/hash/generation/cancel/read-owner guards. The shared allowance experiment remains reproducible Git evidence, not the adopted policy. First-frame/seek and zero-repeat Native acceptance remain pending; no package/dispatch or main/release change.
+
+Final candidate local regression:2,901 tests/2,876 pass/0 fail/cancel/25 existing skips (134.3s). Flow28 and observer/probe12 pass; syntax606 JS/55 PS and finite-pattern705 checks pass. Fresh-worktree preparation initially lacked ignored preload.js; the fixed template generator, not an old binary/preload copy, repaired setup and its5-test check. Original failure receipt remains separate. Actual Windows/Native and ordinary-entry performance are not inferred from these results.
+
+## Home compatibility fix included in the bounded-read candidate
+
+Apply only the first-parent delta of merged Home PR85 (`e6cc8bf8fd5ec42142a0deff6906f71b6652ad11`): the maintained Home CSS, its independent renderer check and documentation. Preserve both sets of status notes during documentation-only conflicts. Cache logic and the measured30ms proxy source remain unchanged. The source anchor is now `958df21c1e24150464b7a50e108b9d37d9f1b148`; a future package must have the new candidate identity. Previous CI/Native results do not validate this new combination. No main change, package dispatch, installation or release is performed by the synchronization.
+
+Combined-source local regression:2,902 tests/2,877 pass/0 fail/25 existing platform or material skips (133.6s); focused Home/cache/source-binding190/190. The unchanged Home renderer check passes18 desktop/TV synthetic comparisons against the pre-sync CSS, with no page errors. JavaScript607/PowerShell55 syntax, finite credential-pattern scan706 and changed documentation checks pass. These results do not substitute for the new exact-commit Windows CI, Native four-phase or ordinary-entry performance evidence.
+
+## Ordinary-entry tools rebound to the Home-inclusive bounded-read product
+
+Merge the reviewed product `b4bd4dd9fe51f93a482c69986fe5e77f7f3503ed` into the separate verification branch, retaining both documentation histories. Set the physical verifier and ordinary app plan to that same exact product. The protected product bytes match that commit;30ms observation is preserved. A future package is consumed by exact successful-run provenance, complete physical manifest and installer/ZIP digests, with no old7a substitution. This is a tool-only successor relative to the reviewed product and does not dispatch, install, publish or alter main.
+
+Home-inclusive tool regression:2,932 tests/2,907 pass/0 fail/25 existing platform or material skips (137.9s); focused Home/cache/app/source tests433/433. JavaScript617/PowerShell55 syntax, finite credential-pattern scan716, changed documentation checks and protected-tree equality pass. This is local verification; the exact new tool commit still requires its own Windows CI, and no Native or ordinary-entry result is implied.

@@ -247,7 +247,7 @@ test('non-15 ms timers preserve returned handle, callback receiver, and argument
   fixture.observer.restore();
 });
 
-test('maintained proxy source observes a real loopback warm read with controlled 15 ms timer', async t => {
+test('maintained proxy source observes a real loopback warm read with controlled bounded response timer', async t => {
   const file = require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
   const exactSource = await fs.readFile(file), root = temporaryRoot('ete-read-observer-real-');
   const original = proxyModule.createProxy, events = [], pendingTimers = new Map();
@@ -255,7 +255,7 @@ test('maintained proxy source observes a real loopback warm read with controlled
   let proxy, origin, store, observer, timerId = 0, armed = 0, cleared = 0, forwarded = 0;
   const timers = {
     setTimeout(callback, ms, ...args) {
-      if (ms === 15) {const handle = {id: ++timerId}; pendingTimers.set(handle, {callback, args}); armed++; return handle;}
+      if (ms === 15 || ms === 25 || ms === 30) {const handle = {id: ++timerId}; pendingTimers.set(handle, {callback, args}); armed++; return handle;}
       forwarded++; return realSetTimeout(callback, ms, ...args);
     },
     clearTimeout(handle) {
@@ -273,7 +273,7 @@ test('maintained proxy source observes a real loopback warm read with controlled
   origin = await fixture.source({bytes: 64 * 1024, firstDelay: 0, tailDelay: 0});
   store = await createStore({root, currentBytes: 2 * 1024 * 1024, nextBytes: 1024 * 1024});
   observer = install({target: proxyModule, filename: file, source: exactSource,
-    expectedSha256: sha(exactSource), timers, context: () => ({item: 'B', generation: 9}),
+    expectedSha256: sha(exactSource), timers, now: () => 0, context: () => ({item: 'B', generation: 9}),
     emit: row => events.push(row)});
   proxy = await proxyModule.createProxy({store, authorize: async () => origin.grant(), requestPolicy: 'coherent'});
   const opened = await proxy.open(fixture.identity('B'));
@@ -301,12 +301,14 @@ test('maintained proxy source observes a real loopback warm read with controlled
   assert.deepEqual(warm.body, origin.data);
   assert.equal(origin.requests.length, 1, 'warm bytes came from the maintained store, without a second source request');
   await proxy.drain();
-  assert.ok(armed > 0, 'warm store read armed the observed source 15 ms timer');
+  assert.ok(armed > 0, 'warm store read armed the observed source bounded read timer');
   assert.equal(cleared, armed, 'read settlement cleared each pending timer');
   assert.equal(pendingTimers.size, 0);
   assert.ok(forwarded > 0, 'other proxy timers still use real Node timers');
   const evidence = observer.snapshot();
   assert.equal(evidence.sourceSha256, sha(exactSource));
+  assert.equal(evidence.unknownTimers, 0);
+  assert.ok(events.some(row => row.operation === 'timer-armed' && row.deadlineMs === 30));
   assert.equal(evidence.activeReads, 0);
   assert.equal(evidence.pendingTimers, 0);
   assert.ok(events.some(row => row.operation === 'read-settled' && row.outcome === 'bytes'));

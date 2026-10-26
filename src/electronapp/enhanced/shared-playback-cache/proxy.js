@@ -53,7 +53,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
   const stats = {originRequests: 0, probeRequests: 0, attemptedBytes: 0, receivedBytes: 0, deliveredBytes: 0,
     hitBytes: 0, committedBytes: 0, skippedWrites: 0, captureBytes: 0, peakCaptureBytes: 0,
     activeOrigins: 0, peakOrigins: 0, activeBodies: 0, peakBodies: 0, queued: 0, peakQueued: 0,
-    readReservedBytes: 0, peakMediaReservedBytes: 0, localWrites: 0, backpressureWrites: 0, originReadHighWaterMarkBytes: 0, localWriteHighWaterMarkBytes: 0, wholeResponseRequests: 0, partialPrefixBypasses: 0, bypassedPrefixBytes: 0, observerErrors: 0, peakWriteJobs: 0};
+    localReadTimeouts: 0, localReadRefusals: 0, localReadGraceMs: 0, readReservedBytes: 0, peakMediaReservedBytes: 0, localWrites: 0, backpressureWrites: 0, originReadHighWaterMarkBytes: 0, localWriteHighWaterMarkBytes: 0, wholeResponseRequests: 0, partialPrefixBypasses: 0, bypassedPrefixBytes: 0, observerErrors: 0, peakWriteJobs: 0};
   let closed = false, closePromise, foregroundWaiters = 0;
   const active = new Set();
   const track = (set, promise) => {set.add(promise); promise.finally(() => set.delete(promise)).catch(() => {}); return promise;};
@@ -377,6 +377,9 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         // Pre-existing/restored data and explicitly finished preloads stay live.
         const readCache = cacheEnabled && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
         let offset = range.start;
+        // Each physical block has a finite read window. Fast/missing reads do not wait.
+        // Another seek owns a separate cancellable response; late IO retains its owner.
+        const readGracePerBlock = 15;
         while (offset <= range.end) {
           useRecord(record); if (signal.aborted) throw cancelled();
           await refresh(record);
@@ -399,18 +402,27 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             if (2 * stats.captureBytes + stats.readReservedBytes + 1048576 <= mediaBufferBytes) {
               stats.readReservedBytes += 1048576;
               stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
-              const deadline = performance.now() + 15;
+              const readStarted = performance.now();
+              const deadline = readStarted + 15 + readGracePerBlock;
               const read = track(controls, store.read(key, offset, length).finally(() => {stats.readReservedBytes -= 1048576;}));
               let timer;
-              try {data = await waitDone(Promise.race([read, new Promise(resolve => {
-                const expire = () => {
-                  const remaining = deadline - performance.now();
-                  if (remaining > 0) {timer = setTimeout(expire, Math.ceil(remaining)); return;}
-                  resolve(null);
-                };
-                timer = setTimeout(expire, 15);
-              })]), signal);}
-              finally {clearTimeout(timer);}
+              try {
+                const result = await waitDone(Promise.race([read.then(value => ({data: value, timedOut: false})), new Promise(resolve => {
+                  const expire = () => {
+                    const remaining = deadline - performance.now();
+                    if (remaining > 0) {timer = setTimeout(expire, Math.ceil(remaining)); return;}
+                    resolve({data: null, timedOut: true});
+                  };
+                  timer = setTimeout(expire, Math.max(1, Math.ceil(deadline - performance.now())));
+                })]), signal);
+                data = result.data;
+                if (result.timedOut) stats.localReadTimeouts++;
+                else if (!data) stats.localReadRefusals++;
+              } finally {
+                clearTimeout(timer);
+                const spent = Math.min(readGracePerBlock, Math.max(0, performance.now() - readStarted - 15));
+                stats.localReadGraceMs += spent;
+              }
             }
             useRecord(record); if (signal.aborted) throw cancelled();
             if (epoch !== record.metadataEpoch || key !== record.key) throw problem('stale-read');
