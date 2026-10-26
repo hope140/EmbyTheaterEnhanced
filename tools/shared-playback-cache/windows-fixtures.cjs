@@ -100,6 +100,7 @@ async function writeAvi(root, id) {
     const stat = await fsp.stat(file), sha256 = await hashFile(file);
     need(stat.isFile() && stat.size === riffSize + 8 && stat.size < 20 * 1048576, 'fixture-avi-size');
     return {id, file: id + '.avi', size: stat.size, sha256, etag: '"' + sha256 + '"', durationSeconds: DURATIONS[id],
+        dataStart: 12 + hdrl.reduce((n, b) => n + b.length, 0) + 12, frameStride: mediaChunkBytes, frames,
         width: WIDTH, height: HEIGHT, fps, audio: 'none', encoding: 'uncompressed-dib-paletted-8bit'};
 }
 
@@ -116,7 +117,8 @@ function closeHttp(server, sockets) {
     for (const socket of sockets) socket.destroy();
     return Promise.all([stopped, ...closing]);
 }
-async function createMediaServer(root, files, expectedAgent, record) {
+async function createMediaServer(root, files, expectedAgent, record, pacing) {
+    if (pacing) need(pacing.chunkBytes === 16384 && pacing.chunkDelayMs === 8 && pacing.firstByteDelayMs === 20 && pacing.prefixBytes === 2097152 && pacing.gapBytes === 262144, 'fixture-pacing-contract');
     const sockets = new Set(), active = new Set(), held = new Set(), closedHeld = [];
     let holdNextItem = null, requestSequence = 0, openedRequests = 0;
     const snapshot = () => ({activeMediaResponses: active.size, mediaSockets: sockets.size, heldRequests: held.size, openedRequests});
@@ -153,9 +155,26 @@ async function createMediaServer(root, files, expectedAgent, record) {
             record('media-held', {requestId, item: match[1], start, end, firstByteSent: true});
             return;
         }
-        const stream = fs.createReadStream(path.join(root, file.file), {start, end});
-        stream.on('data', part => {state.streamReadBytes += part.length;}); stream.on('error', () => res.destroy());
-        res.once('close', () => stream.destroy()); stream.pipe(res);
+        const stream = fs.createReadStream(path.join(root, file.file), {start, end, ...(pacing ? {highWaterMark: pacing.chunkBytes} : {})});
+        stream.on('data', part => {const at = start + state.streamReadBytes; state.streamReadBytes += part.length;
+            record('media-bytes', {requestId, item: match[1], start: at, length: part.length});});
+        stream.on('error', () => res.destroy()); res.once('close', () => stream.destroy());
+        if (!pacing) stream.pipe(res);
+        else {stream.pause(); (async () => {
+            let timer; const closed = new Promise(resolve => res.once('close', resolve));
+            const wait = ms => Promise.race([new Promise(resolve => {timer = setTimeout(resolve, ms);}), closed]).finally(() => clearTimeout(timer));
+            await wait(pacing.firstByteDelayMs);
+            for await (const part of stream) {
+                if (res.destroyed) break;
+                // Keep the initial forward stream bounded while allowing a real
+                // later Range/seek to request the missing body. Closing it aborts this wait.
+                if (start + state.streamReadBytes > (start < pacing.prefixBytes ? pacing.prefixBytes : start + pacing.gapBytes)) {await closed; break;}
+                if (!res.write(part)) await Promise.race([new Promise(resolve => res.once('drain', resolve)), closed]);
+                await wait(pacing.chunkDelayMs);
+            }
+            if (!res.destroyed) res.end();
+        })().catch(() => res.destroy());}
+
     });
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
     return {origin: await listen(server), setHoldNext(item) {
@@ -240,13 +259,13 @@ async function verifyPlan(plan) {
         plan.mediaMetadata?.C?.aviFps === 24, 'fixture-metadata-invalid');
     return {root, files};
 }
-async function startWindowsSources({plan, requireUserAgent = USER_AGENT, record = () => {}} = {}) {
+async function startWindowsSources({plan, requireUserAgent = USER_AGENT, record = () => {}, createEmby, pacing} = {}) {
     need(requireUserAgent === USER_AGENT && typeof record === 'function', 'fixture-agent-fixed');
     const verified = await verifyPlan(plan), files = verified.files, root = verified.root;
     let emby = null, media = null, grpcServer = null, closed = false;
     try {
-        emby = await fixtureServer(plan, record, {trustedCd2: true});
-        media = await createMediaServer(root, files, requireUserAgent, record);
+        emby = createEmby ? await createEmby({plan, record}) : await fixtureServer(plan, record, {trustedCd2: true});
+        media = await createMediaServer(root, files, requireUserAgent, record, pacing);
         grpcServer = await createGrpcServer(media.origin, files, 'synthetic-only-token', record);
         return {origin: emby.origin, mediaOrigin: media.origin, cd2Endpoint: grpcServer.endpoint,
             setHoldNext: item => media.setHoldNext(item), snapshot: () => media.snapshot(), releaseHeld: () => media.releaseHeld(),

@@ -20,7 +20,7 @@ const benchmark = jobBlock('windows-build-input-benchmark');
 
 // Evaluate only this workflow's simple AND/string/boolean route clauses.
 // Unknown syntax fails rather than silently treating a broader route as safe.
-function routes(job, event, ref, benchmarkMode, sharedMode = false, diagnosticMode = false) {
+function routes(job, event, ref, benchmarkMode, sharedMode = false, diagnosticMode = false, appMode = false) {
     const conditions = [...job.matchAll(/^    if: (.+)$/gm)];
     assert.equal(conditions.length, 1, 'one top-level job condition required');
     return conditions[0][1].split(/\s+&&\s+/).map(clause => {
@@ -29,6 +29,8 @@ function routes(job, event, ref, benchmarkMode, sharedMode = false, diagnosticMo
             const equal = (compare[1] === 'event_name' ? event : ref) === compare[3];
             return compare[2] === '==' ? equal : !equal;
         }
+        if (clause === "startsWith(inputs.benchmark_warm_calls, 'app-')") return appMode;
+        if (clause === "!startsWith(inputs.benchmark_warm_calls, 'app-')") return !appMode;
         if (clause === 'inputs.shared_cache_diagnostics') return diagnosticMode;
         if (clause === '!inputs.shared_cache_diagnostics') return !diagnosticMode;
         if (clause === 'inputs.shared_cache_smoke') return sharedMode;
@@ -226,4 +228,18 @@ test('combined smoke and diagnostics dispatch only the owned runtime liveness jo
     const tokenRemoval = ciScript.indexOf('finally { $headers.Clear(); Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue }');
     const livenessInvocation = ciScript.indexOf("'windows-liveness.cjs'");
     assert.ok(tokenRemoval >= 0 && livenessInvocation > tokenRemoval, 'artifact token must be cleared before liveness child launch');
+});
+
+
+test('ordinary app verification is explicit and cannot start other manual jobs or rebuild', () => {
+    const app = jobBlock('windows-shared-cache-app-performance'); assertPinnedSource(app);
+    for (const event of ['push','pull_request','workflow_dispatch']) for (const enabled of [false,true]) {
+        assert.equal(routes(app,event,'refs/heads/verify/shared-cache-app-performance',false,true,true,enabled),event==='workflow_dispatch'&&enabled);
+        if(enabled) for(const name of ['manual-windows-test-package','windows-build-input-benchmark','windows-shared-cache-smoke','windows-shared-cache-diagnostics','windows-shared-cache-liveness']) {
+            assert.equal(routes(jobBlock(name),event,'refs/heads/verify/shared-cache-app-performance',true,true,true,true),false);
+        }
+    }
+    assert.match(app,/-AppPerformanceOnly -AppPerformanceMode/);assert.match(app,/actions: read/);
+    assert.doesNotMatch(app,/build\.ps1|ci-windows-test-package|prepare-ci-build-inputs/);
+    assert.match(app,/cancel-in-progress: false/);assert.match(app,/safe-receipts\/\*/);
 });

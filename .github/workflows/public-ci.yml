@@ -23,10 +23,10 @@ on:
         default: '4'
         options: ['4', '2', '6', '8']
       benchmark_warm_calls:
-        description: Benchmark warm calls; native-liveness only with smoke AND diagnostics
+        description: Warm calls; native-liveness/app-entry/app-matrix only with smoke AND diagnostics
         type: choice
         default: '3'
-        options: ['3', '1', '5', '10', 'native-liveness']
+        options: ['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix']
 
       shared_cache_smoke:
         description: Native smoke alone; enable diagnostics too for no-media runtime liveness (no build)
@@ -337,7 +337,7 @@ jobs:
 
 
   windows-shared-cache-liveness:
-    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_smoke && inputs.shared_cache_diagnostics
+    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_smoke && inputs.shared_cache_diagnostics && !startsWith(inputs.benchmark_warm_calls, 'app-')
     runs-on: windows-2022
     timeout-minutes: 10
     permissions:
@@ -395,3 +395,57 @@ jobs:
           retention-days: 1
           compression-level: 0
           include-hidden-files: false
+
+  windows-shared-cache-app-performance:
+    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_smoke && inputs.shared_cache_diagnostics && startsWith(inputs.benchmark_warm_calls, 'app-')
+    runs-on: windows-2022
+    timeout-minutes: 100
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: ete-shared-cache-ordinary-app-performance
+      cancel-in-progress: false
+    steps:
+      - name: Require exact tool-only app verification mode
+        shell: pwsh
+        env:
+          EXPECTED_SHA: ${{ inputs.benchmark_expected_sha }}
+          RELEASE_MODE: ${{ inputs.release_package }}
+          BENCHMARK_MODE: ${{ inputs.build_input_benchmark }}
+          APP_MODE: ${{ inputs.benchmark_warm_calls }}
+        run: |
+          if ($env:EXPECTED_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXPECTED_SHA -cne $env:GITHUB_SHA -or $env:RELEASE_MODE -eq 'true' -or $env:BENCHMARK_MODE -eq 'true' -or @('app-entry','app-matrix') -cnotcontains $env:APP_MODE) { throw 'Require only exact reviewed ordinary app verification mode.' }
+      - name: Check out exact verification tooling
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up locked Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.1
+      - name: Install locked fixture dependencies without scripts
+        run: npm ci --ignore-scripts
+      - name: Run ordinary main against the exact existing package
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ inputs.shared_cache_artifact_id }}
+          ZIP_SHA: ${{ inputs.shared_cache_zip_sha256 }}
+          INSTALLER_SHA: ${{ inputs.shared_cache_installer_sha256 }}
+          TOOL_SHA: ${{ inputs.benchmark_expected_sha }}
+          APP_MODE: ${{ inputs.benchmark_warm_calls }}
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP ('ete-app-performance-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
+          ./tools/shared-playback-cache/windows-ci.ps1 -ArtifactId $env:ARTIFACT_ID -ZipSha256 $env:ZIP_SHA -InstallerSha256 $env:INSTALLER_SHA -ExpectedToolSha $env:TOOL_SHA -OutputRoot $out -AppPerformanceOnly -AppPerformanceMode $env:APP_MODE.Substring(4)
+      - name: Upload only safe app verification receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: shared-cache-app-performance-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ete-app-performance-${{ github.run_id }}-${{ github.run_attempt }}/safe-receipts/*
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0

@@ -5,11 +5,13 @@ param(
     [Parameter(Mandatory=$true)][string]$ExpectedToolSha,
     [Parameter(Mandatory=$true)][string]$OutputRoot,
     [switch]$LivenessOnly,
-    [switch]$NativeLivenessOnly
+    [switch]$NativeLivenessOnly,
+    [switch]$AppPerformanceOnly,
+    [ValidateSet('entry', 'matrix')][string]$AppPerformanceMode = 'entry'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-if ($LivenessOnly -and $NativeLivenessOnly) { throw 'Select one exact liveness suite.' }
+if (@($LivenessOnly, $NativeLivenessOnly, $AppPerformanceOnly).Where({ $_ }).Count -gt 1) { throw 'Select one exact runtime suite.' }
 if (-not $IsWindows -or $PSVersionTable.PSVersion.Major -lt 7) { throw 'Dedicated Windows PowerShell7 runner required.' }
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if ($ArtifactId -cnotmatch '^[1-9][0-9]{0,17}$' -or $ZipSha256 -cnotmatch '^[a-f0-9]{64}$' -or $InstallerSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ExpectedToolSha -cnotmatch '^[a-f0-9]{40}$') { throw 'Exact artifact/tool identities required.' }
@@ -111,6 +113,20 @@ $extracted = Join-Path $OutputRoot 'payload'
 if ($LASTEXITCODE -ne 0) { throw 'Static installer extraction failed.' }
 $sourceReceipt = [ordered]@{schema=1;productCommit=$productSha;toolCommit=$actualToolSha;artifactId=$ArtifactId;runId=$runId;zipSha256=$ZipSha256;installerSha256=$InstallerSha256;installed=$false;source='exact successful manual package, static extraction'}
 $sourceReceipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $safe 'candidate-source.json') -Encoding utf8
+if ($AppPerformanceOnly) {
+    $ownedRoot = [string](& node -e "const h=require(process.argv[1]),c=require(process.argv[2]);console.log(h.temporaryRoot('ete-shared-app-',c.cases(process.argv[3]).map(x=>'performance/profile-'+x.index+'/userdata/shared-playback-byte-cache-v2')));" (Join-Path $repo 'tests/helpers/range-fixture-root.cjs') (Join-Path $PSScriptRoot 'app-performance-runner.cjs') $AppPerformanceMode)
+    if ($LASTEXITCODE -ne 0) { throw 'Owned ordinary app preflight failed.' }
+    $performanceRoot = Join-Path $ownedRoot.Trim() 'performance'
+    try {
+        & node (Join-Path $PSScriptRoot 'app-performance-runner.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$performanceRoot" "--mode=$AppPerformanceMode"
+        if ($LASTEXITCODE -ne 0) { throw 'Ordinary main performance failed; no fallback or retry.' }
+    } finally {
+        foreach ($receipt in @(Get-ChildItem -LiteralPath $performanceRoot -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'app-performance.json' -or $_.Name -match '^case-[0-9]{1,2}\.json$' })) {
+            Copy-Item -LiteralPath $receipt.FullName -Destination (Join-Path $safe $receipt.Name)
+        }
+    }
+    return
+}
 if ($LivenessOnly -or $NativeLivenessOnly) {
     # Both suites avoid business servers. Native is an explicit separate suite
     # using only one generated local file; default remains strictly no-media.

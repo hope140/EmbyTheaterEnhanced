@@ -239,8 +239,8 @@ test('existing dispatch keeps its ten inputs and adds native liveness as an opt-
     assert.match(block, new RegExp('^        default: ' + value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'm'), name);
   }
   const warmCalls = inputs.slice(inputs.indexOf('      benchmark_warm_calls:\n'), inputs.indexOf('\n      shared_cache_smoke:'));
-  assert.match(warmCalls, /options: \['3', '1', '5', '10', 'native-liveness'\]/);
-  assert.match(workflow, /benchmark_warm_calls:\n +description: [^\n]*native-liveness only with smoke AND diagnostics/);
+  assert.match(warmCalls, /options: \['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix'\]/);
+  assert.match(workflow, /benchmark_warm_calls:\n +description: [^\n]*native-liveness\/app-entry\/app-matrix only with smoke AND diagnostics/);
   assert.equal(fs.existsSync(path.join(root, '.github/workflows/shared-cache-native-liveness.yml')), false,
     'native liveness must use the existing user-selectable public workflow');
 });
@@ -254,12 +254,13 @@ test('combined-mode route is branch-bound, benchmark-disabled, and selects exact
     return jobs.slice(headers[index].index, headers[index + 1]?.index ?? jobs.length);
   }
   const livenessJob = jobBlock('windows-shared-cache-liveness');
-  function routes(job, event, benchmark, smoke, diagnostics) {
+  function routes(job, event, benchmark, smoke, diagnostics, appMode = false) {
     const match = /^    if: (.+)$/m.exec(job);
     assert.ok(match, 'job route condition required');
     return match[1].split(/\s+&&\s+/).map(clause => {
       const eventCheck = /^github\.event_name == '([^']+)'$/.exec(clause);
       if (eventCheck) return event === eventCheck[1];
+      if (clause === "!startsWith(inputs.benchmark_warm_calls, 'app-')") return !appMode;
       const inputCheck = /^(!)?inputs\.(build_input_benchmark|shared_cache_smoke|shared_cache_diagnostics)$/.exec(clause);
       assert.ok(inputCheck, 'unsupported route clause: ' + clause);
       const selected = inputCheck[2] === 'build_input_benchmark' ? benchmark :
@@ -267,6 +268,7 @@ test('combined-mode route is branch-bound, benchmark-disabled, and selects exact
       return inputCheck[1] ? !selected : selected;
     }).every(Boolean);
   }
+  assert.equal(routes(livenessJob, 'workflow_dispatch', false, true, true, true), false, 'ordinary app modes cannot also run native liveness');
   const manual = jobBlock('manual-windows-test-package');
   const benchmark = jobBlock('windows-build-input-benchmark');
   const smoke = jobBlock('windows-shared-cache-smoke');

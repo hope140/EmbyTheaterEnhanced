@@ -10,7 +10,7 @@ function assertCheckoutBytes(actual,blob){
 }
 // Strip only the exact reviewed opt-in suite extension before comparing the
 // ordinary workflow with its frozen baseline. Defaults/routes remain guarded.
-const nativeWarmInput="      benchmark_warm_calls:\n        description: Benchmark warm calls; native-liveness only with smoke AND diagnostics\n        type: choice\n        default: '3'\n        options: ['3', '1', '5', '10', 'native-liveness']\n";
+const nativeWarmInput="      benchmark_warm_calls:\n        description: Warm calls; native-liveness/app-entry/app-matrix only with smoke AND diagnostics\n        type: choice\n        default: '3'\n        options: ['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix']\n";
 const formalWarmInput="      benchmark_warm_calls:\n        description: Subsequent calls in each fresh process\n        type: choice\n        default: '3'\n        options: ['3', '1', '5', '10']\n";
 function removeReviewedNativeChoice(workflow){
  assert.equal(workflow.split(nativeWarmInput).length,2,'exactly one reviewed Native suite input required');
