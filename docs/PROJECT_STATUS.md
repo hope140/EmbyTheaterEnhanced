@@ -1169,8 +1169,21 @@ After the Home-inclusive Native run passed baseline/natural with zero repeated B
 
 Restored-readiness local regression:2,906 total/2,881 pass/0 fail/25 existing platform or material skips (136.1s), focused adapter/session35/35. JavaScript607/PowerShell55 syntax, finite credential-pattern scan706 and patch checks pass. The block-read source hash remains unchanged. New-source Windows reopen/cancel and ordinary entry are pending; previous baseline/natural PASS applies only to the prior b4bd4dd package.
 
+
 ## Rebind prepare tooling to the restored-admission product
 
 Both physical-package and app-performance anchors now identify `04dc9b1e2d0d138d535347147f410f647c836f87`. Merge that product source into the separate verification branch while preserving the structured-root tool correction and both status histories. The protected product tree and30ms block observer must match the new anchor; neither old b4bd4dd nor an arbitrary identical-tree package is accepted. A future single exact-source package may be reused by the tool successor after provenance, complete physical manifest and owned-exit checks. No dispatch or product/main merge is performed here.
 
 Combined restored-admission/tool-control local regression:2,941 total/2,916 pass/0 fail/25 existing platform or material skips (142.5s); focused coordinator/app/cache tests319/319. Real PowerShell/Node structured-consumer tests5/5 include success with separate diagnostics and reject malformed controls without a Windows skip. JavaScript619/PowerShell55 syntax, finite credential-pattern scan718 and protected-tree equality pass. Exact new Windows CI, Native reopen/cancel and ordinary-entry/performance results remain pending.
+
+## Correct the Alameda fixture's legal original-source fallback
+
+The04 package upload gate correctly stopped on one regression failure; there is no new artifact or Native run. The failure was first A's bounded preparation fallback followed by the fixture incorrectly waiting four seconds for a proxy-only key. Separate strict ready-backend lifecycle coverage from an explicit delayed-backend/original-source case, preserving original strict A/B proxy,48-byte coexistence, zero repeated B body and40-byte reopen assertions. The cold case reports unavailable preload, B's genuine first0-7 miss and8-byte retention rather than claiming a cache success. Product code and50ms/30ms policies are unchanged. Negative legacy-wait reproduction fails as expected; corrected pairs pass16/16 and the whole Alameda file19/19. Windows and ordinary performance evidence still require exact new commits.
+
+Fixture-correction local regression:2,907 total/2,882 pass/0 fail/25 existing platform or material skips (136.7s); Alameda19/19 plus eight strict/cold pairs16/16. Restoring the old unconditional key wait fails the new case, and the fixed source is restored afterward. JavaScript607/PowerShell55 syntax, finite credential-pattern scan706, changed documentation and patch checks pass. Runtime product directories remain byte-identical to04dc9b1; this does not constitute a new Windows Native or performance pass.
+
+## Rebind verification after separating the ready and fallback fixtures
+
+Both verifier and ordinary-app anchors now identify `9492750b2b0e7b3fc81f52b51b61900209ac9aba`. Product runtime content remains identical to04, but the new exact source is required for the corrected package regression. Preserve structured-root preparation and strict post-package Native/entry/matrix source provenance. Original-source fallback is not a shared-cache success, and the existing refusal to preload without a current proxy is explicitly covered rather than changed. No new settings, timeout policy, renderer authorization, kernel or release behavior is introduced.
+
+Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform or material skips (145.3s); focused Alameda/app/physical-source/structured-root194/194. JavaScript619/PowerShell55 syntax, finite credential-pattern scan718, changed documentation and protected-tree equality pass. Windows CI/package/Native and ordinary performance remain separately pending for these exact source identities.

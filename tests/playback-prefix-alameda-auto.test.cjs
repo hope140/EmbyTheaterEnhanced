@@ -18,14 +18,17 @@ const waitFor = async (predicate, detail) => {
 async function automaticCase(t, scenario) {
     const root = temporaryRoot('ete-alameda-next-', ['prefix', 'next-episode-prefix-v1', 'shared-byte-cache']), trace = [], timers = new Set(), documentTimers = new Set();
     let origin, mediaOrigin, restoreRequests, service, window, authority, unregisterCd2;
+    let sharedStoreModule, sharedStoreOriginal, preparedSharedStore, releaseSharedStoreFactory, sharedStoreTransferred = false, sharedStoreFactoryCalls = 0;
     // Own cleanup before server/settings setup: one failed path check must not
     // leave HTTP/timers alive or hide the first error behind a later hook.
     t.after(async () => {
         const failures = [];
         const settle = async action => {try {await action();} catch (error) {failures.push(error);}};
         for (const timer of [...timers, ...documentTimers]) clearInterval(timer);
+        releaseSharedStoreFactory?.();
         if (window?.prefixStop && scenario !== 'hold-exit') await settle(() => window.prefixStop());
         if (service) await settle(() => service.destroy());
+        if (preparedSharedStore && !sharedStoreTransferred) await settle(() => preparedSharedStore.close());
         if (unregisterCd2) await settle(() => unregisterCd2());
         if (authority) await settle(() => authority.close());
         if (restoreRequests) restoreRequests();
@@ -38,28 +41,50 @@ async function automaticCase(t, scenario) {
     });
     const record = (type, data = {}) => trace.push({seq: trace.length, atMs: performance.now(), type, ...data});
     const fixtures = ['A', 'B'].map(id => {const file = id + '.avi'; fs.writeFileSync(path.join(root, file), Buffer.from(id.repeat(40))); return {file, size: 40, etag: '"synthetic-' + id + '"'};});
-    const trustedCd2 = scenario.startsWith('trusted-cd2'), sharedCase = scenario === 'trusted-cd2-shared', dateValidator = scenario === 'trusted-cd2-date-unproven', noValidator = scenario === 'trusted-cd2-no-validator';
+    const trustedCd2 = scenario.startsWith('trusted-cd2'), sharedCase = scenario === 'trusted-cd2-shared',
+        sharedColdCase = scenario === 'trusted-cd2-shared-cold-fallback', sharedMode = sharedCase || sharedColdCase,
+        dateValidator = scenario === 'trusted-cd2-date-unproven', noValidator = scenario === 'trusted-cd2-no-validator';
     const unsupported = scenario === 'unsupported' || scenario === 'trusted-cd2-unsupported' || noValidator || dateValidator;
     const unsupportedReason = dateValidator ? 'date-capability-unproven' : noValidator ? 'etag-missing' : 'etag-weak';
     const holding = scenario.startsWith('hold-'), orderedNatural = ['natural', 'explicit-queue-autoplay-off', 'trusted-cd2'].includes(scenario), pendingNatural = scenario === 'hold-natural-eof';
     const plan = {out: root, fixtures, autoPlay: !['autoplay-off', 'explicit-queue-autoplay-off'].includes(scenario)};
     origin = await tool.fixtureServer(plan, record, {holdNext: holding || orderedNatural, holdStart: 8, unsupported, trustedCd2});
     mediaOrigin = trustedCd2 ? await tool.fixtureServer(plan, record, {holdNext: orderedNatural, holdStart: 8, requireUserAgent: 'Synthetic-CD2', unsupported, dateValidator, noValidator}) : origin;
-    restoreRequests = holding || orderedNatural || sharedCase ? tool.observeOriginRequests(mediaOrigin.origin, record, {includeStringInputs: sharedCase}) : null;
-    if (sharedCase) {
+    restoreRequests = holding || orderedNatural || sharedMode ? tool.observeOriginRequests(mediaOrigin.origin, record, {includeStringInputs: sharedMode}) : null;
+    if (sharedMode) {
         // Observe real metadata ownership without replacing results, auth, or IO.
-        const module = require('../src/electronapp/enhanced/shared-playback-cache/store'), original = module.createStore;
-        const observed = async options => {
-            const store = await original(options);
-            return {...store, async open(...args) {
+        sharedStoreModule = require('../src/electronapp/enhanced/shared-playback-cache/store');
+        sharedStoreOriginal = sharedStoreModule.createStore;
+        const observeStore = store => ({...store, async open(...args) {
                 const item = args[0]?.item, started = performance.now();
                 record('shared-store-open-start', {item});
                 try {const key = await store.open(...args); record('shared-store-open-end', {item, elapsedMs: performance.now() - started}); return key;}
                 catch (error) {record('shared-store-open-rejected', {item, elapsedMs: performance.now() - started}); throw error;}
-            }};
+            }});
+        let observed;
+        const expected = {root: path.join(root, 'shared-byte-cache'), currentBytes: 300 * 1024 * 1024,
+                nextBytes: 100 * 1024 * 1024, maxPendingBytes: 2 * 1024 * 1024, recoveryMode: 'on-demand'};
+        preparedSharedStore = await sharedStoreOriginal(expected);
+        let gate = Promise.resolve();
+        if (sharedColdCase) gate = new Promise(resolve => {releaseSharedStoreFactory = resolve;});
+        record('fixture-ready-backend', {empty: preparedSharedStore.status().committed === 0,
+                currentBytes: expected.currentBytes, nextBytes: expected.nextBytes, recoveryMode: expected.recoveryMode});
+        observed = async options => {
+            sharedStoreFactoryCalls++;
+            assert.equal(sharedStoreFactoryCalls, 1, 'one adapter writer factory owns the prepared backend');
+            assert.equal(options.root, expected.root);
+            assert.equal(options.currentBytes, expected.currentBytes, 'factory budget must come from the actual M read');
+            assert.equal(options.nextBytes, expected.nextBytes, 'factory P budget must match the selected 100 MiB policy');
+            assert.equal(options.maxPendingBytes, expected.maxPendingBytes);
+            assert.equal(options.recoveryMode, expected.recoveryMode);
+            record('shared-backend-factory-enter', {currentBytes: options.currentBytes, nextBytes: options.nextBytes, held: sharedColdCase});
+            await gate;
+            sharedStoreTransferred = true;
+            record('shared-backend-factory-transfer', {uniqueWriter: true});
+            return observeStore(preparedSharedStore);
         };
-        module.createStore = observed;
-        t.after(() => {if (module.createStore === observed) module.createStore = original;});
+        sharedStoreModule.createStore = observed;
+        t.after(() => {if (sharedStoreModule.createStore === observed) sharedStoreModule.createStore = sharedStoreOriginal;});
     }
     const managerFile = path.join(root, 'playbackmanager.js');
     fs.copyFileSync(path.join(repo, 'vendor/web-snapshot/www/modules/common/playback/playbackmanager.js'), managerFile);
@@ -84,7 +109,7 @@ async function automaticCase(t, scenario) {
         retireGeneration() {clearInterval(this.clock); this.currentGenerationId = null;}
         command() {}
         submitCommand(args) {
-            if (sharedCase && Array.isArray(args) && args.length === 4 && args[0] === 'expand-properties' && args[1] === 'set' &&
+            if (sharedMode && Array.isArray(args) && args.length === 4 && args[0] === 'expand-properties' && args[1] === 'set' &&
                 args[2] === 'user-data/emby-theater-enhanced/diagnostics/cache-bytes' && args[3] === '${=demuxer-max-bytes}') {
                 const value = String(300 * 1024 * 1024);
                 this.properties[args[2]] = value;
@@ -94,7 +119,7 @@ async function automaticCase(t, scenario) {
         }
         setProperty(name, value) {this.properties[name] = value;}
         async getProperty(name) {
-            if (sharedCase && name === 'demuxer-max-bytes') {
+            if (sharedMode && name === 'demuxer-max-bytes') {
                 // Native's MPV_FORMAT_NODE/INT64 path returns a JSON number.
                 const bytes = Number(this.properties[name]);
                 record('synthetic-M-source', {source: 'SyntheticClient.getProperty/Native-NODE', bytes, command: 'get/demuxer-max-bytes'});
@@ -111,15 +136,20 @@ async function automaticCase(t, scenario) {
         emit(name, value) {this.properties[name] = value; const event = {generationId: this.currentGenerationId, name, value}; record('synthetic-property', event); this.options.onEvent(event);}
         load(args) {
             const id = contexts.get(this.currentGenerationId) || /\/Videos\/([ABC])\//.exec(new URL(args[1]).pathname)?.[1], gen = this.currentGenerationId;
-            record('load', {item: id, generation: gen, source: args[1], ...(sharedCase ? {cacheDecision: {state: service.rangeStatus().current.state, diagnostic: service.rangeStatus().current.diagnostic || null}} : {}), ...(trustedCd2 ? {fileLocalOptions: args.slice(2)} : {})});
+            const sharedProxyLoad = sharedMode && new URL(args[1]).origin !== mediaOrigin.origin;
+            record('load', {item: id, generation: gen, source: args[1], ...(sharedMode ? {cacheDecision: {state: service.rangeStatus().current.state, diagnostic: service.rangeStatus().current.diagnostic || null}} : {}), ...(trustedCd2 ? {fileLocalOptions: args.slice(2)} : {})});
             const promise = (async () => {
-                if (sharedCase && id === 'A') {
+                if (sharedMode && id === 'A' && sharedProxyLoad) {
                     // Lifecycle fixture only: product select/URL choice already
                     // completed. A's first original read starts after its real
                     // metadata key, so best-effort cold taps are not assumed.
                     await waitFor(() => trace.some(row => row.type === 'shared-store-open-end' && row.item === 'A'),
                         () => JSON.stringify({boundary: 'A-key-before-first-fixture-read', decision: service.rangeStatus().current.diagnostic || null}));
                     record('synthetic-fixture-boundary', {condition: 'A-key-before-first-fixture-read'});
+                }
+                if (sharedColdCase && id === 'A') {
+                    assert.equal(new URL(args[1]).origin, mediaOrigin.origin, 'cold preparation timeout must keep A on its original CD2 URL');
+                    record('synthetic-fixture-boundary', {condition: 'A-original-source-after-shared-prepare-timeout'});
                 }
                 const before = trace.length;
                 const headers = {Range: 'bytes=0-7'};
@@ -130,6 +160,7 @@ async function automaticCase(t, scenario) {
                     headers['User-Agent'] = args[4].slice('user-agent='.length);
                 }
                 const response = await fetch(args[1], {headers});
+                if (sharedColdCase && id === 'A') assert.equal(response.status, 206);
                 if (dateValidator) {
                     assert.equal(response.status, 206); assert.equal(response.headers.get('etag'), null);
                     assert.equal(response.headers.get('last-modified'), 'Wed, 01 Jan 2020 00:00:00 GMT');
@@ -137,6 +168,11 @@ async function automaticCase(t, scenario) {
                 }
                 assert.equal(Buffer.from(await response.arrayBuffer()).toString(), id.repeat(8));
                 record('synthetic-read', {item: id, before});
+                if (sharedColdCase && id === 'A') {
+                    assert.equal(sharedStoreFactoryCalls, 1, 'cold cache factory started before original A playback read');
+                    releaseSharedStoreFactory();
+                    record('synthetic-fixture-boundary', {condition: 'A-original-read-before-backend-transfer'});
+                }
                 if (id === 'B' && pendingNatural) {
                     assert.equal(Buffer.from(await (await fetch(args[1], {headers: {Range: 'bytes=8-15'}})).arrayBuffer()).toString(), id.repeat(8));
                     record('synthetic-miss-read', {item: id, start: 8, end: 15});
@@ -147,13 +183,13 @@ async function automaticCase(t, scenario) {
                 this.clock = setInterval(() => {
                     if (this.currentGenerationId !== gen) {clearInterval(this.clock); return;}
                     if (trustedCd2) record('trusted-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
-                    if (sharedCase) record('shared-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
-                    if (sharedCase && position >= 5.4 && !aBufferConfirmed) {
+                    if (sharedMode) record('shared-cache-occupancy', {bytes: service.rangeStatus().diskBytes});
+                    if (sharedMode && sharedProxyLoad && position >= 5.4 && !aBufferConfirmed) {
                         if (service.rangeStatus().diskBytes !== 8) return;
                         aBufferConfirmed = true;
                         record('synthetic-fixture-boundary', {condition: 'A-buffer-confirmed-before-70-percent', bytes: 8});
                     }
-                    if (sharedCase && position >= 7.6 && !trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
+                    if (sharedMode && sharedProxyLoad && position >= 7.6 && !trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
                     if ((orderedNatural || pendingNatural) && position >= 7.6) {
                         // Synthetic clock precondition only; actual renderer/service/HTTP
                         // must still discover and warm the original queue candidate.
@@ -163,7 +199,7 @@ async function automaticCase(t, scenario) {
                             if (!trace.some(row => row.type === 'preload-result' && row.state === 'ready')) return;
                         }
                     }
-                    position = Math.min(orderedNatural || pendingNatural || sharedCase || scenario === 'autoplay-off' ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
+                    position = Math.min(orderedNatural || pendingNatural || sharedMode || scenario === 'autoplay-off' ? 8 : 7.6, position + 0.2); this.emit('time-pos', position);
                     if (position >= 8) {clearInterval(this.clock); this.emit('eof-reached', true);}
                 }, 10); timers.add(this.clock);
             })();
@@ -176,10 +212,10 @@ async function automaticCase(t, scenario) {
     if (trustedCd2) authority = require('../src/electronapp/enhanced/preload-source-authority').createAuthority();
     service = createService({electron: {BrowserWindow: Window}, NativeHelperClient: SyntheticClient, fs: {existsSync: () => true},
         sourceAuthority: authority,
-        logger: value => {if (sharedCase && value.category === 'preload') record('service-preload-diagnostic', require('../src/electronapp/enhanced/playback-range-diagnostics').snapshot(value.details));},
+        logger: value => {if (sharedMode && value.category === 'preload') record('service-preload-diagnostic', require('../src/electronapp/enhanced/playback-range-diagnostics').snapshot(value.details));},
         getMainWindow: () => main, getWebContents: () => main.webContents, execFile: (_file, _args, _options, callback) => {callback(null); return {kill() {}};},
         runtimeRoot: root, getRangeCacheConfig: settingsCase ? () => preferences.runtimeConfig() : undefined,
-        rangeCache: settingsCase ? undefined : sharedCase ? {kind: 'shared-byte-trial', root: path.join(root, 'shared-byte-cache'),
+        rangeCache: settingsCase ? undefined : sharedMode ? {kind: 'shared-byte-trial', root: path.join(root, 'shared-byte-cache'),
             progressPercent: 70, preloadMB: 100, timeoutMs: 1000} : {...tool.CONFIG, blockBytes: 8, root: path.join(root, 'prefix'), onPrefixRead: value => record('prefix-read', value)}});
     const trusted = require('./helpers/trusted-renderer.cjs');
     main.webContents.mainFrame = {url: trusted.appUrl};
@@ -233,7 +269,7 @@ async function automaticCase(t, scenario) {
             }
             record('ipc', {operation: request.operation});
             if (request.operation === 'range-context' && request.payload.context) contexts.set(request.payload.generationId, request.payload.context.itemId);
-            if (sharedCase && request.operation === 'command' && request.payload?.data?.[0] === 'loadfile') record('shared-select-start', {item: contexts.get(request.payload.generationId)});
+            if (sharedMode && request.operation === 'command' && request.payload?.data?.[0] === 'loadfile') record('shared-select-start', {item: contexts.get(request.payload.generationId)});
             const result = await service.call(request.operation, request.payload, request.endpointId);
             if (request.operation === 'range-preload') record('preload-result', result.value);
             return result;
@@ -254,7 +290,7 @@ async function automaticCase(t, scenario) {
         queueMicrotask(() => {try {vm.runInContext(window.prefixHarness.source(member), window, {filename: member}); script.fire('load');} catch (error) {record('script-error', {member, error: error.message}); script.fire('error');}});
     }};
     await vm.runInContext('(' + rendererBoot.toString() + ')(' + JSON.stringify({origin: origin.origin, windowId: '1', singleItem: scenario === 'autoplay-off', moduleBaseUrl: 'file:///fixture/electronapp/www/',
-        ...(sharedCase ? {cacheBytes: 300 * 1024 * 1024} : {})}) + ')', window);
+        ...(sharedMode ? {cacheBytes: 300 * 1024 * 1024} : {})}) + ')', window);
     const details = () => JSON.stringify(trace.slice(-30));
     assert(!trace.some(row => row.type === 'renderer-failure'), details());
     if (scenario === 'trusted-cd2-stop-report') {
@@ -388,50 +424,93 @@ async function automaticCase(t, scenario) {
         assert(!trace.some(row => row.type === 'manager-next-track'), details());
         return;
     }
-    if (sharedCase) {
+    if (sharedMode) {
         await waitFor(() => trace.some(row => row.type === 'synthetic-read' && row.item === 'B'), details);
         const threshold = trace.find(row => row.type === 'synthetic-property' && row.name === 'time-pos' && row.value >= 5.6);
         const preload = trace.find(row => row.type === 'ipc' && row.operation === 'range-preload');
         const ready = trace.find(row => row.type === 'preload-result' && row.state === 'ready');
+        const preloadResult = trace.find(row => row.type === 'preload-result');
         const eof = trace.find(row => row.type === 'synthetic-property' && row.name === 'eof-reached');
         const next = trace.find(row => row.type === 'manager-next-track');
         const loads = trace.filter(row => row.type === 'load'), bLoad = loads.find(row => row.item === 'B');
-        assert(threshold && preload && ready && eof && next && bLoad, details());
-        assert(threshold.seq < preload.seq && preload.seq < ready.seq && ready.seq < eof.seq && eof.seq < next.seq && next.seq < bLoad.seq, details());
-        assert.equal(ready.bytes, 40);
+        const sharedStages = trace.filter(row => ['shared-backend-factory-enter', 'shared-backend-factory-transfer', 'load', 'synthetic-read',
+            'ipc', 'preload-result', 'preload-diagnostic', 'synthetic-property', 'manager-next-track'].includes(row.type) &&
+            (row.type !== 'synthetic-property' || row.name === 'time-pos' && row.value >= 5.6 || row.name === 'eof-reached') &&
+            (row.type !== 'ipc' || row.operation === 'range-preload')).map(({seq, type, item, operation, state, bytes, diagnostic, details, stage, reason, name, value}) => ({seq, type, item, operation, state, bytes, diagnostic, details, stage, reason, name, value}));
+        assert(threshold && eof && next && bLoad, JSON.stringify(sharedStages));
+        if (sharedCase) {
+            assert(preload && ready, JSON.stringify(sharedStages));
+            assert(threshold.seq < preload.seq && preload.seq < ready.seq && ready.seq < eof.seq && eof.seq < next.seq && next.seq < bLoad.seq, details());
+            assert.equal(ready.bytes, 40);
+        } else {
+            assert.equal(ready, undefined, 'cold A fallback is not reported as a successful preload');
+            const refusal = trace.find(row => row.type === 'preload-diagnostic' && row.stage === 'current-probe' && row.reason === 'timeout');
+            assert(refusal, JSON.stringify(sharedStages));
+            assert.equal(preload, undefined, 'renderer observes the original-source timeout and refuses before preload IPC');
+            assert.equal(preloadResult, undefined, 'the refused next candidate is never represented as a cache preload');
+            assert(threshold.seq < refusal.seq && refusal.seq < eof.seq && eof.seq < next.seq && next.seq < bLoad.seq, details());
+            assert(!trace.some(row => row.type === 'next-playback-info' && row.item === 'B' && row.seq < eof.seq), details());
+        }
         assert.equal(loads.length, 2);
-        for (const load of loads) {
-            assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
-            const routed = new URL(load.source);
-            assert.equal(routed.hostname, '127.0.0.1');
-            assert.notEqual(routed.origin, mediaOrigin.origin, 'original Native loads receive the authorized local proxy URL: ' + JSON.stringify({item: load.item, decision: load.cacheDecision, stages: trace.filter(row => ['shared-store-open-start', 'shared-store-open-end', 'shared-store-open-rejected', 'service-preload-diagnostic', 'origin-client-open', 'origin-client-closed', 'origin-closed'].includes(row.type)).map(row => ({seq: row.seq, atMs: row.atMs, type: row.type, item: row.item, reason: row.reason, stage: row.stage, start: row.start, end: row.end, requestId: row.requestId, elapsedMs: row.elapsedMs, complete: row.complete}))}));
+        for (const load of loads) assert.deepEqual(Array.from(load.fileLocalOptions), ['replace', '-1', 'user-agent=Synthetic-CD2']);
+        if (sharedCase) {
+            for (const load of loads) {
+                const routed = new URL(load.source);
+                assert.equal(routed.hostname, '127.0.0.1');
+                assert.notEqual(routed.origin, mediaOrigin.origin, 'strict shared case keeps both A and B on the authorized local proxy');
+            }
+        } else {
+            const aLoad = loads.find(row => row.item === 'A');
+            assert(aLoad && aLoad.source === mediaOrigin.origin + '/Videos/A/stream.avi?sig=synthetic', details());
+            assert.equal(aLoad.cacheDecision.state, 'original');
+            assert.deepEqual(aLoad.cacheDecision.diagnostic, {stage: 'current-probe', reason: 'timeout'});
+            const factory = trace.find(row => row.type === 'shared-backend-factory-enter');
+            const transfer = trace.find(row => row.type === 'shared-backend-factory-transfer');
+            const aRead = trace.find(row => row.type === 'synthetic-read' && row.item === 'A');
+            assert(factory && transfer && aRead && factory.seq < aLoad.seq && aLoad.seq < aRead.seq && aRead.seq < transfer.seq, details());
+            assert.equal(sharedStoreFactoryCalls, 1);
+            assert.equal(sharedStoreTransferred, true);
+            assert.equal(trace.filter(row => row.type === 'shared-store-open-end' && row.item === 'A').length, 0,
+                'cold A is explicitly not counted as a retained cache entry');
+            assert(!trace.some(row => row.type === 'shared-cache-occupancy' && row.bytes === 48), details());
         }
         const mReads = trace.filter(row => row.type === 'synthetic-M-source');
         assert(mReads.length >= 2 && mReads.every(row => row.bytes === 300 * 1024 * 1024 &&
             row.source === 'SyntheticClient.getProperty/Native-NODE' &&
             row.command === 'get/demuxer-max-bytes'), details());
-        const overlap = trace.find(row => row.type === 'shared-cache-occupancy' && row.seq > ready.seq && row.seq < eof.seq && row.bytes === 48);
-        assert(overlap, 'the 8-byte A read and fully prepared 40-byte B coexist before ordinary EOF: ' + details());
+        const overlap = trace.find(row => row.type === 'shared-cache-occupancy' && row.seq > (ready?.seq ?? 0) && row.seq < eof.seq && row.bytes === 48);
+        if (sharedCase) assert(overlap, 'the 8-byte A read and fully prepared 40-byte B coexist before ordinary EOF: ' + details());
+        else assert.equal(overlap, undefined, 'cold A fallback does not claim an A cache hit or 48-byte overlap');
         const resolvedB = trace.find(row => row.type === 'synthetic-cd2-rpc' && row.item === 'B' && row.method === 'GetDownloadUrlPath');
         const negotiation = trace.find(row => row.type === 'next-playback-info' && row.item === 'B');
-        assert(threshold.seq < negotiation.seq && negotiation.seq < resolvedB.seq && resolvedB.seq < preload.seq, details());
+        if (sharedCase) assert(threshold.seq < negotiation.seq && negotiation.seq < resolvedB.seq && resolvedB.seq < preload.seq, details());
+        else {
+            assert.equal(negotiation, undefined, 'B is resolved by ordinary natural-next playback after the preload refusal');
+            assert(eof.seq < next.seq && next.seq < resolvedB.seq && resolvedB.seq < bLoad.seq, details());
+        }
         assert(trace.filter(row => row.type === 'cd2-resolve-result').every(row => row.status === 'hit' && row.sourceKind === 'direct-url' && row.privateProof), details());
         assert(trace.filter(row => row.type === 'trusted-origin-headers').every(row => row.validUserAgent && row.anonymous), details());
         const freshB = trace.filter(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq);
-        assert(freshB.length > 0 && freshB.every(row => row.start === 0 && row.end === 0), details());
-        assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq && !(row.start === 0 && row.end === 0)), details());
+        if (sharedCase) {
+            assert(freshB.length > 0 && freshB.every(row => row.start === 0 && row.end === 0), details());
+            assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.seq > eof.seq && !(row.start === 0 && row.end === 0)), details());
+        } else {
+            assert.deepEqual(freshB.map(({start, end}) => ({start, end})), [{start: 0, end: 0}, {start: 0, end: 7}],
+                'cold B has one 1-byte authorization probe and one explicitly recorded initial body miss');
+            assert(!trace.some(row => row.type === 'origin-media' && row.item === 'B' && row.seq < eof.seq && row.start > 0), details());
+        }
         assert(!trace.some(row => row.type === 'prefix-read'), details());
         assert.equal(trace.filter(row => row.type === 'manager-next-track').length, 1);
-        await waitFor(() => service.rangeStatus().diskBytes === 40, details);
+        const persistedBytes = sharedCase ? 40 : 8;
+        await waitFor(() => service.rangeStatus().diskBytes === persistedBytes, details);
         await service.destroy();
-        const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
-        const recovered = await createStore({root: path.join(root, 'shared-byte-cache'),
+        const recovered = await sharedStoreOriginal({root: path.join(root, 'shared-byte-cache'),
             currentBytes: 300 * 1024 * 1024, nextBytes: (100 * 1024 * 1024), recoveryMode: 'on-demand'});
         try {
-            assert.equal(recovered.status().current, 40);
+            assert.equal(recovered.status().current, persistedBytes);
             assert.equal(recovered.status().next, 0);
-            const data = await recovered.read(recovered.status().currentKey, 0, 40);
-            assert.equal(data.toString(), 'B'.repeat(40), 'destroy/reopen retains only the last naturally played B');
+            const data = await recovered.read(recovered.status().currentKey, 0, persistedBytes);
+            assert.equal(data.toString(), 'B'.repeat(persistedBytes), 'destroy/reopen retains only naturally played B bytes');
         } finally {await recovered.close();}
         const selections = loads.map(load => {
             const start = trace.filter(row => row.type === 'shared-select-start' && row.item === load.item && row.seq < load.seq).at(-1);
@@ -442,8 +521,10 @@ async function automaticCase(t, scenario) {
             const close = trace.find(row => row.type === 'origin-client-closed' && row.clientRequest === open.clientRequest); return close ? close.atMs - open.atMs : null;
         });
         console.log(JSON.stringify({type: 'shared-byte-alameda-natural-result', scenario, syntheticHelper: true,
-            nativeDll: false, exactSyntheticCurrentBytes: 300 * 1024 * 1024, preloadBytes: ready.bytes,
-            overlapDiskBytes: overlap.bytes, freshActualBOriginRequests: freshB.length, persistedCurrentBytes: 40, nextBytesAfterReopen: 0,
+            nativeDll: false, exactSyntheticCurrentBytes: 300 * 1024 * 1024, ...(sharedCase ? {preloadBytes: ready.bytes} : {}),
+            ...(sharedCase ? {overlapDiskBytes: overlap.bytes} : {coldAFallback: true, preloadUnavailable: true,
+                refusalReason: 'current-probe/timeout', bFirstBodyMiss: true, bFirstBodyMissRange: '0-7', retainedABytes: 0}),
+            freshActualBOriginRequests: freshB.length, persistedCurrentBytes: persistedBytes, nextBytesAfterReopen: 0,
             selectionMs: selections.find(value => value.item === 'B')?.elapsedMs ?? null,
             probeMs: warmBProbeMs[0] ?? null, storeOpenMs: warmBStoreOpenMs[0] ?? null,
             selections, warmBStoreOpenMs, warmBProbeMs}));
@@ -518,4 +599,4 @@ async function automaticCase(t, scenario) {
     }
     console.log(JSON.stringify({type: 'next-prefix-node-chain-result', scenario, syntheticHelper: true, threshold: threshold.seq, preload: preload.seq, ready: ready.seq, eof: eof.seq, next: next.seq, bLoad: b.seq, bytes: ready.bytes}));
 }
-for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date-unproven', 'trusted-cd2-no-validator', 'trusted-cd2-shared', 'trusted-cd2-stop-report']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
+for (const scenario of ['natural', 'hold-natural-eof', 'remove-candidate', 'app-exit-before-next', 'hold-cancel', 'hold-preempt', 'hold-replace', 'hold-exit', 'unsupported', 'autoplay-off', 'explicit-queue-autoplay-off', 'settings-next-play', 'trusted-cd2', 'trusted-cd2-unsupported', 'trusted-cd2-date-unproven', 'trusted-cd2-no-validator', 'trusted-cd2-shared', 'trusted-cd2-shared-cold-fallback', 'trusted-cd2-stop-report']) test('real Alameda automatic next-prefix with synthetic helper/document: ' + scenario, {timeout: 8000}, t => automaticCase(t, scenario));
