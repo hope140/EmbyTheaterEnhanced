@@ -377,9 +377,9 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         // Pre-existing/restored data and explicitly finished preloads stay live.
         const readCache = cacheEnabled && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
         let offset = range.start;
-        // Additional waiting is shared by this response, not granted per block.
-        // Fast/missing reads spend none; another seek owns a separate cancellable response.
-        let readGraceRemaining = 10;
+        // Each physical block has a finite read window. Fast/missing reads do not wait.
+        // Another seek owns a separate cancellable response; late IO retains its owner.
+        const readGracePerBlock = 15;
         while (offset <= range.end) {
           useRecord(record); if (signal.aborted) throw cancelled();
           await refresh(record);
@@ -403,7 +403,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
               stats.readReservedBytes += 1048576;
               stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
               const readStarted = performance.now();
-              const deadline = readStarted + 15 + readGraceRemaining;
+              const deadline = readStarted + 15 + readGracePerBlock;
               const read = track(controls, store.read(key, offset, length).finally(() => {stats.readReservedBytes -= 1048576;}));
               let timer;
               try {
@@ -420,8 +420,8 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
                 else if (!data) stats.localReadRefusals++;
               } finally {
                 clearTimeout(timer);
-                const spent = Math.min(readGraceRemaining, Math.max(0, performance.now() - readStarted - 15));
-                readGraceRemaining -= spent; stats.localReadGraceMs += spent;
+                const spent = Math.min(readGracePerBlock, Math.max(0, performance.now() - readStarted - 15));
+                stats.localReadGraceMs += spent;
               }
             }
             useRecord(record); if (signal.aborted) throw cancelled();

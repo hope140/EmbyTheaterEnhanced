@@ -255,7 +255,7 @@ test('maintained proxy source observes a real loopback warm read with controlled
   let proxy, origin, store, observer, timerId = 0, armed = 0, cleared = 0, forwarded = 0;
   const timers = {
     setTimeout(callback, ms, ...args) {
-      if (ms === 15 || ms === 25) {const handle = {id: ++timerId}; pendingTimers.set(handle, {callback, args}); armed++; return handle;}
+      if (ms === 15 || ms === 25 || ms === 30) {const handle = {id: ++timerId}; pendingTimers.set(handle, {callback, args}); armed++; return handle;}
       forwarded++; return realSetTimeout(callback, ms, ...args);
     },
     clearTimeout(handle) {
@@ -308,7 +308,7 @@ test('maintained proxy source observes a real loopback warm read with controlled
   const evidence = observer.snapshot();
   assert.equal(evidence.sourceSha256, sha(exactSource));
   assert.equal(evidence.unknownTimers, 0);
-  assert.ok(events.some(row => row.operation === 'timer-armed' && row.deadlineMs === 25));
+  assert.ok(events.some(row => row.operation === 'timer-armed' && row.deadlineMs === 30));
   assert.equal(evidence.activeReads, 0);
   assert.equal(evidence.pendingTimers, 0);
   assert.ok(events.some(row => row.operation === 'read-settled' && row.outcome === 'bytes'));

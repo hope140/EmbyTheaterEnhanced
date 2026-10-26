@@ -17,18 +17,19 @@ async function cleanup(actions, remove) {
 }
 
 // These functional capture/ownership cases need a deterministic disk deadline, not a
-// promise that a Windows filesystem callback always arrives within its shared grace.
+// promise that a Windows filesystem callback always arrives within its per-block grace.
 // Load the maintained proxy unchanged; control only timers causally scheduled by store.read.
 async function controlledReadClock() {
   const file = require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
   const source = await fs.readFile(file, 'utf8');
-  assert.match(source, /const deadline = readStarted \+ 15 \+ readGraceRemaining/);
+  assert.match(source, /const readGracePerBlock = 15/);
+  assert.match(source, /const deadline = readStarted \+ 15 \+ readGracePerBlock/);
   assert.match(source, /Math\.max\(1, Math\.ceil\(deadline - performance\.now\(\)\)\)/);
   const pending = new Map(), timerOwners = new Map(); let created = 0, fired = 0, early = 0, now = 0, firing = null, slot = null, reads = 0;
   const readSetTimeout = (fn, ms, ...args) => {
     let attempt = null;
     if (firing) {attempt = firing.attempt; firing.rearmed = true;}
-    else if (slot && ms >= 1 && ms <= 25) {attempt = slot; slot = null;}
+    else if (slot && ms >= 1 && ms <= 30) {attempt = slot; slot = null;}
     if (!attempt) return setTimeout(fn, ms, ...args);
     const owner = {attempt, rearmed: false}, timer = {fn, ms, args, due: now + ms};
     created++; timerOwners.set(timer, owner); pending.set(timer, owner); return timer;
@@ -512,7 +513,7 @@ test('a committed local block exceeding its read deadline falls back and retains
   assert.equal(clock.status().pending, 1);
   assert.equal(clock.status().fired, 0);
   assert.equal(clock.status().now, 0);
-  clock.expireRead(24.294);
+  clock.expireRead(29.294);
   await delay(5);
   assert.equal(origin.requests.length, 1, 'an early callback must rearm without refetching a committed block');
   assert.equal(clock.status().pending, 1, 'the remaining absolute deadline is rearmed');
@@ -532,11 +533,11 @@ test('a committed local block exceeding its read deadline falls back and retains
   assert.equal(clock.status().fired, 1, 'only the final absolute deadline is a timeout');
   assert.equal(clock.status().early, 1);
   assert.equal(proxy.status().localReadTimeouts, 1);
-  assert.equal(proxy.status().localReadGraceMs, 10);
+  assert.equal(proxy.status().localReadGraceMs, 15);
   assert.deepEqual(await store.read(key, 0, bytes), origin.data);
 });
 
-test('a valid twenty millisecond local read uses the shared grace without any source request', async t => {
+test('a valid twenty millisecond local read uses per-block grace without any source request', async t => {
   const bytes = 64 * 1024, root = temporaryRoot('ete-shared-read-grace-valid-', ['']);
   let origin, store, proxy;
   const gate = gatedBlockReads();
@@ -558,7 +559,7 @@ test('a valid twenty millisecond local read uses the shared grace without any so
   gate.hold(false); gate.release(0);
   const warm = await warmPending; await proxy.drain();
   assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
-  assert.equal(origin.requests.length, 1, 'a read completed inside its 25ms response window never refetches');
+  assert.equal(origin.requests.length, 1, 'a read completed inside its 30ms per-block window never refetches');
   assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
   assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
   assert.equal(proxy.status().localReadTimeouts, 0);
@@ -567,8 +568,8 @@ test('a valid twenty millisecond local read uses the shared grace without any so
   assert.equal(clock.status().pending, 0);
 });
 
-test('two slow block reads share at most ten extra milliseconds for the whole response', async t => {
-  const bytes = 3 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-shared-', ['']);
+test('two twenty millisecond block reads each use per-block grace without source fallback', async t => {
+  const bytes = 2 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-pair-', ['']);
   let origin, store, proxy;
   const gate = gatedBlockReads();
   t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
@@ -584,24 +585,88 @@ test('two slow block reads share at most ten extra milliseconds for the whole re
   const before = proxy.status(); gate.hold(true);
   const warmPending = get(handle.url, 0, bytes);
   await gate.waitFor(1);
-  clock.advance(23); gate.release(0);
+  clock.advance(20); gate.release(0);
   await gate.waitFor(2);
-  assert.equal(clock.status().now, 23);
-  clock.advance(17);
+  assert.equal(clock.status().now, 20);
+  clock.advance(20); gate.release(1);
   gate.hold(false);
-  clock.expireRead(0);
-  assert.equal(clock.status().pending, 0);
   const warm = await warmPending;
+  assert.equal(clock.status().pending, 0);
   assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
-  assert.equal(origin.requests.length, 2, 'only the second block falls back after the first read spends most grace');
-  assert.deepEqual(origin.requests[1] && {start: origin.requests[1].start, end: origin.requests[1].end},
-    {start: 256 * 1024, end: 2 * 256 * 1024 - 1}, 'slow reads retain the established single-gap fallback');
-  assert.equal(proxy.status().hitBytes - before.hitBytes, 2 * 256 * 1024);
-  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 256 * 1024);
-  assert.equal(proxy.status().localReadGraceMs, 10, 'one response cannot mint a fresh ten milliseconds per block');
-  assert.equal(proxy.status().localReadTimeouts, 1);
+  assert.equal(origin.requests.length, 1, 'both reads finish within their individual deadlines');
+  assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
+  assert.equal(proxy.status().localReadGraceMs, 10, 'each block accounts for its five milliseconds beyond the old deadline');
+  assert.equal(proxy.status().localReadTimeouts, 0);
   assert.equal(proxy.status().localReadRefusals, 0);
   gate.releaseAll(); await proxy.drain();
+  assert.equal(store.status().readers, 0);
+});
+
+test('multiple twenty eight millisecond block reads each stay within the thirty millisecond bound', async t => {
+  const bytes = 3 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-many-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.equal(cold.hash, hash(origin.data));
+
+  const before = proxy.status(); gate.hold(true);
+  const warmPending = get(handle.url, 0, bytes);
+  for (let index = 0; index < 3; index++) {
+    await gate.waitFor(index + 1);
+    clock.advance(28);
+    gate.release(index);
+  }
+  gate.hold(false);
+  const warm = await warmPending;
+  gate.releaseAll(); await proxy.drain();
+  assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
+  assert.equal(origin.requests.length, 1);
+  assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
+  assert.equal(proxy.status().localReadTimeouts, 0);
+  assert.equal(proxy.status().localReadGraceMs, 39);
+  assert.equal(clock.status().pending, 0);
+  assert.equal(store.status().readers, 0);
+});
+
+test('an over-deadline block falls back only for its range gap while later blocks hit locally', async t => {
+  const bytes = 3 * 256 * 1024, root = temporaryRoot('ete-shared-read-grace-gap-', ['']);
+  let origin, store, proxy;
+  const gate = gatedBlockReads();
+  t.after(async () => {gate.releaseAll(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io: gate.io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const cold = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
+  assert.equal(cold.hash, hash(origin.data));
+
+  const before = proxy.status(); gate.hold(true);
+  const warmPending = get(handle.url, 0, bytes);
+  await gate.waitFor(1);
+  clock.expireRead(30);
+  gate.hold(false);
+  const warm = await warmPending;
+  gate.releaseAll(); await proxy.drain();
+  assert.equal(warm.status, 206); assert.equal(warm.hash, cold.hash);
+  assert.equal(origin.requests.length, 2, 'only the timed-out first gap is fetched from origin');
+  assert.deepEqual(origin.requests[1] && {start: origin.requests[1].start, end: origin.requests[1].end},
+    {start: 0, end: 256 * 1024 - 1});
+  assert.equal(proxy.status().hitBytes - before.hitBytes, 2 * 256 * 1024);
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, 256 * 1024);
+  assert.equal(proxy.status().localReadTimeouts, 1);
+  assert.equal(proxy.status().localReadGraceMs, 15);
+  assert.equal(clock.status().pending, 0);
   assert.equal(store.status().readers, 0);
 });
 

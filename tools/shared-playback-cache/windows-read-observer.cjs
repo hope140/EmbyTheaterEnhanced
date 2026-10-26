@@ -20,7 +20,12 @@ function install({target, filename, source, expectedSha256, emit, context = () =
     /const remaining = deadline - performance\.now\(\);/.test(text) &&
     /timer = setTimeout\(expire, Math\.max\(1, Math\.ceil\(deadline - performance\.now\(\)\)\)\)/.test(text) &&
     /readGraceRemaining -= spent;/.test(text);
-  if (!Buffer.from(text, 'utf8').equals(source) || (!fixedTimer && !absoluteTimer && !responseGraceTimer)) throw Error('read-observer-source-contract');
+  const boundedBlockTimer = /const readGracePerBlock = 15;/.test(text) &&
+    /const deadline = readStarted \+ 15 \+ readGracePerBlock;/.test(text) &&
+    /const remaining = deadline - performance\.now\(\);/.test(text) &&
+    /timer = setTimeout\(expire, Math\.max\(1, Math\.ceil\(deadline - performance\.now\(\)\)\)\)/.test(text) &&
+    !/readGracePerBlock -=/.test(text);
+  if (!Buffer.from(text, 'utf8').equals(source) || (!fixedTimer && !absoluteTimer && !responseGraceTimer && !boundedBlockTimer)) throw Error('read-observer-source-contract');
   const load = new Function('exports', 'require', 'module', '__filename', '__dirname', 'setTimeout', 'clearTimeout', text);
   const original = target.createProxy, active = new Set(), timerOwners = new Map();
   const totals = {attempts: 0, settled: 0, valid: 0, resultBytes: 0, empty: 0, rejected: 0, threw: 0, fired: 0, unknownTimers: 0, dropped: 0, observerErrors: 0};
@@ -35,7 +40,7 @@ function install({target, filename, source, expectedSha256, emit, context = () =
     } catch (_) {totals.observerErrors++;}
   }
   function replacement(options) {
-    if (options?.timeoutMs === 15 || responseGraceTimer && options?.timeoutMs === 25) throw Error('read-observer-timer-collision');
+    if (options?.timeoutMs === 15 || responseGraceTimer && options?.timeoutMs === 25 || boundedBlockTimer && options?.timeoutMs === 30) throw Error('read-observer-timer-collision');
     const store = options.store; let slot = null, firing = null;
     const observedStore = {...store, read(...args) {
       const id = ++totals.attempts; let value;
@@ -60,8 +65,8 @@ function install({target, filename, source, expectedSha256, emit, context = () =
       return pending;
     }};
     const readSetTimeout = (callback, ms, ...args) => {
-      const attempt = firing ? firing.attempt : slot && (responseGraceTimer ? ms >= 1 && ms <= 25 : ms === 15) ? slot : null;
-      if (!attempt) {if (ms === 15 || responseGraceTimer && ms === 25) totals.unknownTimers++; return timers.setTimeout(callback, ms, ...args);}
+      const attempt = firing ? firing.attempt : slot && (boundedBlockTimer ? ms >= 1 && ms <= 30 : responseGraceTimer ? ms >= 1 && ms <= 25 : ms === 15) ? slot : null;
+      if (!attempt) {if (ms === 15 || responseGraceTimer && ms === 25 || boundedBlockTimer && ms === 30) totals.unknownTimers++; return timers.setTimeout(callback, ms, ...args);}
       if (firing) firing.rearmed = true;
       else slot = null;
       const owner = {attempt, rearmed: false}; let handle;
