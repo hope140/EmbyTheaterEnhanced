@@ -23,6 +23,13 @@ test('fixed app matrix is 46 isolated arms and 230 outcomes, with entry prefligh
   assert.equal(c.LIMITS.workerMs,90000); assert.equal(c.LIMITS.pairs,20); assert.equal(c.LIMITS.warmups,3);
 });
 
+test('visible holds are explicit entry-only controls and cannot contaminate the performance matrix',()=>{
+  assert.equal(runner.visualControl('entry'),false);assert.equal(runner.visualControl('entry',true),true);
+  assert.equal(runner.visualControl('matrix',false),false);
+  assert.throws(()=>runner.visualControl('matrix',true),/app-visual-entry-only/);
+  assert.throws(()=>runner.visualControl('entry','true'),/app-visual-entry-only/);
+});
+
 test('ordinary renderer login uses actual modules/API authentication and normal play actions', async () => {
   const calls=[];
   const api={serverId:()=> 'prefix-server',getCurrentUserId:()=> 'fixture-user',async authenticateUserByName(...args){calls.push(['authenticate',...args]);}};

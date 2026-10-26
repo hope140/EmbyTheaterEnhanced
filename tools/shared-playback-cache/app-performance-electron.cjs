@@ -25,10 +25,12 @@ async function main() {
     resourceAssessment: {electron:'NOT_ASSESSED',native:'NOT_ASSESSED',disk:'NOT_ASSESSED'},
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, pid: process.pid, samples: [], observations: [], helperExits: [],
     externalNetworkAttempts: 0, discoveryOrWakeRequestsBlocked: 0, udpSocketsBlocked: 0, unknownFixtureRoutes: 0, memoryScope: 'sum of observed Electron working-set peak and owned Native lifetime PeakWorkingSet; conservative sum, not simultaneous RSS'};
+  report.visualHolds = plan.visualHolds;
   need(/^[1-9][0-9]{12}$/.test(args['deadline-ms']), 'app-worker-deadline-argument');
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
+  let visualFile, visualRows = 0;
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
   let scenario = 'startup';
   const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: smoke.coloredFrame,
@@ -39,6 +41,20 @@ async function main() {
     const end = Math.min(deadline, performance.now() + ms);
     while (performance.now() < end) {active(); const found = await test(); active(); if (found && performance.now() < end) return; await delay(10);}
     throw Error(code);
+  }
+  async function visualHold(phase, hash) {
+    if (!plan.visualHolds) return;
+    const owner = {endpointId:endpoint, generationId:client?.currentGenerationId};
+    need(service?.isPreviewOwner(owner), 'app-preview-owner-retired');
+    const position = await client.getProperty('time-pos',1000);
+    need(service.isPreviewOwner(owner) && client.currentGenerationId === owner.generationId, 'app-preview-owner-retired');
+    need(++visualRows <= 4 && /^[a-f0-9]{64}$/.test(hash), 'app-visual-evidence');
+    if (visualFile === undefined) visualFile = fs.openSync(path.join(plan.out,'case-'+index+'.visual.jsonl'),'wx',0o600);
+    const row = {phase,at:performance.now()-started,generation:owner.generationId,
+      timePos:Number.isFinite(position)?position:null,previewHash:hash,holdMs:8000};
+    fs.writeSync(visualFile,JSON.stringify(row)+'\n'); fs.fsyncSync(visualFile); mark('visual-hold',row);
+    const end = performance.now()+8000;
+    while(performance.now()<end) {active(); need(service.isPreviewOwner(owner) && client.currentGenerationId === owner.generationId,'app-preview-owner-retired'); await delay(100);}
   }
   function tap(object, name, settled) {
     const original = object[name]; need(typeof original === 'function', 'app-observer-target');
@@ -263,6 +279,7 @@ async function main() {
         const stillPaused = await controlClient.getProperty('pause',1000);
         need(owned() && stillPaused === true, 'app-between-seek-pause');
         mark('seek-failure-control-paused-frame', {generation:owner.generationId,hash:pausedHash});
+        await visualHold('failed-target-paused',pausedHash);
         need(owned(), 'app-preview-owner-retired');
         await evalCode(contract.rendererAction('unpause'));
         need(owned(), 'app-preview-owner-retired');
@@ -321,6 +338,7 @@ async function main() {
     await evalCode(contract.rendererAction('pause'));
     await until(async () => client && await client.getProperty('pause', 1000) === true, 'app-initial-pause');
     await decoded(null, performance.now()); mark('initial-paused-frame');
+    await visualHold('initial-reference-paused',lastFrameHash);
     if (task.arm === 'B') await until(async () => {const s = await snapshot(); return s.span?.end >= contract.LIMITS.prefixBytes;}, 'app-prefix-coverage-missing', 10000);
     for (const scenario of contract.SCENARIOS.slice(1)) {
       const target = contract.TARGETS[scenario];
@@ -331,6 +349,7 @@ async function main() {
         await until(() => (signals = previewEvidence.seekSignals(events, start, owner, target)), 'app-seek-position-restart');
         mark('seek-native-confirmed', {scenario, generation: owner, positionAt: signals.positionAt - started, restartAt: signals.restartAt - started});
         const nextHash = await decoded(previousHash, signals.after, frameOwner); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
+        if (scenario === 'cached-seek') await visualHold('verified-target-paused',nextHash);
         await evalCode(contract.rendererAction('unpause'));
         const at = await client.getProperty('time-pos', 1000);
         await until(async () => (await client.getProperty('time-pos', 1000)) > at + 0.05, 'app-seek-no-resume');
@@ -374,6 +393,7 @@ async function main() {
       sourceBodyBytes: 0, overlapBodyBytes: 0, peakRssBytes: peakRss, peakDiskBytes: peakDisk});
     report.samples.sort((a,b)=>contract.SCENARIOS.indexOf(a.scenario)-contract.SCENARIOS.indexOf(b.scenario));
     const finalize = () => {
+      if (visualFile !== undefined) {fs.closeSync(visualFile);visualFile=undefined;report.visualEvidenceClosed=true;}
       report.code ||= report.firstFailure?.code;
       report.nativeHelperStarted = clientList.length > 0;
       report.helperOperationErrors = clientList.map(c => ({count: c.operationErrors.length, rows: previewEvidence.operationFacts(c.operationErrors)}));

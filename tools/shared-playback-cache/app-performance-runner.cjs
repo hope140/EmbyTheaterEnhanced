@@ -17,6 +17,10 @@ function cases(mode) {
   for (let pair = -3; pair <= (mode === 'entry' ? -3 : 19); pair++) for (const arm of (pair + 3) % 2 ? ['B','A'] : ['A','B']) result.push({index: result.length, pair, arm});
   return result;
 }
+function visualControl(mode, requested = false) {
+  need(typeof requested === 'boolean' && (!requested || mode === 'entry'), 'app-visual-entry-only');
+  return requested;
+}
 function physical(file, directory = false) {
   need(typeof file === 'string' && path.isAbsolute(file), 'app-physical-path');
   const absolute = path.resolve(file); let cursor = path.parse(absolute).root;
@@ -44,6 +48,7 @@ function readPlan(file, expectedHash) {
   need(p.schema === 1 && p.productCommit === contract.BASE && path.join(p.out, 'app-plan.json') === file &&
     fs.readFileSync(physical(path.join(p.out,'owner')), 'utf8') === OWNER &&
     JSON.stringify(p.cases) === JSON.stringify(cases(p.mode)) && JSON.stringify(p.limits) === JSON.stringify(contract.LIMITS), 'app-plan-contract');
+  need(typeof p.visualHolds === 'boolean','app-visual-entry-only');visualControl(p.mode, p.visualHolds);
   for (const target of ['repo','runtime','out']) physical(p[target], true);
   physical(p.installer);
   const identity = toolIdentity(p.repo);
@@ -102,8 +107,9 @@ function runWorker(planFile, planHash, plan, task) {
     child.once('close',(exitCode,signal)=>finish(exitCode,signal,true));
   });
 }
-async function run({repo,runtime,installer,installerSha256,productCommit,out,mode='entry'}) {
+async function run({repo,runtime,installer,installerSha256,productCommit,out,mode='entry',visualHolds=false}) {
   need(process.platform === 'win32', 'app-performance-windows-required');
+  visualControl(mode, visualHolds);
   repo=physical(repo,true);runtime=physical(runtime,true);installer=physical(installer);
   need(productCommit===contract.BASE,'app-exact-product');
   const tasks=cases(mode);
@@ -113,7 +119,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   let fixture;
   const trial=require('../../src/electronapp/enhanced/shared-playback-cache/trial');
   const rule={id:'app-fixture',sourcePrefix:'X:\\Media',mountPrefix:'X:\\Media',cloudPrefix:'/cloud/media',storageType:'cloud-mount',strategy:'cloud-first',originState:'USER',enabled:true};
-  const plan={schema:1,repo,runtime,installer,installerSha256,productCommit,out,mode,cases:tasks,limits:contract.LIMITS,fixture,
+  const plan={schema:1,repo,runtime,installer,installerSha256,productCommit,out,mode,visualHolds,cases:tasks,limits:contract.LIMITS,fixture,
     toolCommit:tools.toolCommit,tools:tools.files,identity};
   let active=-1,sources,control,controlSockets=new Set(),closed=false;
   const observed=tasks.map(()=>({bodyBytes:0,overlapBytes:0,ranges:[],unknownRoutes:0,unexpectedMedia:0,stoppedReports:0,mediaResponses:0})), requestProbes=new Map();
@@ -188,7 +194,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
     let summary=null;try{if(complete)summary=metrics.summarize(ordered);}catch(_){setupErrors.push('app-summary-invalid');}
     const report={schema:1,status:!setupErrors.length&&results.length===tasks.length&&results.every(r=>r.accepted)&&(mode==='entry'||complete&&summary?.status==='PASS')?'PASS':'FAIL',mode,productCommit,toolCommit:tools.toolCommit,
       scope:'ordinary-main loopback synthetic, decoded frames; not user NAS, audio or visible presentation',
-      performanceAssessment:complete?'COMPLETE_SAMPLES_NO_NEW_THRESHOLD':'NOT_ASSESSED',summary,setupErrors,
+      performanceAssessment:visualHolds?'VISUAL_CONTROL_NOT_PERFORMANCE':complete?'COMPLETE_SAMPLES_NO_NEW_THRESHOLD':'NOT_ASSESSED',summary,setupErrors,
       samples,results,events,cleanup,real115Requests:0,conditions:{node:process.version,platform:process.platform,release:os.release(),cpus:os.cpus().length,
         source:'loopback generated raw AVI, 16KiB/8ms, 20ms initial delay, initial response paused at2MiB; other responses paused after256KiB',
         byteScope:'actual source filesystem stream bytes, not confirmed player consumption; all1B requests excluded, including access probes; not an explicit probe classification',
@@ -200,6 +206,8 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   }
   need(closed,'app-sources-not-closed');
 }
-module.exports={BASE:contract.BASE,TOOL_FILES,cases,physical,toolIdentity,readPlan,intersectionLength,receiptRows,run};
-if(require.main===module){const values={};for(const arg of process.argv.slice(2)){const m=/^--(repo|runtime|installer|installer-sha256|product-sha|out|mode)=(.+)$/.exec(arg);need(m&&!Object.hasOwn(values,m[1]),'app-argument');values[m[1]]=m[2];}
-  run({repo:values.repo,runtime:values.runtime,installer:values.installer,installerSha256:values['installer-sha256'],productCommit:values['product-sha'],out:values.out,mode:values.mode}).catch(error=>{console.error('SHARED_CACHE_APP_ERROR '+(/^[a-z0-9-]{1,100}$/.test(error.message)?error.message:'app-performance-failed'));process.exitCode=1;});}
+module.exports={BASE:contract.BASE,TOOL_FILES,cases,visualControl,physical,toolIdentity,readPlan,intersectionLength,receiptRows,run};
+if(require.main===module){const values={};for(const arg of process.argv.slice(2)){const m=/^--(repo|runtime|installer|installer-sha256|product-sha|out|mode|visual-holds)=(.+)$/.exec(arg);need(m&&!Object.hasOwn(values,m[1]),'app-argument');values[m[1]]=m[2];}
+  need(values['visual-holds']===undefined||values['visual-holds']==='true','app-visual-argument');
+  run({repo:values.repo,runtime:values.runtime,installer:values.installer,installerSha256:values['installer-sha256'],productCommit:values['product-sha'],out:values.out,mode:values.mode,
+    visualHolds:values['visual-holds']==='true'}).catch(error=>{console.error('SHARED_CACHE_APP_ERROR '+(/^[a-z0-9-]{1,100}$/.test(error.message)?error.message:'app-performance-failed'));process.exitCode=1;});}

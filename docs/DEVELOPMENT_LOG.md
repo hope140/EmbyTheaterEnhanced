@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-26 — 前台观察停留点（仅测试）
+
+基于4f工具独立分支增加默认关闭的visual-holds=true，仅entry接受，不增加workflow参数或改变产品。真实main窗口本已show，驱动仍windowsHide=false；在初始暂停参考与目标暂停帧留8秒，严格owner与90秒外层期限保持，visual JSONL只记合成预览SHA、代次和原生位置。原新帧失败保持失败，允许观察真实窗口是否随位置改变；该模式明确VISUAL_CONTROL_NOT_PERFORMANCE，不能用于20对性能结论。原4f工作流与949包保持不动。
+
 ## 2026-10-26 — 同图 seek 的有限失败对照
 
 普通入口实际收到四次ready同图，不是预览busy/空/换代；后续只有目标位置，不能冒称restart。失败样本保持失败，工具只在首个cached-seek失败后沿原PM做一次同owner短恢复对照，记录暂停/推进后的真实摘要与源字节，再恢复暂停，停止余下性能动作并补FAIL行。所有await前后检查owner，操作错误仅限原service固定属性词汇，-9真实属性待Windows证据。
