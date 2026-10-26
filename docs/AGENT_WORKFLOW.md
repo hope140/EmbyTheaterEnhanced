@@ -15,7 +15,7 @@
 
 截至 2026-10-26，[Terra 官方模型页](https://developers.openai.com/api/docs/models/gpt-6.1-terra)定位视觉推理、精准电脑操作与清晰写作；[官方模型选择指南](https://developers.openai.com/api/docs/guides/model-selection)还列出有界代码修改。这支持上述试用建议，不构成项目性能或复杂开发能力结论。模型可用性以实际客户端、账号和运行环境为准；Terra 不可用时沿原路由，原路由也不可用则报告限制，不静默换型。
 
-按[官方子代理说明](https://learn.chatgpt.com/docs/agent-configuration/subagents)，未显式配置时子代理继承父代理模型和推理强度；显式换模型而未指定强度可能使用新模型默认值。已有明确角色设置需要同时记录模型与强度，并先确认当前接口支持。Standard／Fast 服务模式、推理强度和产品模式分别记录，不把编排接口或产品模式标签直接当作 API 的 `reasoning.effort`。本页不提供或改写任何配置文件。
+按[官方子代理说明](https://learn.chatgpt.com/docs/agent-configuration/subagents)，仅当自定义代理、显式派发及 `[agents]` 默认值均未覆盖模型或推理强度时，子代理才继承父代理相应设置；显式或配置选择模型而未指定强度时，可能采用该模型默认值。最终以当前运行时实际解析结果为准。已有明确角色设置需要同时记录模型与强度，并先确认当前接口支持。Standard／Fast 服务模式、推理强度和产品模式分别记录，不把编排接口或产品模式标签直接当作 API 的 `reasoning.effort`。本页不提供或改写任何配置文件。
 
 ## 主代理与子代理分工
 
