@@ -5,15 +5,44 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const {createRequire} = require('node:module');
 const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {createStore} = require('../tools/shared-playback-cache/store.cjs');
-const {createProxy} = require('../tools/shared-playback-cache/proxy.cjs');
 const {source, get, identity, hash, delay} = require('../tools/shared-playback-cache/fixture.cjs');
 async function cleanup(actions, remove) {
   const results = await Promise.allSettled(actions.map(action => Promise.resolve().then(action)));
   results.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
   const errors = results.filter(result => result.status === 'rejected').map(result => result.reason);
   if (errors.length) throw new AggregateError(errors, 'owned-shared-flow-fixture-cleanup-failed');
+}
+
+// These functional capture/ownership cases need a deterministic disk deadline, not a
+// promise that a Windows filesystem callback always arrives within 15ms.
+// Load the maintained proxy unchanged; intercept only its one read timer.
+async function controlledReadClock() {
+  const file = require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
+  const source = await fs.readFile(file, 'utf8');
+  assert.equal((source.match(/setTimeout\(\(\) => resolve\(null\), 15\)/g) || []).length, 1);
+  const pending = new Set(), timers = new Set(); let fired = 0;
+  const readSetTimeout = (fn, ms, ...args) => {
+    if (ms !== 15) return setTimeout(fn, ms, ...args);
+    const timer = {fn}; timers.add(timer); pending.add(timer); return timer;
+  };
+  const readClearTimeout = timer => {if (timers.has(timer)) pending.delete(timer); else clearTimeout(timer);};
+  const loaded = {exports: {}};
+  // Keep Node's own realm (Error/Array/Promise identity); only the two lexical
+  // timer dependencies differ from the standard CommonJS wrapper.
+  const load = new Function('exports', 'require', 'module', '__filename', '__dirname', 'setTimeout', 'clearTimeout', source);
+  load(loaded.exports, createRequire(file), loaded, file, path.dirname(file), readSetTimeout, readClearTimeout);
+  return {createProxy: loaded.exports.createProxy,
+    status: () => ({created: timers.size, pending: pending.size, fired}),
+    expireRead() {
+      assert.equal(pending.size, 1, 'exactly one owned local read must be waiting');
+      const timer = [...pending][0]; pending.delete(timer); fired++; timer.fn();
+    }};
+}
+async function createProxy(options) {
+  return (await controlledReadClock()).createProxy(options);
 }
 
 async function setup(t, {policy = 'coherent', bytes = 512 * 1024, origin: supplied, onOriginChunk} = {}) {
@@ -345,7 +374,7 @@ test('origin chunk observer reports actual contiguous bytes and separates access
   assert.equal(proxy.status().observerErrors, 1);
 });
 
-test('an already received two-MiB cold response survives a blocked disk tap for a later full cache hit', async t => {
+test('an already received two-MiB cold response survives a blocked disk tap for a later full cache hit before its read deadline', async t => {
   const bytes = 2 * 1024 * 1024;
   const root = temporaryRoot('ete-shared-two-mib-capture-', ['']);
   let release, enter;
@@ -364,7 +393,8 @@ test('an already received two-MiB cold response survives a blocked disk tap for 
   }};
   store = await createStore({root, currentBytes: 4 * 1024 * 1024,
     nextBytes: 1024 * 1024, maxPendingBytes: bytes, io});
-  proxy = await createProxy({store, requestPolicy: 'coherent', authorize: async () => origin.grant()});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, requestPolicy: 'coherent', authorize: async () => origin.grant()});
   const handle = await proxy.open(identity());
   const key = await handle.ready();
 
@@ -391,9 +421,51 @@ test('an already received two-MiB cold response survives a blocked disk tap for 
   assert.equal(origin.requests.length, 1, 'the second playback cannot reread an origin gap');
   assert.equal(proxy.status().receivedBytes - before.receivedBytes, 0);
   assert.equal(proxy.status().hitBytes - before.hitBytes, bytes);
+  assert.deepEqual(clock.status(), {created: 8, pending: 0, fired: 0}, 'all eight actual disk reads finish before the controlled deadline');
   assert.ok(proxy.status().peakWriteJobs <= 8);
   assert.ok(store.status().peak <= bytes);
   assert.ok(proxy.status().peakMediaReservedBytes <= 8 * 1024 * 1024);
+});
+
+test('a committed local block exceeding its read deadline falls back and retains the late owned read until drain', async t => {
+  const bytes = 64 * 1024, root = temporaryRoot('ete-shared-read-deadline-', ['']);
+  let origin, store, proxy, release, enter;
+  const gate = new Promise(resolve => {release = resolve;});
+  const entered = new Promise(resolve => {enter = resolve;});
+  t.after(async () => {release(); await cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
+    () => fs.rm(root, {recursive: true, force: true}));});
+  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
+  let hold = false;
+  const io = {...fs, async open(file, flags, ...args) {
+    const handle = await fs.open(file, flags, ...args);
+    if (!String(file).endsWith('.bin') || flags !== 'r') return handle;
+    return {stat: (...params) => handle.stat(...params), close: (...params) => handle.close(...params),
+      async read(...params) {if (hold) {enter(); await gate;} return handle.read(...params);}};
+  }};
+  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes, io});
+  const clock = await controlledReadClock();
+  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  const handle = await proxy.open(identity()), key = await handle.ready();
+  const first = await get(handle.url, 0, bytes); await proxy.drain();
+  assert.deepEqual(await store.span(key, 0), {start: 0, end: bytes}); await handle.actual();
+  const before = proxy.status(); hold = true;
+  const second = get(handle.url, 0, bytes);
+  await entered;
+  assert.equal(origin.requests.length, 1, 'the committed block is still being read locally before the timeout');
+  assert.deepEqual(clock.status(), {created: 1, pending: 1, fired: 0});
+  clock.expireRead();
+  const result = await second;
+  assert.equal(result.status, 206); assert.equal(result.hash, first.hash);
+  assert.equal(origin.requests.length, 2, 'the unchanged production timeout branch deliberately refetches this block');
+  assert.equal(proxy.status().receivedBytes - before.receivedBytes, bytes);
+  assert.equal(proxy.status().hitBytes - before.hitBytes, 0, 'a late local result is never counted as the delivered hit');
+  assert.equal(store.status().readers, 1);
+  let drained = false; const draining = proxy.drain().then(() => {drained = true;});
+  await new Promise(resolve => setImmediate(resolve)); assert.equal(drained, false);
+  hold = false; release(); await draining;
+  assert.equal(store.status().readers, 0); assert.equal(proxy.status().readReservedBytes, 0);
+  assert.deepEqual(clock.status(), {created: 1, pending: 0, fired: 1});
+  assert.deepEqual(await store.read(key, 0, bytes), origin.data);
 });
 
 test('cold overlapping probes stay on one origin response until actual playback enables cache reads', async t => {
