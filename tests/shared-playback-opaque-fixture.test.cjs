@@ -46,7 +46,7 @@ function previewFromBgr(raw) {
   return {width:160,height:90,pixels};
 }
 
-test('opaque BGR24 AVI keeps deterministic RGB pixels and decodes to known fixture evidence', async t => {
+test('opaque BGR24 AVI encodes deterministic distinct media/frame pixels and decodes to known fixture evidence', async t => {
   const palRoot=await root(t), rgbRoot=await root(t);
   const pal=await fixtures.generateFixtures(palRoot);
   const rgb=await fixtures.generateFixtures(rgbRoot,{encoding:'uncompressed-dib-bgr24'});
@@ -69,16 +69,20 @@ test('opaque BGR24 AVI keeps deterministic RGB pixels and decodes to known fixtu
     for(const index of [6,18]) {
       const bgr=await frameBytes(rgbRoot,row,index), indices=await frameBytes(palRoot,palRow,index);
       assert.equal(bgr.length,320*180*3); assert.equal(indices.length,320*180);
+      const identity=n*192+index+1;
+      // Independent dot-product definition of the spatial code, with no call
+      // into the generator or matcher. Validate every raw bottom-up RGB pixel.
+      const expected=Buffer.alloc(bgr.length);
       for(let p=0;p<indices.length;p++) {
-        const i=indices[p], q=p*3;
-        assert.deepEqual([...bgr.subarray(q,q+3)],[i,(i*3)&255,(i*7)&255],`BGR palette equivalence ${row.id} frame ${index} pixel ${p}`);
+        const x=p%320,y=179-Math.floor(p/320),cell=Math.floor(x/10)+32*Math.floor(y*32/180);
+        const odd=[...((identity&cell).toString(2))].filter(bit=>bit==='1').length%2;
+        expected[p*3]=odd?224:32;expected[p*3+1]=odd?192:64;expected[p*3+2]=(17+x+y*3)%256;
       }
-      if(row.id!=='C') {
-        const verdict=evidence.analyze(previewFromBgr(bgr),{item:row.id,frameIndices:[index]});
-        assert.equal(verdict.knownFixtureMatch,true); assert.equal(verdict.targetHit,true);
-        const wrong=evidence.analyze(previewFromBgr(bgr),{item:row.id,frameIndices:[index+1]});
-        assert.equal(wrong.targetHit,false,`wrong target rejected: ${row.id} frame ${index}`);
-      }
+      assert.deepEqual(bgr,expected);
+      const verdict=evidence.analyze(previewFromBgr(bgr),{item:row.id,frameIndices:[index]});
+      assert.equal(verdict.classification,'match'); assert.equal(verdict.targetHit,true);
+      const wrong=evidence.analyze(previewFromBgr(bgr),{item:row.id,frameIndices:[index+1]});
+      assert.equal(wrong.targetHit,false,`wrong target rejected: ${row.id} frame ${index}`);
     }
   }
 });

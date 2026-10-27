@@ -267,8 +267,9 @@ async function main() {
             const evidence=fixtureEvidence.analyze(pixels,{item:'A',colorModel:frameColorProfile.model});
             lastFixtureEvidence={hash:result.hash,evidence};mark('fixture-preview-evidence',{generation:owner.generationId,...evidence});
           }
-          if(!lastFixtureEvidence.evidence.matches.some(row=>row.item==='A'))return false;
-          return targetSeconds===null||lastFixtureEvidence.evidence.matches.some(row=>row.item==='A'&&Math.abs(row.frameIndex-targetSeconds*plan.fixture.media.A.fps)<=1);
+          if(performance.now()>=frameDeadline)return false;
+          return fixtureEvidence.accepts(lastFixtureEvidence.evidence,{item:'A',
+            targetFrame:targetSeconds===null?null:targetSeconds*plan.fixture.media.A.fps});
         };
         if (await accepted()) return true;
         if (preview.probeDue()) await service.capturePreview(owner);

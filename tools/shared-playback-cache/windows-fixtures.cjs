@@ -50,12 +50,16 @@ function formatHeader(frameBytes, encoding) {
 function frameBytes(encoding) {return WIDTH * HEIGHT * (encoding===BGR24?3:1);}
 function makeFrame(index, variant, encoding) {
     const data = Buffer.alloc(frameBytes(encoding));
-    // Bottom-up, 8-bit palette indices with item/frame/position variation.
-    const salt = variant.charCodeAt(0);
+    // Keep the historical pal8 control byte-identical. RGB24 uses a distinct
+    // spatial media/frame code instead of the old colliding additive salt.
+    const salt = variant.charCodeAt(0),identity=(salt-65)*192+index+1;
     for (let p = 0; p < WIDTH*HEIGHT; p++) {
-      const color=(index * 19 + (p % WIDTH) + Math.floor(p / WIDTH) * 11 + salt) & 255;
-      if(encoding===BGR24){data[p*3]=color;data[p*3+1]=(color*3)&255;data[p*3+2]=(color*7)&255;}
-      else data[p]=color;
+      if(encoding===BGR24){
+        const x=p%WIDTH,topY=HEIGHT-1-Math.floor(p/WIDTH);
+        let mask=identity&(Math.floor(x/10)+32*Math.floor(topY*32/HEIGHT)),odd=0;
+        while(mask){odd^=1;mask&=mask-1;}
+        data[p*3]=odd?224:32;data[p*3+1]=odd?192:64;data[p*3+2]=(17+x+topY*3)&255;
+      } else data[p]=(index*19+(p%WIDTH)+Math.floor(p/WIDTH)*11+salt)&255;
     }
     return data;
 }

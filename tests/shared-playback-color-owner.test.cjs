@@ -51,7 +51,7 @@ function makeHarness({frame=makeFrame(),targetSeconds=34/12,profileValues=goodPr
     owner,endpoint:state.endpoint,client,service,retired:false,lastAuditableFrame:state.lastAuditableFrame,
     frameColorProfile:null,lastFixtureEvidence:null,frameDeadline:deadline,targetSeconds,after:0,previousHash:null,
     plan:state.plan,preview,fixtureColor,
-    fixtureEvidence:{analyze(...args){evidenceCalls++;return fixtureEvidence.analyze(...args);}},
+    fixtureEvidence:{accepts:fixtureEvidence.accepts,analyze(...args){evidenceCalls++;return fixtureEvidence.analyze(...args);}},
     crypto,performance:{now:()=>clock},
     mark(type,data){marks.push({type,data});},
     need(condition,code){if(!condition)throw Error(code);}
@@ -126,4 +126,38 @@ test('supported profile is cached within its generation and only a known target 
   assert.equal(await wrongTarget.accepted(),false);
   assert.equal(wrongTarget.context.lastFixtureEvidence.evidence.knownFixtureMatch,true);
   assert.equal(wrongTarget.context.lastFixtureEvidence.evidence.matches.some(row=>row.item==='A'&&Math.abs(row.frameIndex-40)<=1),false);
+});
+
+test('real ordinary acceptance rejects legacy aliases, wrong media and wrong targets including cold frames',async()=>{
+  const row={item:'A',frameIndex:36,meanAbsRGBDiff:0,sampleMeanAbsDiff:0};
+  for(const targetSeconds of [null,3])for(const mutation of ['ambiguous','inconsistent','wrong-item','wrong-target','unmatched']){
+    const h=makeHarness({frame:makeFrame(36),targetSeconds});
+    h.context.fixtureEvidence.analyze=()=>{
+      const result={classification:'match',ambiguous:false,matches:[{...row}]};
+      if(mutation==='ambiguous'||mutation==='inconsistent'){
+        result.matches.push({...row,item:'B',frameIndex:9});
+        if(mutation==='ambiguous'){result.classification='ambiguous';result.ambiguous=true;}
+      } else if(mutation==='wrong-item')result.matches[0].item='B';
+      else if(mutation==='wrong-target'){
+        result.matches[0].frameIndex=96;
+        if(targetSeconds===null)result.classification='wrong-target';
+      } else {result.classification='unmatched';result.matches=[];}
+      return result;
+    };
+    assert.equal(await h.accepted(),false,`${mutation}/${targetSeconds}`);
+  }
+});
+
+test('real ordinary acceptance permits only the existing one-frame seek tolerance',async()=>{
+  for(const index of [34,35,36,37,38]){
+    const h=makeHarness({frame:makeFrame(index),targetSeconds:3});
+    assert.equal(await h.accepted(),Math.abs(index-36)<=1,`A${index} target36`);
+  }
+});
+
+test('the real ordinary acceptance rechecks the absolute cutoff after full-image analysis',async()=>{
+  const h=makeHarness({deadline:50});
+  const analyze=h.context.fixtureEvidence.analyze;
+  h.context.fixtureEvidence.analyze=(...args)=>{const result=analyze(...args);h.state.setNow(50);return result;};
+  assert.equal(await h.accepted(),false);
 });

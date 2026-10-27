@@ -2,21 +2,22 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const evidence=require('../tools/shared-playback-cache/fixture-frame-evidence.cjs');
 
-test('frame evidence matches pixels independently extracted from the real generated AVI palette and frame payload',async t=>{
+test('frame evidence matches independently extracted real RGB24 AVI payloads',async t=>{
   const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'ete-pattern-contract-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
-  const plan=await require('../tools/shared-playback-cache/windows-fixtures.cjs').generateFixtures(root);
-  const bytes=fs.readFileSync(path.join(root,'A.avi')),strf=bytes.indexOf(Buffer.from('strf'));
-  assert.ok(strf>0);const palette=strf+8+40;
-  for(const index of [6,18]){
-    const rawStart=plan.media.A.dataStart+index*plan.media.A.frameStride+8,pixels=Buffer.alloc(160*90*4);
-    for(let y=0;y<90;y++)for(let x=0;x<160;x++){
-      const color=bytes[rawStart+(179-y*2)*320+x*2],out=(y*160+x)*4;
-      pixels[out]=bytes[palette+color*4];pixels[out+1]=bytes[palette+color*4+1];pixels[out+2]=bytes[palette+color*4+2];pixels[out+3]=255;
+  const plan=await require('../tools/shared-playback-cache/windows-fixtures.cjs').generateFixtures(root,{encoding:'uncompressed-dib-bgr24'});
+  for(const item of ['A','B','C']){
+    const bytes=fs.readFileSync(path.join(root,item+'.avi'));
+    for(let index=0;index<192;index++){
+      const rawStart=plan.media[item].dataStart+index*plan.media[item].frameStride+8,pixels=Buffer.alloc(160*90*4);
+      for(let y=0;y<90;y++)for(let x=0;x<160;x++){
+        const src=rawStart+((179-y*2)*320+x*2)*3,out=(y*160+x)*4;
+        bytes.copy(pixels,out,src,src+3);pixels[out+3]=255;
+      }
+      const result=evidence.analyze({width:160,height:90,pixels},{item,frameIndices:[index]});
+      assert.equal(result.classification,'match');assert.equal(result.targetHit,true);assert.equal(result.meanAbsRGBDiff,0);
+      assert.equal(evidence.accepts(result,{item,targetFrame:index}),true);
     }
-    const result=evidence.analyze({width:160,height:90,pixels},{item:'A',frameIndices:[index]});
-    assert.equal(result.targetHit,true);assert.equal(result.meanAbsRGBDiff,0);
-    assert.equal(evidence.analyze({width:160,height:90,pixels},{item:'A',frameIndices:[index===6?18:6]}).targetHit,false);
   }
 });
 
@@ -31,7 +32,7 @@ function flat(value){
   return {width:evidence.PREVIEW_WIDTH,height:evidence.PREVIEW_HEIGHT,pixels};
 }
 
-test('exact synthetic AVI palette frame matches the expected item/frame with zero RGB residual',()=>{
+test('exact synthetic AVI spatial identity frame matches the expected item/frame with zero RGB residual',()=>{
   const frame=evidence.renderExpected('A',0),result=evidence.analyze(frame,{item:'A',frameIndices:[0]});
   assert.equal(result.classification,'match');assert.equal(result.knownFixtureMatch,true);
   assert.deepEqual(result.matchedFrameIndices,[0]);assert.equal(result.meanAbsRGBDiff,0);
@@ -54,15 +55,19 @@ test('wrong item source and wrong target frame are rejected with bounded evidenc
   assert.equal(wrongTarget.targetHit,false);assert.equal(wrongTarget.targetOffsetFrames,1);
 });
 
-test('fixture salt/frame modular collision is reported as ambiguous, never as unique item proof',()=>{
-  const result=evidence.analyze(evidence.renderExpected('A',40),{item:'A',frameIndices:[40]});
-  assert.equal(result.classification,'ambiguous');assert.equal(result.ambiguous,true);
-  assert.deepEqual(result.matches.map(row=>[row.item,row.frameIndex]),[['A',40],['B',13]]);
-  assert.equal(result.targetHit,true);assert.equal(result.targetOffsetFrames,0);
-  assert.equal(result.ptsConfirmed,false);
+test('historical cross-media aliases are distinct and every ambiguous candidate set rejects',()=>{
+  for(const [a,b] of [[36,9],[96,69],[168,141],[40,13]]){
+    const result=evidence.analyze(evidence.renderExpected('A',a),{item:'A',frameIndices:[a]});
+    assert.deepEqual(result.matches.map(row=>[row.item,row.frameIndex]),[['A',a]]);
+    assert.notDeepEqual(evidence.renderExpected('A',a).pixels,evidence.renderExpected('B',b).pixels);
+    const alias={...result,classification:'ambiguous',ambiguous:true,matches:[...result.matches,{item:'B',frameIndex:b,meanAbsRGBDiff:0}]};
+    assert.equal(evidence.accepts(alias,{item:'A',targetFrame:a}),false);
+    // Even inconsistent classification/flags cannot make multiple rows pass.
+    assert.equal(evidence.accepts({...alias,classification:'match',ambiguous:false},{item:'A',targetFrame:a}),false);
+  }
 });
 
-test('solid black, white and the known gray checker patterns do not satisfy the palette predicate',()=>{
+test('solid black, white and the known gray checker patterns do not satisfy the spatial predicate',()=>{
   const checker=(left,right)=>{
     const frame=flat(left);
     for(let y=0;y<frame.height;y++)for(let x=0;x<frame.width;x++){
@@ -81,8 +86,8 @@ test('solid black, white and the known gray checker patterns do not satisfy the 
 test('fixed top-left nearest-2x mapping is explicit and no arbitrary frame history is returned',()=>{
   const result=evidence.analyze(evidence.renderExpected('B',191),{item:'B',frameIndices:[191]});
   assert.equal(result.classification,'match');
-  assert.equal(result.basis,'fixed-top-left-nearest-2x-palette-pattern-only');
-  assert.ok(result.matches.length<=2*evidence.MAX_FRAMES);
+  assert.equal(result.basis,'fixed-top-left-nearest-2x-walsh10-rgb-v1');
+  assert.ok(result.matches.length<=3*evidence.MAX_FRAMES);
   assert.equal(Object.hasOwn(result,'pixels'),false);assert.equal(Object.hasOwn(result,'rawFrame'),false);
   assert.ok(result.matches.every(row=>Object.keys(row).sort().join(',')==='frameIndex,item,meanAbsRGBDiff,sampleMeanAbsDiff'));
 });
@@ -92,7 +97,7 @@ test('invalid dimensions, item labels, frame index bounds and oversized candidat
   assert.throws(()=>evidence.analyze({...frame,width:320},{item:'A'}),/^Error: fixture-frame-frame-invalid$/);
   const transparent={...frame,pixels:Buffer.from(frame.pixels)};transparent.pixels[3]=0;
   assert.throws(()=>evidence.analyze(transparent,{item:'A'}),/^Error: fixture-frame-frame-invalid$/);
-  assert.throws(()=>evidence.analyze(frame,{item:'C'}),/^Error: fixture-frame-item-invalid$/);
+  assert.throws(()=>evidence.analyze(frame,{item:'D'}),/^Error: fixture-frame-item-invalid$/);
   assert.throws(()=>evidence.analyze(frame,{item:'A',frameIndices:[]}),/^Error: fixture-frame-frame-indices-invalid$/);
   assert.throws(()=>evidence.analyze(frame,{item:'A',frameIndices:[1,1]}),/^Error: fixture-frame-frame-indices-invalid$/);
   assert.throws(()=>evidence.analyze(frame,{item:'A',frameIndices:[192]}),/^Error: fixture-frame-frame-indices-invalid$/);

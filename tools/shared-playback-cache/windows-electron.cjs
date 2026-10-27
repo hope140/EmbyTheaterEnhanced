@@ -493,7 +493,9 @@ async function main() {
         }
         if(now()>=frameDeadline)return false;
         try{evidence=require('./fixture-frame-evidence.cjs').analyze(result,{item,colorModel:frameColorProfile.model});}catch(_){return false;}
-        return evidence.matches.some(row=>row.item===item&&(targetSeconds===null||Math.abs(row.frameIndex-targetSeconds*plan.fixture.media[item].fps)<=1));
+        if(now()>=frameDeadline)return false;
+        return require('./fixture-frame-evidence.cjs').accepts(evidence,{item,
+          targetFrame:targetSeconds===null?null:targetSeconds*plan.fixture.media[item].fps});
       }, 'worker-decoded-frame-missing', 5000);
       return {width: result.width, height: result.height, sha256: sha(result.pixels),fixtureEvidence:evidence};
     }

@@ -2,13 +2,15 @@
 
 const WIDTH=320,HEIGHT=180,PREVIEW_WIDTH=160,PREVIEW_HEIGHT=90,MAX_FRAMES=192;
 const MAX_MEAN_ABS_RGB_DIFF=2;
-const ITEMS=Object.freeze({A:65,B:66});
+const ITEMS=Object.freeze({A:0,B:1,C:2});
 const DEFAULT_FRAMES=Object.freeze(Array.from({length:MAX_FRAMES},(_,index)=>index));
-const PALETTE=Object.freeze(Array.from({length:256},(_,i)=>Object.freeze({b:i,g:(i*3)&255,r:(i*7)&255})));
 const colorProfile=require('./fixture-color-profile.cjs');
-const TRANSFER_PALETTE=Object.freeze(PALETTE.map(color=>Object.freeze(Object.fromEntries(Object.entries(color).map(([key,byte])=>[key,colorProfile.value(byte,colorProfile.MODEL)])))));
-const samplePoints=Object.freeze([[0,0],[PREVIEW_WIDTH-1,0],[0,PREVIEW_HEIGHT-1],
-  [PREVIEW_WIDTH-1,PREVIEW_HEIGHT-1],[Math.floor(PREVIEW_WIDTH/2),Math.floor(PREVIEW_HEIGHT/2)]]);
+// Ten independent Walsh coordinates distinguish all 576 nonzero media/frame
+// codewords. Samples only reject; every candidate still needs a full RGB diff.
+const samplePoints=Object.freeze(Array.from({length:10},(_,bit)=>{
+  const cell=1<<bit;return Object.freeze([(cell%32)*5+2,Math.ceil(Math.floor(cell/32)*90/32)+1]);
+}));
+const TRANSFER=Object.freeze(Array.from({length:256},(_,byte)=>colorProfile.value(byte,colorProfile.MODEL)));
 const need=(value,code)=>{if(!value)throw Error('fixture-frame-'+code);};
 
 function validFrame(frame){
@@ -25,12 +27,13 @@ function validateFrames(frameIndices){
   for(const index of indices){need(Number.isInteger(index)&&index>=0&&index<MAX_FRAMES&&!seen.has(index),'frame-indices-invalid');seen.add(index);}
   return indices;
 }
-function paletteIndex(item,frameIndex,x,y,offsetX=0,offsetY=0){
-  const sourceX=Math.min(WIDTH-1,x*2+offsetX),sourceTopY=Math.min(HEIGHT-1,y*2+offsetY);
-  const bottomUpY=HEIGHT-1-sourceTopY;
-  return (frameIndex*19+sourceX+bottomUpY*11+ITEMS[item])&255;
+function expectedColor(item,frameIndex,x,y,model='identity'){
+  const sx=x*2,sy=y*2,cell=Math.floor(sx/10)+32*Math.floor(sy*32/HEIGHT);
+  let bits=(ITEMS[item]*MAX_FRAMES+frameIndex+1)&cell,parity=0;
+  while(bits){parity^=bits&1;bits>>>=1;}
+  const color={b:parity?224:32,g:parity?192:64,r:(17+sx+sy*3)&255};
+  return model==='identity'?color:{b:TRANSFER[color.b],g:TRANSFER[color.g],r:TRANSFER[color.r]};
 }
-function expectedColor(item,frameIndex,x,y,model='identity'){return (model==='identity'?PALETTE:TRANSFER_PALETTE)[paletteIndex(item,frameIndex,x,y)];}
 function validateModel(model){need(model==='identity'||model===colorProfile.MODEL,'color-model-invalid');}
 function renderExpected(item,frameIndex){
   validateItem(item);need(Number.isInteger(frameIndex)&&frameIndex>=0&&frameIndex<MAX_FRAMES,'frame-index-invalid');
@@ -68,7 +71,7 @@ function candidates(frame,indices,items,model){
   return rows.sort((a,b)=>a.meanAbsRGBDiff-b.meanAbsRGBDiff||a.item.localeCompare(b.item)||a.frameIndex-b.frameIndex);
 }
 
-// This matches only the fixed palette pattern. It does not establish a media PTS or decoder timestamp.
+// This matches only the fixed spatial identity pattern. It does not establish a media PTS or decoder timestamp.
 function sampleColorPredicate(frame,{item,frameIndices,colorModel='identity'}={}){
   need(validFrame(frame),'frame-invalid');validateItem(item);validateModel(colorModel);const indices=validateFrames(frameIndices);
   const matches=[];
@@ -76,7 +79,7 @@ function sampleColorPredicate(frame,{item,frameIndices,colorModel='identity'}={}
     const meanAbsRGBDiff=sampleDiff(frame,item,frameIndex,colorModel);
     if(meanAbsRGBDiff<=MAX_MEAN_ABS_RGB_DIFF)matches.push({frameIndex,meanAbsRGBDiff});
   }
-  return {matched:matches.length>0,item,matches,colorModel,threshold:MAX_MEAN_ABS_RGB_DIFF,basis:'five-sample-palette-pattern-only'};
+  return {matched:matches.length>0,item,matches,colorModel,threshold:MAX_MEAN_ABS_RGB_DIFF,basis:'ten-sample-spatial-code-only'};
 }
 
 function analyze(frame,{item,frameIndices,colorModel='identity'}={}){
@@ -94,13 +97,25 @@ function analyze(frame,{item,frameIndices,colorModel='identity'}={}){
       targetOffsetFrames=closest.frameIndex-target;
     }
   }
-  const classification=all.length===0?'unmatched':expected.length===0?'wrong-item':
-    targetIndices&&!targetHit?'wrong-target':all.length>1?'ambiguous':'match';
+  const classification=all.length===0?'unmatched':all.length>1?'ambiguous':expected.length===0?'wrong-item':
+    targetIndices&&!targetHit?'wrong-target':'match';
   const frameNumbers=[...new Set(all.map(row=>row.frameIndex))].sort((a,b)=>a-b);
   return {classification,knownFixtureMatch:all.length>0,item,colorModel,matchedFrameIndices:frameNumbers,
     matches:all.map(row=>({...row})),meanAbsRGBDiff:all[0]?.meanAbsRGBDiff??null,targetHit,
     targetOffsetFrames,ambiguous:all.length>1,threshold:MAX_MEAN_ABS_RGB_DIFF,ptsConfirmed:false,
-    basis:'fixed-top-left-nearest-2x-palette-pattern-only'};
+    basis:'fixed-top-left-nearest-2x-walsh10-rgb-v1'};
 }
 
-module.exports={analyze,sampleColorPredicate,renderExpected,MAX_MEAN_ABS_RGB_DIFF,WIDTH,HEIGHT,PREVIEW_WIDTH,PREVIEW_HEIGHT,MAX_FRAMES};
+// Both ordinary-entry and Native smoke use this fail-closed gate. Never accept
+// a convenient row from an ambiguous set, including the historical A36/B9 alias.
+function accepts(result,{item,targetFrame=null}={}){
+  validateItem(item);
+  need(targetFrame===null||Number.isFinite(targetFrame)&&targetFrame>=0&&targetFrame<MAX_FRAMES,'target-invalid');
+  if(!result||result.classification!=='match'||result.ambiguous!==false||result.matches?.length!==1)return false;
+  const row=result.matches[0];
+  return row.item===item&&Number.isInteger(row.frameIndex)&&row.frameIndex>=0&&row.frameIndex<MAX_FRAMES&&
+    Number.isFinite(row.meanAbsRGBDiff)&&row.meanAbsRGBDiff<=MAX_MEAN_ABS_RGB_DIFF&&row.meanAbsRGBDiff>=0&&
+    (targetFrame===null||Math.abs(row.frameIndex-targetFrame)<=1);
+}
+
+module.exports={accepts,analyze,sampleColorPredicate,renderExpected,MAX_MEAN_ABS_RGB_DIFF,WIDTH,HEIGHT,PREVIEW_WIDTH,PREVIEW_HEIGHT,MAX_FRAMES};

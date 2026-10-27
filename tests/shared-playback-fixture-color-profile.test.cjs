@@ -70,7 +70,7 @@ test('analytic transfer matches independent zimg ramp within its declared maximu
   assert.throws(()=>profile.value(42,'unknown'),/fixture-color-model-invalid/);
 });
 
-test('color-model preview matching accepts only transformed fixture pixels and retains ambiguity',()=>{
+test('color-model preview matching accepts only transformed fixture pixels with unique media/frame identity',()=>{
   const expected=transform(evidence.renderExpected('A',34));
   const match=evidence.analyze(expected,{item:'A',frameIndices:[34],colorModel:profile.MODEL});
   assert.equal(match.knownFixtureMatch,true); assert.equal(match.targetHit,true);
@@ -78,9 +78,8 @@ test('color-model preview matching accepts only transformed fixture pixels and r
   assert.equal(match.ptsConfirmed,false);
   assert.equal(evidence.analyze(expected,{item:'A',frameIndices:[34]}).knownFixtureMatch,false,'identity and derived models are not accepted as alternatives');
   assert.equal(evidence.analyze(evidence.renderExpected('A',34),{item:'A',colorModel:profile.MODEL}).knownFixtureMatch,false);
-  const ambiguous=evidence.analyze(expected,{item:'A',frameIndices:[34],colorModel:profile.MODEL});
-  assert.equal(ambiguous.classification,'ambiguous'); assert(ambiguous.matches.some(row=>row.item==='A'&&row.frameIndex===34));
-  assert(ambiguous.matches.some(row=>row.item==='B'&&row.frameIndex===7));
+  assert.equal(match.classification,'match');assert.equal(match.ambiguous,false);
+  assert.deepEqual(match.matches.map(row=>[row.item,row.frameIndex]),[['A',34]]);
   const wrong=evidence.analyze(expected,{item:'A',frameIndices:[33],colorModel:profile.MODEL});
   assert.equal(wrong.targetHit,false);
   const gray={...expected,pixels:Buffer.from(expected.pixels)};
