@@ -103,3 +103,13 @@ node tools/shared-playback-cache/quota.cjs --run --recovery-probe --out "$PRIVAT
 ~~~
 
 完整串行离线回归2609项：2596通过、0失败、13项既有平台跳过。新增入口／隔离／adapter／session／按需恢复及自然链通过；真实helper回读、可见首帧、Windows、实体慢盘、TLS／真实服务、掉电持久性未验。原始回执和私有路径在仓库外，不公开上传。
+
+## Cold initialization and fresh probe overlap
+
+The source-bound226f tool entry40487057090 correctly rejected the cache-enabled arm at the existing50ms preparation limit. Its actual Native budget read completed in2.94ms; store construction began only after the fresh one-byte probe, then metadata opening completed after the selection had already fallen back. This establishes that run's timeout and serial cold-path order, without reclassifying earlier failures or proving a future timing guarantee.
+
+The new product candidate starts the owned backend initialization inside the same actual `open()` after branded access, expected size, original load options and current-byte budget have been validated. Backend recovery and the fresh one-byte probe overlap. No store/manager is created at app startup or before source selection; no media body is prefetched. Source metadata/key creation and proxy publication remain after a successful fresh probe and live-owner checks. A rejected probe still publishes no route and cannot use recovered bytes. Late initialization remains owned by the cache; close joins it, and cancelled records cannot create keys, promote actual media or revive a local hit.
+
+The session50ms preparation limit, Native budget checks,30ms disk-read grace, restored-metadata ready wait, source/validator/identity checks and all cancellation/cleanup contracts remain unchanged. A genuine slow or unavailable backend still causes original-source fallback and fails strict shared-cache acceptance. This removes an unnecessary serial dependency; it does not guarantee that every cold machine fits50ms. Only the shared-cache adapter product source changes. The existing83f package predates this change and cannot validate it; build a new exact-source candidate, then bind verification tools and installer hashes to that new product before ordinary-entry or matrix assessment.
+
+Validation: focused real-HTTP/adapter/session/budget63/63 pass. Controlled old-source contrast fails both new overlap-start assertions; current source is restored before the complete run. Final serial regression2,915 total/2,890 pass/0 fail/cancel/25 existing platform or material skips (145.0s); JavaScript607/PowerShell55 syntax, finite credential-pattern scan706, three changed-document checks and diff checks pass. The only changed protected product file is shared-playback-cache/adapter.js. No Windows candidate execution, package build, latency improvement or acceptance pass is inferred from these local tests.

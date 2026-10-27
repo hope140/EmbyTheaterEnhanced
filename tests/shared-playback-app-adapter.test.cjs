@@ -22,7 +22,7 @@ async function cleanup(actions, remove) {
     if (errors.length) throw new AggregateError(errors, 'owned-adapter-fixture-cleanup-failed');
 }
 
-async function fixture(t, {etag = '"owned-v1"'} = {}) {
+async function fixture(t, {etag = '"owned-v1"', probeGate} = {}) {
     const parent = temporaryRoot('ete-app-shared-', ['cache']);
     const root = path.join(parent, 'cache'), data = Buffer.alloc(64 * 1024, 0x5a), requests = [];
     const caches = [];
@@ -46,9 +46,14 @@ async function fixture(t, {etag = '"owned-v1"'} = {}) {
         const headers = {'Content-Range': `bytes ${start}-${end}/${data.length + (mode === 'total' ? 1 : 0)}`,
             'Content-Length': end - start + 1, 'Set-Cookie': 'owned-probe-cookie=must-not-replay'};
         if (etag !== null) headers.ETag = etag;
-        res.writeHead(206, headers);
-        if (req.url.includes('hold=1') && end > start) {res.write(data.subarray(start, start + 1)); return;}
-        res.end(mode === 'short' ? Buffer.alloc(0) : data.subarray(start, end + 1));
+        const send = () => {
+            if (res.destroyed) return;
+            res.writeHead(206, headers);
+            if (req.url.includes('hold=1') && end > start) {res.write(data.subarray(start, start + 1)); return;}
+            res.end(mode === 'short' ? Buffer.alloc(0) : data.subarray(start, end + 1));
+        };
+        if (probeGate && start === 0 && end === 0) probeGate.then(send);
+        else send();
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const url = `http://127.0.0.1:${server.address().port}/owned`;
@@ -404,4 +409,83 @@ test('cancelled metadata readiness does not wait for blocked recovery or dispatc
     } finally {blocked.release();}
     await handle.stop();
     assert.equal(cache.status().routes,0);
+});
+
+
+async function waitForOwned(predicate, label) {
+    const end = Date.now() + 2000;
+    while (Date.now() < end) {if (predicate()) return; await delay(2);}
+    assert.fail(label);
+}
+
+test('cold backend recovery overlaps the actual fresh probe without admitting a key, route or body', async t => {
+    const probe = gate(), recovery = gate(), f = await fixture(t, {probeGate: probe.wait});
+    let backend, started = false, opens = 0, handle;
+    const cache = await f.cache({createStore: async options => {
+        started = true; await recovery.wait; backend = await createStore(options);
+        const open = backend.open;
+        backend.open = (...args) => {opens++; return open(...args);}; return backend;
+    }});
+    const source = f.source(), opening = cache.open(source); opening.catch(() => {});
+    try {
+        await waitForOwned(() => f.requests.length === 1, 'the real one-byte probe must start');
+        assert.equal(started, true, 'recovery starts while the metadata response is still gated');
+        assert.equal(opens, 0); assert.equal(f.requests[0].range, 'bytes=0-0');
+        recovery.release(); await waitForOwned(() => !!backend, 'owned recovery completes');
+        assert.equal(backend.status().entries, 0);
+        assert.equal(backend.status().current, 0); assert.equal(backend.status().committed, 0);
+        assert.equal(opens, 0, 'no source metadata/key is installed before fresh authorization');
+        probe.release(); handle = await opening; await handle.ready();
+        assert.equal(opens, 1); assert.equal(f.requests.length, 1, 'no body prefetch or duplicate probe');
+        assert.equal(f.requests[0].closed, true); assert.equal(backend.status().committed, 0);
+        assert.equal(backend.status().currentKey, null, 'selection has not promoted an actual player');
+    } finally {source.owner.abort(); probe.release(); recovery.release(); await Promise.allSettled([opening]); await handle?.stop();}
+});
+
+test('cancelled overlapping probe cannot revive metadata and close joins the one late backend', async t => {
+    const probe = gate(), recovery = gate(), f = await fixture(t, {probeGate: probe.wait});
+    let backend, started = false, opens = 0, closed = false;
+    const cache = await f.cache({createStore: async options => {
+        started = true; await recovery.wait; backend = await createStore(options);
+        const open = backend.open; backend.open = (...args) => {opens++; return open(...args);}; return backend;
+    }});
+    const source = f.source(), opening = cache.open(source); opening.catch(() => {});
+    try {
+        await waitForOwned(() => f.requests.length === 1, 'one actual pending probe');
+        assert.equal(started, true); source.owner.abort();
+        await assert.rejects(opening, /request-cancelled/);
+        assert.equal(cache.status().routes, 0); assert.equal(opens, 0);
+        const closing = cache.close().then(() => {closed = true;});
+        await new Promise(resolve => setImmediate(resolve)); assert.equal(closed, false, 'owned late recovery must be joined');
+        recovery.release(); await closing;
+        assert.equal(backend.status().entries, 0); assert.equal(opens, 0);
+        assert.equal(backend.status().committed, 0); assert.equal(backend.status().closed, true);
+        assert.equal(f.requests[0].closed, true); assert.equal(f.requests.length, 1);
+    } finally {source.owner.abort(); probe.release(); recovery.release(); await Promise.allSettled([opening]);}
+});
+
+for (const mode of ['denied', 'redirect', 'total', 'short']) test('overlapping recovery cannot authorize a refused ' + mode + ' probe', async t => {
+    const f = await fixture(t); let backend, opens = 0;
+    const cache = await f.cache({createStore: async options => {
+        backend = await createStore(options); const open = backend.open;
+        backend.open = (...args) => {opens++; return open(...args);}; return backend;
+    }});
+    f.mode(mode); await assert.rejects(cache.open(f.source()));
+    await waitForOwned(() => !!backend, 'owned recovery completion');
+    assert.equal(opens, 0); assert.equal(backend.status().entries, 0);
+    assert.equal(backend.status().committed, 0); assert.equal(backend.status().currentKey, null);
+    assert.equal(cache.status().routes, 0); assert.equal(f.requests.length, 1);
+});
+
+test('invalid source proof, load options, owner or byte budget cannot start overlapping recovery', async t => {
+    const f = await fixture(t); let creates = 0;
+    const cache = await f.cache({createStore: async options => {creates++; return createStore(options);}}), valid = f.source();
+    await assert.rejects(cache.open({...valid, transport: {...valid.transport}}), /source-proof-invalid/);
+    await assert.rejects(cache.open(f.source('B', {expectedSize: undefined})), /file-size-unavailable/);
+    await assert.rejects(cache.open({...valid, currentBytes: 0}), /source-proof-invalid/);
+    await assert.rejects(cache.open({...valid, currentBytes: Number.MAX_SAFE_INTEGER}), /source-proof-invalid/);
+    await assert.rejects(cache.open({...valid, source: f.url + '?wrong-options'}), /source-proof-invalid/);
+    const retired = f.source('C'); retired.owner.abort(); await assert.rejects(cache.open(retired), /request-cancelled/);
+    assert.equal(creates, 0); assert.equal(f.requests.length, 0);
+    assert.equal(cache.status().routes, 0);
 });
