@@ -55,13 +55,22 @@ async function main() {
     while (performance.now() < end) {active(); const found = await test(); active(); if (found && performance.now() < end) return; await delay(10);}
     throw Error(code);
   }
-  function tap(object, name, settled) {
+  function tap(object, name, settled, stage = null) {
     const original = object[name]; need(typeof original === 'function', 'app-observer-target');
     const replacement = function (...values) {
-      const requestedAt = performance.now();
-      const value = original.apply(this, values);
-      const observe = result => {try {settled(result, values, requestedAt);} catch (_) {observationErrors++;}};
-      if (value && typeof value.then === 'function') value.then(observe, () => {}).catch(() => {}); else observe(value);
+      const requestedAt = performance.now(), ownerGeneration = client?.currentGenerationId ?? null;
+      const trace = (outcome, error) => {
+        if (!stage || retired) return;
+        try {mark('cache-selection-step', {stage, outcome, generation: ownerGeneration,
+          requestMs: requestedAt - started, elapsedMs: Math.max(0, performance.now() - requestedAt),
+          ...(['threw', 'rejected'].includes(outcome) ? {diagnostic: get('enhanced/playback-range-diagnostics').fromError(error, 'current-probe', 'cache-unavailable')} : {})});}
+        catch (_) {observationErrors++;}
+      };
+      trace('begin');
+      let value;
+      try {value = original.apply(this, values);} catch (error) {trace('threw', error); throw error;}
+      const observe = result => {trace('fulfilled'); try {settled(result, values, requestedAt);} catch (_) {observationErrors++;}};
+      if (value && typeof value.then === 'function') value.then(observe, error => trace('rejected', error)).catch(() => {}); else observe(value);
       return value;
     };
     object[name] = replacement;
@@ -80,13 +89,27 @@ async function main() {
   datagram.createSocket = denyDatagram;
   restores.push(() => {need(datagram.createSocket === denyDatagram, 'app-observer-owner'); datagram.createSocket = originalDatagram;});
   // Read-only observation retains exact arguments, return Promise and side effects.
-  tap(get('enhanced/shared-playback-cache/proxy'), 'createProxy', proxy => {cacheProxy = proxy;
-    tap(proxy, 'open', (handle, values) => {if (typeof handle?.url === 'string' && contract.isMediaA(values[0], plan.sources.origin)) proxyUrls.add(handle.url);});
+  tap(get('enhanced/playback-range-session'), 'createSession', session => {
+    if (!session) return;
+    tap(session, 'setContext', () => mark('cache-context-result', {cache: smoke.cacheSelectionSnapshot(session.status())}), 'context');
+    tap(session, 'select', selected => mark('cache-selection-result', {selected: !!selected,
+      cache: smoke.cacheSelectionSnapshot(session.status())}), 'select');
   });
+  tap(get('enhanced/shared-playback-cache/adapter'), 'createCache', cache => {
+    tap(cache, 'open', handle => {
+      if (handle && typeof handle.ready === 'function') tap(handle, 'ready', () => {}, 'adapter-ready');
+    }, 'adapter-open');
+  }, 'adapter-create');
+  tap(get('enhanced/shared-playback-cache/proxy'), 'createProxy', proxy => {cacheProxy = proxy;
+    tap(proxy, 'open', (handle, values) => {
+      if (typeof handle?.url === 'string' && contract.isMediaA(values[0], plan.sources.origin)) proxyUrls.add(handle.url);
+      if (handle && typeof handle.ready === 'function') tap(handle, 'ready', () => {}, 'proxy-ready');
+    }, 'proxy-open');
+  }, 'proxy-create');
   tap(get('enhanced/shared-playback-cache/store'), 'createStore', store => {
     cacheStore = store;
-    tap(store, 'open', (key, values) => {if (contract.isMediaA(values[0], plan.sources.origin)) {cacheKey = key; storeKeys.add(key);}});
-  });
+    tap(store, 'open', (key, values) => {if (contract.isMediaA(values[0], plan.sources.origin)) {cacheKey = key; storeKeys.add(key);}}, 'store-open');
+  }, 'store-create');
   const native = get('native-helper/controller'), OriginalClient = native.NativeHelperClient;
   class ObservedClient extends OriginalClient {
     constructor(options) {
@@ -114,8 +137,18 @@ async function main() {
       lastAuditableFrame = null;
       lastFixtureEvidence = null;
       frameColorProfile = null;
-      mark('native-load', {generation, proxied: selected.proxied});
+      let cache = null, cacheEnabled = null;
+      try {const range = service.rangeStatus(); cache = smoke.cacheSelectionSnapshot(range);
+        cacheEnabled = typeof range?.enabled === 'boolean' ? range.enabled : null;} catch (_) {observationErrors++;}
+      mark('native-load', {generation, proxied: selected.proxied, cacheEnabled, cache});
       return super.load(values);
+    }
+    getProperty(name, timeoutMs) {
+      if (name !== 'demuxer-max-bytes') return super.getProperty(name, timeoutMs);
+      const ownerGeneration = this.currentGenerationId;
+      return smoke.observeCacheBudgetRead(() => super.getProperty(name, timeoutMs), data => {
+        if (!retired) mark('cache-budget', {generation: ownerGeneration, ...data});
+      });
     }
     submitCommand(values) {
       if (values[0] === 'seek') mark('native-seek-submit', {generation: this.currentGenerationId, scenario,
