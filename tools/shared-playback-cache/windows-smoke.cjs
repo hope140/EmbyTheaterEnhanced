@@ -10,6 +10,7 @@ const TOOL_FILES = Object.freeze(['tools/shared-playback-cache/windows-smoke.cjs
   'tools/shared-playback-cache/windows-electron.cjs', 'tools/shared-playback-cache/windows-preload.cjs',
   'tools/shared-playback-cache/windows-contract.cjs', 'tools/shared-playback-cache/windows-fixtures.cjs',
   'tools/shared-playback-cache/windows-read-observer.cjs',
+  'tools/shared-playback-cache/fixture-frame-evidence.cjs',
   'tools/shared-playback-cache/windows-run.ps1', 'tools/shared-playback-cache/windows-ci.ps1',
   'tools/shared-playback-cache/windows-ci-root.cjs',
   '.github/workflows/public-ci.yml', 'tests/helpers/next-prefix-alameda.cjs']);
@@ -147,10 +148,12 @@ function validateProfile(plan, phase) {
   need(reverse.startsWith('..' + path.sep) || reverse === '..' || path.isAbsolute(reverse), 'profile-runtime-overlap');
   return root;
 }
+// Chroma prerequisite only. AVI playback additionally requires the known
+// fixture pattern; nonblack pixels alone never establish decoded video.
 function coloredFrame(frame) {
   return !!frame && Number.isInteger(frame.width) && frame.width > 0 && Number.isInteger(frame.height) && frame.height > 0 &&
     Buffer.isBuffer(frame.pixels) && frame.pixels.length === frame.width * frame.height * 4 &&
-    frame.pixels.some((n, i) => i % 4 !== 3 && n !== 0);
+    frame.pixels.some((n, i) => i % 4 === 0 && Math.max(n, frame.pixels[i + 1], frame.pixels[i + 2]) - Math.min(n, frame.pixels[i + 1], frame.pixels[i + 2]) >= 8);
 }
 // Identity is the owned fixture's PlaybackInfo contract, never a real account.
 function matchesStoppedReport(row, item) {

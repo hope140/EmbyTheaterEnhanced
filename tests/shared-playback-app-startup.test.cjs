@@ -181,6 +181,7 @@ test('failed cold start never dispatches pause or later seek and cannot conceal 
   const commands = [];
   await assert.rejects(vm.runInNewContext('(async()=>{' + source.slice(begin,end) + '})()', {
     measure: async () => ({status:'FAIL',code:'app-sample-failed'}),
+    client:null,endpoint:null,generation:null,
     evalCode: async code => commands.push(code), until: async () => {}, contract:c,
     need(value,code) {if(!value)throw Error(code);}
   }), /app-sample-failed/);
@@ -188,9 +189,23 @@ test('failed cold start never dispatches pause or later seek and cannot conceal 
   let decoded = 0;
   await assert.rejects(vm.runInNewContext('(async()=>{' + source.slice(begin,end) + '})()', {
     measure: async (_scenario, operation) => {try {await operation(); return {status:'PASS'};} catch(error) {return {status:'FAIL',code:c.failureCode(error,'app-sample-failed')};}},
+    client:null,endpoint:null,generation:null,
     evalCode: async code => {commands.push(code); return {player:false,source:false};},
     decoded: async () => decoded++, contract:c,
     need(value,code) {if(!value)throw Error(code);}
   }), /app-play-not-established/);
   assert.equal(commands.length, 1); assert.equal(decoded, 0);
+});
+
+test('an owned cold-frame failure may export existing pixels but never resumes the failed playback test',async()=>{
+  const source=fs.readFileSync(require.resolve('../tools/shared-playback-cache/app-performance-electron.cjs'),'utf8');
+  const begin=source.indexOf('    const cold ='),end=source.indexOf("    if (task.arm === 'B') await until",begin),audits=[],commands=[];
+  await assert.rejects(vm.runInNewContext('(async()=>{'+source.slice(begin,end)+'})()',{
+    measure:async()=>({status:'FAIL',code:'app-decoded-frame-missing'}),client:{},endpoint:'owned',generation:17,
+    auditPhase:async(phase,owner,after)=>audits.push({phase,endpoint:owner.endpointId,generation:owner.generationId,after}),
+    evalCode:async code=>commands.push(code),until:async()=>{},contract:c,
+    need(value,code){if(!value)throw Error(code);}
+  }),/app-decoded-frame-missing/);
+  assert.deepEqual(audits,[{phase:'reference',endpoint:'owned',generation:17,after:0}]);
+  assert.equal(commands.length,0);
 });

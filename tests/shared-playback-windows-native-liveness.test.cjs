@@ -199,6 +199,9 @@ test('preview frame acceptance checks supported dimensions, exact RGBA size, and
   const alphaOnly = Buffer.alloc(64 * 64 * 4); alphaOnly[3] = 255;
   assert.equal(nativeWorker.coloredFrame({width: 64, height: 64, pixels: alphaOnly}), false);
   assert.equal(nativeWorker.coloredFrame(null), false);
+  const checker = Buffer.alloc(64*64*4);
+  for(let i=0;i<checker.length;i+=4){checker[i]=checker[i+1]=checker[i+2]=(i%8?224:239);checker[i+3]=255;}
+  assert.equal(nativeWorker.coloredFrame({width:64,height:64,pixels:checker}),false);
 });
 
 test('owned five-second fixture is small, hashed, and rejected after byte corruption', t => {

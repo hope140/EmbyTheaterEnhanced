@@ -88,6 +88,8 @@ test('profile owner is insufficient when a child directory is redirected', t => 
 test('opaque black alpha is not a decoded color-frame success', () => {
   assert.equal(driver.coloredFrame({width: 1, height: 1, pixels: Buffer.from([0, 0, 0, 255])}), false);
   assert.equal(driver.coloredFrame({width: 1, height: 1, pixels: Buffer.from([15, 0, 3, 255])}), true);
+  assert.equal(driver.coloredFrame({width: 2, height: 1, pixels: Buffer.from([224,224,224,255,239,239,239,255])}), false, 'mpv gray transparency tiles are not video color evidence');
+  assert.equal(driver.coloredFrame({width: 2, height: 1, pixels: Buffer.from([0,0,0,255,255,255,255,255])}), false, 'white carrier and black bars are not video color evidence');
   assert.equal(driver.coloredFrame({width: 2, height: 1, pixels: Buffer.from([15, 0, 3, 255])}), false);
 });
 const result = phase => ({phase, spawnPid: 1001, coordinatorPid: 1000, exitCode: 0, exitSignal: null, exitConfirmed: true, terminationReason: null, streamsClosed: true, timedOut: false,

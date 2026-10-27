@@ -7,6 +7,7 @@ const {pathToFileURL} = require('node:url');
 const contract = require('./app-performance-contract.cjs'), fixed = require('./windows-contract.cjs');
 const smoke = require('./windows-smoke.cjs');
 const previewEvidence = require('./app-preview-observer.cjs');
+const fixtureEvidence = require('./fixture-frame-evidence.cjs');
 const need = (value, code) => {if (!value) throw Error(code);};
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function main() {
@@ -29,7 +30,7 @@ async function main() {
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
-  let lastAuditableFrame = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
+  let lastAuditableFrame = null, lastFixtureEvidence = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
   const previewAuditPhases = new Set(), carrierAuditPhases = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
   // Entry evidence only: never enable image I/O in the timed matrix.
@@ -40,7 +41,13 @@ async function main() {
       return image.toPNG();
     }}) : null;
   let scenario = 'startup';
-  const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: smoke.coloredFrame,
+  const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: frame => {
+    let evidence;
+    try{evidence=fixtureEvidence.analyze(frame,{item:'A'});}catch(_){return false;}
+    lastFixtureEvidence={hash:crypto.createHash('sha256').update(frame.pixels).digest('hex'),evidence};
+    mark('fixture-preview-evidence',{generation:frame.owner?.generationId??null,...evidence});
+    return evidence.matches.some(row=>row.item==='A');
+  },
     current: owner => !!service && owner.endpointId === endpoint && owner.generationId === client?.currentGenerationId && service.isPreviewOwner(owner),
     observe: row => mark('preview-observation', {...row, requestedAt: row.requestedAt - started, resolvedAt: row.resolvedAt - started, scenario})});
   function active() {need(!retired && performance.now() < deadline, 'app-worker-deadline');}
@@ -106,6 +113,7 @@ async function main() {
       const selected = contract.loadSource(values[1], plan.sources.mediaOrigin, proxyUrls);
       generation = this.currentGenerationId;
       lastAuditableFrame = null;
+      lastFixtureEvidence = null;
       mark('native-load', {generation, proxied: selected.proxied});
       return super.load(values);
     }
@@ -152,7 +160,8 @@ async function main() {
     service = value;
     restores.push(preview.install(value));
     tap(value,'capturePreview',(frame,_values,requestedAt)=>{
-      if (!pixelAudit || retired || performance.now()>=deadline || !frame || !smoke.coloredFrame(frame) ||
+      if (!pixelAudit || retired || performance.now()>=deadline || !frame || !Buffer.isBuffer(frame.pixels) ||
+        !Number.isInteger(frame.width)||frame.width<1||frame.width>160||!Number.isInteger(frame.height)||frame.height<1||frame.height>90||frame.pixels.length!==frame.width*frame.height*4||
         !value.isPreviewOwner(frame.owner) || lastAuditableFrame && requestedAt < lastAuditableFrame.requestedAt) return;
       // One bounded diagnostic frame, never a media buffer or frame history.
       lastAuditableFrame = {width:frame.width,height:frame.height,pixels:Buffer.from(frame.pixels),owner:{...frame.owner},
@@ -234,16 +243,20 @@ async function main() {
     await until(async () => evalCode("require(['pluginManager']).then(v=>(v[0].default||v[0]).ofType('mediaplayer').some(p=>p.id==='libmpvmediaplayer'))"), 'app-player-not-ready', 10000);
     sampling = setInterval(() => {try {resourceSample();} catch (_) {observationErrors++;}}, 100);
     let lastFrameHash = null;
-    async function decoded(previousHash = null, after = performance.now(), owner = {endpointId: endpoint, generationId: client?.currentGenerationId}) {
+    async function decoded(previousHash = null, after = performance.now(), owner = {endpointId: endpoint, generationId: client?.currentGenerationId}, targetSeconds = null) {
       let result; const frameDeadline = Math.min(deadline, performance.now() + 5000);
       await until(async () => {
         if (!service || !endpoint || !client?.currentGenerationId) return false;
         need(endpoint === owner.endpointId && client.currentGenerationId === owner.generationId && service.isPreviewOwner(owner), 'app-preview-owner-retired');
-        result = preview.frame(owner, after, previousHash, frameDeadline);
-        if (result) return true;
+        const accepted = () => {
+          result=preview.frame(owner,after,previousHash,frameDeadline);
+          if(!result||!lastFixtureEvidence||lastFixtureEvidence.hash!==result.hash)return false;
+          return targetSeconds===null||lastFixtureEvidence.evidence.matches.some(row=>row.item==='A'&&Math.abs(row.frameIndex-targetSeconds*plan.fixture.media.A.fps)<=1);
+        };
+        if (accepted()) return true;
         if (preview.probeDue()) await service.capturePreview(owner);
         need(endpoint === owner.endpointId && client.currentGenerationId === owner.generationId && service.isPreviewOwner(owner), 'app-preview-owner-retired');
-        result = preview.frame(owner, after, previousHash, frameDeadline); return !!result;
+        return accepted();
       }, 'app-decoded-frame-missing');
       lastFrameHash = result.hash; return lastFrameHash;
     }
@@ -265,12 +278,13 @@ async function main() {
         // PrintWindow sends WM_PRINT and can trigger painting. It must not
         // intervene before the original cached-seek sample has failed.
         if(!report.firstFailure) {mark('pixel-carrier-deferred',{phase,reason:'preserve-original-baseline'});return;}
-        const metadata = {phase,generation:owner.generationId,actualFramePts:null,timePosIsFramePts:false};
-        for (const property of ['time-pos','pause']) {
+        const metadata = {phase,generation:owner.generationId,actualFramePts:null,timePosIsFramePts:false,alphaMeaning:'INTERPRETATION_MODE_NOT_PIXEL_ALPHA'};
+        for (const property of ['time-pos','pause','current-vo']) {
           need(owned(),'app-preview-owner-retired');
           try {const value=await activeClient.getProperty(property,1000);
-            metadata[property==='time-pos'?'timePosAfterPreview':'pauseAfterPreview']=typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value)?value:null;
-          } catch (_) {metadata[property==='time-pos'?'timePosAfterPreview':'pauseAfterPreview']=null;}
+            if(property==='current-vo')metadata.currentVo=['gpu-next','gpu','null'].includes(value)?value:'other';
+            else metadata[property==='time-pos'?'timePosAfterPreview':'pauseAfterPreview']=typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value)?value:null;
+          } catch (_) {metadata[property==='current-vo'?'currentVo':property==='time-pos'?'timePosAfterPreview':'pauseAfterPreview']=null;}
           need(owned(),'app-preview-owner-retired');
         }
         for (const property of ['video-params','video-out-params','video-frame-info']) {
@@ -281,10 +295,13 @@ async function main() {
               pictureType:['I','P','B'].includes(value['picture-type'])?value['picture-type']:null,
               interlaced:typeof value.interlaced==='boolean'?value.interlaced:null} : null;
             else {
-              const formats = new Set(['pal8','rgb8','bgr8','bgra','bgr0','rgba','rgb0','yuv420p','yuvj420p','yuv420p10le','nv12','p010','p010le','d3d11','d3d11-nv12','d3d11-p010']);
+              const formats = new Set(['pal8','rgb8','bgr8','bgra','bgr0','rgba','rgb0','rgb24','bgr24','rgba64','bgra64','rgba64le','bgra64le',
+                'gbrp','gbrap','gbrp16','gbrp16le','gbrap16','gbrap16le','gbrpf32','gbrapf32','rgbaf16',
+                'yuv420p','yuvj420p','yuv420p10le','yuv444p','yuva444p','yuv444p16','yuv444p16le','nv12','p010','p010le','d3d11','d3d11-nv12','d3d11-p010']);
               metadata[property] = value && typeof value === 'object' ? {...Object.fromEntries(['w','h','dw','dh'].map(key=>
                 [key,Number.isFinite(value[key])?value[key]:null])),pixelformat:formats.has(value.pixelformat)?value.pixelformat:'other',
-                hwPixelformat:formats.has(value['hw-pixelformat'])?value['hw-pixelformat']:null} : null;
+                hwPixelformat:formats.has(value['hw-pixelformat'])?value['hw-pixelformat']:null,
+                alpha:['auto','straight','premul','none'].includes(value.alpha)?value.alpha:value.alpha==null?null:'other'} : null;
             }
           } catch (_) {metadata[property]=null;}
           need(owned(),'app-preview-owner-retired');
@@ -310,8 +327,8 @@ async function main() {
         need(owned()&&service.getVideoWindow()===window&&!window.isDestroyed()&&window.getNativeWindowHandle().readBigUInt64LE()===handle,'app-pixel-carrier-owner');
         const afterSize=carrierReader.clientSize(handle);
         need(afterSize.width===size.width&&afterSize.height===size.height,'app-pixel-carrier-owner');
-        if (!result.accepted || !smoke.coloredFrame({...size,pixels:result.pixels}) || resolvedAt-requestAt>=3000) {
-          carrierDisabled = !result.accepted?'print-not-accepted':resolvedAt-requestAt>=3000?'late-result':'black-or-unpainted';
+        if (!result.accepted || resolvedAt-requestAt>=3000) {
+          carrierDisabled = !result.accepted?'print-not-accepted':'late-result';
           mark('pixel-carrier-unavailable',{phase,reason:carrierDisabled,attempted:true,accepted:!!result.accepted,elapsedMs:resolvedAt-requestAt});return;
         }
         let row;
@@ -436,6 +453,8 @@ async function main() {
       need(playing?.player === true && playing.source === true, 'app-play-not-established');
       await decoded();
       need(report.observations.some(r => r.type === 'native-load' && r.proxied === (task.arm === 'B')), 'app-shared-selection');});
+    if(cold.status!=='PASS'&&client&&endpoint&&generation)
+      await auditPhase('reference',{endpointId:endpoint,generationId:generation},0);
     need(cold.status === 'PASS', cold.code || 'app-cold-playback-failed');
     // First seek must move away from the actual paused reference, rather than
     // comparing the target against a cold preview that may already show it.
@@ -453,7 +472,7 @@ async function main() {
         let signals;
         await until(() => (signals = previewEvidence.seekSignals(events, start, owner, target)), 'app-seek-position-restart');
         mark('seek-native-confirmed', {scenario, generation: owner, positionAt: signals.positionAt - started, restartAt: signals.restartAt - started});
-        const nextHash = await decoded(previousHash, signals.after, frameOwner); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
+        const nextHash = await decoded(previousHash, signals.after, frameOwner,target); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
         if(scenario==='cached-seek')await auditPhase('paused-target',frameOwner,signals.after);
         active();
         need(endpoint===frameOwner.endpointId&&client.currentGenerationId===owner&&service.isPreviewOwner(frameOwner),'app-preview-owner-retired');
@@ -503,6 +522,7 @@ async function main() {
   finally {
     clearTimeout(timeout); clearInterval(sampling); retired = true;
     lastAuditableFrame = null;
+    lastFixtureEvidence = null;
     for (const scenario of contract.SCENARIOS) if (!report.samples.some(row => row.scenario === scenario)) report.samples.push({
       scenario, pair: task.pair, arm: task.arm, status: 'FAIL', latencyMs: null,
       sourceBodyBytes: 0, overlapBodyBytes: 0, peakRssBytes: peakRss, peakDiskBytes: peakDisk});

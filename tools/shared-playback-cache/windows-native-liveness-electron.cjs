@@ -26,7 +26,7 @@ function helperHealthy(client, requireClosed = false) {
 function coloredFrame(frame) {
   return !!frame && ((frame.width === 64 && frame.height === 64) || (frame.width === 160 && frame.height === 90)) &&
     Buffer.isBuffer(frame.pixels) && frame.pixels.length === frame.width * frame.height * 4 &&
-    frame.pixels.some((value, index) => index % 4 !== 3 && value !== 0);
+    frame.pixels.some((value, index) => index % 4 === 0 && Math.max(value, frame.pixels[index + 1], frame.pixels[index + 2]) - Math.min(value, frame.pixels[index + 1], frame.pixels[index + 2]) >= 8);
 }
 function verifyFixture(plan) {
   const fixture = plan.fixture;

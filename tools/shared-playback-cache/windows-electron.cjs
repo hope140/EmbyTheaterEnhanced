@@ -471,14 +471,16 @@ async function main() {
     need(load.proxied === (phase !== 'baseline'), 'worker-shared-not-selected');
     receipt.checks.trustedProof = trace.some(row => row.type === 'resolved' && row.proofPresent);
     need(receipt.checks.trustedProof, 'worker-proof-missing');
-    async function frame(item) {
-      let result;
+    async function frame(item, targetSeconds = null) {
+      let result,evidence;
       await waitFor(async () => {
         if (currentItem !== item || !activeEndpoint || !lastGeneration) return false;
         result = await service.capturePreview({endpointId: activeEndpoint, generationId: lastGeneration});
-        return driver.coloredFrame(result);
+        if(!driver.coloredFrame(result))return false;
+        try{evidence=require('./fixture-frame-evidence.cjs').analyze(result,{item});}catch(_){return false;}
+        return evidence.matches.some(row=>row.item===item&&(targetSeconds===null||Math.abs(row.frameIndex-targetSeconds*plan.fixture.media[item].fps)<=1));
       }, 'worker-decoded-frame-missing', 5000);
-      return {width: result.width, height: result.height, sha256: sha(result.pixels)};
+      return {width: result.width, height: result.height, sha256: sha(result.pixels),fixtureEvidence:evidence};
     }
     receipt.frame = await frame(phase === 'reopen' ? 'B' : 'A');
     receipt.timingsMs.decodedFirstFrame = now() - load.at;
@@ -503,7 +505,7 @@ async function main() {
       phaseOf(label + '-restart');
       await waitFor(() => trace.slice(initial).some(r => r.type === 'native' && r.generation === generation && r.name === 'playback-restart'), 'worker-seek-frame-restart');
       facts.restart = true;
-      phaseOf(label + '-frame'); await frame(currentItem); facts.frame = true;
+      phaseOf(label + '-frame'); await frame(currentItem,seconds); facts.frame = true;
       const elapsed = now() - start;
       const pausedPosition = await clients.at(-1).getProperty('time-pos', 500); active();
       need(typeof pausedPosition === 'number' && Number.isFinite(pausedPosition), 'worker-seek-paused-position');
