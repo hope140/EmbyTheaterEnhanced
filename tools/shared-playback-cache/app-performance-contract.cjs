@@ -4,7 +4,9 @@ const BASE = '9492750b2b0e7b3fc81f52b51b61900209ac9aba';
 const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'uncached-seek', 'boundary-seek', 'far-seek']);
 const TARGETS = Object.freeze({'cached-seek': 0.5, 'uncached-seek': 8, 'boundary-seek': 3, 'far-seek': 14});
 const LIMITS = Object.freeze({warmups: 3, pairs: 20, workerMs: 90000, suiteMs: 5400000,
-  prefixBytes: 2 * 1024 * 1024, gapBytes: 262144, chunkBytes: 16384, chunkDelayMs: 8, firstByteDelayMs: 20});
+  // Owned RGB24 payload is 3x the old pal8 fixture. Preserve the same
+  // cache-time window and seek targets; this is not a product budget.
+  prefixBytes: 6 * 1024 * 1024, gapBytes: 786432, chunkBytes: 49152, chunkDelayMs: 8, firstByteDelayMs: 20});
 const need = (value, code) => {if (!value) throw Error(code);};
 function rendererLogin(origin) {
   const u = new URL(origin); need(u.origin === origin && u.protocol === 'http:' && u.hostname === '127.0.0.1', 'app-fixture-origin');

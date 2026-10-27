@@ -12,6 +12,7 @@ const protoLoader = require('@grpc/proto-loader');
 const {fixtureServer} = require('../../tests/helpers/next-prefix-alameda.cjs');
 
 const WIDTH = 320, HEIGHT = 180, FPS = 12;
+const PAL8 = 'uncompressed-dib-paletted-8bit', BGR24 = 'uncompressed-dib-bgr24';
 const FPS_BY_ID = Object.freeze({A: 12, B: 24, C: 24});
 const DURATIONS = Object.freeze({A: 16, B: 8, C: 8});
 const USER_AGENT = 'Synthetic-CD2';
@@ -38,19 +39,24 @@ function streamHeader(frames, frameBytes, fps) {
     body.writeInt16LE(WIDTH, 52); body.writeInt16LE(HEIGHT, 54);
     return chunk('strh', body);
 }
-function formatHeader(frameBytes) {
-    const body = Buffer.alloc(40 + 256 * 4); body.writeUInt32LE(40, 0); body.writeInt32LE(WIDTH, 4); body.writeInt32LE(HEIGHT, 8);
-    body.writeUInt16LE(1, 12); body.writeUInt16LE(8, 14); body.writeUInt32LE(0, 16); body.writeUInt32LE(frameBytes, 20);
-    body.writeUInt32LE(256, 32); body.writeUInt32LE(256, 36);
-    for (let i = 0; i < 256; i++) {const at = 40 + i * 4; body[at] = i; body[at + 1] = (i * 3) & 255; body[at + 2] = (i * 7) & 255;}
+function formatHeader(frameBytes, encoding) {
+    const paletted=encoding===PAL8;
+    const body = Buffer.alloc(40 + (paletted?256 * 4:0)); body.writeUInt32LE(40, 0); body.writeInt32LE(WIDTH, 4); body.writeInt32LE(HEIGHT, 8);
+    body.writeUInt16LE(1, 12); body.writeUInt16LE(paletted?8:24, 14); body.writeUInt32LE(0, 16); body.writeUInt32LE(frameBytes, 20);
+    if(paletted){body.writeUInt32LE(256, 32); body.writeUInt32LE(256, 36);
+      for (let i = 0; i < 256; i++) {const at = 40 + i * 4; body[at] = i; body[at + 1] = (i * 3) & 255; body[at + 2] = (i * 7) & 255;}}
     return chunk('strf', body);
 }
-function frameBytes() {return WIDTH * HEIGHT;}
-function makeFrame(index, variant) {
-    const data = Buffer.alloc(frameBytes());
+function frameBytes(encoding) {return WIDTH * HEIGHT * (encoding===BGR24?3:1);}
+function makeFrame(index, variant, encoding) {
+    const data = Buffer.alloc(frameBytes(encoding));
     // Bottom-up, 8-bit palette indices with item/frame/position variation.
     const salt = variant.charCodeAt(0);
-    for (let p = 0; p < data.length; p++) data[p] = (index * 19 + (p % WIDTH) + Math.floor(p / WIDTH) * 11 + salt) & 255;
+    for (let p = 0; p < WIDTH*HEIGHT; p++) {
+      const color=(index * 19 + (p % WIDTH) + Math.floor(p / WIDTH) * 11 + salt) & 255;
+      if(encoding===BGR24){data[p*3]=color;data[p*3+1]=(color*3)&255;data[p*3+2]=(color*7)&255;}
+      else data[p]=color;
+    }
     return data;
 }
 async function writeAll(handle, buffer, position) {
@@ -66,10 +72,10 @@ async function hashFile(file) {
     for await (const part of fs.createReadStream(file)) hash.update(part);
     return hash.digest('hex');
 }
-async function writeAvi(root, id) {
-    const fps = FPS_BY_ID[id], file = path.join(root, id + '.avi'), frames = DURATIONS[id] * fps, bytes = frameBytes();
+async function writeAvi(root, id, encoding) {
+    const fps = FPS_BY_ID[id], file = path.join(root, id + '.avi'), frames = DURATIONS[id] * fps, bytes = frameBytes(encoding);
     // Build the small RIFF header and index in memory; media frames are written one at a time.
-    const avih = mainHeader(frames, bytes, fps), strl = list('strl', [streamHeader(frames, bytes, fps), formatHeader(bytes)]),
+    const avih = mainHeader(frames, bytes, fps), strl = list('strl', [streamHeader(frames, bytes, fps), formatHeader(bytes,encoding)]),
         hdrl = list('hdrl', [avih, strl]);
     const mediaChunkBytes = 8 + bytes + (bytes % 2), moviBodyBytes = 4 + frames * mediaChunkBytes;
     const indexBody = Buffer.alloc(frames * 16);
@@ -86,7 +92,7 @@ async function writeAvi(root, id) {
         let position = 0;
         for (const buffer of [riff, ...hdrl, movi]) {await writeAll(handle, buffer, position); position += buffer.length;}
         for (let i = 0; i < frames; i++) {
-            const data = makeFrame(i, id), prefix = Buffer.alloc(8); prefix.write('00db'); prefix.writeUInt32LE(data.length, 4);
+            const data = makeFrame(i, id, encoding), prefix = Buffer.alloc(8); prefix.write('00db'); prefix.writeUInt32LE(data.length, 4);
             await writeAll(handle, prefix, position); position += prefix.length;
             await writeAll(handle, data, position); position += data.length;
             if (data.length % 2) {await writeAll(handle, Buffer.alloc(1), position); position++;}
@@ -98,10 +104,10 @@ async function writeAvi(root, id) {
     }
     await handle.close();
     const stat = await fsp.stat(file), sha256 = await hashFile(file);
-    need(stat.isFile() && stat.size === riffSize + 8 && stat.size < 20 * 1048576, 'fixture-avi-size');
+    need(stat.isFile() && stat.size === riffSize + 8 && stat.size < (encoding===BGR24?40:20) * 1048576, 'fixture-avi-size');
     return {id, file: id + '.avi', size: stat.size, sha256, etag: '"' + sha256 + '"', durationSeconds: DURATIONS[id],
         dataStart: 12 + hdrl.reduce((n, b) => n + b.length, 0) + 12, frameStride: mediaChunkBytes, frames,
-        width: WIDTH, height: HEIGHT, fps, audio: 'none', encoding: 'uncompressed-dib-paletted-8bit'};
+        width: WIDTH, height: HEIGHT, fps, audio: 'none', encoding};
 }
 
 async function listen(server) {
@@ -118,7 +124,9 @@ function closeHttp(server, sockets) {
     return Promise.all([stopped, ...closing]);
 }
 async function createMediaServer(root, files, expectedAgent, record, pacing, createReadStream = fs.createReadStream) {
-    if (pacing) need(pacing.chunkBytes === 16384 && pacing.chunkDelayMs === 8 && pacing.firstByteDelayMs === 20 && pacing.prefixBytes === 2097152 && pacing.gapBytes === 262144, 'fixture-pacing-contract');
+    if (pacing) need(pacing.chunkDelayMs === 8 && pacing.firstByteDelayMs === 20 &&
+      (pacing.chunkBytes===16384&&pacing.prefixBytes===2097152&&pacing.gapBytes===262144||
+       pacing.chunkBytes===49152&&pacing.prefixBytes===6291456&&pacing.gapBytes===786432), 'fixture-pacing-contract');
     const sockets = new Set(), active = new Set(), held = new Set(), closedHeld = [];
     let holdNextItem = null, requestSequence = 0, openedRequests = 0;
     const snapshot = () => ({activeMediaResponses: active.size, mediaSockets: sockets.size, heldRequests: held.size, openedRequests});
@@ -246,12 +254,13 @@ async function createGrpcServer(mediaOrigin, files, token, record) {
     })};
 }
 
-async function generateFixtures(root) {
+async function generateFixtures(root, {encoding=PAL8} = {}) {
+    need([PAL8,BGR24].includes(encoding),'fixture-encoding-invalid');
     need(typeof root === 'string' && path.isAbsolute(root), 'fixture-absolute-root-required');
     const realRoot = await fsp.realpath(root), entries = await fsp.readdir(realRoot);
     need(entries.length === 0 && (await fsp.stat(realRoot)).isDirectory(), 'fixture-fresh-root-required');
     const files = Object.create(null);
-    for (const id of ['A', 'B', 'C']) files[id] = await writeAvi(realRoot, id);
+    for (const id of ['A', 'B', 'C']) files[id] = await writeAvi(realRoot, id,encoding);
     return {schema: 1, out: realRoot, autoPlay: true, fixtures: ['A', 'B', 'C'].map(id => files[id]), media: files,
         mediaMetadata: Object.fromEntries(['A', 'B', 'C'].map(id => [id, {durationSeconds: DURATIONS[id], aviFps: FPS_BY_ID[id],
             embyReportedRealFrameRate: id === 'A' ? 12 : 24, audio: 'none'}]))};
@@ -262,7 +271,7 @@ async function verifyPlan(plan) {
     const files = Object.create(null);
     for (const row of plan.fixtures) {
         need(row && ['A', 'B', 'C'].includes(row.id) && row.file === row.id + '.avi' && /^[a-f0-9]{64}$/.test(row.sha256) &&
-            Number.isSafeInteger(row.size) && row.size > 0 && row.size < 20 * 1048576, 'fixture-row-invalid');
+            [PAL8,BGR24].includes(row.encoding)&&Number.isSafeInteger(row.size) && row.size > 0 && row.size < (row.encoding===BGR24?40:20) * 1048576, 'fixture-row-invalid');
         const file = path.join(root, row.file), stat = await fsp.lstat(file);
         need(stat.isFile() && !stat.isSymbolicLink() && await fsp.realpath(file) === file && stat.size === row.size && await hashFile(file) === row.sha256, 'fixture-file-identity');
         files[row.id] = row;

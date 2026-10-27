@@ -44,6 +44,7 @@ function readPlan(file, expectedHash) {
   need(p.schema === 1 && p.productCommit === contract.BASE && path.join(p.out, 'app-plan.json') === file &&
     fs.readFileSync(physical(path.join(p.out,'owner')), 'utf8') === OWNER &&
     JSON.stringify(p.cases) === JSON.stringify(cases(p.mode)) && JSON.stringify(p.limits) === JSON.stringify(contract.LIMITS), 'app-plan-contract');
+  need(Array.isArray(p.fixture?.fixtures)&&p.fixture.fixtures.length===3&&p.fixture.fixtures.every(row=>row.encoding==='uncompressed-dib-bgr24'), 'app-plan-contract');
   for (const target of ['repo','runtime','out']) physical(p[target], true);
   physical(p.installer);
   const identity = toolIdentity(p.repo);
@@ -132,7 +133,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
     if(events.length<8192&&type!=='media-bytes')events.push({case:owner,type,...data});
   };
   try {
-    fixture=await fixtures.generateFixtures(path.join(out,'media'));fixture.autoPlay=false;plan.fixture=fixture;
+    fixture=await fixtures.generateFixtures(path.join(out,'media'),{encoding:'uncompressed-dib-bgr24'});fixture.autoPlay=false;plan.fixture=fixture;
     sources=await fixtures.startWindowsSources({plan:fixture,record,createEmby,pacing:contract.LIMITS});
     plan.sources={origin:sources.origin,mediaOrigin:sources.mediaOrigin,cd2Endpoint:sources.cd2Endpoint};
     control=http.createServer((req,res)=>{(async()=>{
@@ -190,7 +191,8 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
       scope:'ordinary-main loopback synthetic, decoded frames; not user NAS, audio or visible presentation',
       performanceAssessment:complete?'COMPLETE_SAMPLES_NO_NEW_THRESHOLD':'NOT_ASSESSED',summary,setupErrors,
       samples,results,events,cleanup,real115Requests:0,conditions:{node:process.version,platform:process.platform,release:os.release(),cpus:os.cpus().length,
-        source:'loopback generated raw AVI, 16KiB/8ms, 20ms initial delay, initial response paused at2MiB; other responses paused after256KiB',
+        source:'loopback generated opaque BGR24 AVI, 48KiB/8ms, 20ms initial delay, initial response paused at6MiB; other responses paused after768KiB',
+        fixtureContrast:'same RGB frame content and fps as historical pal8; 3x body bytes and 3x initial test window; historical latency distributions not interchangeable',
         byteScope:'actual source filesystem stream bytes, not confirmed player consumption; all1B requests excluded, including access probes; not an explicit probe classification',
         memoryScope:'sum of observed Electron working-set peak and one live owned Native lifetime PeakWorkingSet; conservative sum, not simultaneous RSS',diskScope:'maximum observed logical bytes of owned cache files including index; not filesystem allocated blocks'},durationMs:Date.now()-began};
     if(report.summary?.status==='FAIL')report.status='FAIL';

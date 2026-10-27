@@ -10,7 +10,7 @@ async function createEmby({plan = {}, record = () => {}} = {}) {
   const files = Object.create(null);
   for (const id of ['A', 'B', 'C']) {
     const file = plan.media && !Array.isArray(plan.media) ? plan.media[id] : null;
-    if (!file || file.id !== id || !Number.isSafeInteger(file.size) || file.size <= 0 || file.size > 20 * 1048576 ||
+    if (!file || file.id !== id || !Number.isSafeInteger(file.size) || file.size <= 0 || file.size > (file.encoding==='uncompressed-dib-bgr24'?40:20) * 1048576 ||
         !Number.isFinite(file.durationSeconds) || file.durationSeconds <= 0 || file.durationSeconds > 120 ||
         !Number.isFinite(file.fps) || file.fps <= 0 || file.fps > 120 ||
         !Number.isSafeInteger(file.width) || file.width <= 0 || file.width > 1920 ||

@@ -43,6 +43,7 @@ async function main() {
   let stage = 'isolated', activeEndpoint, lastGeneration, currentItem, service, authority, cd2Service,
     mainWindow, indexUrl, originalFrame, ownedSession, unregisterNative, unregisterCd2, unregisterSettings, readObserver, lateEvents = 0, retiredAt = null;
   const receipt = {schema: 1, phase, productCommit: plan.productCommit, toolCommit: plan.tools.toolCommit,
+    fixtureEncoding:plan.fixture?.media?.A?.encoding??null,
     status: 'FAIL', scope, workerPid: process.pid, workerParentPid: process.ppid, workerType: process.type,
     checks: {}, timingsMs: {candidateVerification: verificationMs}, firstFrameMeaning: 'decoded native preview; hidden carrier',
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', hiddenHarnessBackgroundThrottling: false, real115Requests: 0, helpers: [], seekObservations: [], evaluations: []};

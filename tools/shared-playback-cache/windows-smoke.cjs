@@ -112,7 +112,7 @@ async function prepare({repo, runtime, installer, installerSha256, productCommit
   physical(path.dirname(out), true); fs.mkdirSync(out, {mode: 0o700}); out = physical(out, true);
   fs.writeFileSync(path.join(out, 'owner'), OWNER, {flag: 'wx', mode: 0o600});
   fs.mkdirSync(path.join(out, 'media'));
-  const fixture = await fixtures.generateFixtures(path.join(out, 'media'));
+  const fixture = await fixtures.generateFixtures(path.join(out, 'media'),{encoding:'uncompressed-dib-bgr24'});
   const trial = require('../../src/electronapp/enhanced/shared-playback-cache/trial');
   for (const name of ['baseline-profile', 'shared-profile']) trial.createProfile({root: path.join(out, name)});
   const plan = {schema: 1, productCommit: identity.productCommit, repo, runtime: physical(runtime, true),

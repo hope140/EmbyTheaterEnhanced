@@ -22,6 +22,8 @@ async function main() {
   need(!fs.existsSync(output), 'app-worker-preserve-receipt');
   const get = member => require(path.join(plan.runtime, 'electronapp', member));
   const report = {schema: 1, status: 'FAIL', index, pair: task.pair, arm: task.arm, productCommit: plan.productCommit,
+    fixtureFormat:{encoding:plan.fixture.media.A.encoding,width:plan.fixture.media.A.width,height:plan.fixture.media.A.height,fps:plan.fixture.media.A.fps,
+      sourceBytes:plan.fixture.media.A.size,sourceSha256:plan.fixture.media.A.sha256,alphaChannel:false},
     toolCommit: plan.toolCommit, scope: 'ordinary product main and unchanged web/API/PM; owned loopback fixture; decoded frame not visible presentation',
     resourceAssessment: {electron:'NOT_ASSESSED',native:'NOT_ASSESSED',disk:'NOT_ASSESSED'},
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, pid: process.pid, samples: [], observations: [], helperExits: [],
@@ -296,7 +298,7 @@ async function main() {
               interlaced:typeof value.interlaced==='boolean'?value.interlaced:null} : null;
             else {
               const formats = new Set(['pal8','rgb8','bgr8','bgra','bgr0','rgba','rgb0','rgb24','bgr24','rgba64','bgra64','rgba64le','bgra64le',
-                'gbrp','gbrap','gbrp16','gbrp16le','gbrap16','gbrap16le','gbrpf32','gbrapf32','rgbaf16',
+                'gbrp','gbrap','gbrp16','gbrp16le','gbrap16','gbrap16le','gbrpf32','gbrapf32','gbrpf32le','gbrapf32le','gbrpf32be','gbrapf32be','gbrpf16le','gbrapf16le','rgbaf16','rgbaf32',
                 'yuv420p','yuvj420p','yuv420p10le','yuv444p','yuva444p','yuv444p16','yuv444p16le','nv12','p010','p010le','d3d11','d3d11-nv12','d3d11-p010']);
               metadata[property] = value && typeof value === 'object' ? {...Object.fromEntries(['w','h','dw','dh'].map(key=>
                 [key,Number.isFinite(value[key])?value[key]:null])),pixelformat:formats.has(value.pixelformat)?value.pixelformat:'other',
