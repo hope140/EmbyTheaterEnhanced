@@ -1221,3 +1221,12 @@ Fixture-correction local regression:2,907 total/2,882 pass/0 fail/25 existing pl
 Both verifier and ordinary-app anchors now identify `9492750b2b0e7b3fc81f52b51b61900209ac9aba`. Product runtime content remains identical to04, but the new exact source is required for the corrected package regression. Preserve structured-root preparation and strict post-package Native/entry/matrix source provenance. Original-source fallback is not a shared-cache success, and the existing refusal to preload without a current proxy is explicitly covered rather than changed. No new settings, timeout policy, renderer authorization, kernel or release behavior is introduced.
 
 Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform or material skips (145.3s); focused Alameda/app/physical-source/structured-root194/194. JavaScript619/PowerShell55 syntax, finite credential-pattern scan718, changed documentation and protected-tree equality pass. Windows CI/package/Native and ordinary performance remain separately pending for these exact source identities.
+
+
+## Bounded ordinary-entry pixel evidence
+
+The existing ordinary-entry seek failure remains a failure. Test-only entry mode now retains one validated owner-bound preview frame and saves up to three synthetic preview PNGs with raw pixel digests/statistics. Only after the original sample fails may it inspect the same owned video carrier with PrintWindow; that call can itself trigger painting and is explicitly labelled as an intervention. Matrix mode disables all image collection. This is prepared diagnostic tooling against unchanged product949, not new Windows execution or a performance pass.
+
+Export accepts only fixed phase names, declared SHA-256/length, bounded PNG dimensions and owned physical files. Partial phase/case evidence is allowed; unknown files are never broadly copied. No desktop or foreign HWND is enumerated or captured. Actual frame PTS remains unknown; time-pos is not substituted for it. The independent transparent subtitle-color defect is not fixed in this tool branch and is not treated as the cause of repeated preview pixels.
+
+Local verification:2,991 total/2,966 pass/0 fail/cancel/25 existing platform or material skips in148.0s; focused49/49. JavaScript626/PowerShell55 syntax, finite credential-pattern scan725, changed-document checks and protected949 product-tree equality pass. These injected encoder/local checks do not replace actual Windows PNG, PrintWindow or ordinary-entry results; no new Windows run or matrix performance pass is claimed.

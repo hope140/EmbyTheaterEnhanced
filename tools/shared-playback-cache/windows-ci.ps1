@@ -174,12 +174,23 @@ $sourceReceipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $safe 'can
 if ($AppPerformanceOnly) {
     $ownedRoot = Get-OwnedFixtureRoot 'performance' $AppPerformanceMode
     $performanceRoot = Join-Path $ownedRoot 'performance'
+    $performanceSucceeded = $false
     try {
         & node (Join-Path $PSScriptRoot 'app-performance-runner.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$performanceRoot" "--mode=$AppPerformanceMode"
         if ($LASTEXITCODE -ne 0) { throw 'Ordinary main performance failed; no fallback or retry.' }
+        $performanceSucceeded = $true
     } finally {
         foreach ($receipt in @(Get-ChildItem -LiteralPath $performanceRoot -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'app-performance.json' -or $_.Name -match '^case-[0-9]{1,2}(?:\.json|\.lifecycle\.jsonl)$' })) {
             Copy-Item -LiteralPath $receipt.FullName -Destination (Join-Path $safe $receipt.Name)
+        }
+        if (Test-Path -LiteralPath (Join-Path $performanceRoot 'owner') -PathType Leaf) {
+            & node (Join-Path $PSScriptRoot 'app-pixel-audit.cjs') --copy $performanceRoot $safe
+            if ($LASTEXITCODE -ne 0) {
+                [Console]::Error.WriteLine('SHARED_CACHE_PIXEL_EXPORT_FAILED')
+                # Preserve a prior runner failure; a successful runner may not
+                # hide a failed bounded evidence export.
+                if ($performanceSucceeded) { throw 'Bounded pixel evidence export failed.' }
+            }
         }
     }
     return

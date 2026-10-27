@@ -87,6 +87,7 @@ const SAFE_FAILURE_CODES = new Set([
   'app-owned-memory-single-helper', 'app-owned-memory-target', 'app-play-not-established',
   'app-player-not-ready', 'app-prefix-coverage-missing', 'app-preload-ipc-not-ready',
   'app-preview-owner-retired', 'app-initial-position',
+  'app-pixel-audit-failed', 'app-pixel-codec-roundtrip', 'app-pixel-preview-missing', 'app-pixel-carrier-owner', 'app-pixel-carrier-limit',
   'app-ready-dependencies', 'app-ready-entered', 'app-ready-event-missing',
   'app-ready-observer-missing', 'app-renderer-command-timeout', 'app-routes',
   'app-sample-count', 'app-sample-failed', 'app-seek-coverage-mismatch',

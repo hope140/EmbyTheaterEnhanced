@@ -1640,3 +1640,12 @@ Fixture-bound tool regression:2,942 total/2,917 pass/0 fail/25 existing platform
 - 工具采用独立writtenBytes，只有准确请求长度与未受窗口截断的末块才同步res.end(part)。complete仍为实际writableEnded，增加真实finish事件/finished快照；长请求和partial仍不end。
 - 真实HTTP旧固定源码受控反例：body1000、client end/close真、server end/finish假。新实现4轮普通/4轮仅受控尾部wait均通过，实际文件/HTTP/首字节延迟保留；400字节断开仍false/迟到正文0，并确认输入源关闭。没有修改产品949或任何真实播放预算。
 - 最终全仓串行2959项：2934通过、0失败/取消、25项既有平台/材料跳过（142.3秒）；定向32/32，含8轮短响应和400/1000字节中断负向。JS622/PS55、有限凭证模式721、文档及949产品树不变检查通过。真实Windows新普通入口与性能仍未执行。
+
+
+## 2026-10-27 — Bound ordinary-entry pixel diagnosis
+
+- Preserve the original cached-seek failure and five-second gate. Save existing same-owner reference/paused/resumed previews, one in-memory frame at a time; no extra screenshot loop or artificial playback hold. Matrix mode has no pixel collection.
+- After the original failure only, compare the owned video carrier with bounded PrintWindow capture and revalidate HWND/PID/generation/size afterward. WM_PRINT may repaint; these results cannot retroactively prove baseline presentation or change FAIL to PASS. No foreign-window enumeration or actual-frame-PTS claim.
+- Add strict fixed-name/manifest/hash/PNG/physical-file export, partial-case handling, collision rollback, malformed/symlink/hardlink and size negatives. Unit PNG encoding is injected; real Electron codec and Win32 output remain untested by these local checks. Product949 and its verified package remain unchanged; no new native execution, dispatch or performance acceptance is implied.
+
+Local verification:2,991 total/2,966 pass/0 fail/cancel/25 existing platform or material skips in148.0s; focused49/49. JavaScript626/PowerShell55 syntax, finite credential-pattern scan725, changed-document checks and protected949 product-tree equality pass. These injected encoder/local checks do not replace actual Windows PNG, PrintWindow or ordinary-entry results; no new Windows run or matrix performance pass is claimed.

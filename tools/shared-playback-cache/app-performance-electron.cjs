@@ -1,7 +1,7 @@
 'use strict';
 // Test entry wrapper: execute the verified, unchanged ordinary product main.
 // No alternate renderer, API client, PlaybackManager or source proof is supplied.
-const fs = require('node:fs'), path = require('node:path');
+const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
 const {performance} = require('node:perf_hooks');
 const {pathToFileURL} = require('node:url');
 const contract = require('./app-performance-contract.cjs'), fixed = require('./windows-contract.cjs');
@@ -29,7 +29,16 @@ async function main() {
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
+  let lastAuditableFrame = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
+  const previewAuditPhases = new Set(), carrierAuditPhases = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
+  // Entry evidence only: never enable image I/O in the timed matrix.
+  const pixelAudit = plan.mode === 'entry' ? require('./app-pixel-audit.cjs').createAudit({root:plan.out,index,
+    encodePNG: ({pixels,width,height}) => {
+      const image = electron.nativeImage.createFromBitmap(pixels,{width,height});
+      need(!image.isEmpty() && image.getSize().width === width && image.getSize().height === height && image.toBitmap().equals(pixels),'app-pixel-codec-roundtrip');
+      return image.toPNG();
+    }}) : null;
   let scenario = 'startup';
   const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: smoke.coloredFrame,
     current: owner => !!service && owner.endpointId === endpoint && owner.generationId === client?.currentGenerationId && service.isPreviewOwner(owner),
@@ -43,8 +52,9 @@ async function main() {
   function tap(object, name, settled) {
     const original = object[name]; need(typeof original === 'function', 'app-observer-target');
     const replacement = function (...values) {
+      const requestedAt = performance.now();
       const value = original.apply(this, values);
-      const observe = result => {try {settled(result, values);} catch (_) {observationErrors++;}};
+      const observe = result => {try {settled(result, values, requestedAt);} catch (_) {observationErrors++;}};
       if (value && typeof value.then === 'function') value.then(observe, () => {}).catch(() => {}); else observe(value);
       return value;
     };
@@ -95,6 +105,7 @@ async function main() {
     load(values) {
       const selected = contract.loadSource(values[1], plan.sources.mediaOrigin, proxyUrls);
       generation = this.currentGenerationId;
+      lastAuditableFrame = null;
       mark('native-load', {generation, proxied: selected.proxied});
       return super.load(values);
     }
@@ -111,10 +122,25 @@ async function main() {
     }
     request(method, params, options) {
       const promise = super.request(method, params, options);
+      if(pixelAudit && ['presentation-prepare','presentation-arm','presentation-release','presentation-cancel-preparation'].includes(method)) {
+        const at=performance.now();
+        promise.then(value=>mark('pixel-presentation-reply',{method,generation:options?.generationId??null,requestMs:at-started,
+          ready:value?.ready===true,painted:value?.painted===true,holdPresent:Number.isSafeInteger(value?.holdId)&&value.holdId>0}),
+        ()=>mark('pixel-presentation-reply',{method,generation:options?.generationId??null,requestMs:at-started,rejected:true})).catch(()=>{});
+      }
       if (method === 'preview-snapshot') {
         const reasons = new Set(['preview-not-ready-or-busy', 'preview-queue-failed', 'preview-owner-unavailable', 'preview-frame-unavailable', 'preview-generation-retired', 'preview-media-ended', 'preview-deadline']);
-        promise.then(result => mark('preview-native-reply', {scenario, generation: options?.generationId ?? null,
-          ready: result?.ready === true, reason: reasons.has(result?.reason) ? result.reason : result?.ready === true ? 'ready' : 'other'}),
+        promise.then(result => {
+          const shape = !!pixelAudit && result?.ready === true && result?.generationId === options?.generationId && result.format === 'bgr24' &&
+            Number.isInteger(result.width) && result.width > 0 && result.width <= 160 && Number.isInteger(result.height) && result.height > 0 && result.height <= 90 &&
+            typeof result.pixels === 'string' && result.pixels.length <= 57600;
+          const bytes = shape ? Buffer.from(result.pixels,'base64') : null;
+          const canonical = !!bytes && bytes.length === result.width*result.height*3 && bytes.toString('base64') === result.pixels;
+          mark('preview-native-reply', {scenario, generation: options?.generationId ?? null,
+            ready: result?.ready === true, reason: reasons.has(result?.reason) ? result.reason : result?.ready === true ? 'ready' : 'other',
+            rawShapeValid:pixelAudit?canonical:null,format:shape?'bgr24':null,width:shape?result.width:null,height:shape?result.height:null,
+            rawBytes:canonical?bytes.length:null,rawBgrSha256:canonical?crypto.createHash('sha256').update(bytes).digest('hex'):null});
+        },
         () => mark('preview-native-reply', {scenario, generation: options?.generationId ?? null, ready: false, reason: 'request-rejected'})).catch(() => {});
       }
       return promise;
@@ -125,7 +151,24 @@ async function main() {
   tap(get('native-helper/service'), 'createService', value => {
     service = value;
     restores.push(preview.install(value));
-    tap(value, 'call', (result, values) => {if (values[0] === 'create' && result?.status === 'ok') endpoint = result.endpointId;});
+    tap(value,'capturePreview',(frame,_values,requestedAt)=>{
+      if (!pixelAudit || retired || performance.now()>=deadline || !frame || !smoke.coloredFrame(frame) ||
+        !value.isPreviewOwner(frame.owner) || lastAuditableFrame && requestedAt < lastAuditableFrame.requestedAt) return;
+      // One bounded diagnostic frame, never a media buffer or frame history.
+      lastAuditableFrame = {width:frame.width,height:frame.height,pixels:Buffer.from(frame.pixels),owner:{...frame.owner},
+        requestedAt,resolvedAt:performance.now()};
+    });
+    tap(value, 'call', (result, values, requestedAt) => {
+      if (values[0] === 'create' && result?.status === 'ok') endpoint = result.endpointId;
+      if(pixelAudit && ['prepare-presentation','cancel-presentation','set-visible','begin-generation'].includes(values[0]))
+        mark('pixel-service-call',{operation:values[0],requestMs:requestedAt-started,status:result?.status==='ok'?'ok':result?.status==='accepted'?'accepted':'other',
+          ready:result?.ready===true,generation:Number.isSafeInteger(values[1]?.generationId)?values[1].generationId:null,
+          visible:typeof values[1]?.visible==='boolean'?values[1].visible:null});
+    });
+    tap(value,'notify',(_result,values,requestedAt)=>{
+      if(pixelAudit && values[0]==='set-visible')mark('pixel-service-notify',{operation:'set-visible',requestMs:requestedAt-started,
+        generation:Number.isSafeInteger(values[1]?.generationId)?values[1].generationId:null,visible:typeof values[1]?.visible==='boolean'?values[1].visible:null});
+    });
   });
   const expectedUrl = pathToFileURL(path.join(plan.runtime, 'electronapp/www/index.html')).href + '?autostart=false';
   restores.push(contract.installReadinessObserver(app, expectedUrl, mark));
@@ -204,6 +247,83 @@ async function main() {
       }, 'app-decoded-frame-missing');
       lastFrameHash = result.hash; return lastFrameHash;
     }
+    async function auditPhase(phase, owner, after) {
+      if (!pixelAudit) return;
+      if(pixelWritesDisabled){mark('pixel-audit-unavailable',{phase,reason:'prior-audit-write-failure',attempted:false});return;}
+      const activeClient = client;
+      const owned = () => !retired && performance.now()<deadline && client === activeClient && endpoint === owner.endpointId && activeClient?.currentGenerationId === owner.generationId && service?.isPreviewOwner(owner);
+      try {
+        need(owned(), 'app-preview-owner-retired');
+        const frame = lastAuditableFrame;
+        need(frame && frame.owner.endpointId===owner.endpointId && frame.owner.generationId===owner.generationId && frame.requestedAt>=after,'app-pixel-preview-missing');
+        if(!previewAuditPhases.has(phase)) {
+          let row;
+          try{row=pixelAudit.preview(phase,frame,{generation:owner.generationId,requestMs:frame.requestedAt-started,resolveMs:frame.resolvedAt-started});}
+          catch(error){pixelWritesDisabled=true;throw error;}
+          previewAuditPhases.add(phase);mark('pixel-preview-saved',row);
+        }
+        // PrintWindow sends WM_PRINT and can trigger painting. It must not
+        // intervene before the original cached-seek sample has failed.
+        if(!report.firstFailure) {mark('pixel-carrier-deferred',{phase,reason:'preserve-original-baseline'});return;}
+        const metadata = {phase,generation:owner.generationId,actualFramePts:null,timePosIsFramePts:false};
+        for (const property of ['time-pos','pause']) {
+          need(owned(),'app-preview-owner-retired');
+          try {const value=await activeClient.getProperty(property,1000);
+            metadata[property==='time-pos'?'timePosAfterPreview':'pauseAfterPreview']=typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value)?value:null;
+          } catch (_) {metadata[property==='time-pos'?'timePosAfterPreview':'pauseAfterPreview']=null;}
+          need(owned(),'app-preview-owner-retired');
+        }
+        for (const property of ['video-params','video-out-params','video-frame-info']) {
+          need(owned(),'app-preview-owner-retired');
+          try {
+            const value = await activeClient.getProperty(property,1000);
+            if (property === 'video-frame-info') metadata[property] = value && typeof value === 'object' ? {
+              pictureType:['I','P','B'].includes(value['picture-type'])?value['picture-type']:null,
+              interlaced:typeof value.interlaced==='boolean'?value.interlaced:null} : null;
+            else {
+              const formats = new Set(['pal8','rgb8','bgr8','bgra','bgr0','rgba','rgb0','yuv420p','yuvj420p','yuv420p10le','nv12','p010','p010le','d3d11','d3d11-nv12','d3d11-p010']);
+              metadata[property] = value && typeof value === 'object' ? {...Object.fromEntries(['w','h','dw','dh'].map(key=>
+                [key,Number.isFinite(value[key])?value[key]:null])),pixelformat:formats.has(value.pixelformat)?value.pixelformat:'other',
+                hwPixelformat:formats.has(value['hw-pixelformat'])?value['hw-pixelformat']:null} : null;
+            }
+          } catch (_) {metadata[property]=null;}
+          need(owned(),'app-preview-owner-retired');
+        }
+        mark('pixel-frame-metadata',metadata);
+        if (carrierDisabled) {mark('pixel-carrier-unavailable',{phase,reason:carrierDisabled,attempted:false});return;}
+        if(carrierAuditPhases.has(phase))return;
+        const window = service.getVideoWindow();
+        need(window && !window.isDestroyed(),'app-pixel-carrier-owner');
+        const handle = window.getNativeWindowHandle().readBigUInt64LE();
+        carrierReader ||= get('enhanced/native-media/dwm.cjs').createDwm(get('enhanced/native-media/node_modules/koffi'));
+        // clientSize validates the HWND belongs to this Electron PID. Never
+        // enumerate/capture the desktop or another process's windows.
+        const size = carrierReader.clientSize(handle);
+        need(Number.isInteger(size.width)&&Number.isInteger(size.height)&&size.width>0&&size.height>0&&
+          size.width<=4096&&size.height<=2160&&size.width*size.height*4<=16*1024*1024,'app-pixel-carrier-limit');
+        const requestAt=performance.now();
+        mark('pixel-carrier-start',{phase,generation:owner.generationId,width:size.width,height:size.height});
+        // Do not race this Promise and free its DC/DIB early. The implementation
+        // releases them in finally when the real PrintWindow call returns.
+        const result=await carrierReader.capture(handle,size.width,size.height,{pixelFormat:'opaque-video-bgrx'});
+        const resolvedAt=performance.now();
+        need(owned()&&service.getVideoWindow()===window&&!window.isDestroyed()&&window.getNativeWindowHandle().readBigUInt64LE()===handle,'app-pixel-carrier-owner');
+        const afterSize=carrierReader.clientSize(handle);
+        need(afterSize.width===size.width&&afterSize.height===size.height,'app-pixel-carrier-owner');
+        if (!result.accepted || !smoke.coloredFrame({...size,pixels:result.pixels}) || resolvedAt-requestAt>=3000) {
+          carrierDisabled = !result.accepted?'print-not-accepted':resolvedAt-requestAt>=3000?'late-result':'black-or-unpainted';
+          mark('pixel-carrier-unavailable',{phase,reason:carrierDisabled,attempted:true,accepted:!!result.accepted,elapsedMs:resolvedAt-requestAt});return;
+        }
+        let row;
+        try{row=pixelAudit.carrier(phase,{...size,pixels:result.pixels},{generation:owner.generationId,requestMs:requestAt-started,resolveMs:resolvedAt-started});}
+        catch(error){pixelWritesDisabled=true;throw error;}
+        carrierAuditPhases.add(phase);
+        mark('pixel-carrier-saved',row);
+      } catch(error) {
+        carrierDisabled ||= 'capture-or-owner-unavailable';
+        observationErrors++;mark('pixel-audit-failed',{phase,code:contract.failureCode(error,'app-pixel-audit-failed')});
+      }
+    }
     async function snapshot() {
       resourceSample();
       return {hit: cacheProxy?.status().hitBytes ?? null,
@@ -235,7 +355,7 @@ async function main() {
       // This runs only AFTER a failed sample. It cannot convert that sample or
       // the case to PASS, and its bytes/timing are not performance samples.
       const owner = {endpointId: endpoint, generationId: generation}, controlClient = client;
-      const owned = () => client === controlClient && endpoint === owner.endpointId && controlClient?.currentGenerationId === owner.generationId && service?.isPreviewOwner(owner);
+      const owned = () => !retired && performance.now()<deadline && client === controlClient && endpoint === owner.endpointId && controlClient?.currentGenerationId === owner.generationId && service?.isPreviewOwner(owner);
       const snapshotState = async phase => {
         const row = {phase, generation: owner.generationId};
         for (const property of ['pause','time-pos','core-idle','current-vo','frame-drop-count','decoder-frame-drop-count']) {
@@ -258,11 +378,12 @@ async function main() {
         need(owned(), 'app-preview-owner-retired');
         const paused = await snapshotState('paused');
         need(paused.pause === true && Number.isFinite(paused['time-pos']), 'app-between-seek-pause');
-        const pausedHash = await decoded(null, performance.now(), owner);
+        const pausedCaptureAfter=performance.now(),pausedHash = await decoded(null, pausedCaptureAfter, owner);
         need(owned(), 'app-preview-owner-retired');
         const stillPaused = await controlClient.getProperty('pause',1000);
         need(owned() && stillPaused === true, 'app-between-seek-pause');
         mark('seek-failure-control-paused-frame', {generation:owner.generationId,hash:pausedHash});
+        await auditPhase('paused-target',owner,pausedCaptureAfter);need(owned(),'app-preview-owner-retired');
         need(owned(), 'app-preview-owner-retired');
         await evalCode(contract.rendererAction('unpause'));
         need(owned(), 'app-preview-owner-retired');
@@ -271,9 +392,10 @@ async function main() {
           const position = await controlClient.getProperty('time-pos',1000);need(owned(), 'app-preview-owner-retired');
           return pause === false && position > paused['time-pos'] + .25;
         }, 'app-seek-no-resume');
-        const hash = await decoded(null, performance.now(), owner);
+        const resumedCaptureAfter=performance.now(),hash = await decoded(null, resumedCaptureAfter, owner);
         await snapshotState('resumed');
         mark('seek-failure-control-frame', {generation: owner.generationId, hash, changedFromPaused: hash !== pausedHash});
+        await auditPhase('resumed',owner,resumedCaptureAfter);need(owned(),'app-preview-owner-retired');
       } catch (error) {mark('seek-failure-control-error', {code: contract.failureCode(error,'app-worker-failed')});}
       finally {
         if (owned()) {
@@ -320,7 +442,8 @@ async function main() {
     await until(async () => client && await client.getProperty('time-pos', 1000) >= contract.TARGETS['cached-seek'] + 1, 'app-initial-position');
     await evalCode(contract.rendererAction('pause'));
     await until(async () => client && await client.getProperty('pause', 1000) === true, 'app-initial-pause');
-    await decoded(null, performance.now()); mark('initial-paused-frame');
+    const referenceAfter=performance.now();await decoded(null, referenceAfter); mark('initial-paused-frame');
+    await auditPhase('reference',{endpointId:endpoint,generationId:generation},referenceAfter);
     if (task.arm === 'B') await until(async () => {const s = await snapshot(); return s.span?.end >= contract.LIMITS.prefixBytes;}, 'app-prefix-coverage-missing', 10000);
     for (const scenario of contract.SCENARIOS.slice(1)) {
       const target = contract.TARGETS[scenario];
@@ -331,9 +454,19 @@ async function main() {
         await until(() => (signals = previewEvidence.seekSignals(events, start, owner, target)), 'app-seek-position-restart');
         mark('seek-native-confirmed', {scenario, generation: owner, positionAt: signals.positionAt - started, restartAt: signals.restartAt - started});
         const nextHash = await decoded(previousHash, signals.after, frameOwner); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
+        if(scenario==='cached-seek')await auditPhase('paused-target',frameOwner,signals.after);
+        active();
+        need(endpoint===frameOwner.endpointId&&client.currentGenerationId===owner&&service.isPreviewOwner(frameOwner),'app-preview-owner-retired');
+        const resumedAfter=performance.now();
         await evalCode(contract.rendererAction('unpause'));
         const at = await client.getProperty('time-pos', 1000);
         await until(async () => (await client.getProperty('time-pos', 1000)) > at + 0.05, 'app-seek-no-resume');
+        if(scenario==='cached-seek'&&pixelAudit){
+          if(lastAuditableFrame?.requestedAt>=resumedAfter)await auditPhase('resumed',frameOwner,resumedAfter);
+          else mark('pixel-stage-unavailable',{phase:'resumed',reason:'no-fresh-passive-frame-normal-path-preserved'});
+        }
+        active();
+        need(endpoint===frameOwner.endpointId&&client.currentGenerationId===owner&&service.isPreviewOwner(frameOwner),'app-preview-owner-retired');
         await evalCode(contract.rendererAction('pause'));
       }, async () => {
         await until(async () => client && await client.getProperty('pause', 1000) === true, 'app-between-seek-pause');
@@ -369,11 +502,16 @@ async function main() {
   } catch (error) {contract.recordTerminalFailure(report, error);}
   finally {
     clearTimeout(timeout); clearInterval(sampling); retired = true;
+    lastAuditableFrame = null;
     for (const scenario of contract.SCENARIOS) if (!report.samples.some(row => row.scenario === scenario)) report.samples.push({
       scenario, pair: task.pair, arm: task.arm, status: 'FAIL', latencyMs: null,
       sourceBodyBytes: 0, overlapBodyBytes: 0, peakRssBytes: peakRss, peakDiskBytes: peakDisk});
     report.samples.sort((a,b)=>contract.SCENARIOS.indexOf(a.scenario)-contract.SCENARIOS.indexOf(b.scenario));
     const finalize = () => {
+      report.pixelAuditFiles=pixelAudit?pixelAudit.files():[];
+      report.pixelAuditAssessment=!pixelAudit?'DISABLED_MATRIX':previewAuditPhases.size===3?'THREE_PREVIEW_PHASES_WINDOW_OPTIONAL':'PARTIAL';
+      report.pixelAuditLatencyScope=pixelAudit?'ENTRY_DIAGNOSTIC_INCLUDES_CAPTURE_IO_NOT_PERFORMANCE':'NONE';
+      report.pixelWindowIntervention=pixelAudit?'ONLY_AFTER_ORIGINAL_SAMPLE_FAILURE;WM_PRINT_MAY_TRIGGER_PAINT':'NONE';
       report.code ||= report.firstFailure?.code;
       report.nativeHelperStarted = clientList.length > 0;
       report.helperOperationErrors = clientList.map(c => ({count: c.operationErrors.length, rows: previewEvidence.operationFacts(c.operationErrors)}));
