@@ -87,7 +87,7 @@ async function createCache(config, dependencies = {}) {
     const policy = selection(config), timeoutMs = config.timeoutMs ?? 30000;
     if (!positive(timeoutMs) || timeoutMs > 30000) throw error('cache-unavailable');
     const records = new Set(), openings = new Set();
-    let manager, managerPromise, managerBytes, resetting, closed = false, closing;
+    let manager, managerPromise, managerBytes, resetting, closed = false, closing, backendClosed = false, backendFailed = false;
     let pendingUncachedIntent;
     let unavailable = false;
     const factory = dependencies.createStore || (value => require('./store').createStore(value));
@@ -115,7 +115,7 @@ async function createCache(config, dependencies = {}) {
         if (managerBytes !== undefined && managerBytes !== currentBytes) {
             if (records.size > 1) throw error('cache-unavailable');
             resetting = Promise.resolve(managerPromise).then(value => value.proxy.close()).finally(() => {
-                manager = managerPromise = managerBytes = undefined; resetting = undefined;
+                manager = managerPromise = managerBytes = undefined; resetting = undefined; backendFailed = false;
             });
             resetting.catch(() => {unavailable = true;});
             throw error('cache-unavailable');
@@ -139,7 +139,7 @@ async function createCache(config, dependencies = {}) {
                 return {url: value.source, origin: value.origin, userAgent: value.userAgent, expectedSize: value.expectedSize};
             }
         }).then(proxy => (manager = {store, proxy})).catch(async () => {
-            unavailable = true; await store.close(); throw error('cache-unavailable');
+            backendFailed = true; unavailable = true; await store.close(); throw error('cache-unavailable');
         });
         managerPromise.catch(() => {});
         return managerPromise;
@@ -274,7 +274,10 @@ async function createCache(config, dependencies = {}) {
         },
         status() {
             const status = manager?.store.status();
-            return {bytes: status?.committed || 0, currentBytes: status?.current || 0, nextBytes: status?.next || 0,
+            // Backend readiness conveys no media authorization or body hit.
+            const backendState = backendClosed ? 'closed' : closed ? 'closing' : backendFailed || status?.faulted ? 'failed' :
+                resetting || managerPromise && (!manager || status?.initializing) ? 'initializing' : manager ? 'ready' : 'idle';
+            return {backendState, bytes: status?.committed || 0, currentBytes: status?.current || 0, nextBytes: status?.next || 0,
                 maxBytes: (managerBytes || 0) + policy.prefetchBytes, routes: records.size,
                 initializing: !!status?.initializing, unavailable: unavailable || !!status?.faulted || !!resetting,
                 confidence: 'metadata-assumed-unless-strong-validator'};
@@ -288,6 +291,7 @@ async function createCache(config, dependencies = {}) {
                 await Promise.allSettled([...records].map(record => record.handle?.stop()));
                 if (resetting) await resetting;
                 if (managerPromise) await (await managerPromise).proxy.close();
+                backendClosed = true;
             })();
             return closing;
         }
