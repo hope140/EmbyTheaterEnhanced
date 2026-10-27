@@ -8,6 +8,7 @@ const contract = require('./app-performance-contract.cjs'), fixed = require('./w
 const smoke = require('./windows-smoke.cjs');
 const previewEvidence = require('./app-preview-observer.cjs');
 const fixtureEvidence = require('./fixture-frame-evidence.cjs');
+const fixtureColor = require('./fixture-color-profile.cjs');
 const need = (value, code) => {if (!value) throw Error(code);};
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function main() {
@@ -32,7 +33,7 @@ async function main() {
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
-  let lastAuditableFrame = null, lastFixtureEvidence = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
+  let lastAuditableFrame = null, lastFixtureEvidence = null, frameColorProfile = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
   const previewAuditPhases = new Set(), carrierAuditPhases = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
   // Entry evidence only: never enable image I/O in the timed matrix.
@@ -43,13 +44,9 @@ async function main() {
       return image.toPNG();
     }}) : null;
   let scenario = 'startup';
-  const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: frame => {
-    let evidence;
-    try{evidence=fixtureEvidence.analyze(frame,{item:'A'});}catch(_){return false;}
-    lastFixtureEvidence={hash:crypto.createHash('sha256').update(frame.pixels).digest('hex'),evidence};
-    mark('fixture-preview-evidence',{generation:frame.owner?.generationId??null,...evidence});
-    return evidence.matches.some(row=>row.item==='A');
-  },
+  // This observer proves only freshness/chroma. Full pixels and the independently
+  // selected color model are checked in decoded(), never accepted on this alone.
+  const preview = previewEvidence.createPreviewObserver({now: () => performance.now(), colored: smoke.coloredFrame,
     current: owner => !!service && owner.endpointId === endpoint && owner.generationId === client?.currentGenerationId && service.isPreviewOwner(owner),
     observe: row => mark('preview-observation', {...row, requestedAt: row.requestedAt - started, resolvedAt: row.resolvedAt - started, scenario})});
   function active() {need(!retired && performance.now() < deadline, 'app-worker-deadline');}
@@ -116,6 +113,7 @@ async function main() {
       generation = this.currentGenerationId;
       lastAuditableFrame = null;
       lastFixtureEvidence = null;
+      frameColorProfile = null;
       mark('native-load', {generation, proxied: selected.proxied});
       return super.load(values);
     }
@@ -162,10 +160,11 @@ async function main() {
     service = value;
     restores.push(preview.install(value));
     tap(value,'capturePreview',(frame,_values,requestedAt)=>{
-      if (!pixelAudit || retired || performance.now()>=deadline || !frame || !Buffer.isBuffer(frame.pixels) ||
+      if (retired || performance.now()>=deadline || !frame || !Buffer.isBuffer(frame.pixels) ||
         !Number.isInteger(frame.width)||frame.width<1||frame.width>160||!Number.isInteger(frame.height)||frame.height<1||frame.height>90||frame.pixels.length!==frame.width*frame.height*4||
         !value.isPreviewOwner(frame.owner) || lastAuditableFrame && requestedAt < lastAuditableFrame.requestedAt) return;
-      // One bounded diagnostic frame, never a media buffer or frame history.
+      // One bounded frame for validation in both modes, never a media buffer or
+      // history. PNG/window I/O remains disabled in the timed matrix.
       lastAuditableFrame = {width:frame.width,height:frame.height,pixels:Buffer.from(frame.pixels),owner:{...frame.owner},
         requestedAt,resolvedAt:performance.now()};
     });
@@ -250,15 +249,31 @@ async function main() {
       await until(async () => {
         if (!service || !endpoint || !client?.currentGenerationId) return false;
         need(endpoint === owner.endpointId && client.currentGenerationId === owner.generationId && service.isPreviewOwner(owner), 'app-preview-owner-retired');
-        const accepted = () => {
+        const accepted = async () => {
           result=preview.frame(owner,after,previousHash,frameDeadline);
-          if(!result||!lastFixtureEvidence||lastFixtureEvidence.hash!==result.hash)return false;
+          const pixels=lastAuditableFrame,activeClient=client;
+          if(!result||!pixels||pixels.owner.endpointId!==owner.endpointId||pixels.owner.generationId!==owner.generationId||
+            crypto.createHash('sha256').update(pixels.pixels).digest('hex')!==result.hash)return false;
+          if(!frameColorProfile){
+            const profile=await fixtureColor.readProfile(activeClient);
+            need(!retired&&client===activeClient&&endpoint===owner.endpointId&&activeClient.currentGenerationId===owner.generationId&&service.isPreviewOwner(owner),'app-preview-owner-retired');
+            if(performance.now()>=frameDeadline){mark('fixture-color-profile-late',{generation:owner.generationId});return false;}
+            mark('fixture-color-profile',{generation:owner.generationId,...profile});
+            need(profile.supported,'app-fixture-color-profile-unavailable');
+            frameColorProfile=profile;
+          }
+          if(performance.now()>=frameDeadline)return false;
+          if(!lastFixtureEvidence||lastFixtureEvidence.hash!==result.hash){
+            const evidence=fixtureEvidence.analyze(pixels,{item:'A',colorModel:frameColorProfile.model});
+            lastFixtureEvidence={hash:result.hash,evidence};mark('fixture-preview-evidence',{generation:owner.generationId,...evidence});
+          }
+          if(!lastFixtureEvidence.evidence.matches.some(row=>row.item==='A'))return false;
           return targetSeconds===null||lastFixtureEvidence.evidence.matches.some(row=>row.item==='A'&&Math.abs(row.frameIndex-targetSeconds*plan.fixture.media.A.fps)<=1);
         };
-        if (accepted()) return true;
+        if (await accepted()) return true;
         if (preview.probeDue()) await service.capturePreview(owner);
         need(endpoint === owner.endpointId && client.currentGenerationId === owner.generationId && service.isPreviewOwner(owner), 'app-preview-owner-retired');
-        return accepted();
+        return await accepted();
       }, 'app-decoded-frame-missing');
       lastFrameHash = result.hash; return lastFrameHash;
     }
@@ -525,6 +540,7 @@ async function main() {
     clearTimeout(timeout); clearInterval(sampling); retired = true;
     lastAuditableFrame = null;
     lastFixtureEvidence = null;
+    frameColorProfile = null;
     for (const scenario of contract.SCENARIOS) if (!report.samples.some(row => row.scenario === scenario)) report.samples.push({
       scenario, pair: task.pair, arm: task.arm, status: 'FAIL', latencyMs: null,
       sourceBodyBytes: 0, overlapBodyBytes: 0, peakRssBytes: peakRss, peakDiskBytes: peakDisk});

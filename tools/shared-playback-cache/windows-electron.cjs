@@ -472,13 +472,27 @@ async function main() {
     need(load.proxied === (phase !== 'baseline'), 'worker-shared-not-selected');
     receipt.checks.trustedProof = trace.some(row => row.type === 'resolved' && row.proofPresent);
     need(receipt.checks.trustedProof, 'worker-proof-missing');
+    let frameColorProfile=null;
     async function frame(item, targetSeconds = null) {
       let result,evidence;
+      const frameDeadline=now()+5000;
       await waitFor(async () => {
         if (currentItem !== item || !activeEndpoint || !lastGeneration) return false;
-        result = await service.capturePreview({endpointId: activeEndpoint, generationId: lastGeneration});
+        const owner={endpointId:activeEndpoint,generationId:lastGeneration},frameClient=clients.at(-1);
+        const owned=()=>currentItem===item&&activeEndpoint===owner.endpointId&&lastGeneration===owner.generationId&&clients.at(-1)===frameClient&&service.isPreviewOwner(owner);
+        result = await service.capturePreview(owner);
+        if(!owned())return false;
         if(!driver.coloredFrame(result))return false;
-        try{evidence=require('./fixture-frame-evidence.cjs').analyze(result,{item});}catch(_){return false;}
+        if(frameColorProfile?.generation!==owner.generationId||frameColorProfile?.client!==frameClient||frameColorProfile?.endpoint!==owner.endpointId){
+          const profile=await require('./fixture-color-profile.cjs').readProfile(frameClient);active();
+          need(owned(),'worker-fixture-owner-retired');
+          if(now()>=frameDeadline)return false;
+          (receipt.colorProfiles||=[]).push({generation:owner.generationId,...profile});
+          need(profile.supported,'worker-fixture-color-profile-unavailable');
+          frameColorProfile={generation:owner.generationId,client:frameClient,endpoint:owner.endpointId,...profile};
+        }
+        if(now()>=frameDeadline)return false;
+        try{evidence=require('./fixture-frame-evidence.cjs').analyze(result,{item,colorModel:frameColorProfile.model});}catch(_){return false;}
         return evidence.matches.some(row=>row.item===item&&(targetSeconds===null||Math.abs(row.frameIndex-targetSeconds*plan.fixture.media[item].fps)<=1));
       }, 'worker-decoded-frame-missing', 5000);
       return {width: result.width, height: result.height, sha256: sha(result.pixels),fixtureEvidence:evidence};

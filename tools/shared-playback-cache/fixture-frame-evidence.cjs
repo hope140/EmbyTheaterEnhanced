@@ -5,6 +5,8 @@ const MAX_MEAN_ABS_RGB_DIFF=2;
 const ITEMS=Object.freeze({A:65,B:66});
 const DEFAULT_FRAMES=Object.freeze(Array.from({length:MAX_FRAMES},(_,index)=>index));
 const PALETTE=Object.freeze(Array.from({length:256},(_,i)=>Object.freeze({b:i,g:(i*3)&255,r:(i*7)&255})));
+const colorProfile=require('./fixture-color-profile.cjs');
+const TRANSFER_PALETTE=Object.freeze(PALETTE.map(color=>Object.freeze(Object.fromEntries(Object.entries(color).map(([key,byte])=>[key,colorProfile.value(byte,colorProfile.MODEL)])))));
 const samplePoints=Object.freeze([[0,0],[PREVIEW_WIDTH-1,0],[0,PREVIEW_HEIGHT-1],
   [PREVIEW_WIDTH-1,PREVIEW_HEIGHT-1],[Math.floor(PREVIEW_WIDTH/2),Math.floor(PREVIEW_HEIGHT/2)]]);
 const need=(value,code)=>{if(!value)throw Error('fixture-frame-'+code);};
@@ -28,7 +30,8 @@ function paletteIndex(item,frameIndex,x,y,offsetX=0,offsetY=0){
   const bottomUpY=HEIGHT-1-sourceTopY;
   return (frameIndex*19+sourceX+bottomUpY*11+ITEMS[item])&255;
 }
-function expectedColor(item,frameIndex,x,y,offsetX=0,offsetY=0){return PALETTE[paletteIndex(item,frameIndex,x,y,offsetX,offsetY)];}
+function expectedColor(item,frameIndex,x,y,model='identity'){return (model==='identity'?PALETTE:TRANSFER_PALETTE)[paletteIndex(item,frameIndex,x,y)];}
+function validateModel(model){need(model==='identity'||model===colorProfile.MODEL,'color-model-invalid');}
 function renderExpected(item,frameIndex){
   validateItem(item);need(Number.isInteger(frameIndex)&&frameIndex>=0&&frameIndex<MAX_FRAMES,'frame-index-invalid');
   const pixels=Buffer.alloc(PREVIEW_WIDTH*PREVIEW_HEIGHT*4);
@@ -38,48 +41,48 @@ function renderExpected(item,frameIndex){
   }
   return {width:PREVIEW_WIDTH,height:PREVIEW_HEIGHT,pixels};
 }
-function sampleDiff(frame,item,frameIndex){
+function sampleDiff(frame,item,frameIndex,model){
   let sum=0;
   for(const [x,y] of samplePoints){
-    const p=(y*PREVIEW_WIDTH+x)*4,color=expectedColor(item,frameIndex,x,y);
+    const p=(y*PREVIEW_WIDTH+x)*4,color=expectedColor(item,frameIndex,x,y,model);
     sum+=Math.abs(frame.pixels[p]-color.b)+Math.abs(frame.pixels[p+1]-color.g)+Math.abs(frame.pixels[p+2]-color.r);
   }
   return sum/(samplePoints.length*3);
 }
-function fullDiff(frame,item,frameIndex){
+function fullDiff(frame,item,frameIndex,model){
   let sum=0;
   for(let y=0;y<PREVIEW_HEIGHT;y++)for(let x=0;x<PREVIEW_WIDTH;x++){
-    const p=(y*PREVIEW_WIDTH+x)*4,color=expectedColor(item,frameIndex,x,y);
+    const p=(y*PREVIEW_WIDTH+x)*4,color=expectedColor(item,frameIndex,x,y,model);
     sum+=Math.abs(frame.pixels[p]-color.b)+Math.abs(frame.pixels[p+1]-color.g)+Math.abs(frame.pixels[p+2]-color.r);
   }
   return sum/(PREVIEW_WIDTH*PREVIEW_HEIGHT*3);
 }
-function candidates(frame,indices,items){
+function candidates(frame,indices,items,model){
   const rows=[];
   for(const item of items)for(const frameIndex of indices){
-    const sampleMeanAbsDiff=sampleDiff(frame,item,frameIndex);
+    const sampleMeanAbsDiff=sampleDiff(frame,item,frameIndex,model);
     if(sampleMeanAbsDiff>MAX_MEAN_ABS_RGB_DIFF)continue;
-    const meanAbsRGBDiff=fullDiff(frame,item,frameIndex);
+    const meanAbsRGBDiff=fullDiff(frame,item,frameIndex,model);
     if(meanAbsRGBDiff<=MAX_MEAN_ABS_RGB_DIFF)rows.push({item,frameIndex,meanAbsRGBDiff,sampleMeanAbsDiff});
   }
   return rows.sort((a,b)=>a.meanAbsRGBDiff-b.meanAbsRGBDiff||a.item.localeCompare(b.item)||a.frameIndex-b.frameIndex);
 }
 
 // This matches only the fixed palette pattern. It does not establish a media PTS or decoder timestamp.
-function sampleColorPredicate(frame,{item,frameIndices}={}){
-  need(validFrame(frame),'frame-invalid');validateItem(item);const indices=validateFrames(frameIndices);
+function sampleColorPredicate(frame,{item,frameIndices,colorModel='identity'}={}){
+  need(validFrame(frame),'frame-invalid');validateItem(item);validateModel(colorModel);const indices=validateFrames(frameIndices);
   const matches=[];
   for(const frameIndex of indices){
-    const meanAbsRGBDiff=sampleDiff(frame,item,frameIndex);
+    const meanAbsRGBDiff=sampleDiff(frame,item,frameIndex,colorModel);
     if(meanAbsRGBDiff<=MAX_MEAN_ABS_RGB_DIFF)matches.push({frameIndex,meanAbsRGBDiff});
   }
-  return {matched:matches.length>0,item,matches,threshold:MAX_MEAN_ABS_RGB_DIFF,basis:'five-sample-palette-pattern-only'};
+  return {matched:matches.length>0,item,matches,colorModel,threshold:MAX_MEAN_ABS_RGB_DIFF,basis:'five-sample-palette-pattern-only'};
 }
 
-function analyze(frame,{item,frameIndices}={}){
-  need(validFrame(frame),'frame-invalid');validateItem(item);
+function analyze(frame,{item,frameIndices,colorModel='identity'}={}){
+  need(validFrame(frame),'frame-invalid');validateItem(item);validateModel(colorModel);
   const targetIndices=frameIndices===undefined?null:validateFrames(frameIndices);
-  const all=candidates(frame,DEFAULT_FRAMES,Object.keys(ITEMS));
+  const all=candidates(frame,DEFAULT_FRAMES,Object.keys(ITEMS),colorModel);
   const expected=all.filter(row=>row.item===item);
   let targetOffsetFrames=null,targetHit=null;
   if(targetIndices){
@@ -94,7 +97,7 @@ function analyze(frame,{item,frameIndices}={}){
   const classification=all.length===0?'unmatched':expected.length===0?'wrong-item':
     targetIndices&&!targetHit?'wrong-target':all.length>1?'ambiguous':'match';
   const frameNumbers=[...new Set(all.map(row=>row.frameIndex))].sort((a,b)=>a-b);
-  return {classification,knownFixtureMatch:all.length>0,item,matchedFrameIndices:frameNumbers,
+  return {classification,knownFixtureMatch:all.length>0,item,colorModel,matchedFrameIndices:frameNumbers,
     matches:all.map(row=>({...row})),meanAbsRGBDiff:all[0]?.meanAbsRGBDiff??null,targetHit,
     targetOffsetFrames,ambiguous:all.length>1,threshold:MAX_MEAN_ABS_RGB_DIFF,ptsConfirmed:false,
     basis:'fixed-top-left-nearest-2x-palette-pattern-only'};
