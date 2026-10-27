@@ -90,6 +90,47 @@ function loadPlayer(refresh = {}) {
     setSubtitleAppearance(value) { subtitleAppearance = value; }};
 }
 
+function loadVendorSubtitleSettings(preferences) {
+  const vendorSource = fs.readFileSync(path.join(__dirname, '..', 'vendor/web-snapshot/www/modules/common/usersettings/usersettingsbuilder.js'), 'utf8');
+  let factory;
+  vm.runInNewContext(vendorSource, {define: (dependencies, callback) => {factory = callback;}});
+  assert.equal(typeof factory, 'function');
+  const exports = {};
+  factory(exports, {default: {get: name => preferences[name] ?? null, set() {}}}, {default: {trigger() {}}});
+  const settings = new exports.default();
+  settings.currentUserId = 'fixture-user';
+  return settings;
+}
+
+test('real vendor subtitle defaults map transparent and preserve configured hex alpha in native player options', async () => {
+  const {instance, captured, setSubtitleAppearance} = loadPlayer();
+  const vendor = loadVendorSubtitleSettings({});
+  const options = {item: {MediaType: 'video', Type: 'Movie', Path: 'fixture.mkv'}, mediaType: 'video',
+    mediaSource: {Path: 'fixture.mkv', RunTimeTicks: 10000000, MediaStreams: []}, url: 'fixture.mkv',
+    playMethod: 'DirectPlay', startPositionTicks: 0, _etePlayRequestId: 1};
+
+  const defaults = vendor.getSubtitleAppearanceSettings();
+  assert.equal(defaults.textBackground, 'transparent');
+  assert.equal(defaults.textBackgroundOpacity, '1');
+  setSubtitleAppearance(defaults);
+  await instance.play(options);
+  assert.equal(captured()[0]['sub-back-color'], '0/0/0/0');
+
+  const alphaZero = loadVendorSubtitleSettings({localplayersubtitleappearance3: JSON.stringify({
+    textBackground: '#123456', textBackgroundOpacity: '0'
+  })}).getSubtitleAppearanceSettings();
+  setSubtitleAppearance(alphaZero);
+  await instance.play({...options, _etePlayRequestId: 2});
+  assert.equal(captured()[1]['sub-back-color'], '0.07058823529411765/0.20392156862745098/0.33725490196078434/0');
+
+  const configuredAlpha = loadVendorSubtitleSettings({localplayersubtitleappearance3: JSON.stringify({
+    textBackground: '#123456', textBackgroundOpacity: '0.5'
+  })}).getSubtitleAppearanceSettings();
+  setSubtitleAppearance(configuredAlpha);
+  await instance.play({...options, _etePlayRequestId: 3});
+  assert.equal(captured()[2]['sub-back-color'], '0.07058823529411765/0.20392156862745098/0.33725490196078434/0.5');
+});
+
 test('full AMD player assembles current video/audio settings from exact keys on consecutive Plays', async () => {
   const {instance, settings, captured, setSubtitleAppearance} = loadPlayer();
   settings.set('mpv-hwdec', 'unset');
