@@ -33,6 +33,7 @@ async function main() {
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyUrls = new Set();
+  let storeBootstrap = null;
   let lastAuditableFrame = null, lastFixtureEvidence = null, frameColorProfile = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
   const previewAuditPhases = new Set(), carrierAuditPhases = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 2048) report.observations.push({type, at: performance.now() - started, ...data}); else observationErrors++;};
@@ -106,6 +107,21 @@ async function main() {
       if (handle && typeof handle.ready === 'function') tap(handle, 'ready', () => {}, 'proxy-ready');
     }, 'proxy-open');
   }, 'proxy-create');
+  // Observe only the exact, manifest-bound bootstrap source and its owned
+  // lexical I/O. Source bytes and product fs/guard operations stay unchanged.
+  const storeModule = get('enhanced/shared-playback-cache/store');
+  const physicalFs = fixed.selectPhysicalFs(), manifestBytes = physicalFs.readFileSync(path.join(plan.runtime, 'build-manifest.json'));
+  need(crypto.createHash('sha256').update(manifestBytes).digest('hex') === plan.identity.manifestSha256, 'app-observer-target');
+  const storeMember = 'electronapp/enhanced/shared-playback-cache/store.js';
+  const storeRow = JSON.parse(manifestBytes).files.find(row => row.path === storeMember);
+  need(storeRow && /^[a-f0-9]{64}$/i.test(storeRow.sha256), 'app-observer-target');
+  const storeFilename = path.join(plan.runtime, storeMember);
+  storeBootstrap = require('./store-bootstrap-observer.cjs').install({target: storeModule, filename: storeFilename,
+    source: physicalFs.readFileSync(storeFilename), expectedSha256: storeRow.sha256,
+    root: path.join(profile, 'userdata/shared-playback-byte-cache-v2'),
+    context: () => ({generation: client?.currentGenerationId}), now: () => performance.now() - started,
+    emit: row => mark('store-bootstrap', row), onFailure: () => {observationErrors++;}});
+  restores.push(() => storeBootstrap.restore());
   tap(get('enhanced/shared-playback-cache/store'), 'createStore', store => {
     cacheStore = store;
     tap(store, 'open', (key, values) => {if (contract.isMediaA(values[0], plan.sources.origin)) {cacheKey = key; storeKeys.add(key);}}, 'store-open');
@@ -609,6 +625,8 @@ async function main() {
       if (!report.ownedHelpersClosed || observationErrors || report.status === 'PASS' && clientList.length !== 1) report.status = 'FAIL';
       report.observationErrors = observationErrors; report.durationMs = performance.now() - started;
       for (const restore of restores.reverse()) {try {restore();} catch (_) {report.status = 'FAIL'; report.restoreFailure = true;}}
+      report.storeInitialization = storeBootstrap?.snapshot() || null;
+      if (report.storeInitialization && (report.storeInitialization.pendingCreates || report.storeInitialization.observerErrors || report.storeInitialization.dropped)) report.status = 'FAIL';
       fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
       console.log('SHARED_CACHE_APP_CASE ' + JSON.stringify({index, status: report.status, code: report.code || null, sampleCount: report.samples.length, ownedHelpersClosed: report.ownedHelpersClosed}));
     };
