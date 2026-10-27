@@ -3,7 +3,10 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {Writable}=require('node:stream');
 const c=require('../tools/shared-playback-cache/layered-protocol.cjs'),runner=require('../tools/shared-playback-cache/layered-runner.cjs');
 const evidence=require('../tools/shared-playback-cache/fixture-frame-evidence.cjs'),color=require('../tools/shared-playback-cache/fixture-color-profile.cjs');
-const product='c'.repeat(40),tool='d'.repeat(40),worker=fs.readFileSync(require.resolve('../tools/shared-playback-cache/layered-electron.cjs'),'utf8');
+const product='c'.repeat(40),tool='d'.repeat(40);
+const workerGitBytes=require('node:child_process').execFileSync('git',['show','HEAD:tools/shared-playback-cache/layered-electron.cjs'],{cwd:path.join(__dirname,'..')});
+function canonicalWorker(bytes){require('../tools/shared-playback-cache/windows-smoke.cjs').boundToolBytes(workerGitBytes,bytes);return bytes.toString('utf8').replace(/\r\n/g,'\n');}
+const worker=canonicalWorker(fs.readFileSync(require.resolve('../tools/shared-playback-cache/layered-electron.cjs')));
 const oldFiles=['app-performance-electron.cjs','app-performance-runner.cjs','app-performance-contract.cjs','app-performance-metrics.cjs','windows-contract.cjs','windows-ci.ps1','windows-ci-root.cjs'];
 function owner(helper='h1',generationId=131,endpointId='endpoint-1'){return{helper,generationId,endpointId};}
 const cache=new Map();
@@ -163,4 +166,10 @@ test('frozen tool comparison permits only exact LF or full CRLF checkout and rej
  const bound=require('../tools/shared-playback-cache/windows-smoke.cjs').boundToolBytes,blob=Buffer.from("const marker='fixed';\nconst gate=2;\n"),crlf=Buffer.from(blob.toString().replace(/\n/g,'\r\n'));
  assert.doesNotThrow(()=>bound(blob,blob));assert.doesNotThrow(()=>bound(blob,crlf));
  for(const value of [Buffer.concat([Buffer.from([239,187,191]),blob]),Buffer.from("const marker='fixed';\r\nconst gate=2;\n"),Buffer.from(blob.toString().replace('gate=2','gate=3'))])assert.throws(()=>bound(blob,value));
+});
+
+test('real worker extraction remains identical under exact CRLF checkout and refuses other source transformations',()=>{
+ const crlf=Buffer.from(workerGitBytes.toString('utf8').replace(/\n/g,'\r\n'));assert.equal(canonicalWorker(crlf),worker);
+ const start=canonicalWorker(crlf).indexOf('    request(method, params, options)'),end=canonicalWorker(crlf).indexOf('\n  }\n  native.NativeHelperClient',start);assert(start>=0&&end>start);
+ for(const bytes of [Buffer.concat([Buffer.from([239,187,191]),workerGitBytes]),Buffer.from(workerGitBytes.toString().replace('    request(method, params, options)','    request(other, params, options)')),Buffer.from(workerGitBytes.toString().replace('\n','\r\n'))])assert.throws(()=>canonicalWorker(bytes));
 });
