@@ -167,11 +167,16 @@ async function createCache(config, dependencies = {}) {
                     : ['loadfile', options.source, 'replace', '-1', 'user-agent=' + initial.userAgent];
                 if (!record.transport.matchesLoadOptions(load)) throw error('source-proof-invalid');
                 record.total = initial.expectedSize;
+                // Recover the owned backend within this same selection, while
+                // the fresh probe is pending. No route/key or body is admitted
+                // until that probe succeeds; close still owns late recovery.
+                const preparing = ensure(options.currentBytes);
+                preparing.catch(() => {});
                 const metadata = await probe(initial, record.signal, timeoutMs);
                 guard(record);
                 record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
                     metadata, accessChecked: true};
-                const owned = await ensure(options.currentBytes);
+                const owned = await preparing;
                 guard(record);
                 const route = await owned.proxy.open(identity, 'next');
                 record.route = route;
