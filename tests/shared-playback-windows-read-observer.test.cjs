@@ -12,6 +12,22 @@ const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache
 const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const fixture = require('../tools/shared-playback-cache/fixture.cjs');
 
+function observedFixtureRoot(prefix, allocate=temporaryRoot) {return allocate(prefix,['']);}
+async function setupStage(stage, operation, diagnostic=()=>{}) {
+  diagnostic(JSON.stringify({type:'read-observer-setup',stage,state:'begin'}));
+  try {const value=await operation();diagnostic(JSON.stringify({type:'read-observer-setup',stage,state:'ready'}));return value;}
+  catch(error){diagnostic(JSON.stringify({type:'read-observer-setup',stage,state:'failed',
+    code:['EACCES','EADDRINUSE'].includes(error?.code)?error.code:'other',
+    port:Number.isInteger(error?.port)&&error.port>0&&error.port<=65535?error.port:null}));throw error;}
+}
+async function cleanupReadFixture({proxy,origin,store,observer},remove) {
+  const outcomes=await Promise.allSettled([()=>proxy?.close(),()=>origin?.close()].map(action=>Promise.resolve().then(action)));
+  outcomes.push(...await Promise.allSettled([()=>store?.close(),()=>observer?.restore()].map(action=>Promise.resolve().then(action))));
+  outcomes.push(...await Promise.allSettled([Promise.resolve().then(remove)]));
+  const errors=outcomes.filter(row=>row.status==='rejected');
+  if(errors.length)throw new AggregateError(errors.map(row=>row.reason),'read-observer-real-fixture-cleanup-failed');
+}
+
 const filename = path.resolve('/owned/runtime/enhanced/shared-playback-cache/proxy.js');
 const source = Buffer.from(`'use strict';
 const {performance} = require('node:perf_hooks');
@@ -247,9 +263,54 @@ test('non-15 ms timers preserve returned handle, callback receiver, and argument
   fixture.observer.restore();
 });
 
+test('read-observer root selects its real guard identity before any bind, including Windows exclusions',()=>{
+  const {guardPort,selectRoot}=require('./helpers/range-fixture-root.cjs');
+  const base=path.join(path.parse(process.cwd()).root,'owned','read-observer-fixture'),initial=guardPort(base,'win32');
+  const excluded=[{start:initial,end:initial}],calls=[];
+  const selected=observedFixtureRoot('owned-prefix',(prefix,relatives)=>{
+    calls.push({prefix,relatives});return selectRoot(base,relatives,excluded,new Set(),'win32');
+  });
+  assert.deepEqual(calls,[{prefix:'owned-prefix',relatives:['']}]);
+  assert.notEqual(selected,base);assert.notEqual(guardPort(selected,'win32'),initial);
+  assert.equal(selectRoot(base,[],excluded,new Set(),'win32'),base,'old omitted guard roots reproduce the unsafe selection without binding a denied port');
+});
+
+test('each setup listener failure preserves EACCES with one attempt and safe stage evidence',async()=>{
+  for(const label of ['store-guard','origin-listener','proxy-listener']){
+    const rows=[],denied=Object.assign(Error('private-source-path'),{code:'EACCES',port:49839});let attempts=0;
+    await assert.rejects(setupStage(label,async()=>{attempts++;throw denied;},row=>rows.push(JSON.parse(row))),error=>error===denied);
+    assert.equal(attempts,1);assert.deepEqual(rows.map(row=>row.state),['begin','failed']);
+    assert.deepEqual(rows[1],{type:'read-observer-setup',stage:label,state:'failed',code:'EACCES',port:49839});
+    assert.equal(JSON.stringify(rows).includes('private'),false);
+  }
+});
+
+test('partial read-observer setup closes its store even when proxy or observer cleanup fails',async()=>{
+  const closed=[];
+  await assert.rejects(cleanupReadFixture({proxy:{close(){closed.push('proxy');throw Error('owned-close-failed');}},
+    origin:{close(){closed.push('origin');}},store:{close(){closed.push('store');}},observer:{restore(){closed.push('observer');throw Error('owned-restore-failed');}}},
+    ()=>closed.push('remove')),error=>error instanceof AggregateError&&error.errors.length===2);
+  assert.deepEqual(closed,['proxy','origin','store','observer','remove']);
+  const storeOnly=[];await cleanupReadFixture({store:{close(){storeOnly.push('store');}}},()=>storeOnly.push('remove'));
+  assert.deepEqual(storeOnly,['store','remove']);
+});
+
+test('source fixture returns a single real listen error instead of leaving its Promise pending',async()=>{
+  const {EventEmitter}=require('node:events'),server=new EventEmitter(),denied=Object.assign(Error('private-source-path'),{code:'EACCES',port:49839});let calls=0;
+  server.listen=(port,host)=>{
+    calls++;assert.equal(port,0);assert.equal(host,'127.0.0.1');
+    assert.equal(server.listenerCount('error'),1,'the original missing error handler fails this negative control');
+    queueMicrotask(()=>server.emit('error',denied));return server;
+  };
+  const file=require.resolve('../tools/shared-playback-cache/fixture.cjs'),source=await fs.readFile(file,'utf8'),module={exports:{}};
+  new Function('require','module','exports',source)(id=>id==='node:http'?{createServer:()=>server}:require(id),module,module.exports);
+  await assert.rejects(module.exports.source({bytes:4096}),error=>error===denied);
+  assert.equal(calls,1);assert.equal(server.listenerCount('error'),0);assert.equal(server.listenerCount('listening'),0);
+});
+
 test('maintained proxy source observes a real loopback warm read with controlled bounded response timer', async t => {
   const file = require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
-  const exactSource = await fs.readFile(file), root = temporaryRoot('ete-read-observer-real-');
+  const exactSource = await fs.readFile(file), root = observedFixtureRoot('ete-read-observer-real-');
   const original = proxyModule.createProxy, events = [], pendingTimers = new Map();
   const realSetTimeout = global.setTimeout, realClearTimeout = global.clearTimeout;
   let proxy, origin, store, observer, timerId = 0, armed = 0, cleared = 0, forwarded = 0;
@@ -263,19 +324,15 @@ test('maintained proxy source observes a real loopback warm read with controlled
       return realClearTimeout(handle);
     }
   };
-  t.after(async () => {
-    const outcomes = await Promise.allSettled([proxy?.close(), origin?.close()]);
-    observer?.restore();
-    await fs.rm(root, {recursive: true, force: true});
-    const errors = outcomes.filter(row => row.status === 'rejected');
-    if (errors.length) throw new AggregateError(errors.map(row => row.reason), 'read-observer-real-fixture-cleanup-failed');
-  });
-  origin = await fixture.source({bytes: 64 * 1024, firstDelay: 0, tailDelay: 0});
-  store = await createStore({root, currentBytes: 2 * 1024 * 1024, nextBytes: 1024 * 1024});
+  t.after(()=>cleanupReadFixture({proxy,origin,store,observer},()=>fs.rm(root,{recursive:true,force:true})));
+  // Acquire the real deterministic guard first. A system-selected HTTP port
+  // must not occupy the cache's future guard while setup is still pending.
+  store = await setupStage('store-guard',()=>createStore({root, currentBytes: 2 * 1024 * 1024, nextBytes: 1024 * 1024}),row=>t.diagnostic(row));
+  origin = await setupStage('origin-listener',()=>fixture.source({bytes: 64 * 1024, firstDelay: 0, tailDelay: 0}),row=>t.diagnostic(row));
   observer = install({target: proxyModule, filename: file, source: exactSource,
     expectedSha256: sha(exactSource), timers, now: () => 0, context: () => ({item: 'B', generation: 9}),
     emit: row => events.push(row)});
-  proxy = await proxyModule.createProxy({store, authorize: async () => origin.grant(), requestPolicy: 'coherent'});
+  proxy = await setupStage('proxy-listener',()=>proxyModule.createProxy({store, authorize: async () => origin.grant(), requestPolicy: 'coherent'}),row=>t.diagnostic(row));
   const opened = await proxy.open(fixture.identity('B'));
   await opened.ready();
   const boundedGet = async signal => {
