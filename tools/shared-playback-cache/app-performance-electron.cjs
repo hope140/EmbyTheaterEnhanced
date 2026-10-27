@@ -485,9 +485,24 @@ async function main() {
       const target = contract.TARGETS[scenario];
       const measured = await measure(scenario, async () => {
         const start = events.length, owner = generation, frameOwner = {endpointId: endpoint, generationId: generation}, previousHash = lastFrameHash;
+        const seekDeadline = Math.min(deadline, performance.now() + 5000);
         await evalCode(contract.rendererAction('seek', target));
+        if (scenario !== 'cached-seek') {
+          // Source shaping only: after the real PM command, unblock at most one
+          // gap window on each PRE-EXISTING stalled response. All bytes remain
+          // measured; position/restart/new target pixels retain their deadlines.
+          active();need(endpoint===frameOwner.endpointId&&client.currentGenerationId===owner&&service.isPreviewOwner(frameOwner),'app-preview-owner-retired');
+          const response = await fetch(plan.controlOrigin + '/advance/' + index, {method:'POST',
+            signal:AbortSignal.timeout(2000),headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario})});
+          need(response.ok, 'app-seek-source-window');
+          const window = await response.json();
+          active();need(endpoint===frameOwner.endpointId&&client.currentGenerationId===owner&&service.isPreviewOwner(frameOwner),'app-preview-owner-retired');
+          need(Number.isSafeInteger(window.advancedResponses) && window.advancedResponses >= 0 &&
+            window.maxAdditionalBytesPerResponse === contract.LIMITS.gapBytes, 'app-seek-source-window');
+          mark('seek-source-window', {scenario,...window});
+        }
         let signals;
-        await until(() => (signals = previewEvidence.seekSignals(events, start, owner, target)), 'app-seek-position-restart');
+        await until(() => (signals = previewEvidence.seekSignals(events, start, owner, target)), 'app-seek-position-restart', Math.max(0,seekDeadline-performance.now()));
         mark('seek-native-confirmed', {scenario, generation: owner, positionAt: signals.positionAt - started, restartAt: signals.restartAt - started});
         const nextHash = await decoded(previousHash, signals.after, frameOwner,target); mark('seek-new-frame', {scenario, generation: owner, differentFromPrevious: nextHash !== previousHash});
         if(scenario==='cached-seek')await auditPhase('paused-target',frameOwner,signals.after);

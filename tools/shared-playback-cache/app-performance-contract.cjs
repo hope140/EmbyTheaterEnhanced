@@ -1,7 +1,9 @@
 'use strict';
 const path = require('node:path'), crypto = require('node:crypto');
 const BASE = '9492750b2b0e7b3fc81f52b51b61900209ac9aba';
-const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'uncached-seek', 'boundary-seek', 'far-seek']);
+// Test the original prefix boundary before an uncached seek can legitimately
+// finish that partial frame while unblocking the previous response.
+const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'boundary-seek', 'uncached-seek', 'far-seek']);
 const TARGETS = Object.freeze({'cached-seek': 0.5, 'uncached-seek': 8, 'boundary-seek': 3, 'far-seek': 14});
 const LIMITS = Object.freeze({warmups: 3, pairs: 20, workerMs: 90000, suiteMs: 5400000,
   // Owned RGB24 payload is 3x the old pal8 fixture. Preserve the same
@@ -94,7 +96,7 @@ const SAFE_FAILURE_CODES = new Set([
   'app-ready-dependencies', 'app-ready-entered', 'app-ready-event-missing',
   'app-ready-observer-missing', 'app-renderer-command-timeout', 'app-routes',
   'app-sample-count', 'app-sample-failed', 'app-seek-coverage-mismatch',
-  'app-seek-no-resume', 'app-seek-position-restart', 'app-session-missing',
+  'app-seek-no-resume', 'app-seek-position-restart', 'app-seek-source-window', 'app-session-missing',
   'app-shared-selection', 'app-source-observation', 'app-startup-not-ready',
   'app-windows-electron-required', 'app-worker-case', 'app-worker-deadline',
   'app-worker-deadline-argument', 'app-worker-failed', 'app-worker-preserve-lifecycle',

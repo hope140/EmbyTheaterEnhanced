@@ -117,7 +117,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   const plan={schema:1,repo,runtime,installer,installerSha256,productCommit,out,mode,cases:tasks,limits:contract.LIMITS,fixture,
     toolCommit:tools.toolCommit,tools:tools.files,identity};
   let active=-1,sources,control,controlSockets=new Set(),closed=false;
-  const observed=tasks.map(()=>({bodyBytes:0,overlapBytes:0,ranges:[],unknownRoutes:0,unexpectedMedia:0,stoppedReports:0,mediaResponses:0})), requestProbes=new Map();
+  const observed=tasks.map(()=>({bodyBytes:0,overlapBytes:0,ranges:[],unknownRoutes:0,unexpectedMedia:0,stoppedReports:0,mediaResponses:0,advances:0})), requestProbes=new Map();
   const events=[], results=[],samples=[], setupErrors=[]; const began=Date.now();
   const record=(type,data)=>{
     if(type==='media-open'&&active>=0)requestProbes.set(data.requestId,{case:active,probe:data.start===data.end});
@@ -130,23 +130,32 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
     if(type==='media-bytes'&&!ownership?.probe){state.bodyBytes+=data.length;state.overlapBytes+=intersectionLength(data.start,data.length,state.ranges);}
     if(type==='emby-fixture'&&data.category==='unknown')state.unknownRoutes++;
     if(type==='emby-fixture'&&data.category==='playing-report'&&data.phase==='stopped'&&data.item==='A')state.stoppedReports++;
-    if(events.length<8192&&type!=='media-bytes')events.push({case:owner,type,...data});
+    if(events.length<8192&&type!=='media-bytes')events.push({case:owner,type,wallClockMs:Date.now(),...data});
   };
   try {
     fixture=await fixtures.generateFixtures(path.join(out,'media'),{encoding:'uncompressed-dib-bgr24'});fixture.autoPlay=false;plan.fixture=fixture;
     sources=await fixtures.startWindowsSources({plan:fixture,record,createEmby,pacing:contract.LIMITS});
     plan.sources={origin:sources.origin,mediaOrigin:sources.mediaOrigin,cd2Endpoint:sources.cd2Endpoint};
     control=http.createServer((req,res)=>{(async()=>{
-      const match=/^\/(snapshot|window)\/(\d{1,2})$/.exec(req.url);if(!match||Number(match[2])!==active||req.headers.authorization||req.headers.cookie){res.writeHead(403).end();return;}
+      const match=/^\/(snapshot|window|advance)\/(\d{1,2})$/.exec(req.url);if(!match||Number(match[2])!==active||req.headers.authorization||req.headers.cookie){res.writeHead(403).end();return;}
       const state=observed[active];
       if(match[1]==='snapshot'&&req.method==='GET'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({bodyBytes:state.bodyBytes,overlapBytes:state.overlapBytes}));return;}
-      if(match[1]!=='window'||req.method!=='POST'){res.writeHead(405).end();return;}
+      if(!['window','advance'].includes(match[1])||req.method!=='POST'){res.writeHead(405).end();return;}
       const chunks=[];let length=0;for await(const part of req){length+=part.length;if(length>8192)throw Error('control-body');chunks.push(part);}
-      const value=JSON.parse(Buffer.concat(chunks));need(Object.keys(value).join(',')==='ranges'&&Array.isArray(value.ranges)&&value.ranges.length<=64,'control-range');
+      need(active===Number(match[2])&&observed[active]===state&&!req.aborted&&!res.destroyed,'control-retired');
+      const value=JSON.parse(Buffer.concat(chunks));
+      if(match[1]==='advance') {
+        const expected=['boundary-seek','uncached-seek','far-seek'][state.advances];
+        need(Object.keys(value).join(',')==='scenario' && expected && value.scenario===expected,'control-advance');
+        state.advances++; const result=sources.advancePaced();
+        events.push({case:active,type:'source-window-advance',wallClockMs:Date.now(),scenario:value.scenario,...result});
+        res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));return;
+      }
+      need(Object.keys(value).join(',')==='ranges'&&Array.isArray(value.ranges)&&value.ranges.length<=64,'control-range');
       for(const range of value.ranges)need(Object.keys(range).sort().join(',')==='end,start'&&Number.isSafeInteger(range.start)&&Number.isSafeInteger(range.end)&&range.start>=0&&range.end>range.start&&range.end<=fixture.media.A.size,'control-range');
       need(value.ranges.every((range,i)=>!i||value.ranges[i-1].end<=range.start),'control-range-order');
       state.ranges=value.ranges;res.writeHead(204).end();
-    })().catch(()=>res.writeHead(400).end());});
+    })().catch(()=>{if(!res.destroyed&&!res.writableEnded)res.writeHead(400).end();});});
     control.on('connection',socket=>{controlSockets.add(socket);socket.once('close',()=>controlSockets.delete(socket));});
     await new Promise((resolve,reject)=>{control.once('error',reject);control.listen(0,'127.0.0.1',resolve);});plan.controlOrigin='http://127.0.0.1:'+control.address().port;
     for(const task of tasks){
@@ -191,7 +200,8 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
       scope:'ordinary-main loopback synthetic, decoded frames; not user NAS, audio or visible presentation',
       performanceAssessment:complete?'COMPLETE_SAMPLES_NO_NEW_THRESHOLD':'NOT_ASSESSED',summary,setupErrors,
       samples,results,events,cleanup,real115Requests:0,conditions:{node:process.version,platform:process.platform,release:os.release(),cpus:os.cpus().length,
-        source:'loopback generated opaque BGR24 AVI, 48KiB/8ms, 20ms initial delay, initial response paused at6MiB; other responses paused after768KiB',
+        source:'loopback generated opaque BGR24 AVI, 48KiB/8ms, 20ms initial delay; 6MiB initial / 768KiB later windows; after each noncached real seek, one 768KiB continuation for already stalled responses only',
+        seekOrder:'cached0.5, boundary3, uncached8, far14; real coverage still asserted before each B sample; continuation/control overhead included in latency; not comparable with historical permanent-hold samples',
         fixtureContrast:'same RGB frame content and fps as historical pal8; 3x body bytes and 3x initial test window; historical latency distributions not interchangeable',
         byteScope:'actual source filesystem stream bytes, not confirmed player consumption; all1B requests excluded, including access probes; not an explicit probe classification',
         memoryScope:'sum of observed Electron working-set peak and one live owned Native lifetime PeakWorkingSet; conservative sum, not simultaneous RSS',diskScope:'maximum observed logical bytes of owned cache files including index; not filesystem allocated blocks'},durationMs:Date.now()-began};

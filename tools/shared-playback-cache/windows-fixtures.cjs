@@ -127,7 +127,7 @@ async function createMediaServer(root, files, expectedAgent, record, pacing, cre
     if (pacing) need(pacing.chunkDelayMs === 8 && pacing.firstByteDelayMs === 20 &&
       (pacing.chunkBytes===16384&&pacing.prefixBytes===2097152&&pacing.gapBytes===262144||
        pacing.chunkBytes===49152&&pacing.prefixBytes===6291456&&pacing.gapBytes===786432), 'fixture-pacing-contract');
-    const sockets = new Set(), active = new Set(), held = new Set(), closedHeld = [];
+    const sockets = new Set(), active = new Set(), held = new Set(), closedHeld = [], pacedWaiters = new Map();
     let holdNextItem = null, requestSequence = 0, openedRequests = 0;
     const snapshot = () => ({activeMediaResponses: active.size, mediaSockets: sockets.size, heldRequests: held.size, openedRequests});
     const rememberClosedHold = state => {
@@ -165,42 +165,67 @@ async function createMediaServer(root, files, expectedAgent, record, pacing, cre
             return;
         }
         const streamLimit = start < pacing?.prefixBytes ? pacing.prefixBytes : pacing?.gapBytes;
-        const streamEnd = pacing ? Math.min(end, start + streamLimit - 1) : end;
-        const stream = createReadStream(path.join(root, file.file), {start, end: streamEnd, ...(pacing ? {highWaterMark: pacing.chunkBytes} : {})});
-        stream.on('data', part => {const at = start + state.streamReadBytes; state.streamReadBytes += part.length;
-            record('media-bytes', {requestId, item: match[1], start: at, length: part.length});});
-        stream.on('error', () => res.destroy()); res.once('close', () => stream.destroy());
+        const openStream = (offset, last) => {
+            const input = createReadStream(path.join(root, file.file), {start: offset, end: last, ...(pacing ? {highWaterMark: pacing.chunkBytes} : {})});
+            input.on('data', part => {const at = start + state.streamReadBytes; state.streamReadBytes += part.length;
+                record('media-bytes', {requestId, item: match[1], start: at, length: part.length});});
+            input.on('error', () => res.destroy()); return input;
+        };
+        let stream = openStream(start, pacing ? Math.min(end, start + streamLimit - 1) : end);
+        res.once('close', () => stream.destroy());
         if (!pacing) stream.pipe(res);
         else {stream.pause(); (async () => {
             let timer, writtenBytes = 0; const requestedBytes = end-start+1;
             const closed = new Promise(resolve => res.once('close', resolve));
             const wait = ms => Promise.race([new Promise(resolve => {timer = setTimeout(resolve, ms);}), closed]).finally(() => clearTimeout(timer));
             await wait(pacing.firstByteDelayMs);
-            for await (const part of stream) {
+            while (!res.destroyed) {
+              for await (const part of stream) {
                 if (res.destroyed) break;
-                // Keep the initial forward stream bounded while allowing a real
-                // later Range/seek to request the missing body. Closing it aborts this wait.
                 const nextWritten = writtenBytes + part.length;
                 need(nextWritten <= requestedBytes, 'fixture-paced-response-overrun');
                 // End the exact short response in the same turn as its last
                 // bytes. Content-Length lets a client finish/close before an
                 // artificial post-body pacing delay would call end(). Count
                 // submitted bytes independently of source prefetch/read events.
-                if (streamEnd === end && nextWritten === requestedBytes) {
+                if (nextWritten === requestedBytes) {
                     res.end(part); writtenBytes = nextWritten; return;
                 }
                 if (!res.write(part)) await Promise.race([new Promise(resolve => res.once('drain', resolve)), closed]);
                 writtenBytes = nextWritten;
                 await wait(pacing.chunkDelayMs);
+              }
+              if (res.destroyed || writtenBytes === requestedBytes) return;
+              // A permanently stalled socket can also stall mpv's demux thread
+              // before it can execute a queued seek. The ordinary-app fixture
+              // may grant ONE bounded continuation to responses already waiting
+              // when a real seek is submitted. It never grants future requests,
+              // changes headers, fabricates EOF, or fetches the target itself.
+              record('media-paced-wait', {requestId, item: match[1], start, end, writtenBytes});
+              const granted = await new Promise(resolve => {
+                const finish = value => {res.removeListener('close', onClose); pacedWaiters.delete(state); resolve(value);};
+                const onClose = () => finish(false);
+                pacedWaiters.set(state, () => finish(true)); res.once('close', onClose);
+              });
+              if (!granted || res.destroyed) return;
+              const offset = start + writtenBytes;
+              stream = openStream(offset, Math.min(end, offset + pacing.gapBytes - 1));
             }
-            if (!res.destroyed && writtenBytes < requestedBytes) await closed;
         })().catch(() => res.destroy());}
 
     });
     server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
     return {origin: await listen(server), setHoldNext(item) {
         need(item === null || ['A', 'B', 'C'].includes(item), 'fixture-hold-item'); holdNextItem = item;
-    }, snapshot,
+    }, snapshot, advancePaced() {
+        need(!!pacing, 'fixture-pacing-contract');
+        const waiting = [...pacedWaiters.entries()];
+        for (const [state, advance] of waiting) {
+            record('media-paced-advance', {requestId: state.requestId, item: state.item, start: state.start, end: state.end,
+                maxAdditionalBytes: pacing.gapBytes}); advance();
+        }
+        return {advancedResponses: waiting.length, maxAdditionalBytesPerResponse: pacing.gapBytes};
+    },
     async releaseHeld() {
         let released = 0;
         for (const state of [...held]) {
@@ -222,7 +247,7 @@ async function createMediaServer(root, files, expectedAgent, record, pacing, cre
                 actualResponseClosed: true, latewriteacceptedbytes: 0});
         }
         return released;
-    }, async close() {await closeHttp(server, sockets); need(active.size === 0 && held.size === 0, 'fixture-live-media-response'); return snapshot();}};
+    }, async close() {await closeHttp(server, sockets); need(active.size === 0 && held.size === 0 && pacedWaiters.size === 0, 'fixture-live-media-response'); return snapshot();}};
 }
 async function createGrpcServer(mediaOrigin, files, token, record) {
     const definition = protoLoader.loadSync(PROTO, {keepCase: true, longs: String, enums: String, defaults: true, oneofs: true});
@@ -291,6 +316,7 @@ async function startWindowsSources({plan, requireUserAgent = USER_AGENT, record 
         grpcServer = await createGrpcServer(media.origin, files, 'synthetic-only-token', record);
         return {origin: emby.origin, mediaOrigin: media.origin, cd2Endpoint: grpcServer.endpoint,
             setHoldNext: item => media.setHoldNext(item), snapshot: () => media.snapshot(), releaseHeld: () => media.releaseHeld(),
+            advancePaced: () => media.advancePaced(),
             async close() {
                 if (closed) return; closed = true;
                 const results = await Promise.allSettled([emby.close(), media.close(), grpcServer.close()]);

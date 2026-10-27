@@ -1,6 +1,6 @@
 'use strict';
 
-const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'uncached-seek', 'boundary-seek', 'far-seek']);
+const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'boundary-seek', 'uncached-seek', 'far-seek']);
 const PAIRS = Object.freeze(Array.from({length: 23}, (_, index) => index - 3));
 const FIELDS = Object.freeze(['scenario', 'pair', 'arm', 'status', 'latencyMs', 'sourceBodyBytes',
   'overlapBodyBytes', 'peakRssBytes', 'peakDiskBytes']);
