@@ -6,11 +6,12 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 
-function actualControlHandler(context){
-  const file=path.join(__dirname,'../tools/shared-playback-cache/app-performance-runner.cjs');
-  const source=fs.readFileSync(file,'utf8');
+const file=path.join(__dirname,'../tools/shared-playback-cache/app-performance-runner.cjs');
+const actualSource=fs.readFileSync(file,'utf8');
+function actualControlHandler(context,source=actualSource){
   const start=source.indexOf('control=http.createServer(');
-  const end=source.indexOf(';\n    control.on(\'connection\'',start);
+  const terminal=/;\r?\n    control\.on\('connection'/.exec(source.slice(Math.max(0,start)));
+  const end=terminal ? start+terminal.index : -1;
   assert(start>=0&&end>start,'control handler source markers');
   const expression=source.slice(start+'control='.length,end);
   let handler;
@@ -56,8 +57,12 @@ function context(){
     need(value,code){if(!value)throw Error(code);}};
 }
 
-test('control handler retires body-parsing requests before any per-case mutation',async()=>{
-  const c=context(),handler=actualControlHandler(c);
+for(const lineEnding of ['LF','CRLF']){
+  // Transform the actual maintained source bytes, not a copied handler. Both
+  // versions execute every ownership/cancellation and ordering assertion below.
+  const source=actualSource.replace(/\r?\n/g,lineEnding==='LF'?'\n':'\r\n');
+  test(lineEnding+': control handler retires body-parsing requests before any per-case mutation',async()=>{
+  const c=context(),handler=actualControlHandler(c,source);
   const staleAdvance=request('/advance/0',JSON.stringify({scenario:'boundary-seek'})),advanceRes=response();
   await invoke(handler,staleAdvance,advanceRes,()=>{c.active=1;});
   assert.equal(c.observed[0].advances,0);assert.equal(c.calls.length,0);
@@ -78,8 +83,8 @@ test('control handler retires body-parsing requests before any per-case mutation
   }
 });
 
-test('same-case advance sequence stays boundary, uncached, far and rejects duplicates',async()=>{
-  const c=context(),handler=actualControlHandler(c);c.active=0;
+test(lineEnding+': same-case advance sequence stays boundary, uncached, far and rejects duplicates',async()=>{
+  const c=context(),handler=actualControlHandler(c,source);c.active=0;
   for(const scenario of ['boundary-seek','uncached-seek','far-seek']){
     const req=request('/advance/0',JSON.stringify({scenario})),res=response();
     // This test does not need a retirement transition; release the body normally.
@@ -89,4 +94,19 @@ test('same-case advance sequence stays boundary, uncached, far and rejects dupli
   const duplicate=request('/advance/0',JSON.stringify({scenario:'boundary-seek'})),duplicateRes=response();
   handler(duplicate,duplicateRes);await duplicate.consumed.promise;duplicate.release.resolve();await duplicateRes.done.promise;
   assert.equal(duplicateRes.status,400);assert.equal(c.observed[0].advances,3);assert.equal(c.calls.length,3);
+});
+
+}
+
+test('source boundaries handle both checkout line endings without accepting absent markers',()=>{
+  const lf=actualSource.replace(/\r?\n/g,'\n'),crlf=lf.replace(/\n/g,'\r\n');
+  const oldMarker=";\n    control.on('connection'";
+  assert(lf.indexOf(oldMarker)>0,'control contains the original LF-only marker');
+  assert.equal(crlf.indexOf(oldMarker),-1,'CRLF really reproduces the former missing marker');
+  assert.equal(typeof actualControlHandler(context(),lf),'function');
+  assert.equal(typeof actualControlHandler(context(),crlf),'function');
+  for(const source of [lf,crlf]){
+    assert.throws(()=>actualControlHandler(context(),source.replace('control=http.createServer(','control=removed(')),/control handler source markers/);
+    assert.throws(()=>actualControlHandler(context(),source.replace("control.on('connection'","control.removed('connection'")),/control handler source markers/);
+  }
 });
