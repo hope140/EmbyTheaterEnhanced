@@ -34,15 +34,16 @@ function controlledSessionClock() {
   assert.match(source, /const SHARED_PREPARE_TIMEOUT_MS = 50;/);
   assert.equal((source.match(/\bsetTimeout\s*\(/g) || []).length, 1);
   assert.equal((source.match(/\bclearTimeout\s*\(/g) || []).length, 1);
-  const pending = new Map(), known = new Set(); let created = 0, fired = 0, cleared = 0;
+  const pending = new Map(), known = new Set(); let created = 0, fired = 0, cleared = 0, clockMs = 0;
   const arm = (fn, ms) => {assert.equal(ms, 50); const timer = {fn, ms}; pending.set(timer, timer); known.add(timer); created++; return timer;};
   const disarm = timer => {assert.ok(known.has(timer)); known.delete(timer); pending.delete(timer); cleared++;};
   const loaded = {exports: {}};
   new Function('exports', 'require', 'module', '__filename', '__dirname', 'setTimeout', 'clearTimeout', source)(
     loaded.exports, createRequire(file), loaded, file, path.dirname(file), arm, disarm);
-  return {createSession: loaded.exports.createSession,
+  return {createSession: options => loaded.exports.createSession({...options, now: () => clockMs}),
+    advance(ms) {clockMs += ms;},
     status: () => ({created, fired, cleared, pending: pending.size}),
-    expire() {assert.equal(pending.size, 1); const timer = pending.keys().next().value; pending.delete(timer); fired++; timer.fn();}};
+    expire() {assert.equal(pending.size, 1); const timer = pending.keys().next().value; pending.delete(timer); clockMs += timer.ms; fired++; timer.fn();}};
 }
 function gate() {let release; const promise = new Promise(resolve => {release = resolve;}); return {promise, release};}
 function selectionMessage(session, events, error) {
@@ -67,7 +68,7 @@ async function cleanup(actions, remove) {
 
 async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.alloc(BLOCK, 0x42), delayMs = 0, responseGate} = {}) {
   const objects = new Map([['A', aBytes], ['B', bBytes], ['C', aBytes]]);
-  const requests = [], sockets = new Set();
+  const requests = [], sockets = new Set(); let version = 1;
   const server = http.createServer((req, res) => {
     const item = /^\/(A|B|C)\.mkv$/.exec(new URL(req.url, 'http://127.0.0.1').pathname)?.[1];
     const data = objects.get(item);
@@ -84,7 +85,7 @@ async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.
       res.writeHead(206, {'Content-Length': end - start + 1,
         'Content-Range': `bytes ${start}-${end}/${data.length}`,
         'Content-Type': 'application/octet-stream', 'Last-Modified': 'Wed, 21 Oct 2026 08:00:00 GMT',
-        ETag: '"owned-synthetic-v1"'});
+        ETag: '"owned-synthetic-v' + version + '"'});
       res.end(data.subarray(start, end + 1));
     };
     if (responseGate) responseGate.then(send); else if (delayMs) setTimeout(send, delayMs); else send();
@@ -92,7 +93,7 @@ async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.
   server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  return {origin, requests, replace(item, data) {objects.set(item, data);},
+  return {origin, requests, version(value) {version = value;}, replace(item, data) {objects.set(item, data);},
     async close() {for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve));}};
 }
 
@@ -117,6 +118,7 @@ async function fixture(t, options = {}) {
   webA.isDestroyed = webB.isDestroyed = () => false;
   const principalA = authority.principalFor(webA), principalB = authority.principalFor(webB);
   const helper = {currentGenerationId: 1, exited: false, transportTerminated: false};
+  let budgetBytes = MEDIA_BUFFER_BYTES, budgetCurrent = true;
   let bindingPrincipal = principalA, currentRequestId = 'play-A', nextRequestPrefix = 'play-A-next-', cache, createCount = 0;
   const currentBytesReads = [];
   const selectionDiagnostics = [];
@@ -146,7 +148,7 @@ async function fixture(t, options = {}) {
       currentBytesReads.push(generationId);
       if (options.currentBytesGate) await options.currentBytesGate;
       if (options.slowCurrentBytesMs) await delay(options.slowCurrentBytesMs);
-      return {bytes: MEDIA_BUFFER_BYTES, isCurrent: () => true, commit() {}};
+      return {bytes: budgetBytes, isCurrent: () => budgetCurrent, commit() {}};
     }});
 
   function candidate(item, {principal = principalA, accountId = 'account-A', requestId = 'play-A', playSessionId = 'session-A'} = {}) {
@@ -162,6 +164,7 @@ async function fixture(t, options = {}) {
   return {root, origin, authority, principalA, principalB, helper, session, config, candidate, loadOptions, clock,
     webA, webB,
     get cache() {return cache;}, get createCount() {return createCount;}, currentBytesReads, selectionDiagnostics,
+    setBudget(bytes, current = true) {budgetBytes = bytes; budgetCurrent = current;},
     setBindingPrincipal(value) {bindingPrincipal = value;}, setCurrentRequestId(value) {currentRequestId = value;},
     setNextRequestPrefix(value) {nextRequestPrefix = value;}};
 }
@@ -189,21 +192,25 @@ async function selectCurrent(f, value) {
 }
 
 test('strict load binding replaces the source with the loopback cache route and streams actual bytes', {timeout:10000}, async t => {
-  const f = await fixture(t), a = f.candidate('A');
+  const f = await fixture(t); let a = f.candidate('A');
   await f.session.setContext(a, f.helper, 1);
   const altered = f.loadOptions(a).slice(); altered[4] = 'user-agent=Wrong/1.0';
   assert.equal(await f.session.select(a.source, f.helper, 1, altered), null);
   assert.equal(f.createCount, 0, 'mismatched load options cannot initialize the cache');
-  const selected = await requireSelected(f, f.session.select(a.source, f.helper, 1, f.loadOptions(a)));
+  assert.equal(await f.session.select(a.source, f.helper, 1, f.loadOptions(a)), null, 'fallback is latched for that Play');
+  f.helper.currentGenerationId = 2; f.setCurrentRequestId('play-again');
+  a = f.candidate('A', {requestId:'play-again'});
+  await f.session.setContext(a, f.helper, 2);
+  const selected = await requireSelected(f, f.session.select(a.source, f.helper, 2, f.loadOptions(a)));
   assert.notEqual(selected.source, a.source, 'the replacement source belongs to the loopback proxy');
   assert.equal(selected.canDispatch(), true);
   // This invokes the session callback directly. It is not a Native Helper/core-idle observation.
-  await f.session.started(f.helper, 1);
+  await f.session.started(f.helper, 2);
   const result = await getRange(selected.source);
   assert.equal(result.status, 206);
   assert.equal(digest(result.body), digest(Buffer.alloc(BLOCK, 0x41)));
   assert.ok(f.origin.requests.some(row => row.item === 'A'), 'HTTP bytes came from the owned synthetic source');
-  assert.deepEqual(f.currentBytesReads, [1], 'M comes from the explicit test-only injection');
+  assert.deepEqual(f.currentBytesReads, [2], 'M comes from the explicit test-only injection');
   assert.equal(f.cache.status().maxBytes, MEDIA_BUFFER_BYTES + PRELOAD_MB * 1024 * 1024);
 });
 
@@ -409,4 +416,85 @@ test('strict shared assertions still reject an original-source fallback at the c
     assert.equal(f.origin.requests.length,0);
     assert.equal(f.session.status().current.state,'original');
   } finally {hold.release();}
+});
+
+
+test('cold fallback stays original after backend readiness; only a new authorized generation can reuse infrastructure', {timeout:10000}, async t => {
+  const hold = gate(); t.after(hold.release);
+  const f = await fixture(t, {storeGate: hold.promise}), a = f.candidate('A');
+  assert.deepEqual(f.session.status().backend, {state:'idle'});
+  const selecting = selectCurrent(f, a);
+  assert.ok(await waitFor(() => f.cache?.status().initializing));
+  assert.deepEqual(f.session.status().backend, {state:'initializing'});
+  f.clock.expire(); assert.equal(await selecting, null);
+  const starting = f.session.started(f.helper, 1);
+  assert.equal(f.session.status().current.route, 'original');
+  const diagnostic = f.session.status().current.diagnostic;
+  const beforeReady = f.origin.requests.length;
+  hold.release(); await starting;
+  assert.ok(await waitFor(() => f.session.status().backend.state === 'ready'));
+  assert.equal(f.session.status().current.route, 'original');
+  assert.deepEqual(f.session.status().current.diagnostic, diagnostic);
+  assert.equal(f.session.status().current.bytes, 0);
+  assert.equal(f.cache.status().bytes, 0, 'background recovery did not fetch a body');
+  assert.equal(await f.session.select(a.source, f.helper, 1, f.loadOptions(a)), null, 'same Play cannot retry into a proxy');
+  assert.equal((await f.session.preload(f.candidate('B'), f.helper, 1)).state, 'unavailable');
+  assert.equal(f.origin.requests.length, beforeReady);
+  assert.equal(digest((await getRange(a.source)).body), digest(Buffer.alloc(BLOCK, 0x41)), 'fallback can play the original bytes');
+  assert.equal(f.session.status().current.route, 'original');
+  assert.ok(await waitFor(() => f.cache.status().routes === 0));
+
+  f.helper.currentGenerationId = 2; f.setCurrentRequestId('play-again');
+  const again = f.candidate('A', {requestId:'play-again'}), before = f.origin.requests.length;
+  const selected = await requireSelected(f, selectCurrent(f, again));
+  assert.deepEqual(f.currentBytesReads, [1,2], 'backend reuse still reads the new Native generation budget');
+  assert.equal(f.createCount, 1);
+  assert.equal(f.session.status().current.route, 'proxy');
+  assert.equal(f.cache.status().bytes, 0, 'ready backend and route are not body hits');
+  assert.deepEqual(f.origin.requests.slice(before).map(r => [r.start,r.end]), [[0,0]], 'a fresh probe remains mandatory');
+  assert.equal(digest((await getRange(selected.source)).body), digest(Buffer.alloc(BLOCK, 0x41)));
+  assert.ok(f.origin.requests.slice(before).some(r => r.end > r.start), 'empty recovered infrastructure still needs origin body bytes');
+  await f.session.close();
+  assert.equal(f.cache.status().backendState, 'closed');
+});
+
+for (const phase of ['budget','store']) test('absolute prepare expiry rejects late ' + phase + ' completion before its timer callback runs', {timeout:10000}, async t => {
+  const hold = gate(); t.after(hold.release);
+  const f = await fixture(t, phase === 'budget' ? {currentBytesGate: hold.promise} : {storeGate: hold.promise});
+  const a = f.candidate('A'), selecting = selectCurrent(f, a);
+  assert.ok(await waitFor(() => phase === 'budget' ? f.currentBytesReads.length === 1 : f.cache?.status().initializing));
+  f.clock.advance(50); hold.release();
+  assert.equal(await selecting, null);
+  assert.equal(f.clock.status().fired, 0, 'only the monotonic clock crossed the deadline');
+  assert.equal(f.session.status().current.route, 'original');
+  assert.deepEqual(f.session.status().current.diagnostic, {stage:'current-probe',reason:'timeout'});
+  if (phase === 'budget') assert.equal(f.createCount, 0);
+  else {
+    assert.ok(await waitFor(() => f.cache.status().backendState === 'ready'));
+    assert.equal(f.cache.status().bytes, 0);
+  }
+  assert.ok(f.origin.requests.every(r => r.start === 0 && r.end === 0));
+});
+
+test('ready backend still rejects stale proof and budget, and revalidates a changed representation before body reuse', {timeout:10000}, async t => {
+  const f = await fixture(t), a = f.candidate('A');
+  const first = await requireSelected(f, selectCurrent(f, a));
+  await f.session.started(f.helper, 1); await getRange(first.source);
+  assert.ok(await waitFor(() => f.cache.status().bytes >= BLOCK));
+  const createCount = f.createCount;
+  f.helper.currentGenerationId = 2; f.setCurrentRequestId('play-2');
+  let before = f.origin.requests.length;
+  assert.equal(await selectCurrent(f, a), null, 'old request proof cannot be reused');
+  assert.equal(f.origin.requests.length, before);
+  f.helper.currentGenerationId = 3; f.setCurrentRequestId('play-3'); f.setBudget(MEDIA_BUFFER_BYTES, false);
+  assert.equal(await selectCurrent(f, f.candidate('A', {requestId:'play-3'})), null);
+  assert.equal(f.origin.requests.length, before, 'retired Native budget cannot reach source probe');
+  f.helper.currentGenerationId = 4; f.setCurrentRequestId('play-4'); f.setBudget(MEDIA_BUFFER_BYTES);
+  f.origin.version(2); f.origin.replace('A', Buffer.alloc(BLOCK, 0x59));
+  const changed = await requireSelected(f, selectCurrent(f, f.candidate('A', {requestId:'play-4'})));
+  const response = await getRange(changed.source);
+  assert.equal(digest(response.body), digest(Buffer.alloc(BLOCK, 0x59)), 'old cached body cannot survive a changed validator');
+  assert.ok(f.origin.requests.slice(before).some(r => r.end > r.start));
+  assert.equal(f.createCount, createCount);
+  assert.deepEqual(f.currentBytesReads, [1,3,4]);
 });

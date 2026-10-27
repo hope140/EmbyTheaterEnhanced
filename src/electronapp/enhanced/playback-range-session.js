@@ -47,13 +47,14 @@ function playbackContext(value) {
     if (!value || Object.keys(value).some(k => !contextFields.includes(k)) || value.mediaType !== 'Video' || ['serverId', 'serverOrigin', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId'].some(k => typeof value[k] !== 'string' || !value[k] || value[k].length > 2048)) return null;
     return {...value, identity: null};
 }
-function createSession({config, create = createCache, onDiagnostic = () => {}, authorize, readCurrentBytes}) {
+function createSession({config, create = createCache, onDiagnostic = () => {}, authorize, readCurrentBytes, now = () => require('node:perf_hooks').performance.now()}) {
     if (!config) return null;
     if (!['next-prefix', 'shared-byte-trial'].includes(config.kind)) throw Error('next-prefix-required');
     const policy = selection(config), work = new Set();
     let cacheInstance = null, nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
+    let cacheFailed = false;
     let cachePromise, current = null, next = null, epoch = 0, playedEpoch = 0, closed = false, closing, retirement = Promise.resolve();
-    const ensure = () => cachePromise ||= Promise.resolve(create(config)).then(value => {cacheInstance = value; return value;});
+    const ensure = () => cachePromise ||= Promise.resolve(create(config)).then(value => {cacheInstance = value; return value;}, error => {cacheFailed = true; throw error;});
     const track = promise => {work.add(promise); promise.finally(() => work.delete(promise)).catch(() => {}); return promise;};
     function report(value) {const safe = diagnostics.snapshot(value); try {onDiagnostic(safe);} catch (_) {} return safe;}
     function retire(preserveNext = true) {
@@ -93,7 +94,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             parsed ||= playbackContext(value);
             if (closed || epoch !== ticket || helper.exited || helper.transportTerminated || helper.currentGenerationId !== generationId) {controller.abort(); return {state: 'unavailable', diagnostic: diagnostics.snapshot({stage: 'lifecycle', reason: 'generation-retired'})};}
             if (!parsed) {controller.abort(); return {state: 'unavailable', diagnostic: report(diagnostic || contextDiagnostic(value))};}
-            const record = {value: parsed, helper, generationId, epoch, controller, handle: null, playing: false, diagnostic: parsed.identity ? null : report(diagnostic || contextDiagnostic(value))}; current = record;
+            const record = {value: parsed, helper, generationId, epoch, controller, handle: null, playing: false, selection: 'idle', diagnostic: parsed.identity ? null : report(diagnostic || contextDiagnostic(value))}; current = record;
             return {state: 'ready', ...(record.diagnostic ? {diagnostic: record.diagnostic} : {})};
         })());
     }
@@ -102,8 +103,15 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
     async function select(source, helper, generationId, loadOptions) {
         const record = current;
         if (!record || !record.value.identity || !owns(record) || record.value.source !== source || record.helper !== helper || record.generationId !== generationId) return null;
+        // One attempt belongs to this explicit Play. Late backend readiness is
+        // reusable infrastructure, never permission to replace its fallback.
+        if (config.kind === 'shared-byte-trial') {
+            if (record.selection !== 'idle') return null;
+            record.selection = 'preparing';
+        }
         if (loadOptions) {
             if (record.value.transport ? !record.value.transport.matchesLoadOptions(loadOptions) : loadOptions.length !== 2) {
+                record.selection = 'original';
                 record.diagnostic = report({stage: 'current-context', reason: record.value.transport ? 'source-options-changed' : 'file-options-unproxied'});
                 return null;
             }
@@ -114,6 +122,15 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 // Optional cache preparation must not hold loadfile behind a
                 // slow backend/property read. The original source stays owned.
                 const selection = new AbortController(), signal = AbortSignal.any([selection.signal, record.controller.signal]);
+                const expiresAt = now() + SHARED_PREPARE_TIMEOUT_MS;
+                const active = () => {
+                    if (now() >= expiresAt) {
+                        selection.abort();
+                        throw diagnostics.error('timeout', 'range-shared-prepare-timeout');
+                    }
+                    if (!owns(record) || signal.aborted || record.selection !== 'preparing')
+                        throw diagnostics.error('generation-retired', 'range-shared-retired');
+                };
                 let timer;
                 const deadline = new Promise((_resolve, reject) => {timer = setTimeout(() => {
                     selection.abort(); reject(diagnostics.error('timeout', 'range-shared-prepare-timeout'));
@@ -121,42 +138,51 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 const preparing = (async () => {
                     if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
                     budget = await readCurrentBytes(helper, generationId);
+                    active();
                     if (!budget || typeof budget.isCurrent !== 'function' || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-budget-retired');
                     const currentBytes = budget.bytes;
-                    if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
+                    active();
                     record.currentBytes = currentBytes;
                     const cache = await ensure();
-                    if (!owns(record) || signal.aborted) throw diagnostics.error('generation-retired', 'range-shared-retired');
+                    active();
                     const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
-                        currentBytes, isCurrent: () => owns(record) && !signal.aborted && budget.isCurrent(), signal});
+                        currentBytes, isCurrent: () => owns(record) && ['preparing', 'proxy'].includes(record.selection) && !signal.aborted && budget.isCurrent() && (record.selection === 'proxy' || now() < expiresAt), signal});
                     try {
                         // Publishing a proxy is not proof its restored metadata
                         // is ready. Keep this wait inside the existing load cap;
                         // cancellation retires late recovery without a cold body.
                         if (typeof value.ready === 'function') await value.ready();
-                        if (!owns(record) || signal.aborted || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-retired');
+                        active();
+                        if (!budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-retired');
                         return value;
                     } catch (error) {await value.stop(); throw error;}
                 })();
-                try {handle = await Promise.race([preparing, deadline]);}
-                catch (error) {selection.abort(); throw error;}
+                try {
+                    handle = await Promise.race([preparing, deadline]);
+                    try {active();} catch (error) {await handle.stop(); throw error;}
+                }
+                catch (error) {
+                    selection.abort();
+                    if (now() >= expiresAt) throw diagnostics.error('timeout', 'range-shared-prepare-timeout');
+                    throw error;
+                }
                 finally {clearTimeout(timer);}
             } else {
                 const cache = await ensure(); if (!owns(record)) return null;
                 handle = await cache.open({source, identity: record.value.identity, transport: record.value.transport, isCurrent: () => owns(record), signal: record.controller.signal});
             }
             if (!owns(record) || budget && !budget.isCurrent()) {await handle.stop(); return null;}
-            record.handle = handle;
+            record.handle = handle; record.selection = 'proxy';
             let cancelling;
             function cancel() {
                 // Clear synchronously: original-source fallback must not later
                 // mark this un-dispatched proxy as the actually playing route.
-                if (record.handle === handle) record.handle = null;
+                if (record.handle === handle) {record.handle = null; record.selection = 'original';}
                 return cancelling ||= track(Promise.resolve().then(() => handle.stop()));
             }
-            return {source: handle.source, canDispatch: () => owns(record) && (!budget || budget.isCurrent()),
+            return {source: handle.source, canDispatch: () => owns(record) && record.handle === handle && (!budget || budget.isCurrent()),
                 ...(budget ? {commit: () => budget.commit()} : {}), cancel};
-        } catch (error) {if (owns(record)) record.diagnostic = report(diagnostics.fromError(error, 'current-probe', 'cache-unavailable')); return null;}
+        } catch (error) {if (owns(record)) {record.selection = 'original'; record.diagnostic = report(diagnostics.fromError(error, 'current-probe', 'cache-unavailable'));} return null;}
     }
     function unproxied(reason, helper, generationId) {
         const record = current;
@@ -166,6 +192,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
         const record = current;
         if (!record || !owns(record) || record.helper !== helper || record.generationId !== generationId || record.playing) return Promise.resolve();
         record.playing = true;
+        if (!record.handle) record.selection = 'original';
         const play = ++playedEpoch;
         // Queue a confirmed start before a subsequent Stop can release its read lease.
         const promotion = record.handle ? record.handle.markPlaying() : null;
@@ -229,9 +256,11 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
     }
     return {cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
+            const backend = config.kind === 'shared-byte-trial' ? {state: cacheInstance ? cacheInstance.status().backendState : cacheFailed ? 'failed' : cachePromise ? 'initializing' : 'idle'} : undefined;
             let bytes = 0; try {if (current && current.handle && current.handle.status) bytes = current.handle.status().bytes;} catch (_) {}
             return {enabled: true, ...policy, kind: config.kind, timeoutMs: config.timeoutMs,
-                current: {state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
+                ...(backend ? {backend} : {}),
+                current: {route: current ? current.handle ? 'proxy' : 'original' : 'idle', state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
                 next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,
                 maxBytes: policy.prefetchBytes};
         },

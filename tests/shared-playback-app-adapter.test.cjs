@@ -489,3 +489,19 @@ test('invalid source proof, load options, owner or byte budget cannot start over
     assert.equal(creates, 0); assert.equal(f.requests.length, 0);
     assert.equal(cache.status().routes, 0);
 });
+
+
+test('backend state is lazy and failed recovery is never ready or a body hit', async t => {
+    const f = await fixture(t); let creates = 0;
+    const cache = await f.cache({createStore: async () => {creates++; throw Error('owned-fixture-failure');}});
+    assert.equal(cache.status().backendState, 'idle');
+    assert.equal(creates, 0); assert.equal(f.requests.length, 0);
+    const source = f.source();
+    const handle = await cache.open(source);
+    await assert.rejects(handle.ready(), /cache-unavailable/);
+    assert.equal(cache.status().backendState, 'failed');
+    assert.equal(cache.status().bytes, 0);
+    assert.equal(creates, 1); assert.equal(f.requests.length, 1);
+    await handle.stop(); await cache.close();
+    assert.equal(cache.status().backendState, 'closed');
+});

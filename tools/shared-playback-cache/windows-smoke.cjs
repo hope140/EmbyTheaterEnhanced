@@ -246,7 +246,9 @@ function cacheSelectionSnapshot(status) {
   const nextStates = ['idle', 'preparing', 'warming', 'ready', 'partial', 'unavailable'];
   const number = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
   const diagnostic = value => value ? require('../../src/electronapp/enhanced/playback-range-diagnostics').snapshot(value) : null;
-  return {current: {state: currentStates.includes(status?.current?.state) ? status.current.state : 'unknown',
+  return {backend: {state: ['idle','initializing','ready','failed','closing','closed'].includes(status?.backend?.state) ? status.backend.state : 'unknown'},
+    current: {route: ['idle','original','proxy'].includes(status?.current?.route) ? status.current.route : 'unknown',
+      state: currentStates.includes(status?.current?.state) ? status.current.state : 'unknown',
     diagnostic: diagnostic(status?.current?.diagnostic)},
     next: {state: nextStates.includes(status?.next?.state) ? status.next.state : 'unknown',
       bytes: number(status?.next?.bytes), targetBytes: number(status?.next?.targetBytes), diagnostic: diagnostic(status?.next?.diagnostic)},
