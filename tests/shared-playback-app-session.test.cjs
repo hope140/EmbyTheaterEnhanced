@@ -13,6 +13,7 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 const {readFileSync} = require('node:fs');
 const {createRequire} = require('node:module');
+const {performance} = require('node:perf_hooks');
 const {createAuthority} = require('../src/electronapp/enhanced/preload-source-authority');
 const {createSession} = require('../src/electronapp/enhanced/playback-range-session');
 const {createCache} = require('../src/electronapp/enhanced/shared-playback-cache/adapter');
@@ -66,17 +67,20 @@ async function cleanup(actions, remove) {
   if (errors.length) throw new AggregateError(errors, 'owned-session-fixture-cleanup-failed');
 }
 
-async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.alloc(BLOCK, 0x42), delayMs = 0, responseGate} = {}) {
+async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.alloc(BLOCK, 0x42), delayMs = 0, responseGate, observeRequests = false} = {}) {
   const objects = new Map([['A', aBytes], ['B', bBytes], ['C', aBytes]]);
-  const requests = [], sockets = new Set(); let version = 1;
+  const requests = [], sockets = new Set(), connections = [], clientRequests = [], trace = [];
+  let version = 1, firstProbeFlushed;
+  const mark = (event, fields = {}) => {const row = {sequence: trace.length, atMs: performance.now(), event, ...fields}; trace.push(row); return row.sequence;};
   const server = http.createServer((req, res) => {
     const item = /^\/(A|B|C)\.mkv$/.exec(new URL(req.url, 'http://127.0.0.1').pathname)?.[1];
     const data = objects.get(item);
     const match = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
     const start = match ? Number(match[1]) : 0;
     const end = match && match[2] ? Number(match[2]) : data ? data.length - 1 : -1;
-    const request = {item, start, end, closed: false}; requests.push(request);
-    res.once('close', () => {request.closed = true;});
+    const request = {item, start, end, method: req.method, peerPort: req.socket.remotePort, closed: false}; requests.push(request);
+    request.arrived = mark('origin-request', {item, start, end, peerPort: request.peerPort});
+    res.once('close', () => {request.closed = true; mark('origin-response-close', {peerPort: request.peerPort});});
     if (!data || !match || start < 0 || end < start || end >= data.length) {
       res.writeHead(416); res.end(); return;
     }
@@ -90,11 +94,38 @@ async function localOrigin({aBytes = Buffer.alloc(BLOCK, 0x41), bBytes = Buffer.
     };
     if (responseGate) responseGate.then(send); else if (delayMs) setTimeout(send, delayMs); else send();
   });
-  server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
+  server.on('connection', socket => {
+    const connection = {socket, peerPort: socket.remotePort, closed: false}; connections.push(connection); sockets.add(socket);
+    mark('origin-connection', {peerPort: connection.peerPort});
+    socket.once('close', () => {connection.closed = true; sockets.delete(socket); mark('origin-socket-close', {peerPort: connection.peerPort});});
+  });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  return {origin, requests, version(value) {version = value;}, replace(item, data) {objects.set(item, data);},
-    async close() {for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve));}};
+  // Observe only requests to this fixture. Keep original arguments, return
+  // identity and transport behavior; restore the shared Node method on close.
+  const originalRequest = http.request;
+  function observedRequest(...args) {
+    const request = Reflect.apply(originalRequest, this, args);
+    if (typeof args[0] === 'string' && args[0].startsWith(origin + '/')) {
+      const row = {id: clientRequests.length + 1, item: new URL(args[0]).pathname, range: request.getHeader('range'),
+        method: request.method, localPort: null, finished: false, closed: false}; clientRequests.push(row);
+      row.created = mark('client-request', {id: row.id, item: row.item, range: row.range});
+      request.once('finish', () => {row.finished = true; row.localPort = request.socket?.localPort;
+        mark('client-finish', {id: row.id, localPort: row.localPort});
+        if (row.id === 1 && firstProbeFlushed) firstProbeFlushed();});
+      request.once('close', () => {row.closed = true; row.closeSequence = mark('client-close', {id: row.id, localPort: row.localPort});});
+    }
+    return request;
+  }
+  if (observeRequests) http.request = observedRequest;
+  return {origin, requests, clientRequests, connections, trace, note: mark,
+    atFirstProbeFlush(callback) {firstProbeFlushed = callback;}, version(value) {version = value;}, replace(item, data) {objects.set(item, data);},
+    async close() {
+      const ownsObserver = !observeRequests || http.request === observedRequest;
+      if (observeRequests && ownsObserver) http.request = originalRequest;
+      for (const socket of sockets) socket.destroy(); await new Promise(resolve => server.close(resolve));
+      assert.equal(ownsObserver, true, 'fixture must restore exactly its owned HTTP observer');
+    }};
 }
 
 async function freshRoot() {
@@ -419,27 +450,70 @@ test('strict shared assertions still reject an original-source fallback at the c
 });
 
 
-test('cold fallback stays original after backend readiness; only a new authorized generation can reuse infrastructure', {timeout:10000}, async t => {
+// This fence counts constructor-time submissions as well as server arrivals.
+// A cancelled request may arrive after its client closes, so first join the
+// exact initial probe on BOTH sides before forbidding any subsequent traffic.
+function requestFence(origin) {
+  return {
+    client: origin.clientRequests.map(({id,item,range,method,localPort,finished,closed}) => ({id,item,range,method,localPort,finished,closed})),
+    server: origin.requests.map(({item,start,end,method,peerPort,closed}) => ({item,start,end,method,peerPort,closed}))
+  };
+}
+function assertNoAdditionalRequests(origin, fence) {
+  assert.deepEqual(requestFence(origin), fence, 'backend readiness must issue no additional probe or media body request');
+}
+async function coldFallbackFixture(t, delayedArrival) {
   const hold = gate(); t.after(hold.release);
-  const f = await fixture(t, {storeGate: hold.promise}), a = f.candidate('A');
+  const f = await fixture(t, {storeGate: hold.promise, origin:{observeRequests:true}}), a = f.candidate('A');
+  const reached = async predicate => assert.ok(await waitFor(predicate), JSON.stringify(f.origin.trace));
   assert.deepEqual(f.session.status().backend, {state:'idle'});
+  let arrivalCountAtExpiry;
+  if (delayedArrival) f.origin.atFirstProbeFlush(() => {
+    // Expire synchronously at the real client's flush boundary, before the
+    // loopback server gets another I/O turn. No network delay/retry is added.
+    arrivalCountAtExpiry = f.origin.requests.length;
+    f.clock.expire(); f.origin.note('selection-expired');
+  });
   const selecting = selectCurrent(f, a);
-  assert.ok(await waitFor(() => f.cache?.status().initializing));
+  await reached(() => f.cache?.status().backendState === 'initializing' && f.origin.clientRequests.length === 1 &&
+    f.origin.clientRequests[0].finished && f.origin.connections.length === 1);
   assert.deepEqual(f.session.status().backend, {state:'initializing'});
-  f.clock.expire(); assert.equal(await selecting, null);
+  if (delayedArrival) assert.equal(arrivalCountAtExpiry, 0, 'expiry precedes the flushed probe HTTP arrival');
+  else {
+    await reached(() => f.origin.requests.length === 1 && f.origin.requests[0].closed);
+    f.clock.expire(); f.origin.note('selection-expired');
+  }
+  assert.equal(await selecting, null);
+  await reached(() => f.origin.clientRequests[0].closed);
   const starting = f.session.started(f.helper, 1);
   assert.equal(f.session.status().current.route, 'original');
   const diagnostic = f.session.status().current.diagnostic;
-  const beforeReady = f.origin.requests.length;
+  await reached(() => f.origin.requests.length === 1 && f.origin.requests[0].closed && f.origin.connections.every(c => c.closed));
+  assert.equal(f.origin.clientRequests.length, 1, 'silence baseline cannot absorb an extra submitted request');
+  assert.equal(f.origin.connections.length, 1, 'only the initial probe connection may enter the baseline');
+  const clientProbe = f.origin.clientRequests[0], serverProbe = f.origin.requests[0];
+  assert.equal(clientProbe.range, 'bytes=0-0'); assert.equal(clientProbe.method, 'GET');
+  assert.deepEqual([serverProbe.item,serverProbe.start,serverProbe.end,serverProbe.method], ['A',0,0,'GET']);
+  assert.equal(clientProbe.localPort, serverProbe.peerPort, 'arrival belongs to the exact flushed connection');
+  if (delayedArrival) assert.ok(f.origin.trace.find(row => row.event === 'selection-expired').sequence < serverProbe.arrived,
+    'arrival after expiry is the same pre-existing flushed probe');
+  assert.equal(f.cache.status().initializing, true, 'late arrival predates backend recovery, not a background retry');
+  const fence = requestFence(f.origin);
   hold.release(); await starting;
-  assert.ok(await waitFor(() => f.session.status().backend.state === 'ready'));
+  await reached(() => f.session.status().backend.state === 'ready' && f.cache.status().routes === 0);
   assert.equal(f.session.status().current.route, 'original');
   assert.deepEqual(f.session.status().current.diagnostic, diagnostic);
   assert.equal(f.session.status().current.bytes, 0);
   assert.equal(f.cache.status().bytes, 0, 'background recovery did not fetch a body');
   assert.equal(await f.session.select(a.source, f.helper, 1, f.loadOptions(a)), null, 'same Play cannot retry into a proxy');
   assert.equal((await f.session.preload(f.candidate('B'), f.helper, 1)).state, 'unavailable');
-  assert.equal(f.origin.requests.length, beforeReady);
+  assertNoAdditionalRequests(f.origin, fence);
+  return {f,a,fence};
+}
+
+for (const delayedArrival of [false,true]) test('cold fallback stays original after backend readiness; only a new authorized generation can reuse infrastructure / ' +
+  (delayedArrival ? 'probe arrives after expiry' : 'probe arrives before expiry'), {timeout:10000}, async t => {
+  const {f,a} = await coldFallbackFixture(t, delayedArrival);
   assert.equal(digest((await getRange(a.source)).body), digest(Buffer.alloc(BLOCK, 0x41)), 'fallback can play the original bytes');
   assert.equal(f.session.status().current.route, 'original');
   assert.ok(await waitFor(() => f.cache.status().routes === 0));
@@ -456,6 +530,25 @@ test('cold fallback stays original after backend readiness; only a new authorize
   assert.ok(f.origin.requests.slice(before).some(r => r.end > r.start), 'empty recovered infrastructure still needs origin body bytes');
   await f.session.close();
   assert.equal(f.cache.status().backendState, 'closed');
+});
+
+// Inject only into the synthetic origin AFTER the production fence is stable.
+// A new request is a failure before the server receives it, as well as afterwards.
+for (const range of ['bytes=0-0','bytes=0-1']) test('background traffic fence rejects new ' + range + ' before and after server arrival', {timeout:10000}, async t => {
+  const {f,a,fence} = await coldFallbackFixture(t, true);
+  const extra = http.request(a.source, {agent:false, headers:{Range:range,Connection:'close'}});
+  extra.on('error', () => {});
+  extra.on('response', response => response.resume());
+  t.after(() => extra.destroy());
+  extra.end();
+  assert.equal(f.origin.requests.length, 1, 'no additional server arrival yet');
+  assert.throws(() => assertNoAdditionalRequests(f.origin, fence), assert.AssertionError);
+  assert.ok(await waitFor(() => f.origin.clientRequests.length === 2 && f.origin.clientRequests[1].finished && f.origin.connections.length === 2));
+  assert.ok(await waitFor(() => f.origin.requests.length === 2 && f.origin.requests[1].closed && f.origin.clientRequests[1].closed));
+  assert.deepEqual([f.origin.requests[1].start,f.origin.requests[1].end], range === 'bytes=0-0' ? [0,0] : [0,1]);
+  assert.throws(() => assertNoAdditionalRequests(f.origin, fence), assert.AssertionError);
+  assert.equal(f.session.status().current.route, 'original');
+  assert.equal(f.cache.status().bytes, 0);
 });
 
 for (const phase of ['budget','store']) test('absolute prepare expiry rejects late ' + phase + ' completion before its timer callback runs', {timeout:10000}, async t => {

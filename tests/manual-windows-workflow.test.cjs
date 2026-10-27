@@ -29,8 +29,11 @@ function routes(job, event, ref, benchmarkMode, sharedMode = false, diagnosticMo
             const equal = (compare[1] === 'event_name' ? event : ref) === compare[3];
             return compare[2] === '==' ? equal : !equal;
         }
-        if (clause === "startsWith(inputs.benchmark_warm_calls, 'app-')") return appMode;
-        if (clause === "!startsWith(inputs.benchmark_warm_calls, 'app-')") return !appMode;
+        const suite=typeof appMode==='string'?appMode:appMode?'app-entry':'native-liveness';
+        if (clause === "startsWith(inputs.benchmark_warm_calls, 'app-')") return suite.startsWith('app-');
+        if (clause === "!startsWith(inputs.benchmark_warm_calls, 'app-')") return !suite.startsWith('app-');
+        const choices=/^contains\(fromJSON\('([^']+)'\), inputs\.benchmark_warm_calls\)$/.exec(clause);
+        if(choices){const values=JSON.parse(choices[1]);assert.ok(Array.isArray(values)&&values.every(v=>typeof v==='string'));return values.includes(suite);}
         if (clause === 'inputs.shared_cache_diagnostics') return diagnosticMode;
         if (clause === '!inputs.shared_cache_diagnostics') return !diagnosticMode;
         if (clause === 'inputs.shared_cache_smoke') return sharedMode;
@@ -242,4 +245,16 @@ test('ordinary app verification is explicit and cannot start other manual jobs o
     assert.match(app,/-AppPerformanceOnly -AppPerformanceMode/);assert.match(app,/actions: read/);
     assert.doesNotMatch(app,/build\.ps1|ci-windows-test-package|prepare-ci-build-inputs/);
     assert.match(app,/cancel-in-progress: false/);assert.match(app,/safe-receipts\/\*/);
+});
+
+
+test('layered entry/matrix select one isolated reviewed job and cannot dispatch any package or old suite',()=>{
+ const strict=jobBlock('windows-shared-cache-app-performance'),layered=jobBlock('windows-shared-cache-layered');assertPinnedSource(layered);
+ for(const event of ['push','pull_request','workflow_dispatch'])for(const smoke of [false,true])for(const diagnostics of [false,true])for(const suite of ['app-entry','app-matrix','app-layered-entry','app-layered-matrix','app-other']){
+  const ready=event==='workflow_dispatch'&&smoke&&diagnostics;
+  assert.equal(routes(strict,event,'refs/heads/verify/local',false,smoke,diagnostics,suite),ready&&['app-entry','app-matrix'].includes(suite));
+  assert.equal(routes(layered,event,'refs/heads/verify/local',false,smoke,diagnostics,suite),ready&&['app-layered-entry','app-layered-matrix'].includes(suite));
+  if(smoke&&diagnostics)for(const name of ['manual-windows-test-package','windows-build-input-benchmark','windows-shared-cache-smoke','windows-shared-cache-diagnostics','windows-shared-cache-liveness'])assert.equal(routes(jobBlock(name),event,'refs/heads/verify/local',true,true,true,suite),false);
+ }
+ assert.match(layered,/group: ete-shared-cache-ordinary-app-performance/);assert.match(layered,/cancel-in-progress: false/);assert.match(layered,/layered-ci\.ps1/);assert.doesNotMatch(layered,/ci-windows-test-package|prepare-ci-build-inputs|build\.ps1/);
 });

@@ -242,8 +242,8 @@ test('existing dispatch keeps its ten inputs and adds native liveness as an opt-
     assert.match(block, new RegExp('^        default: ' + value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'm'), name);
   }
   const warmCalls = inputs.slice(inputs.indexOf('      benchmark_warm_calls:\n'), inputs.indexOf('\n      shared_cache_smoke:'));
-  assert.match(warmCalls, /options: \['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix'\]/);
-  assert.match(workflow, /benchmark_warm_calls:\n +description: [^\n]*native-liveness\/app-entry\/app-matrix only with smoke AND diagnostics/);
+  assert.match(warmCalls, /options: \['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix', 'app-layered-entry', 'app-layered-matrix'\]/);
+  assert.match(workflow, /benchmark_warm_calls:\n +description: [^\n]*native-liveness\/app-entry\/app-matrix\/app-layered-entry\/app-layered-matrix only with smoke AND diagnostics/);
   assert.equal(fs.existsSync(path.join(root, '.github/workflows/shared-cache-native-liveness.yml')), false,
     'native liveness must use the existing user-selectable public workflow');
 });

@@ -1,6 +1,6 @@
 'use strict';
 const path = require('node:path'), crypto = require('node:crypto');
-const BASE = 'c9504345e8f50239aebfd117b942c12f6f8dc7bc';
+const BASE = '6b536371d2569c3bdda96bc633e683e23542fd84';
 // Test the original prefix boundary before an uncached seek can legitimately
 // finish that partial frame while unblocking the previous response.
 const SCENARIOS = Object.freeze(['cold-first-frame', 'cached-seek', 'boundary-seek', 'uncached-seek', 'far-seek']);
