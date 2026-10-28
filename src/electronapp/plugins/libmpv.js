@@ -86,7 +86,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
     function hexToRgbA(hex, alpha) {
 
         if (hex === 'transparent') {
-            return hex;
+            return '0/0/0/0';
         }
 
         var c;

@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-28 — 字幕透明色独立移植
+
+从 `83f881a1ddf2d5bf7971794b446f0068f3e435af` 仅移植 `src/electronapp/plugins/libmpv.js` 与 `tests/mpv-settings-assembly.test.cjs` 到 main `95dc3f3`；透明色映射为 libmpv 接受的 RGBA，真实冻结 usersettingsbuilder 默认值、零 alpha 与 0.5 alpha 回归 3/3 通过。未合入祖先分支功能，未构建、安装或发布 Windows 包。
+
 ## 2026-10-26 — 代理协作入口与验收交接整理
 
 根 AGENTS 保留现有播放、材料和个人环境保护边界，模型细节移至[协作细则](AGENT_WORKFLOW.md)，贡献指南及索引引用同一入口。补足独立任务输入／输出／停止条件、单文件写入归属、主代理整合责任和权限受阻回报；测试文档统一证据与失败归因，公开 CI 文档补充 run／准确 SHA／产物交接要求。历史模型身份与产品决策保留，不新建代理配置或扩大权限。
