@@ -76,8 +76,8 @@ async function hashFile(file) {
     for await (const part of fs.createReadStream(file)) hash.update(part);
     return hash.digest('hex');
 }
-async function writeAvi(root, id, encoding) {
-    const fps = FPS_BY_ID[id], file = path.join(root, id + '.avi'), frames = DURATIONS[id] * fps, bytes = frameBytes(encoding);
+async function writeAvi(root, id, encoding, fps = FPS_BY_ID[id]) {
+    const file = path.join(root, id + '.avi'), frames = DURATIONS[id] * FPS_BY_ID[id], bytes = frameBytes(encoding);
     // Build the small RIFF header and index in memory; media frames are written one at a time.
     const avih = mainHeader(frames, bytes, fps), strl = list('strl', [streamHeader(frames, bytes, fps), formatHeader(bytes,encoding)]),
         hdrl = list('hdrl', [avih, strl]);
@@ -109,7 +109,7 @@ async function writeAvi(root, id, encoding) {
     await handle.close();
     const stat = await fsp.stat(file), sha256 = await hashFile(file);
     need(stat.isFile() && stat.size === riffSize + 8 && stat.size < (encoding===BGR24?40:20) * 1048576, 'fixture-avi-size');
-    return {id, file: id + '.avi', size: stat.size, sha256, etag: '"' + sha256 + '"', durationSeconds: DURATIONS[id],
+    return {id, file: id + '.avi', size: stat.size, sha256, etag: '"' + sha256 + '"', durationSeconds: frames / fps,
         dataStart: 12 + hdrl.reduce((n, b) => n + b.length, 0) + 12, frameStride: mediaChunkBytes, frames,
         width: WIDTH, height: HEIGHT, fps, audio: 'none', encoding};
 }
@@ -283,16 +283,17 @@ async function createGrpcServer(mediaOrigin, files, token, record) {
     })};
 }
 
-async function generateFixtures(root, {encoding=PAL8} = {}) {
+async function generateFixtures(root, {encoding=PAL8, timing} = {}) {
     need([PAL8,BGR24].includes(encoding),'fixture-encoding-invalid');
+    need(timing === undefined || timing === 'layered-equal-time-v1' && encoding === BGR24, 'fixture-timing-invalid');
     need(typeof root === 'string' && path.isAbsolute(root), 'fixture-absolute-root-required');
     const realRoot = await fsp.realpath(root), entries = await fsp.readdir(realRoot);
     need(entries.length === 0 && (await fsp.stat(realRoot)).isDirectory(), 'fixture-fresh-root-required');
     const files = Object.create(null);
-    for (const id of ['A', 'B', 'C']) files[id] = await writeAvi(realRoot, id,encoding);
-    return {schema: 1, out: realRoot, autoPlay: true, fixtures: ['A', 'B', 'C'].map(id => files[id]), media: files,
-        mediaMetadata: Object.fromEntries(['A', 'B', 'C'].map(id => [id, {durationSeconds: DURATIONS[id], aviFps: FPS_BY_ID[id],
-            embyReportedRealFrameRate: id === 'A' ? 12 : 24, audio: 'none'}]))};
+    for (const id of ['A', 'B', 'C']) files[id] = await writeAvi(realRoot, id,encoding,timing && id === 'C' ? 12 : FPS_BY_ID[id]);
+    return {schema: 1, ...(timing ? {timing} : {}), out: realRoot, autoPlay: true, fixtures: ['A', 'B', 'C'].map(id => files[id]), media: files,
+        mediaMetadata: Object.fromEntries(['A', 'B', 'C'].map(id => [id, {durationSeconds: files[id].durationSeconds, aviFps: files[id].fps,
+            embyReportedRealFrameRate: files[id].fps, audio: 'none'}]))};
 }
 async function verifyPlan(plan) {
     need(plan?.schema === 1 && typeof plan.out === 'string' && path.isAbsolute(plan.out) && Array.isArray(plan.fixtures) && plan.fixtures.length === 3, 'fixture-plan-invalid');
@@ -305,9 +306,23 @@ async function verifyPlan(plan) {
         need(stat.isFile() && !stat.isSymbolicLink() && await fsp.realpath(file) === file && stat.size === row.size && await hashFile(file) === row.sha256, 'fixture-file-identity');
         files[row.id] = row;
     }
+    need(plan.timing === undefined || plan.timing === 'layered-equal-time-v1', 'fixture-timing-invalid');
+    const equalTime = plan.timing === 'layered-equal-time-v1';
     need(Object.keys(files).length === 3 && plan.mediaMetadata?.A?.durationSeconds === 16 && plan.mediaMetadata?.B?.durationSeconds === 8 &&
-        plan.mediaMetadata?.C?.durationSeconds === 8 && plan.mediaMetadata?.A?.aviFps === 12 && plan.mediaMetadata?.B?.aviFps === 24 &&
-        plan.mediaMetadata?.C?.aviFps === 24, 'fixture-metadata-invalid');
+        plan.mediaMetadata?.C?.durationSeconds === (equalTime ? 16 : 8) && plan.mediaMetadata?.A?.aviFps === 12 && plan.mediaMetadata?.B?.aviFps === 24 &&
+        plan.mediaMetadata?.C?.aviFps === (equalTime ? 12 : 24), 'fixture-metadata-invalid');
+    if (equalTime) for (const id of ['A','B','C']) {
+        const keys=['id','file','size','sha256','etag','durationSeconds','dataStart','frameStride','frames','width','height','fps','audio','encoding'], row=files[id], media=plan.media?.[id], meta=plan.mediaMetadata[id];
+        need(media && keys.every(k=>media[k] === row[k]) && meta.durationSeconds === row.durationSeconds && meta.aviFps === row.fps && meta.embyReportedRealFrameRate === row.fps, 'fixture-timing-projection');
+    }
+    if (equalTime) for (const id of ['A','C']) {
+        const row = files[id], f = await fsp.open(path.join(root,row.file),'r'), head = Buffer.alloc(224);
+        try {need((await f.read(head,0,head.length,0)).bytesRead === head.length,'fixture-timing-header');} finally {await f.close();}
+        need(row.etag === '"'+row.sha256+'"' && row.encoding === BGR24 && row.fps === 12 && row.durationSeconds === 16 && row.frames === 192 && row.dataStart === 224 && row.frameStride === 172808 &&
+            plan.mediaMetadata[id].embyReportedRealFrameRate === 12 && head.toString('ascii',24,28) === 'avih' && head.toString('ascii',100,104) === 'strh' &&
+            head.readUInt32LE(32) === Math.round(1e6/12) && head.readUInt32LE(36) === 172800*12 && head.readUInt32LE(48) === 192 &&
+            head.readUInt32LE(128) === 1 && head.readUInt32LE(132) === 12 && head.readUInt32LE(140) === 192 && head.toString('ascii',220,224) === 'movi', 'fixture-timing-header');
+    }
     return {root, files};
 }
 async function startWindowsSources({plan, requireUserAgent = USER_AGENT, record = () => {}, createEmby, pacing} = {}) {

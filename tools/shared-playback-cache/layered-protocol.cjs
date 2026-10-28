@@ -3,7 +3,12 @@ const crypto=require('node:crypto');
 const base=require('./app-performance-contract.cjs');
 const PHASES=Object.freeze(['cold-C','ready-A']);
 const ITEM=Object.freeze({'cold-C':'C','ready-A':'A'});
-const TARGETS=Object.freeze({'cold-C':Object.freeze({'cached-seek':.25,'boundary-seek':1.5,'uncached-seek':4,'far-seek':7}),'ready-A':base.TARGETS});
+const TARGETS=Object.freeze({'cold-C':base.TARGETS,'ready-A':base.TARGETS});
+const FIXTURE_TIMING='layered-equal-time-v1';
+function assertFixtureTiming(f){
+ const keys=['id','file','size','sha256','etag','durationSeconds','dataStart','frameStride','frames','width','height','fps','audio','encoding'];
+ need(f?.timing===FIXTURE_TIMING&&['A','C'].every(id=>{const row=f.fixtures?.find(x=>x.id===id),m=f.media?.[id],meta=f.mediaMetadata?.[id];return row&&m&&keys.every(k=>m[k]===row[k])&&m.fps===12&&m.durationSeconds===16&&m.frames===192&&m.encoding==='uncompressed-dib-bgr24'&&meta?.aviFps===12&&meta.durationSeconds===16&&meta.embyReportedRealFrameRate===12;}),'layered-fixture-timing');
+}
 const LIMITS=Object.freeze({...base.LIMITS,workerMs:180000,suiteMs:7200000,quietMs:5000,stopMs:5000});
 const OWNER='ETE ordinary C-stop-A layered trial v1\n';
 const need=(v,c)=>{if(!v)throw Error(c);};
@@ -65,7 +70,7 @@ function sampleEvidence(phase,receipt,sample){
  const proof=sample?.frameProof,expected=receipt?.owner;
  if(!proof||!sameOwner(proof.owner,expected)||!proof.profile?.supported||proof.profile.model!==require('./fixture-color-profile.cjs').MODEL||proof.evidence?.colorModel!==proof.profile.model||proof.evidence?.threshold!==2||
    !/^[a-f0-9]{64}$/.test(proof.hash||'')||!Number.isFinite(proof.requestedAt)||!Number.isFinite(proof.resolvedAt)||!Number.isFinite(proof.after)||!Number.isFinite(proof.deadline)||proof.requestedAt<proof.after||proof.resolvedAt<proof.requestedAt||proof.resolvedAt>proof.deadline||!validClock(proof,'after',['after','requestedAt','resolvedAt','deadline']))return false;
- const target=sample.scenario==='cold-first-frame'?null:TARGETS[phase]?.[sample.scenario]*(phase==='cold-C'?24:12);
+ const target=sample.scenario==='cold-first-frame'?null:TARGETS[phase]?.[sample.scenario]*12;
  if(!require('./fixture-frame-evidence.cjs').accepts(proof.evidence,{item:ITEM[phase],targetFrame:target}))return false;
  if(target!==null){const seek=sample.seekProof;if(!seek||!sameOwner(seek.owner,expected)||seek.target!==TARGETS[phase][sample.scenario]||
    ![seek.submittedAt,seek.positionAt,seek.restartAt,seek.deadline].every(Number.isFinite)||seek.positionAt<seek.submittedAt||seek.restartAt<seek.submittedAt||proof.after<Math.max(seek.positionAt,seek.restartAt)||proof.deadline>seek.deadline||!validClock(seek,'submittedAt',['submittedAt','positionAt','restartAt','deadline'])||seek.clock.origin!==proof.clock.origin||seek.previousHash===proof.hash||!/^[a-f0-9]{64}$/.test(seek.previousHash||''))return false;}
@@ -133,4 +138,4 @@ async function runStages({arm,play,beginQuiet,snapshot,backend,beginReady,wait,n
 const CODES=new Set(['layered-local-not-drained','layered-local-read-during-quiet','layered-load-count','layered-fresh-budget-source','layered-owner-reused','layered-quiet-or-prefill','layered-backend-not-ready','layered-control-phase','layered-stop-unconfirmed','layered-cold-function-failed','layered-boundary-no-local-hit','layered-original-revived','layered-not-run']);
 function failureCode(error,fallback){return CODES.has(error?.message)?error.message:base.failureCode(error,fallback);}
 function recordTerminalFailure(report,error){base.recordTerminalFailure(report,error);report.terminalFailure.code=failureCode(error,'app-worker-failed');report.code=report.firstFailure?.code||report.terminalFailure.code;}
-module.exports={...base,failureCode,recordTerminalFailure,PHASES,ITEM,TARGETS,LIMITS,OWNER,cases,blank,slots,runStages,rendererAction,isMedia,loadSource,sameOwner,seekSignals,createLedger,observerClean,sampleEvidence,freshEvidence,validatePhase,receiptRows,summarize};
+module.exports={...base,failureCode,recordTerminalFailure,PHASES,ITEM,TARGETS,FIXTURE_TIMING,assertFixtureTiming,LIMITS,OWNER,cases,blank,slots,runStages,rendererAction,isMedia,loadSource,sameOwner,seekSignals,createLedger,observerClean,sampleEvidence,freshEvidence,validatePhase,receiptRows,summarize};

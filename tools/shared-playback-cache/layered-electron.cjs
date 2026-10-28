@@ -23,7 +23,7 @@ async function main() {
   need(!fs.existsSync(output), 'app-worker-preserve-receipt');
   const get = member => require(path.join(plan.runtime, 'electronapp', member));
   const report = {schema: 2, kind:'ordinary-C-stop-A', phases:Object.fromEntries(contract.PHASES.map(p=>[p,{phase:p,item:contract.ITEM[p],selection:null,owner:null,stopConfirmed:false,samples:contract.blank(task,p)}])), status: 'FAIL', index, pair: task.pair, arm: task.arm, productCommit: plan.productCommit,
-    fixtureFormat:Object.fromEntries(contract.PHASES.map(phase=>{const f=plan.fixture.media[contract.ITEM[phase]];return[phase,{encoding:f.encoding,width:f.width,height:f.height,fps:f.fps,sourceBytes:f.size,sourceSha256:f.sha256,alphaChannel:false}];})),
+    fixtureFormat:Object.fromEntries(contract.PHASES.map(phase=>{const f=plan.fixture.media[contract.ITEM[phase]];return[phase,{timing:plan.fixture.timing,encoding:f.encoding,width:f.width,height:f.height,fps:f.fps,durationSeconds:f.durationSeconds,frames:f.frames,sourceBytes:f.size,sourceSha256:f.sha256,alphaChannel:false}];})),
     toolCommit: plan.toolCommit, scope: 'ordinary product main and unchanged web/API/PM; owned loopback fixture; decoded frame not visible presentation',
     resourceAssessment: {electron:'NOT_ASSESSED',native:'NOT_ASSESSED',disk:'NOT_ASSESSED'},
     audio: 'NOT_TESTED_VIDEO_ONLY_FIXTURE', real115Requests: 0, pid: process.pid, samples: [], observations: [], helperExits: [],

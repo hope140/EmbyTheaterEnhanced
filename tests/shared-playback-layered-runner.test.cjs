@@ -16,7 +16,7 @@ function phaseReceipt(task,phase,selection=task.arm==='B'?'proxy':'original'){
  const r={phase,item,selection,owner:owned,stopConfirmed:true,loadAt:10,samples:[]};
  r.budget={...owned,phase,outcome:'fulfilled',at:1,resolvedAt:3,requestGeneration:owned.generationId,requestId:1,bytes:314572800,response:{helper:owned.helper,generationId:owned.generationId,requestId:1,at:2}};
  r.source={...owned,phase,item,accepted:true,at:1,resolvedAt:3,proofHash:(item==='A'?'a':'c').repeat(64)};
- r.samples=c.SCENARIOS.map((scenario,i)=>{const t=i?c.TARGETS[phase][scenario]:null,fps=item==='C'?24:12,at=100+i*1000;
+ r.samples=c.SCENARIOS.map((scenario,i)=>{const t=i?c.TARGETS[phase][scenario]:null,fps=12,at=100+i*1000;
   return{phase,item,scenario,pair:task.pair,arm:task.arm,status:'PASS',latencyMs:100,sourceBodyBytes:i?0:1000,sourceStreamReadBytes:i?0:1001,oneByteReadBytes:i?0:1,localHitBytes:selection==='proxy'&&scenario==='boundary-seek'?70368:0,overlapBodyBytes:0,peakRssBytes:1024,peakDiskBytes:2048,
    frameProof:{owner:owned,hash:String(i+1).repeat(64),profile:{supported:true,model:color.MODEL},evidence:frame(item,t===null?13:t*fps),after:at+2,requestedAt:at+3,resolvedAt:at+4,deadline:at+4999,clock:{origin:0,after:at+2,requestedAt:at+3,resolvedAt:at+4,deadline:at+4999}},
    seekProof:i?{owner:owned,previousHash:'0'.repeat(64),target:t,submittedAt:at,positionAt:at+1,restartAt:at+2,deadline:at+5000,clock:{origin:0,submittedAt:at,positionAt:at+1,restartAt:at+2,deadline:at+5000}}:null};});return r;
@@ -35,7 +35,7 @@ test('ordinary renderer really requests C then A, with unchanged seek/pause acti
  await vm.runInNewContext(c.rendererAction('pause'),{require:async()=>[pm]});await vm.runInNewContext(c.rendererAction('seek',.25),{require:async()=>[pm]});
  assert.deepEqual(calls,['C','A','pause',2500000]);assert.doesNotMatch(c.rendererAction('play',undefined,'cold-C'),/sourceProof|\.define\(/);
  assert.throws(()=>c.rendererAction('play',undefined,'quiet'));
- for(const phase of c.PHASES)assert.deepEqual(c.SCENARIOS.slice(1).map(s=>c.TARGETS[phase][s]*(phase==='cold-C'?24:12)),[6,36,96,168]);
+ for(const phase of c.PHASES)assert.deepEqual(c.SCENARIOS.slice(1).map(s=>c.TARGETS[phase][s]*12),[6,36,96,168]);
 });
 for(const arm of ['A','B'])test('real sequencing function keeps the same fixed quiet duration for arm '+arm,async()=>{
  let now=0;const calls=[],state={quiet:{opened:0,sourceBytes:0},aRequests:0,initialAReads:0};
@@ -116,8 +116,8 @@ test('real RGB24 fixture C traffic drains before quiet and real A traffic stays 
  const fixtures=require('../tools/shared-playback-cache/windows-fixtures.cjs'),{createEmby}=require('../tools/shared-playback-cache/app-emby-fixture.cjs');
  const root=require('./helpers/range-fixture-root.cjs').temporaryRoot('ete-layered-source-',['']);let source,now=0;const ledger=c.createLedger(c.cases('entry'),{now:()=>now});ledger.activate(0);
  t.after(async()=>{try{if(source){const closed=await source.close();assert.equal(closed.mediaSockets,0);assert.equal(closed.activeMediaResponses,0);assert.equal(closed.heldRequests,0);assert.equal(closed.grpcStopped,true);}}finally{await fsp.rm(root,{recursive:true,force:true});}});
- const fixture=await fixtures.generateFixtures(root,{encoding:'uncompressed-dib-bgr24'});fixture.autoPlay=false;
- assert.equal(fixture.media.C.fps,24);assert.equal(fixture.media.C.durationSeconds,8);assert.equal(fixture.media.A.fps,12);assert.equal(fixture.media.A.durationSeconds,16);
+ const fixture=await fixtures.generateFixtures(root,{encoding:'uncompressed-dib-bgr24',timing:c.FIXTURE_TIMING});fixture.autoPlay=false;
+ assert.equal(fixture.media.C.fps,12);assert.equal(fixture.media.C.durationSeconds,16);c.assertFixtureTiming(fixture);assert.equal(fixture.media.A.fps,12);assert.equal(fixture.media.A.durationSeconds,16);
  source=await fixtures.startWindowsSources({plan:fixture,createEmby,pacing:c.LIMITS,record:(type,data)=>ledger.record(type,data,0)});
  const read=async(item,range)=>{const r=await fetch(source.mediaOrigin+'/Videos/'+item+'/stream.avi',{headers:{'User-Agent':fixtures.USER_AGENT,Range:range}});assert.equal(r.status,206);return Buffer.from(await r.arrayBuffer());};
  assert.equal((await read('C','bytes=0-31')).length,32);

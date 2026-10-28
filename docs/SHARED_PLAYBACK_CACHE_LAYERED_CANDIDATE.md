@@ -14,8 +14,8 @@ Product source is bound to `6b536371d2569c3bdda96bc633e683e23542fd84`. This test
 | Both arms | Same ordinary C → Stop → fixed 5 s quiet → A sequence, same source shaping and time window |
 | Arm A / arm B | Shared cache disabled / enabled; media identities remain C then A in both arms |
 | Selection / disk protection | Existing 50 ms preparation and 30 ms disk-read grace, unchanged |
-| Cold C | 24 fps / 8 s RGB24 AVI; seek .25 → 1.5 → 4 → 7 s |
-| Ready A | 12 fps / 16 s RGB24 AVI; seek .5 → 3 → 8 → 14 s |
+| Cold C | Layered-only 12 fps / 16 s RGB24 AVI, 192 frames; seek .5 → 3 → 8 → 14 s |
+| Ready A | 12 fps / 16 s RGB24 AVI, 192 frames; seek .5 → 3 → 8 → 14 s |
 | Decoded frame proof | Unique media/frame, fixed supported mpv/zimg conversion, tolerance 2, target frames 6 / 36 / 96 / 168 with original one-frame allowance |
 | Event/fresh-frame deadline | Original 5 s seek-submit, position, restart and new/different-frame gates; original monotonic clock retained |
 | Source pacing | Existing 6 MiB prefix; only already-held owned responses may resume by at most 768 KiB after each non-cached seek; all bytes/time counted |
@@ -33,6 +33,14 @@ Cold C may legitimately remain original after its selection expires. It can pass
 The new explicit A request must independently establish its current owner, actual Native budget response and source proof. It cannot inherit C's proof. Original/proxy routing and backend initializing/ready/failed are recorded separately. The .5 s sample with source 0 / hit 0 is `native-demux-or-no-body`, not a shared hit. A B-boundary local read is required even if the backend was ready before Play.
 
 Every media request has an immutable case/request-ID ledger entry. Tombstones survive close; late C bytes remain C and additionally fail cross-phase/closed-request checks. One-byte bytes are retained separately; only a 0–0 probe candidate is excluded from body overlap, without claiming its role merely from the range. Nonzero one-byte reads remain body. Servers close between cases, preventing a late request from acquiring the next case's ownership.
+
+## Equal-time synthetic supply
+
+The layered generator explicitly selects `layered-equal-time-v1`. C and A both use 12 fps / 16 seconds / 192 frames and the same seek times; the ordinary reference-position condition remains cached target + 1 second, now 1.5 seconds (frame 18) in both phases. The previous 24 fps C used frame 30 for that condition even though its target times had been halved. Merely lowering that position threshold is not this correction.
+
+The legacy fixture generator remains unchanged by default, including C at 24 fps / 8 seconds. The layered C body, index, dimensions, frame identities, frame stride, byte length, 6 MiB supply and bounded continuation rules remain identical. Only three AVI timing fields change, and generated FPS/duration/SHA/ETag metadata matches those actual bytes. New layered plans require the explicit timing marker; source startup verifies both A/C timing headers and rejects relabeled legacy bytes, inconsistent metadata and stale ETag. No product interface or behavior changes.
+
+The old 6 MiB window already contained C frame 30: from byte 224 it includes complete frames 0–35 and 70,368 bytes of frame 36. Therefore the earlier original-source/proxy difference cannot be described as missing target-frame bytes or a proven disk/decoder defect. Equalizing the timeline corrects a demonstrated fixture mismatch, but does not establish the precise Native/demux stall cause or guarantee that the new ordinary entry will pass. Previous failures remain failures. Do not pool latency distributions across the old C timing and `layered-equal-time-v1`.
 
 ## Reports and performance limits
 

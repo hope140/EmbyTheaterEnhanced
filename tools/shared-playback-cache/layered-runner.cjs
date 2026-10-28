@@ -38,7 +38,7 @@ function readPlan(file, expectedHash) {
   need(p.schema === 2 && p.kind === 'ordinary-C-stop-A' && p.productCommit === contract.BASE && path.join(p.out, 'layered-plan-'+p.caseIndex+'.json') === file &&
     fs.readFileSync(physical(path.join(p.out,'owner')), 'utf8') === OWNER &&
     JSON.stringify(p.cases) === JSON.stringify(cases(p.mode)) && JSON.stringify(p.limits) === JSON.stringify(contract.LIMITS), 'app-plan-contract');
-  need(Array.isArray(p.fixture?.fixtures)&&p.fixture.fixtures.length===3&&p.fixture.fixtures.every(row=>row.encoding==='uncompressed-dib-bgr24'), 'app-plan-contract');
+  need(Array.isArray(p.fixture?.fixtures)&&p.fixture.fixtures.length===3&&p.fixture.fixtures.every(row=>row.encoding==='uncompressed-dib-bgr24'), 'app-plan-contract');contract.assertFixtureTiming(p.fixture);
   for (const target of ['repo','runtime','out']) physical(p[target], true);
   physical(p.installer);
   const identity = toolIdentity(p.repo);
@@ -116,7 +116,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   const samples=contract.slots(tasks);let closed=false;const began=Date.now();
   for(const phase of contract.PHASES){const auditRoot=path.join(out,phase);fs.mkdirSync(auditRoot);fs.writeFileSync(path.join(auditRoot,'owner'),'ETE ordinary app performance owned trial v1\n',{flag:'wx'});}
   try {
-    fixture=await fixtures.generateFixtures(path.join(out,'media'),{encoding:'uncompressed-dib-bgr24'});fixture.autoPlay=false;plan.fixture=fixture;
+    fixture=await fixtures.generateFixtures(path.join(out,'media'),{encoding:'uncompressed-dib-bgr24',timing:contract.FIXTURE_TIMING});fixture.autoPlay=false;contract.assertFixtureTiming(fixture);plan.fixture=fixture;
     for(const task of tasksForRun){
       need(Date.now()-began<contract.LIMITS.suiteMs,'layered-suite-deadline');ledger.activate(task.index);
       let sources,control;const controlSockets=new Set();let caseObservationFailed=false;
@@ -183,7 +183,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
     const summary=contract.summarize(tasks,samples,results,mode);
     const report={schema:2,kind:'ordinary-C-stop-A',status:closed&&setupErrors.length===0&&results.length===tasks.length&&results.every(r=>r?.accepted)&&summary.status==='PASS'?'PASS':'FAIL',mode,productCommit,toolCommit:tools.toolCommit,samples,results,summary,setupErrors,events,sourceLedger:ledger.states,requestLedger:[...ledger.requests].map(([key,value])=>({key,...value})),
       resourceScope:'whole-case Electron and per-owned-helper observed lifetime peaks; both phases included; never subtracted into phase-only RSS',
-      sourceScope:'all filesystem stream bytes counted; one-byte reads separately retained; 0-0 probe candidates are not automatically proven access probes',
+      fixtureTiming:contract.FIXTURE_TIMING,sourceScope:'all filesystem stream bytes counted; one-byte reads separately retained; 0-0 probe candidates are not automatically proven access probes',
       durationMs:Date.now()-began,real115Requests:0};
     fs.writeFileSync(path.join(out,'layered-performance.json'),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
     console.log('SHARED_CACHE_LAYERED_RESULT '+JSON.stringify({status:report.status,cases:results.length,plannedCases:tasks.length,samples:samples.length,setupErrors}));
