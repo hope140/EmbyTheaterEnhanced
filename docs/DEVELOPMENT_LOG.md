@@ -1,5 +1,25 @@
 # 维护记录
 
+## 2026-10-28 — 主页／删除／字幕整合验证
+
+以 main `95dc3f3086e53a2e730eaa4a69d1fb271f7ca060` 保留已合主线内容，仅接入两项优先修复及字幕透明色独立修复。交接文件 Git blob 与提供的补丁身份一致，重叠记录保留三项内容。Node 24.18.1 本轮修前对照：主页 8 pass／1 fail、删除 1 pass／6 fail；修后分别 9/9 与 7/7，字幕 3/3。删除仅用合成条目的回环 HTTP 服务。公开离线与相关材料／来源合同的整合结果按本次准确提交另核；尚无 Windows 安装器、完整客户端、真实服务或安装验收，本轮未发布。
+
+## 2026-10-28 — 侧栏主页重复恢复可见性修复候选
+
+基线 main `95dc3f3086e53a2e730eaa4a69d1fb271f7ca060`。根因是驻留 Home 自恢复时 `previousView === view`，冻结 `tryRestoreView` 先移除目标的 hide 再给 previousView 添加 hide。维护生成器仅增加相同节点判断；组合 viewmanager 输出 SHA256 由 `AFAC86446F43B599A75E6AD7D619A3BFF0BB513105334A23EFF4C63FE237D4F4` 更新为 `4F35A1F33E3540BD95CAAEAECF1B361A077E2A6FC0E566B655E2B603E35E6F83`，构建合同与隔离试验入口同步固定该身份。没有修改冻结输入、原 Home 数据 owner、缓存策略、插件事务或播放链。
+
+同一 Node 回归修前 8 pass／1 fail（当前页重复恢复后 0 个可见页），候选定向 128/128；显式插件／首页材料及 build-input/runtime-provenance 回归 91/91。原生侧栏 Home 点击工具在 baseline／retain／sections 下对比基线组合 viewmanager 与候选，6 组通过：控制均复现隐藏、候选维持单页与卡片；候选还覆盖 Items 延迟、忽略取消时的重复点击及最终新进度。原有 Home／设置／缓存页路由工具 15 组通过。只读独立审查未发现阻断问题，另核对预先取消、迟到 controller、同步重入与普通页自恢复。受控 API／加载器／平台边界不代替 Windows、真实服务、用户截图比对或安装验收；本地独立分支候选，不推送、合并、发布。
+
+首次公开离线集为 2131 项、2097 pass／9 fail／25 平台 skip：6 项暴露隔离试验入口未同步的新 overlay 哈希，已补齐；3 项由未提交生成器触发既有来源拒绝。保留该次失败；提交候选后沿原入口复验，不放宽哈希或来源校验。
+
+源码提交 `7a3e78aef479c94907645df504f5f8caf3c7d854` 的复验终态：公开集 2131 项为 2106 pass／0 fail／25 平台 skip，既有 6 个材料依赖排除不计通过；显式插件／首页材料、Web overlay、build-input 与 runtime-provenance 共 95/95，隔离入口专项 48/48。511 份 JavaScript／53 份 PowerShell 语法、607 份维护文本有限凭据模式与贡献范围空白检查通过。后续整合须从包含两项修复及拟验收旧改动的准确提交重新构建并核验，不以本轮结果接受未完成缓存功能。
+
+## 2026-10-28 — 单条删除 DTO 与版本端点修复
+
+对照冻结 Web `deletehelper`／ApiClient，确认单条删除传入完整 Item，而维护 API 未覆盖 MIT 的标量 ID 方法。维护源和生成 AMD 增加窄覆盖：校验 Item ID，复用 `_delete` 既有版本分支，成功后调用原 `_libraryChanged`；同步 selection 输入／输出身份，不改冻结输入、确认 UI、批量删除协议或失败提示。
+
+新增 loopback HTTP 回归加载真实冻结删除 helper，并分别驱动冻结 API 与维护 API，覆盖 4.7.0.32／4.7.0.33／4.10、成功事件及导航、403／500 不导航不失效、取消不发删除、成功视图失效及批量端点。修前同组 1 pass／6 fail，修后 7/7；API 整合／生命周期／缩略图集合 57/57，独立只读复核重复验证通过。Linux 公开集合 2137 项为 2112 pass／0 fail／25 平台 skip，原有 6 个材料依赖文件仍排除；510 份已跟踪 JS 与新增测试语法、有限凭据模式扫描、diff whitespace 及 18 项 API 来源身份检查通过。测试服务只接受合成条目，未访问用户真实服务或删除媒体；完整 Windows 客户端、真实服务、安装及发行未验。
+
 ## 2026-10-28 — 字幕透明色独立移植
 
 从 `83f881a1ddf2d5bf7971794b446f0068f3e435af` 仅移植 `src/electronapp/plugins/libmpv.js` 与 `tests/mpv-settings-assembly.test.cjs` 到 main `95dc3f3`；透明色映射为 libmpv 接受的 RGBA，真实冻结 usersettingsbuilder 默认值、零 alpha 与 0.5 alpha 回归 3/3 通过。未合入祖先分支功能，未构建、安装或发布 Windows 包。

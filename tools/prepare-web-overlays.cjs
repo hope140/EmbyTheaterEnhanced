@@ -300,7 +300,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/viewmanager/viewmanager.js',
         expectedBaseSha256: 'A15C0615FB7B2F69A0EAAF7052B9CDD6317E6A58D9D2B2D2C5B407ED4A95E1E3',
         expectedInputSha256: null,
-        expectedOutputSha256: "AFAC86446F43B599A75E6AD7D619A3BFF0BB513105334A23EFF4C63FE237D4F4",
+        expectedOutputSha256: "4F35A1F33E3540BD95CAAEAECF1B361A077E2A6FC0E566B655E2B603E35E6F83",
         generatorPaths: Object.freeze([GENERATOR_PATH, PLUGIN_GENERATOR_PATH, HOME_GENERATOR_PATH])
     }),
     Object.freeze({

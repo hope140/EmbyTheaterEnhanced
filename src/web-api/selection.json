@@ -11,7 +11,8 @@
   "scope": "ApiClient nonregistration adaptation; current CM is retained with narrow transport overlay; candidate CM is build-only and is not selected for runtime.",
   "integrationAdaptations": [
     "Preserve existing {name, options} messageListeners representation and replay.",
-    "Allow optional ThumbnailSet cancellation through the existing transport; preserve version-qualified queries and legacy unsupported-server empty results."
+    "Allow optional ThumbnailSet cancellation through the existing transport; preserve version-qualified queries and legacy unsupported-server empty results.",
+    "Preserve the Web deleteItem item DTO contract, versioned deletion endpoint and success-only local LibraryChanged event."
   ],
   "inputs": [
     {
@@ -46,8 +47,8 @@
     },
     {
       "path": "src/web-api/src/apiclient.js",
-      "size": 27002,
-      "sha256": "a6d4ee63ccad6c0e8697035e66f6497831a0e498a541efde8a7f685ebab4b068"
+      "size": 27314,
+      "sha256": "1bea40f939efea761460a5dec11c759dd2b25f237c28fea0999077f8a3a2e0e9"
     },
     {
       "path": "src/web-api/src/connectionmanager.js",
@@ -88,8 +89,8 @@
   "outputs": [
     {
       "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
-      "size": 27324,
-      "sha256": "5fa66ceaff0ce7763cefa51a64b95c9641c4d034a7ca77dbcc98d1bcd7042432"
+      "size": 27636,
+      "sha256": "1581f870f8c93988afe067d1b36193f8cd1aa4ed08e690f410df0f663f9ef938"
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/mit-apiclient.js",

@@ -4,6 +4,19 @@ const home=require('../tools/patch-server-home.cjs'),plugin=require('../tools/pa
 const create=()=>{const runtime=makeRuntime({transform:s=>home.patchViewManager(plugin.patchViewManager(s))});runtime.document.body.contains=e=>runtime.document.contains(e);return runtime;};
 const load=(r,id,type,Factory)=>r.manager.loadView({url:'/'+id,view:r.page(id),type,controllerFactory:Factory});
 function controlled(state){return class Controller{constructor(view){this.view=view;}eteHomeRestoreState(){return state;}};}
+test('repeated navigation to the current resident Home keeps that same page visible',async()=>{
+ const r=create();await load(r,'home','home',controlled({enabled:true,allowed:true}));const view=r.manager.currentView();
+ for(let turn=0;turn<3;turn++){
+  assert.equal(r.manager.canRestoreHome({url:'/home',type:'home'}),true);
+  await r.manager.tryRestoreView({url:'/home',type:'home'});
+  assert.equal(r.manager.currentView(),view);
+  assert.deepEqual(r.visiblePages(),[view]);
+  assert.equal(r.document.main.children.length,1);
+ }
+ await load(r,'settings','settings');assert.equal(view.classList.contains('hide'),true);
+ await r.manager.tryRestoreView({url:'/home',type:'home'});
+ assert.deepEqual(r.visiblePages(),[view]);assert.equal(r.document.main.children.length,2);
+});
 test('only an opted-in eligible resident Home is offered for forward restore, without adding slots',async()=>{
  const r=create(),state={enabled:true,allowed:true};await load(r,'home','home',controlled(state));const view=r.manager.currentView();await load(r,'settings','settings');
  assert.equal(r.manager.canRestoreHome({url:'/home',type:'home'}),true);await r.manager.tryRestoreView({url:'/home',type:'home'});assert.equal(r.manager.currentView(),view);assert.equal(r.document.main.children.length,2);

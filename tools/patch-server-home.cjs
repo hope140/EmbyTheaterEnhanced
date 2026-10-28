@@ -76,6 +76,11 @@ function patchViewManager(text) {
         'function ViewManager(){}ViewManager.prototype.canRestoreHome=function(options){var index=eteHomeRestoreIndex(options);return index!==null&&index>=0};');
     text = once(text, 'index=currentUrls.indexOf(url);if(-1!==index)',
         'index=eteHomeRestoreIndex(options);if(index===null)index=currentUrls.indexOf(url);if(-1!==index)');
+    // Forward Home navigation can restore the already-current native slot.
+    // Keep its original pause/resume cycle, but never hide that same view as
+    // the previous page after revealing it.
+    text = once(text, 'return view.classList.remove("hide"),selectedPageIndex=index,!previousView||controller&&controller.hidesPreviousView||previousView.classList.add("hide")',
+        'return view.classList.remove("hide"),selectedPageIndex=index,!previousView||previousView===view||controller&&controller.hidesPreviousView||previousView.classList.add("hide")');
     return once(text, 'return setControllerClass(view,options).then(function(){eteCheck(epoch,signal);console.log',
         'return setControllerClass(view,options).then(function(){eteCheck(epoch,signal);eteHomeRestoreCheck(options,view);console.log');
 }

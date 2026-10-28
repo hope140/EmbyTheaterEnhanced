@@ -218,6 +218,13 @@ class ApiClient extends BaseApiClient {
         return this._request(this.isMinServerVersion('4.7.0.33') ? 'POST' : 'DELETE',
             path + (this.isMinServerVersion('4.7.0.33') ? '/Delete' : ''), query);
     }
+    // The Web delete helper supplies the item DTO, not the MIT base's scalar ID.
+    deleteItem(item) {
+        if (!item || !item.Id) throw new Error('null itemId');
+        return this._delete(`Items/${id(item.Id)}`).then(result => {
+            this._libraryChanged([item]); return result;
+        });
+    }
     deleteItems(items) {
         const operation = this.isMinServerVersion('4.7.0.33') ?
             this._request('POST', 'Items/Delete', { Ids: ids(items).join(',') }) :

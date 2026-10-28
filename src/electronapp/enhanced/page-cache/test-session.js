@@ -32,7 +32,7 @@ const FLOW_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'}),
     Object.freeze({path: 'electronapp/www/home/home.js', sha256: 'BA337B1E152FF26787B2D612156A76263A9C41E2149F0504D9D01A7E575E8D5F'}),
     Object.freeze({path: 'electronapp/www/home/hometab.js', sha256: 'EE30D819DE898154D8D6727CE31FE86418F79761368FA4B7075F071DF56635CB'}),
-    Object.freeze({path: 'electronapp/www/modules/viewmanager/viewmanager.js', sha256: 'AFAC86446F43B599A75E6AD7D619A3BFF0BB513105334A23EFF4C63FE237D4F4'}),
+    Object.freeze({path: 'electronapp/www/modules/viewmanager/viewmanager.js', sha256: '4F35A1F33E3540BD95CAAEAECF1B361A077E2A6FC0E566B655E2B603E35E6F83'}),
     Object.freeze({path: 'electronapp/www/modules/approuter.js', sha256: '364CF6818BA4D92D237943FFD1D59FDB8B533E944BE7E4AB06588F203A1E66C5'})
 ]);
 const DETAIL_OVERLAYS = Object.freeze([

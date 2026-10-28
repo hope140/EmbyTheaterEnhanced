@@ -52,6 +52,12 @@ renderer使用canonical`modules/approuter.js`的原`getRouteUrl(parent,{section:
 
 普通 baseline 保持原模式与布局缓存默认关闭，但允许原生三槽内、同账号／服务器／认证代次／语言／查询且未失效的 Home 驻留页恢复。恢复仍请求新布局和 Items；等待时保留原卡片，布局签名相同则通过原容器交付新内容，身份／数据失效则退休。布局发生变化才更换 stage，未新增视图池或永久 API 缓存。加载中的用户进度、状态和正在播出／录制节目易变字段不继续显示旧值。原请求、导航票据与提交守卫仍有效；失效或槽淘汰后冷加载属正常行为。
 
+### 当前首页重复导航
+
+点击侧栏主页也可以命中当前驻留 Home。原生 `tryRestoreView` 的 previousView 与目标 view 此时是同一节点；显示目标后再次隐藏 previousView 会把正文自身隐藏。维护 viewmanager overlay 仅在二者不同的情况下隐藏旧页，原暂停／恢复、身份与取消守卫、三槽上限和请求更新链保持。相同节点保护也适用于该原生恢复分支的其他页面；插件事务路径沿原分流处理。
+
+`node --test tests/home-route-restore.test.cjs` 覆盖同页连续恢复、跨页返回、身份／原生失效与槽淘汰。受控浏览器对照命令：`node tools/check-home-repeat-navigation-renderer.cjs <Chromium绝对路径> <新证据目录绝对路径> <修复前40位commit>`（需已有 Playwright）。它使用原生侧栏 Home 条目、路由入口函数、Home/TabbedView/BaseView 与卡片组件，对比只替换组合 viewmanager 的控制组和候选组，覆盖 baseline／retain／sections 及持有 Items 回复时的重入。API、模块加载和平台能力由夹具提供，禁止实际网络请求；不代表完整 Windows 客户端、真实服务或安装验收。
+
 ## 图片内文字与旧首页样式兼容
 
 旧 CardBuilder 为 `.sections.homeSectionsContainer` 内的 `.innerCardFooter .cardText.cardTextCentered` 注入隐藏规则。维护 Home 将 `homeSectionsContainer` stage 放在原 `.sections` 内，两个类不再属于同一节点，旧规则失配；回退使用 Backdrop 的继续观看卡片会露出原已生成的年份。维护 `home-flow.css` 仅为这层父子结构补回相同隐藏范围，保留普通外层卡片文字、进度及指示器，也不改变非首页的图片内文字。没有改动冻结快照或添加第二个 `sections` 容器。
