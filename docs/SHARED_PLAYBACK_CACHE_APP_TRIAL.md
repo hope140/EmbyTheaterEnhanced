@@ -1,6 +1,18 @@
 # 共享播放缓存：普通应用隔离试验入口
 
-状态：已接入普通应用的既有会话链，但仅显式隔离试验启用。默认普通启动不读取或初始化共享缓存；本轮未生成安装包、未启动真实 Windows Electron／Native DLL、未访问 NAS 或115。父任务可据精确提交准备新的 Windows 候选，不复用历史过期包。
+状态：显式隔离试验仍使用严格共享路径。本地普通启动候选由既有开关选择按来源路由，默认仍关闭；下面的旧试验接线说明保留历史身份。候选尚未生成新安装包或完成 Windows 普通入口／Native 自然切集验收，不复用旧包冒充本次来源。
+
+## 普通启动的来源兼容候选
+
+既有开关保持默认关闭、70%／300MiB及原档位。开启后每个显式 Play 锁定一种路径：未提供共享凭据的来源继续原 next-prefix 的同源、静态来源及强 ETag／206校验；提供凭据的来源使用严格共享路径，main 角色授权、真实 Native 预算、来源大小、验证器及50ms／30ms保护均保持。凭据错误、过期或共享准备失败不能转到旧路径重试，只能正常直读。当前正式共享凭据由 CD2 来源解析签发，不新增普通 Emby 授权提供者。
+
+原队列的 next 跟随本次 Play 的引擎：legacy 当前视频的带凭据 next 仍由原 legacy transport 校验，之后真正播放它时才可改选共享；shared 当前视频的无凭据 next 不预载，之后真正播放它时可选 legacy。跨引擎不复用先前 prefix。这个限制避免两条磁盘路径同时取得一份 P，不保证混合来源队列的每个 next 都可预载。
+
+切引擎先等待旧实例关闭：legacy→shared先释放旧 P；shared→legacy准备时保留实际 A，等 legacy B 的真实开始事件后，才维护固定的已存在共享目录。目录不存在则不创建、不为维护读预算；存在时取得并 commit真实 M，使用 existing-only／on-demand恢复及原 owner／OS guard校验，同媒体裁剪到 M，不同媒体清旧 actual，finally关闭后才能准入 legacy P。维护不访问媒体源，不阻塞当前正常播放。取消、重复退休、换代及退出共享一条持久维护屏障；关闭失败保留错误并阻断后续缓存准入。开关关闭不主动删除已保留数据。
+
+renderer 的 context=null 仅退休原 owner，不切引擎或丢未播放 next。状态区分实际引擎与 source-aware 路由；尚未核实的旧共享磁盘大小保留 null，不填0或称命中。UI说明区分仅预载与共享保留，P仅下一集、M＋P为媒体上限，索引另计，不承诺每次命中或提速。
+
+50ms仍仅为原shared.select的准备保护，不能覆盖range-context／退休的所属维护等待。跨引擎快速换片若遇慢文件操作，下一次load可能等待旧维护关闭。维护本身不发pause／stop；但切换时旧route可能已退休，不能保证旧视频仍持续流畅播放。需单独记录切换请求至load总时间及等待段，并覆盖慢维护期间立即切集、Stop与退出，不能把本地功能回归当作Windows交互延迟通过。
 
 ## 一份实现与真实来源归属
 
@@ -124,6 +136,14 @@ Each explicit Play has one shared-selection attempt. A timeout, refusal or cance
 Status separates `backend.state` (`idle`, `initializing`, `ready`, `failed`, `closing`, `closed`) from `current.route` (`idle`, `original`, `proxy`). `ready` describes infrastructure only. It neither authorizes a media resource nor proves cached body bytes or a local hit. The existing current activity state, source diagnostic, disk bytes and next-prefix progress retain their separate meanings.
 
 A later explicit Play may reuse an already initialized backend in the same application/configuration. It must acquire a fresh current-generation actual Native budget, current source authority and successful one-byte validator probe, then wait for its own key readiness. A changed budget can require reset and fallback. Changed source identity/account/validator and revoked authority still reject or invalidate old data. Direct original-source fallback does not itself fill the shared cache. Reusing infrastructure therefore does not guarantee a body hit on that later Play, and a new process is not an already initialized backend.
+
+### Independently authorized next episode after a cold fallback
+
+The current Play remaining on its original source does not disqualify the original queue's next episode from preloading. After the existing progress threshold, the shared session may prepare only that separately resolved next candidate. It requires its own main-issued next-role transport proof, the same live helper/generation and server/account/play-session ownership, and a still-current actual Native budget. The budget is committed before prefix transfer. Cancellation, a stale budget or invalid proof cannot start late routes or bodies. The current route and its original timeout diagnostic remain unchanged; next progress is displayed separately from current direct playback.
+
+Natural next remains owned by PlaybackManager. Actual playback of B is a new generation and must perform the existing budget, authority and one-byte source validation before using B's preloaded bytes. Preparing B does not promote it to actual or retain the direct-played A. Exit before B plays discards B; after B actually plays, Stop/exit retains only B and on-demand reopening verifies its stored bytes. The 50 ms current-selection cap and 30 ms foreground disk grace are unchanged.
+
+Local coverage uses real loopback HTTP, authority, shared store, Native-budget-reader logic and the original Alameda/PlaybackManager queue with a synthetic helper. It covers cold A direct playback, independently warmed B, natural EOF, fresh B probe without repeated prefix body, cancellation, invalid budgets/proofs, and both exit/reopen outcomes. This is not a new Windows package or natural-next Native result. Unconditionally replacing the ordinary legacy path would reject previously supported proofless Emby preloads. The source-aware candidate described above preserves that path without relaxing main-issued transport authority.
 
 ### Prospective acceptance layers
 

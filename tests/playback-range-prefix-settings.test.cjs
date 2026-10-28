@@ -66,14 +66,15 @@ test('enabled preferences persist across reopen; old resource-bearing experiment
     assert.equal(fs.readFileSync(file, 'utf8'), oldBytes, 'loading the old experiment does not auto-rewrite it');
 });
 
-test('runtime config is default-off and otherwise exposes only the isolated next-prefix policy', () => {
+test('runtime config stays default-off and exposes fixed owned roots for source-aware routing', () => {
     const profileRoot = temporaryRoot('ete-next-prefix-runtime-');
     const store = settings.createStore({profileRoot});
     assert.equal(store.runtimeConfig(), null);
     store.save(config({enabled: true, progressPercent: 60, preloadMB: 100}));
     assert.deepEqual(store.runtimeConfig(), {
-        kind: 'next-prefix',
+        kind: 'source-aware',
         root: path.join(profileRoot, 'next-episode-prefix-v1'),
+        sharedRoot: path.join(profileRoot, 'shared-playback-byte-cache-v2'),
         progressPercent: 60,
         preloadMB: 100,
         prefetchBytes: (100 * 1024 * 1024),
@@ -81,7 +82,7 @@ test('runtime config is default-off and otherwise exposes only the isolated next
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false, 'configuration lookup creates no cache');
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),
-        ['kind', 'prefetchBytes', 'preloadMB', 'progressPercent', 'root', 'timeoutMs']);
+        ['kind', 'prefetchBytes', 'preloadMB', 'progressPercent', 'root', 'sharedRoot', 'timeoutMs']);
 });
 
 test('IPC supports explicit enabled settings with next-play application and no restart gate', async () => {
@@ -100,7 +101,7 @@ test('IPC supports explicit enabled settings with next-play application and no r
 });
 
 test('video settings contain the preload controls and use the existing next-play IPC contract', () => {
-    assert.match(htmlSource, /启用预载/);
+    assert.match(htmlSource, /启用播放暂存与下一集预载/);
     assert.match(htmlSource, /下次播放生效/);
     assert.doesNotMatch(htmlSource, /rangeRuntimeState|btnSaveRange|当前运行/);
     assert.match(controllerSource, /enhanced-playback-range-settings-get/);

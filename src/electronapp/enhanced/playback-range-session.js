@@ -215,7 +215,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 return {state: 'unavailable', diagnostic: safe};
             }
             if (!owner || !owns(owner) || owner.helper !== helper || owner.generationId !== generationId) return refuse({stage: 'lifecycle', reason: 'generation-retired'});
-            if (!owner.handle) return refuse(owner.diagnostic || {stage: 'current-context', reason: 'current-proxy-required'});
+            if (!owner.handle && config.kind !== 'shared-byte-trial') return refuse(owner.diagnostic || {stage: 'current-context', reason: 'current-proxy-required'});
             if (!owner.playing) return refuse({stage: 'progress-check', reason: 'waiting-progress'});
             if (next) return {state: 'already-preparing'};
             const controller = new AbortController(); let parsed;
@@ -226,12 +226,28 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 parsed.itemId === owner.value.itemId || parsed.playSessionId !== owner.value.playSessionId) {controller.abort(); return refuse({stage: 'next-context', reason: 'next-identity'});}
             const record = {controller, handle: null}; next = record;
             nextProgress = {state: 'preparing', bytes: 0, targetBytes: policy.prefetchBytes};
-            const valid = () => next === record && owns(owner) && !record.controller.signal.aborted;
+            let budget = null;
+            const ownsNext = () => next === record && owns(owner) && !record.controller.signal.aborted;
+            const valid = () => {
+                if (!ownsNext()) return false;
+                try {return !budget || typeof budget.isCurrent === 'function' && budget.isCurrent() === true;} catch (_) {return false;}
+            };
             try {
+                if (config.kind === 'shared-byte-trial') {
+                    // A prior current-Play fallback remains original. This is
+                    // only the already requested NEXT candidate, with its own
+                    // branded proof and the current helper's real budget.
+                    if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
+                    budget = await readCurrentBytes(helper, generationId);
+                    if (!budget || typeof budget.isCurrent !== 'function' || typeof budget.commit !== 'function' || budget.isCurrent() !== true ||
+                        !Number.isSafeInteger(budget.bytes) || budget.bytes < 262144 || budget.bytes > 3072 * 1048576) throw diagnostics.error('generation-retired', 'range-shared-budget-retired');
+                    if (!valid()) throw Error('range-next-retired');
+                }
                 const cache = await ensure(); if (!valid()) throw Error('range-next-retired');
                 record.handle = await cache.open({source: parsed.source, identity: parsed.identity, transport: parsed.transport, role: 'next',
-                    ...(config.kind === 'shared-byte-trial' ? {currentBytes: owner.currentBytes} : {}), isCurrent: valid, signal: record.controller.signal});
+                    ...(budget ? {currentBytes: budget.bytes} : {}), isCurrent: valid, signal: record.controller.signal});
                 if (!valid()) throw Error('range-next-retired');
+                if (budget) budget.commit();
                 const size = record.handle.status ? record.handle.status().total : policy.prefetchBytes;
                 nextProgress = {state: 'warming', bytes: 0, targetBytes: Math.min(size, policy.prefetchBytes)};
                 const result = await record.handle.prefetch({maxBytes: policy.prefetchBytes, bytesPerSecond: config.bytesPerSecond, signal: record.controller.signal,
@@ -240,8 +256,10 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                     ...(result.bytes < nextProgress.targetBytes ? {diagnostic: report({stage: 'next-prefix', reason: 'cache-quota'})} : {})};
                 return {state: valid() ? nextProgress.state : 'cancelled', bytes: result.bytes, ...(valid() && nextProgress.diagnostic ? {diagnostic: nextProgress.diagnostic} : {})};
             } catch (error) {
-                const diagnostic = diagnostics.fromError(error, record.handle ? 'next-prefix' : 'next-probe', 'cache-unavailable');
-                if (valid()) nextProgress = {...nextProgress, state: 'unavailable', diagnostic: report(diagnostic)};
+                const stage = record.handle ? 'next-prefix' : 'next-probe';
+                if (config.kind === 'shared-byte-trial' && record.handle) {try {await record.handle.stop();} catch (_) {} record.handle = null;}
+                const diagnostic = diagnostics.fromError(error, stage, 'cache-unavailable');
+                if (ownsNext()) nextProgress = {...nextProgress, state: 'unavailable', diagnostic: report(diagnostic)};
                 return {state: record.controller.signal.aborted ? 'cancelled' : 'unavailable', diagnostic};
             }
         })());

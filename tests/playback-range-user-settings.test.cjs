@@ -43,7 +43,7 @@ test('legacy resource-bearing experiment config preserves choices but cannot res
     assert.equal(fs.readFileSync(file, 'utf8'), bytes, 'loading legacy input does not migrate or rewrite the file');
 });
 
-test('store clones snapshots, atomically persists enabled choices, reopens, and exposes only next-prefix policy', () => {
+test('store clones snapshots, atomically persists enabled choices, reopens, and exposes source-aware runtime routing', () => {
     const profileRoot = temporaryRoot('ete-next-prefix-store-'), store = settings.createStore({profileRoot});
     assert.deepEqual(store.get(), config());
     assert.equal(store.runtimeConfig(), null);
@@ -53,12 +53,12 @@ test('store clones snapshots, atomically persists enabled choices, reopens, and 
     assert.equal(store.get().enabled, true);
     assert.deepEqual(settings.createStore({profileRoot}).get(), saved);
     assert.deepEqual(store.runtimeConfig(), {
-        kind: 'next-prefix', root: path.join(profileRoot, 'next-episode-prefix-v1'),
+        kind: 'source-aware', root: path.join(profileRoot, 'next-episode-prefix-v1'), sharedRoot: path.join(profileRoot, 'shared-playback-byte-cache-v2'),
         progressPercent: 60, preloadMB: 100, prefetchBytes: (100 * 1024 * 1024), timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false);
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),
-        ['kind', 'prefetchBytes', 'preloadMB', 'progressPercent', 'root', 'timeoutMs']);
+        ['kind', 'prefetchBytes', 'preloadMB', 'progressPercent', 'root', 'sharedRoot', 'timeoutMs']);
 });
 
 test('store refuses a symlinked profile root without touching its target', t => {

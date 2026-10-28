@@ -298,4 +298,4 @@ async function createCache(config, dependencies = {}) {
     };
 }
 
-module.exports = {createCache};
+module.exports = {createCache, uncachedIdentity};

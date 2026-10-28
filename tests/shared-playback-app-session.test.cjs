@@ -2,7 +2,9 @@
 
 // Synthetic app-session integration only: issue/bind use the real authority,
 // playback-range-session and shared cache adapter; the HTTP origin is loopback.
-// readCurrentBytes is an explicit test injection (not a native property read).
+// readCurrentBytes normally uses explicit test injection. The budget-reader
+// integration case runs the maintained reader with a synthetic helper getter;
+// it is not a Native DLL/property measurement.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {EventEmitter} = require('node:events');
@@ -149,7 +151,10 @@ async function fixture(t, options = {}) {
   webA.isDestroyed = webB.isDestroyed = () => false;
   const principalA = authority.principalFor(webA), principalB = authority.principalFor(webB);
   const helper = {currentGenerationId: 1, exited: false, transportTerminated: false};
-  let budgetBytes = MEDIA_BUFFER_BYTES, budgetCurrent = true;
+  let budgetBytes = MEDIA_BUFFER_BYTES, budgetCurrent = true, budgetCommits = 0;
+  const nativeBudgetCalls = [];
+  helper.getProperty = async (...args) => {nativeBudgetCalls.push(args);return budgetBytes;};
+  const realBudget = options.realBudget ? require('../src/electronapp/native-helper/shared-cache-budget').createBudgetReader((owned,generation) => owned===helper&&generation===helper.currentGenerationId&&budgetCurrent) : null;
   let bindingPrincipal = principalA, currentRequestId = 'play-A', nextRequestPrefix = 'play-A-next-', cache, createCount = 0;
   const currentBytesReads = [];
   const selectionDiagnostics = [];
@@ -179,7 +184,8 @@ async function fixture(t, options = {}) {
       currentBytesReads.push(generationId);
       if (options.currentBytesGate) await options.currentBytesGate;
       if (options.slowCurrentBytesMs) await delay(options.slowCurrentBytesMs);
-      return {bytes: budgetBytes, isCurrent: () => budgetCurrent, commit() {}};
+      if (realBudget) return realBudget.read(_helper,generationId);
+      return {bytes: budgetBytes, isCurrent: () => budgetCurrent, commit() {budgetCommits++;}};
     }});
 
   function candidate(item, {principal = principalA, accountId = 'account-A', requestId = 'play-A', playSessionId = 'session-A'} = {}) {
@@ -196,6 +202,7 @@ async function fixture(t, options = {}) {
     webA, webB,
     get cache() {return cache;}, get createCount() {return createCount;}, currentBytesReads, selectionDiagnostics,
     setBudget(bytes, current = true) {budgetBytes = bytes; budgetCurrent = current;},
+    setBudgetGate(value) {options.currentBytesGate = value;}, get budgetCommits() {return budgetCommits;},realBudget,nativeBudgetCalls,
     setBindingPrincipal(value) {bindingPrincipal = value;}, setCurrentRequestId(value) {currentRequestId = value;},
     setNextRequestPrefix(value) {nextRequestPrefix = value;}};
 }
@@ -462,9 +469,9 @@ function requestFence(origin) {
 function assertNoAdditionalRequests(origin, fence) {
   assert.deepEqual(requestFence(origin), fence, 'backend readiness must issue no additional probe or media body request');
 }
-async function coldFallbackFixture(t, delayedArrival) {
+async function coldFallbackFixture(t, delayedArrival, extra = {}) {
   const hold = gate(); t.after(hold.release);
-  const f = await fixture(t, {storeGate: hold.promise, origin:{observeRequests:true}}), a = f.candidate('A');
+  const f = await fixture(t, {...extra,storeGate: hold.promise, origin:{observeRequests:true}}), a = f.candidate('A');
   const reached = async predicate => assert.ok(await waitFor(predicate), JSON.stringify(f.origin.trace));
   assert.deepEqual(f.session.status().backend, {state:'idle'});
   let arrivalCountAtExpiry;
@@ -511,7 +518,7 @@ async function coldFallbackFixture(t, delayedArrival) {
   return {f,a,fence};
 }
 
-for (const delayedArrival of [false,true]) test('cold fallback stays original after backend readiness; only a new authorized generation can reuse infrastructure / ' +
+for (const delayedArrival of [false,true]) test('cold fallback never reselects current media; a new authorized generation reuses infrastructure / ' +
   (delayedArrival ? 'probe arrives after expiry' : 'probe arrives before expiry'), {timeout:10000}, async t => {
   const {f,a} = await coldFallbackFixture(t, delayedArrival);
   assert.equal(digest((await getRange(a.source)).body), digest(Buffer.alloc(BLOCK, 0x41)), 'fallback can play the original bytes');
@@ -530,6 +537,60 @@ for (const delayedArrival of [false,true]) test('cold fallback stays original af
   assert.ok(f.origin.requests.slice(before).some(r => r.end > r.start), 'empty recovered infrastructure still needs origin body bytes');
   await f.session.close();
   assert.equal(f.cache.status().backendState, 'closed');
+});
+
+test('cold original playback independently warms authorized next media; natural next reuses bytes and reopen retains only actual B', {timeout:10000}, async t => {
+  const {f,a}=await coldFallbackFixture(t,false),diagnostic=f.session.status().current.diagnostic;
+  const before=f.origin.requests.length,commits=f.budgetCommits;
+  const next=f.candidate('B',{requestId:'play-A-next-1'});
+  const result=await f.session.preload(next,f.helper,1);
+  assert.equal(result.state,'ready',JSON.stringify(result.diagnostic));assert.equal(result.bytes,BLOCK);
+  assert.equal(f.budgetCommits,commits+1);assert.equal(f.session.status().current.route,'original');assert.deepEqual(f.session.status().current.diagnostic,diagnostic);
+  assert.equal(f.session.status().current.bytes,0);assert.equal(f.cache.status().currentBytes,0);assert.equal(f.cache.status().nextBytes,BLOCK);
+  assert(f.origin.requests.slice(before).every(r=>r.item==='B'),'next work cannot reopen or fetch current A');
+  assert.equal(await f.session.select(a.source,f.helper,1,f.loadOptions(a)),null);
+  await f.session.retire();f.helper.currentGenerationId=2;f.setCurrentRequestId('play-B');f.setNextRequestPrefix('play-B-next-');
+  const b=f.candidate('B',{requestId:'play-B'}),probeStart=f.origin.requests.length,selected=await requireSelected(f,selectCurrent(f,b));
+  assert.equal(digest((await getRange(selected.source)).body),digest(Buffer.alloc(BLOCK,0x42)));
+  assert(f.origin.requests.slice(probeStart).every(r=>r.item==='B'&&r.start===0&&r.end===0),'new actual B revalidates access without repeating warmed body');
+  await f.session.started(f.helper,2);assert(await waitFor(()=>f.cache.status().currentBytes===BLOCK&&f.cache.status().nextBytes===0));
+  await f.session.close();const restored=await createStore({root:f.root,currentBytes:MEDIA_BUFFER_BYTES,nextBytes:PRELOAD_MB*1048576,recoveryMode:'on-demand'});
+  try{assert.equal(restored.status().current,BLOCK);assert.equal(restored.status().next,0);assert.equal(digest(await restored.read(restored.status().currentKey,0,BLOCK)),digest(Buffer.alloc(BLOCK,0x42)));}finally{await restored.close();}
+});
+
+for(const [label,bytes,current]of [['stale',MEDIA_BUFFER_BYTES,false],['too-small',1,true],['non-integer',3.5,true],['too-large',3072*1048576+1,true]])test('cold next refuses '+label+' real budget without new HTTP or reviving current', {timeout:10000},async t=>{
+  const {f,fence}=await coldFallbackFixture(t,false);f.setBudget(bytes,current);
+  const result=await f.session.preload(f.candidate('B',{requestId:'play-A-next-1'}),f.helper,1);
+  assert.equal(result.state,'unavailable');assert.equal(f.session.status().next.state,'unavailable');assert.equal(f.session.status().current.route,'original');assert.equal(f.cache.status().nextBytes,0);assertNoAdditionalRequests(f.origin,fence);
+});
+
+test('cancelled cold-next budget read cannot start late routes, keys or bodies', {timeout:10000},async t=>{
+  const {f,fence}=await coldFallbackFixture(t,false),hold=gate();t.after(hold.release);f.setBudgetGate(hold.promise);
+  const warming=f.session.preload(f.candidate('B',{requestId:'play-A-next-1'}),f.helper,1);
+  assert(await waitFor(()=>f.currentBytesReads.length===2));await f.session.cancelNext();hold.release();const result=await warming;
+  assert.equal(result.state,'cancelled');assert.equal(f.session.status().current.route,'original');assert.equal(f.cache.status().nextBytes,0);assertNoAdditionalRequests(f.origin,fence);
+});
+
+for(const [label,options]of [['foreign-account',{requestId:'play-A-next-1',accountId:'other-account'}],['current-only-proof',{requestId:'play-A'}]])test('cold next rejects '+label+' independently of its ready backend', {timeout:10000},async t=>{
+  const {f,fence}=await coldFallbackFixture(t,false),before=f.currentBytesReads.length;
+  const result=await f.session.preload(f.candidate('B',options),f.helper,1);assert.equal(result.state,'unavailable');
+  assert.equal(f.session.status().current.route,'original');assert.equal(f.cache.status().nextBytes,0);assert.equal(f.currentBytesReads.length,before);assertNoAdditionalRequests(f.origin,fence);
+});
+
+test('cold next uses actual budget-reader commit/retire barriers without locking the original fallback early', {timeout:10000},async t=>{
+  const {f}=await coldFallbackFixture(t,false,{realBudget:true});assert.equal(f.nativeBudgetCalls.length,1);assert.deepEqual(f.nativeBudgetCalls[0],['demuxer-max-bytes',50]);
+  assert.doesNotThrow(()=>f.realBudget.beforeWrite(),'original fallback did not commit a proxy budget');
+  const result=await f.session.preload(f.candidate('B',{requestId:'play-A-next-1'}),f.helper,1);assert.equal(result.state,'ready');
+  assert.equal(f.nativeBudgetCalls.length,2,'a settings revision must force a real new property read');assert.throws(()=>f.realBudget.beforeWrite(),/budget-in-use/);
+  assert.equal(f.session.status().current.route,'original');await f.session.cancelNext();assert.equal(f.cache.status().nextBytes,0);
+  f.realBudget.retire();assert.doesNotThrow(()=>f.realBudget.beforeWrite(),'new generation retires the held budget');
+});
+
+test('exiting after cold-next warming discards unplayed B instead of inventing a retained actual object', {timeout:10000},async t=>{
+  const {f}=await coldFallbackFixture(t,false);assert.equal((await f.session.preload(f.candidate('B',{requestId:'play-A-next-1'}),f.helper,1)).state,'ready');
+  assert.equal(f.cache.status().currentBytes,0);assert.equal(f.cache.status().nextBytes,BLOCK);await f.session.close();
+  const restored=await createStore({root:f.root,currentBytes:MEDIA_BUFFER_BYTES,nextBytes:PRELOAD_MB*1048576,recoveryMode:'on-demand'});
+  try{assert.equal(restored.status().current,0);assert.equal(restored.status().next,0);assert.equal(restored.status().currentKey,null);}finally{await restored.close();}
 });
 
 // Inject only into the synthetic origin AFTER the production fence is stable.

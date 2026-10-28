@@ -123,7 +123,7 @@ function normalizeStartupKernelSelection(value) {
 function createService(options) {
   const settings = options || {};
   function readRangeConfig() {
-    try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config && ['next-prefix', 'shared-byte-trial'].includes(config.kind) ? {...config} : null;} catch (_) {return null;}
+    try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config && ['next-prefix', 'shared-byte-trial', 'source-aware'].includes(config.kind) ? {...config} : null;} catch (_) {return null;}
   }
   function reportPreload(value) {
     const safe = preloadDiagnostics.snapshot(value);
@@ -141,13 +141,17 @@ function createService(options) {
     !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId);
   function readSharedCurrentBytes(helper, generationId) {return sharedBudget.read(helper, generationId);}
   function primeSharedBudget(helper) {
-    if (rangeSession && rangeConfigKind === 'shared-byte-trial') sharedBudget.read(helper, helper.currentGenerationId);
+    if (rangeSession && (rangeConfigKind === 'shared-byte-trial' || rangeConfigKind === 'source-aware' &&
+        rangeSession.status().kind === 'shared-byte-trial' && rangeSession.status().current.state !== 'idle')) sharedBudget.read(helper, helper.currentGenerationId);
   }
   function changesSharedBudget(name) {return name === 'demuxer-max-bytes' || name === 'profile';}
-  function createRangeSession(config) {return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
+  function createRangeSession(config) {
+    if (config.kind === 'source-aware') return require('../enhanced/playback-range-source-session').createSourceSession({config,
+      onDiagnostic: reportPreload, readCurrentBytes: readSharedCurrentBytes, authorize: settings.sourceAuthority ? authorizeRange : undefined});
+    return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
     ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes} : {}),
     authorize: settings.sourceAuthority ? authorizeRange : undefined});}
-  function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
+  function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'sharedRoot', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();
   let rangeSession = initialRangeConfig ? createRangeSession(initialRangeConfig) : null;
   let rangeConfigKind = initialRangeConfig && initialRangeConfig.kind;
@@ -809,7 +813,10 @@ function createService(options) {
     if (operation === 'range-context') {
       requireGeneration(active, payload);
       ++rangePreloadEpoch;
-      return {status: 'ok', value: rangeSession ? await rangeSession.setContext(payload.context, active, active.currentGenerationId) : {state: 'disabled'}};
+      const value = rangeSession ? await rangeSession.setContext(payload.context, active, active.currentGenerationId) : {state: 'disabled'};
+      if (rangeConfigKind === 'source-aware' && active === client && active.currentGenerationId === payload.generationId &&
+          value && value.state === 'ready' && !value.diagnostic) primeSharedBudget(active);
+      return {status: 'ok', value};
     }
     if (operation === 'range-cancel-next') {
       requireGeneration(active, payload);

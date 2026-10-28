@@ -23,16 +23,18 @@ const turn = () => new Promise(resolve => setImmediate(resolve));
 test('preload appears once under the original video Advanced section with confirmed defaults and no runtime display or save button', () => {
     assert.equal((html.match(/<form\b/g) || []).length, 1);
     assert.equal((html.match(/<\/form>/g) || []).length, 1);
-    const advanced = html.indexOf('<h1>${Advanced}</h1>'), preload = html.indexOf('<h1>预载</h1>');
+    const advanced = html.indexOf('<h1>${Advanced}</h1>'), preload = html.indexOf('<h1>播放暂存与预载</h1>');
     assert(advanced >= 0 && advanced < preload, 'preload follows the existing Advanced heading');
     assert.equal((html.match(/<h1>\$\{Advanced\}<\/h1>/g) || []).length, 1);
-    assert.equal((html.match(/<h1>预载<\/h1>/g) || []).length, 1);
+    assert.equal((html.match(/<h1>播放暂存与预载<\/h1>/g) || []).length, 1);
     for (const name of ['chkRangeEnabled', 'selectRangeProgress', 'selectRangePreload']) {
         const marker = 'class="' + name + '"';
         assert.equal(html.split(marker).length - 1, 1, name + ' is not duplicated');
         assert(preload < html.indexOf(marker) && html.indexOf(marker) < html.indexOf('</form>'), name + ' remains in the original Advanced form');
     }
-    assert.match(html, /<h1>预载<\/h1>/); assert.match(html, /启用预载/); assert.match(html, /下次播放生效/);
+    assert.match(html, /<h1>播放暂存与预载<\/h1>/); assert.match(html, /启用播放暂存与下一集预载/); assert.match(html, /下次播放生效/);
+    assert.match(html, /支持共享暂存的来源会保留最近实际播放视频/); assert.match(html, /其他来源仅预载下一集/);
+    assert.match(html, /关闭开关不主动删除/); assert.match(html, /预载量只限制下一集/);
     assert.doesNotMatch(html, /rangeRuntimeState|当前运行|btnSaveRange|type="submit"|maxBytes|bytesPerSecond/);
     const choices = name => html.match(new RegExp('class="' + name + '"[^>]*>([\\s\\S]*?)<\\/select>'))[1];
     assert.deepEqual([...choices('selectRangeProgress').matchAll(/value="(\d+)"/g)].map(m => Number(m[1])), [50, 60, 70, 80, 90]);

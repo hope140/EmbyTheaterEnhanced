@@ -44,7 +44,8 @@ function createStore({profileRoot}) {
             return get();
         },
         // P is the selected next-prefix budget, not a second last-play quota.
-        runtimeConfig() {return config.enabled ? {kind: 'next-prefix', root: path.join(profileRoot, 'next-episode-prefix-v1'),
+        runtimeConfig() {return config.enabled ? {kind: 'source-aware', root: path.join(profileRoot, 'next-episode-prefix-v1'),
+            sharedRoot: path.join(profileRoot, 'shared-playback-byte-cache-v2'),
             ...selection(config), timeoutMs: 30000} : null;}
 
     };

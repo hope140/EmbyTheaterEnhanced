@@ -38,7 +38,7 @@ function runtimeConfig(sharedCacheTrial, enabled) {
     const end = main.indexOf('unregisterRangeSettingsIpc =', start);
     const sandbox = {sharedCacheTrial, path, app: {getPath: () => '/owned-trial/userdata'},
         rangeSettingsStore: {get: () => ({enabled, progressPercent: 70, preloadMB: 300}),
-            runtimeConfig: () => ({kind: 'next-prefix', marker: 'ordinary-path'})}};
+            runtimeConfig: () => ({kind: 'source-aware', marker: 'ordinary-path'})}};
     vm.runInNewContext(main.slice(start, end) + '\nresult = getRangeCacheRuntimeConfig();', sandbox);
     return JSON.parse(JSON.stringify(sandbox.result));
 }
@@ -48,7 +48,7 @@ test('actual main config uses both the explicit isolated trial and existing enab
     assert.equal(selected.kind, 'shared-byte-trial');
     assert.equal(selected.progressPercent, 70); assert.equal(selected.preloadMB, 300);
     assert.equal(selected.root, path.join('/owned-trial/userdata', 'shared-playback-byte-cache-v2'));
-    assert.deepEqual(runtimeConfig(null, true), {kind: 'next-prefix', marker: 'ordinary-path'});
+    assert.deepEqual(runtimeConfig(null, true), {kind: 'source-aware', marker: 'ordinary-path'});
 });
 
 const service = fs.readFileSync(path.join(__dirname, '../src/electronapp/native-helper/service.js'), 'utf8');

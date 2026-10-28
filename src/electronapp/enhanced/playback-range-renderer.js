@@ -49,7 +49,7 @@
         try {return JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(bytes));}
         catch (_) {throw diagnostics.error('metadata-json', 'range-metadata-json');}
     }
-    function category(state, diagnostic, next) {
+    function category(state, diagnostic, next, current) {
         var labels = {idle: '未预载', waiting: '等待进度或下一集', checking: '正在确认下一集', preparing: '正在准备', warming: '正在预载', ready: '预载完成', partial: '已预载部分', unavailable: '暂不可用', cancelled: '已取消'};
         var text = labels[state] || '未预载';
         if (diagnostic) text += '：' + diagnostics.text(diagnostic);
@@ -57,6 +57,7 @@
             var mb = function (n) {return Number.isFinite(n) && n >= 0 ? (n / (1024 * 1024)).toFixed(1) + ' MiB' : '未知';};
             text += ' · ' + mb(next.bytes) + ' / ' + mb(next.targetBytes);
         }
+        if (current && current.route === 'original') text += ' · 当前视频直读';
         return {type: 'enhanced', name: 'Emby Theater Enhanced', stats: [{label: '预载:', value: text}]};
     }
     async function bind(options) {
@@ -108,7 +109,7 @@
                         catch (error) {if (owns()) {nextState = 'unavailable'; nextDiagnostic = report(diagnostics.fromError(error, 'current-context', 'proxy-unavailable'));} return;}
                         if (!owns()) return;
                         var currentFailure = currentStatus && currentStatus.value && currentStatus.value.current;
-                        if (currentFailure && currentFailure.state === 'original' && currentFailure.diagnostic) {
+                        if (currentFailure && currentFailure.state === 'original' && currentFailure.diagnostic && currentStatus.value.kind !== 'shared-byte-trial') {
                             nextState = 'unavailable'; nextDiagnostic = report(currentFailure.diagnostic); return;
                         }
                         var api = options.connectionManager.getApiClient(context.serverId);
@@ -149,8 +150,8 @@
                     var result = await binding.status(), now = valid(), currentNext = now && nextItem(options, now);
                     if (!now || nextCancellation || nextId !== candidateId || ticket !== stateEpoch || sequence !== statusSequence || nextId !== (currentNext && currentNext.Id) || !result || !result.value || !result.value.enabled) return null;
                     var status = result.value, next = status.next || {}, state = next.state === 'idle' ? nextState : next.state;
-                    var diagnostic = next.diagnostic || (status.current && status.current.state === 'original' && status.current.diagnostic) || nextDiagnostic;
-                    return category(diagnostic && (state === 'waiting' || state === 'idle') ? 'unavailable' : state, diagnostic, next);
+                    var diagnostic = next.diagnostic || (status.kind !== 'shared-byte-trial' && status.current && status.current.state === 'original' && status.current.diagnostic) || nextDiagnostic;
+                    return category(diagnostic && (state === 'waiting' || state === 'idle') ? 'unavailable' : state, diagnostic, next, status.kind === 'shared-byte-trial' ? status.current : null);
                 } catch (error) {
                     var latest = valid(), latestNext = latest && nextItem(options, latest);
                     if (!latest || nextCancellation || ticket !== stateEpoch || sequence !== statusSequence || nextId !== candidateId || nextId !== (latestNext && latestNext.Id)) return null;

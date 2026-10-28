@@ -94,6 +94,15 @@ test('known current-source refusal is shown before next metadata and cannot be r
     assert.equal(fetches,0);assert((await controller.category()).stats[0].value.includes('current-context/source-cross-origin'));
 });
 
+test('shared current fallback does not block independent next negotiation or mislabel its ready status',async t=>{
+    const f=rendererFixture(t),calls=[];
+    f.binding.status=async()=>({value:{kind:'shared-byte-trial',enabled:true,current:{route:'original',state:'original',diagnostic:{stage:'current-probe',reason:'timeout'}},next:{state:'idle'}}});
+    f.binding.preload=async value=>{calls.push(value);return{value:{state:'ready'}};};
+    const controller=await renderer.bind(f.input);t.after(()=>controller.close());controller.started();await controller.tick();await new Promise(setImmediate);
+    assert.equal(calls.length,1);assert.equal(calls[0].itemId,'B');const text=(await controller.category()).stats[0].value;
+    assert(text.includes('预载完成'));assert(text.includes('当前视频直读'));assert(!text.includes('timeout'));assert(!text.includes('never-log-this'));
+});
+
 test('current owned status-query failure remains visible without arbitrary exception text',async t=>{
     const f=rendererFixture(t),controller=await renderer.bind(f.input);t.after(()=>controller.close());
     f.binding.status=async()=>{throw Error('private-transport-url-token');};controller.started();await controller.tick();await new Promise(setImmediate);

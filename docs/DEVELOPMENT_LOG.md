@@ -1,5 +1,21 @@
 # 维护记录
 
+## 2026-10-28 — 普通开关保留旧来源并有条件接入共享路径
+
+新增source-aware会话路由：sourceProof缺省选旧next-prefix，提供则走shared且不因拒绝降级；每Play／next锁引擎，避免双P。service复用原generation／角色授权／预算reader。普通无proof且无共享目录不发预算维护或创建共享目录，试验flag仍严格共享。UI说明按来源能力区分退出丢弃与最后实际保留，原默认与选项不变。
+
+维护复用原store owner／OS guard、真实budget commit及on-demand恢复；existingOnly拒绝创建缺失目录／owner／blocks。真实legacy开始后才清不同媒体旧actual，同媒体裁剪到M，关闭后才准入legacy P。重复retire保留维护屏障，关闭失败保留错误并禁后续缓存。真实Alameda初轮发现endpoint丢timeoutMs而立即超时，修复状态字段；独立审查补context-null保留next及重复retire等待维护负例。初次失败保留，不放宽时限或重标历史Windows结果。当前本地候选未提交或远端验收。
+
+完整回归初轮唯一失败为新增M裁剪夹具依赖尽力前台tap留足两块；改为显式真实store写入两块作为恢复输入，不改产品捕获保证或M＋P断言。冻结最终源码公开串行2854项：2829通过、0失败／取消、25既有平台跳过，按原合同排除6材料文件，约132.5秒；最终定向54项全过。JS607＋2新增文件／PS55语法、有限扫描706＋2及diff检查通过。跨引擎等待所属维护不计入原50ms选源预算；仍需Windows时延验证，不声称整体无退化或提速。
+
+## 2026-10-28 — 将当前冷回退与下一集预载资格分开
+
+共享 session 不再以当前代理句柄存在作为下一集预载的前提。当前直读仍一 Play 一次选择，下一集继续原来源解析与 next-role 授权，独立读取有效的实际 Native 预算并在传输前 commit；失败清理所属 next 句柄，取消和换代使迟到预算、路由与写入失效。renderer 单独展示下一集进度及当前直读，保留旧 next-prefix 的诊断行为。没有应用启动预热、新设置、默认变化或时限放宽。
+
+新增冷 A→预载 B→原 PM 自然 EOF→B 新代次 fresh probe→Stop／退出／重开的真实本机服务验证；覆盖未播 B 退出即丢弃、预算过期／越界、错误账号／proof、取消后迟到预算及真实预算 reader 的 commit／retire。helper 与时钟为合成，不能替代 Native 解码或 Windows 验收。普通共享开关与新保留文案在兼容性对照发现普通 Emby 来源被拒后未纳入；后续需明确来源授权／兼容路由设计，不绕过 main proof。旧运行结果不重标。
+
+最终公开串行回归2840项：2815通过、0失败／取消、25既有平台跳过，排除原6个材料依赖文件；耗时约130.6秒。JavaScript607／PowerShell55语法、有限敏感模式扫描706文件及diff检查通过。当前为本地候选，未提交、推送、构建或派发新验收。
+
 ## 2026-10-26 — Windows测试路径身份对齐与同HEAD包绑定
 
 保留504CI失败：2746项中2739通过、1失败、6跳过；失败在Linux端口fixture的notStrictEqual，媒体未进入。用exact helper源配POSIX／win32 path注入确定性复现raw路径hash与host规范identity不一致；修测试根拼接，不改helper／产品guard。结合已有9a工具，CI先核兼容锚点／产品树，artifact metadata来源再用既有reviewedCandidate白名单核对，之后所有run/name/provenance仍使用选定精确SHA；支持本次HEAD打包和本次HEAD验证，旧包不重标，未来工具变动仍须重新审阅来源。

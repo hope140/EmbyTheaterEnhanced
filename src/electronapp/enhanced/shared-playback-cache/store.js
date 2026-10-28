@@ -112,6 +112,7 @@ async function createStore({
   maxPendingBytes = 2 * 1024 * 1024,
   maxEntries = MAX_ROWS,
   recoveryMode = 'verified',
+  existingOnly = false,
   io = fs,
 } = {}) {
   if (typeof root !== 'string' || !path.isAbsolute(root)) {
@@ -139,6 +140,7 @@ async function createStore({
   if (rootStat && (!rootStat.isDirectory() || rootStat.isSymbolicLink())) {
     throw new Error('cache root is not an owned directory');
   }
+  if (!rootStat && existingOnly) throw new Error('existing cache root is unavailable');
   if (!rootStat) await io.mkdir(ownedRoot, {mode: 0o700});
   rootStat = await io.lstat(ownedRoot);
   if (process.platform !== 'win32' && (rootStat.mode & 0o077) !== 0) {
@@ -154,6 +156,7 @@ async function createStore({
     owner = await io.readFile(ownerPath, 'utf8');
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
+    if (existingOnly) throw new Error('existing cache owner is unavailable');
     const existing = await io.readdir(ownedRoot);
     if (existing.length) throw new Error('cache root is not empty or owned');
     await io.writeFile(ownerPath, `${OWNER}\n`, {flag: 'wx', mode: 0o600});
@@ -179,6 +182,7 @@ async function createStore({
     if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('unsafe cache blocks directory');
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
+    if (existingOnly) throw new Error('existing cache blocks are unavailable');
     await io.mkdir(blocksPath, {mode: 0o700});
   }
   const rootIdentity = await io.lstat(ownedRoot);
