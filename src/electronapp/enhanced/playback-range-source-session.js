@@ -39,16 +39,21 @@ function createSourceSession({config, authorize, readCurrentBytes, onDiagnostic 
             budget.bytes < 262144 || budget.bytes > 3072 * 1048576) throw Error('source-cache-budget-unavailable');
         // Recovery may trim retained M, so lock the actual budget before any
         // recovery work, not merely before admitting a later prefix write.
+        const actualIdentity = sharedAdapter.uncachedIdentity(record.context);
+        if (!actualIdentity) throw Error('source-cache-actual-identity-unavailable');
         budget.commit();
-        let store;
+        // The actual Play and budget have now authorized this owned storage
+        // cleanup; it may delete old blocks but never reads the source. Retirement cancels playback/preload, not its joined cleanup.
+        // setContext waits maintenance before admitting any newer actual; the
+        // private store lease cannot remove a newer Play's retained object.
+        let store, cleanupPending = true;
+        const ownsCleanup = () => cleanupPending;
         try {
             store = await storeFactory({root: config.sharedRoot, currentBytes: budget.bytes,
                 nextBytes: policy.prefetchBytes, recoveryMode: 'on-demand', existingOnly: true});
-            if (!valid()) return;
-            await store.forgetActualUnlessMedia(sharedAdapter.uncachedIdentity(record.context), {isCurrent: valid});
-            if (!valid()) return;
+            await store.forgetActualUnlessMedia(actualIdentity, {isCurrent: ownsCleanup});
             retainedBytes = store.status().current;
-        } finally {if (store) {try {await store.close();} catch (error) {maintenanceCloseError = error; maintenanceFailure = report(error); throw error;}}}
+        } finally {cleanupPending = false; if (store) {try {await store.close();} catch (error) {maintenanceCloseError = error; maintenanceFailure = report(error); throw error;}}}
     }
     function setContext(context, helper, generationId) {
         // renderer binding.retire sends range-context(null). This is not a
