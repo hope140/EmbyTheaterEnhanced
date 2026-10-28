@@ -45,6 +45,7 @@
         var focusedTitleId = null, focusedSeeAll = false;
         var flowRows = [], flowTicket = null, flowLayout = null, eventClient = null, eventQueued = null;
         var savedScroll = null, flowFocus = null, flowRevision = 0, inputRevision = 0;
+        var baselinePosition = null, pausedBaselinePosition = null;
         function current(ticket) {
             if (!ticket || disposed || !active || ticket.epoch !== epoch || !owner.view || flowing && ticket.flowRevision !== flowRevision) return false;
             // A retained baseline stage must retire on auth/locale/query changes
@@ -97,6 +98,18 @@
             if (value.position !== null && typeof value.element.scrollToPosition === 'function') value.element.scrollToPosition({position: value.position, behavior: 'instant'});
             else { value.element.scrollLeft = value.left; value.element.scrollTop = value.top; }
         }
+        function baselineSnapshot() {
+            return {scope: identity(epoch), input: inputRevision, outer: scrollState(owner.scroller || owner.view),
+                rows: flowRows.map(function(row) { return scrollState(row.items.parentElement); })};
+        }
+        function restoreBaselinePosition(value, ticket) {
+            if (!value || baselinePosition !== value || !current(ticket)) return;
+            baselinePosition = null;
+            if (value.input !== inputRevision || !sameIdentity(value.scope, identity(epoch))) return;
+            value.rows.forEach(function(row) { if (row && stage.contains(row.element)) restoreScroll(row); });
+            // The existing scroller clamps positions when fresh content is shorter.
+            restoreScroll(value.outer);
+        }
         function rowBusy(row) {
             if (!row.status) {
                 row.items.inert = true; row.allowed = false; row.items.classList.add('eteHomeFlowPending');
@@ -135,6 +148,17 @@
             focusedItemId = focusedTitleId = null; focusedSeeAll = false; flowFocus = null;
         }
         function flowMessage(event, message) {
+            if (!flowing && message && ['UserDataChanged', 'LibraryChanged'].includes(message.MessageType) &&
+                stageMode === 'server' && sameIdentity(flowTicket, identity(epoch))) {
+                if (!baselinePosition || baselinePosition.input !== inputRevision || !sameIdentity(baselinePosition.scope, identity(epoch))) {
+                    baselinePosition = !active && pausedBaselinePosition || baselineSnapshot();
+                }
+                // Retire old replies immediately, but keep the native layout while
+                // fresh data loads. Policy/auth changes still clear the old stage.
+                epoch++; provider.cancel(); cancelWaits(); pauseItems(stage);
+                owner.sectionsRendered = false; committedTicket = null;
+                flowChanged(); return;
+            }
             if (!flowing && message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) { clear(); flowChanged(); return; }
             if (message && message.MessageType === 'UserPolicyUpdated') {
                 // A policy change may revoke visibility even when the auth string is unchanged.
@@ -159,7 +183,7 @@
         }
         if (events) ['localusersignedin', 'localusersignedout', 'connected'].forEach(function(name) { events.on(connection, name, flowRetire); });
         function userMoved() { inputRevision++; if (flowFocus) { flowFocus.done = true; flowFocus.interacted = true; } }
-        if (flowing) ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function(name) { owner.view.addEventListener(name, userMoved, {capture: true, passive: true}); });
+        ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function(name) { owner.view.addEventListener(name, userMoved, {capture: true, passive: true}); });
         function waitForIdentity(value, deadline) {
             return new Promise(function(resolve, reject) {
                 var timer, settled = false;
@@ -214,6 +238,7 @@
             });
         }
         function clear() {
+            baselinePosition = pausedBaselinePosition = null;
             epoch++;
             provider.cancel();
             cancelWaits();
@@ -242,6 +267,7 @@
             owner.sectionsRendered = true;
             committedTicket = ticket;
             getItems(stage).forEach(function(items) { owner.addFocusBehavior(items); });
+            if (!flowing && baselinePosition) return;
             var match = focusedItemId && Array.from(stage.querySelectorAll('[data-id]')).find(function(element) {
                 return element.getAttribute('data-id') === focusedItemId;
             });
@@ -476,6 +502,7 @@
             var reuse = stageMode === 'server' && flowLayout !== null && sameIdentity(flowTicket, identity(epoch));
             if (!reuse) clear();
             else { epoch++; provider.cancel(); cancelWaits(); pauseItems(stage); flowRows.forEach(rowBusy); }
+            var position = baselinePosition;
             var loadEpoch = epoch, identityDeadline = identityClock.now() + 3000, ticket = identity(loadEpoch);
             loading.show();
             try {
@@ -527,6 +554,7 @@
                 if (!current(ticket)) return {status: 'cancelled'};
                 flowRows.forEach(function(row) { row.allowed = true; row.items.inert = false; row.items.classList.remove('eteHomeFlowPending'); row.items.classList.remove('eteHomeFlowProgramPending'); });
                 ready(ticket, options);
+                restoreBaselinePosition(position, ticket);
                 return {status: 'server'};
             } catch (_) {
                 if (current(ticket) && stageMode !== 'legacy') {
@@ -537,7 +565,12 @@
                     showError();
                 }
                 return {status: current(ticket) ? 'error' : 'cancelled'};
-            } finally { if (current(ticket)) loading.hide(); }
+            } finally {
+                if (current(ticket)) {
+                    if (baselinePosition === position) baselinePosition = null;
+                    loading.hide();
+                }
+            }
         }
         function start(options) {
             var work = (flowing ? flowRefresh : refresh)(options), record = {promise: work, epoch: epoch};
@@ -567,6 +600,7 @@
                 return start(options);
             },
             pause: function() {
+                if (!flowing) pausedBaselinePosition = baselineSnapshot();
                 if (flowing) {
                     savedScroll = scrollState(owner.scroller || owner.view);
                     flowRows.forEach(function(row) {
@@ -599,8 +633,8 @@
                 if (events) {
                     unwatchClient();
                     ['localusersignedin', 'localusersignedout', 'connected'].forEach(function(name) { events.off(connection, name, flowRetire); });
-                    if (owner.view) ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function(name) { owner.view.removeEventListener(name, userMoved, {capture: true}); });
                 }
+                if (owner.view) ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(function(name) { owner.view.removeEventListener(name, userMoved, {capture: true}); });
                 clear(); provider.dispose(); layoutCache.dispose(); loading.hide();
             }
         };

@@ -745,12 +745,86 @@ for (const change of ['auth', 'locale', 'version', 'query']) test('default Home 
     f.api.getJSON = () => new Promise(() => {}); const pending = f.controller.resume();
     assert.equal(f.root.contains(stage), false); f.controller.pause(); await pending; f.controller.dispose();
 });
-test('default Home data and policy invalidations retire a paused resident stage', async () => {
-    for (const name of ['UserDataChanged', 'LibraryChanged', 'UserPolicyUpdated']) {
+test('default Home policy invalidation still retires a paused resident stage', async () => {
+    for (const name of ['UserPolicyUpdated']) {
         const f = fixture(null, null, {enabled: false}); await f.controller.resume(); f.controller.pause();
         f.deps.events.trigger(f.api, 'message', [{MessageType: name}]);
         assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false); f.controller.dispose();
     }
+});
+
+// Model the native scroller's range clamp and the position loss caused by
+// removing its content. This fixture is not a browser layout/visual test.
+function dataPositionFixture() {
+    const f = fixture(null, null, {enabled: false});
+    let position = 640, maximum = 2000;
+    const writes = [];
+    f.owner.scroller = {getScrollPosition: () => position, scrollToPosition(value) {
+        writes.push(value.position); position = Math.max(0, Math.min(maximum, value.position));
+    }};
+    const replace = f.root.replaceChildren;
+    f.root.replaceChildren = function(...children) { replace.apply(this, children); if (!children.length) position = 0; };
+    return Object.assign(f, {writes, position: () => position, move: value => { position = value; },
+        shorten: value => { maximum = value; position = Math.min(position, maximum); }});
+}
+for (const name of ['UserDataChanged', 'LibraryChanged']) test('default data refresh retains layout and scroll for '+name, async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const stage = f.root.children[0], row = f.root.querySelector('.itemsContainer'); row.parentElement.scrollLeft = 80;
+    const layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: name}]);
+    assert.equal(f.root.children[0], stage); assert.equal(f.position(), 640); assert.equal(row.inert, true);
+    await flowFlush(); layout.resolve(sections()); await flowFlush();
+    assert.equal(f.root.children[0], stage); assert.equal(row.inert, false);
+    assert.equal(row.children[0].getAttribute('data-id'), 'fresh');
+    assert.equal(f.position(), 640); assert.equal(row.parentElement.scrollLeft, 80);
+    assert.deepEqual(f.writes, [640]); f.controller.dispose();
+});
+test('default paused data invalidation keeps its native owner and position on return', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const stage = f.root.children[0]; f.controller.pause();
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'LibraryChanged'}]);
+    assert.equal(f.controller.canRestore(), true);
+    await f.controller.resume(); assert.equal(f.root.children[0], stage); assert.equal(f.position(), 640);
+    f.controller.dispose();
+});
+test('shorter refreshed data clamps the saved position once', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    f.api.getJSON = request => {
+        if (request.route.endsWith('/HomeSections')) return Promise.resolve(sections().slice(1));
+        f.shorten(250); return Promise.resolve({Items: []});
+    };
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'LibraryChanged'}]); await flowFlush();
+    assert.equal(f.position(), 250); assert.deepEqual(f.writes, [640]); f.controller.dispose();
+});
+test('user scroll intent during refresh prevents old position and focus restoration', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserDataChanged'}]); await flowFlush();
+    f.owner.view.events.wheel(); f.move(900); const focusCount = f.focus.filter(value => !(value instanceof Items)).length;
+    layout.resolve(sections()); await flowFlush();
+    assert.equal(f.position(), 900); assert.deepEqual(f.writes, []);
+    assert.equal(f.focus.filter(value => !(value instanceof Items)).length, focusCount);
+    f.controller.dispose();
+});
+test('failed data refresh keeps the original error path and does not restore an obsolete offset', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    f.api.getJSON = () => Promise.reject(new Error('synthetic request failure'));
+    f.deps.legacy.loadSections = () => Promise.reject(new Error('synthetic fallback failure'));
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserDataChanged'}]); await flowFlush();
+    assert.equal(f.root.children[0].getAttribute('data-ete-home-source'), 'error');
+    assert.deepEqual(f.writes, []); assert.equal(f.controller.canRestore(), false); f.controller.dispose();
+});
+test('a newer data event retires the pending reply without replacing the original position', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const first = flowGate(), second = flowGate(); let reads = 0;
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? (++reads === 1 ? first.promise : second.promise) : Promise.resolve({Items: [{Id: 'new'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserDataChanged'}]); await flowFlush();
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'LibraryChanged'}]); await flowFlush();
+    first.resolve(sections()); await flowFlush(); assert.deepEqual(f.writes, []);
+    second.resolve(sections()); await flowFlush(); assert.deepEqual(f.writes, [640]); assert.equal(f.position(), 640);
+    f.controller.dispose();
 });
 for (const change of ['auth', 'logout', 'locale', 'version', 'query']) test('default retained Home rejects an in-flight '+change+' change without waiting for an identity event', async () => {
     const f = fixture(); await f.controller.resume(); const stage = f.root.children[0]; f.controller.pause();
