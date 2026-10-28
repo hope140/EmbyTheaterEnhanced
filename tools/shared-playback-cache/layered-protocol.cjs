@@ -65,7 +65,7 @@ function createLedger(tasks,{now=()=>performance.now()}={}){
 function validClock(proof,start,fields){
  const c=proof?.clock;return !!c&&Number.isFinite(c.origin)&&fields.every(k=>Number.isFinite(c[k])&&proof[k]===c[k]-c.origin)&&c.deadline<=c[start]+5000;
 }
-function observerClean(receipt){return !!receipt&&receipt.restoreFailure!==true&&receipt.finalizeFailure!==true&&!!receipt.storeInitialization&&['pendingCreates','observerErrors','dropped'].every(k=>receipt.storeInitialization[k]===0);}
+function observerClean(receipt){return !!receipt&&receipt.restoreFailure!==true&&receipt.finalizeFailure!==true&&!!receipt.storeInitialization&&['pendingCreates','observerErrors','dropped'].every(k=>receipt.storeInitialization[k]===0)&&!!receipt.prefixCoverage&&['pending','errors','dropped'].every(k=>receipt.prefixCoverage[k]===0)&&receipt.prefixCoverage.restored===true;}
 function sampleEvidence(phase,receipt,sample){
  const proof=sample?.frameProof,expected=receipt?.owner;
  if(!proof||!sameOwner(proof.owner,expected)||!proof.profile?.supported||proof.profile.model!==require('./fixture-color-profile.cjs').MODEL||proof.evidence?.colorModel!==proof.profile.model||proof.evidence?.threshold!==2||

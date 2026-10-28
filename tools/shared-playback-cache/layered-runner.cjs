@@ -4,7 +4,7 @@ const {spawn, execFileSync} = require('node:child_process');
 const contract = require('./layered-protocol.cjs');
 const fixed = require('./windows-contract.cjs'), fixtures = require('./windows-fixtures.cjs');
 const {createEmby} = require('./app-emby-fixture.cjs');
-const TOOL_FILES = Object.freeze(['layered-runner.cjs','layered-protocol.cjs','layered-electron.cjs','layered-ci.ps1','layered-ci-root.cjs','app-performance-contract.cjs','app-performance-metrics.cjs','app-performance-runner.cjs','store-bootstrap-observer.cjs','app-preview-observer.cjs','app-pixel-audit.cjs','fixture-frame-evidence.cjs','fixture-color-profile.cjs','app-performance-resources.cjs','app-emby-fixture.cjs','windows-contract.cjs','windows-fixtures.cjs','windows-smoke.cjs','windows-ci.ps1','windows-ci-root.cjs']
+const TOOL_FILES = Object.freeze(['layered-runner.cjs','layered-protocol.cjs','layered-electron.cjs','prefix-coverage-observer.cjs','layered-ci.ps1','layered-ci-root.cjs','app-performance-contract.cjs','app-performance-metrics.cjs','app-performance-runner.cjs','store-bootstrap-observer.cjs','app-preview-observer.cjs','app-pixel-audit.cjs','fixture-frame-evidence.cjs','fixture-color-profile.cjs','app-performance-resources.cjs','app-emby-fixture.cjs','windows-contract.cjs','windows-fixtures.cjs','windows-smoke.cjs','windows-ci.ps1','windows-ci-root.cjs']
   .map(name=>'tools/shared-playback-cache/'+name).concat(['tests/helpers/next-prefix-alameda.cjs',
     'tests/helpers/range-fixture-root.cjs','.github/workflows/public-ci.yml']));
 const OWNER = contract.OWNER;

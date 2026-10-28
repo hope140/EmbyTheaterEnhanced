@@ -34,6 +34,9 @@ async function main() {
   const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyItems = new Map(), cacheKeys = new Map(), budgetReads = [], sourceContexts = [], cacheReadCalls = [], actualLoads = [], nativePeaks = new Map(), stopJobs = new Set();
   let phaseName='cold-C', mediaId='C', phaseSelection=null, phaseOwner=null,lastAcceptedFrameProof=null,measurementProof=null,measurementSeek=null;
   const ownerOf=(c,generationId=c?.currentGenerationId)=>({helper:c?.helperInstanceId??null,endpointId:c?.layeredEndpoint??endpoint,generationId});
+  const prefixCoverage = require('./prefix-coverage-observer.cjs').create({now:()=>performance.now()-started,
+    context:()=>({phase:phaseName,item:mediaId,...ownerOf(client)}),onFailure:()=>{observationErrors++;}});
+  restores.push(()=>prefixCoverage.restore());
   let storeBootstrap = null;
   let lastAuditableFrame = null, lastFixtureEvidence = null, frameColorProfile = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
   const previewAuditPhases = new Set(), carrierAuditPhases = new Set();
@@ -122,8 +125,9 @@ async function main() {
   restores.push(() => storeBootstrap.restore());
   tap(get('enhanced/shared-playback-cache/store'), 'createStore', store => {
     cacheStore = store;
+    prefixCoverage.watch(store);
     tap(store,'read',()=>{},null,(_values,captured)=>{if(cacheReadCalls.length>=8192){observationErrors++;return;}cacheReadCalls.push({...captured,at:performance.now()-started});});
-    tap(store, 'open', (key, values) => {for(const item of ['C','A'])if(contract.isMedia(values[0],plan.sources.origin,item)){cacheKeys.set(item,key);storeKeys.add(key);if(item===mediaId)cacheKey=key;}}, 'store-open');
+    tap(store, 'open', (key, values, _requestedAt, captured) => {for(const item of ['C','A'])if(contract.isMedia(values[0],plan.sources.origin,item)){cacheKeys.set(item,key);storeKeys.add(key);if(item===mediaId)cacheKey=key;prefixCoverage.bind(key,values[0],values[1],item,captured,store);}}, 'store-open');
   }, 'store-create');
   const native = get('native-helper/controller'), OriginalClient = native.NativeHelperClient;
   class ObservedClient extends OriginalClient {
@@ -500,7 +504,13 @@ async function main() {
     await until(async () => client && await client.getProperty('pause', 1000) === true, 'app-initial-pause');
     const referenceAfter=performance.now();await decoded(null, referenceAfter); mark('initial-paused-frame');
     await auditPhase('reference',{endpointId:endpoint,generationId:generation},referenceAfter);
-    if (task.arm === 'B'&&phaseSelection==='proxy') await until(async () => {const s = await snapshot(); return s.span?.end >= contract.LIMITS.prefixBytes;}, 'app-prefix-coverage-missing', 10000);
+    if (task.arm === 'B'&&phaseSelection==='proxy') await until(async () => {
+      resourceSample();
+      const s = await prefixCoverage.sample({store:cacheStore,proxy:cacheProxy,key:cacheKey,
+        offset:contract.frameRange(plan.fixture.media[mediaId],contract.TARGETS[phaseName]['cached-seek']).start,
+        threshold:contract.LIMITS.prefixBytes,owner:phaseOwner,item:mediaId,phase:phaseName});
+      return s.span?.end >= contract.LIMITS.prefixBytes;
+    }, 'app-prefix-coverage-missing', 10000);
     for (const scenario of contract.SCENARIOS.slice(1)) {
       const target = contract.TARGETS[phaseName][scenario];
       const measured = await measure(scenario, async () => {
@@ -609,6 +619,8 @@ async function main() {
       for (const restore of restores.reverse()) {try {restore();} catch (_) {report.status = 'FAIL'; report.restoreFailure = true;}}
       report.storeInitialization = storeBootstrap?.snapshot() || null;
       if (report.storeInitialization && (report.storeInitialization.pendingCreates || report.storeInitialization.observerErrors || report.storeInitialization.dropped)) report.status = 'FAIL';
+      report.prefixCoverage = prefixCoverage.snapshot();
+      if (report.prefixCoverage.errors || report.prefixCoverage.dropped || report.prefixCoverage.pending || !report.prefixCoverage.restored) report.status = 'FAIL';
       fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
       console.log('SHARED_CACHE_LAYERED_CASE ' + JSON.stringify({index, status: report.status, code: report.code || null, sampleCount: report.samples.length, ownedHelpersClosed: report.ownedHelpersClosed}));
     };

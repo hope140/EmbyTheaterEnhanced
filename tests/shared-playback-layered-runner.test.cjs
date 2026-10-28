@@ -85,6 +85,16 @@ test('full denominator statistics separate cold proxy/fallback and omit untruste
  const groups=summary.phases['cold-C'].scenarios['cold-first-frame'].groups;assert.equal(groups['B-original-fallback'].valid,1);assert.equal(groups['B-proxy'].valid,18);assert.equal(rows.every(r=>r.latencyMs===100),true);
  const missing=c.summarize(tasks,c.slots(tasks),[],'matrix');assert.equal(missing.phases['ready-A'].failedSamples,230);assert.equal(missing.phases['ready-A'].unclassified,23);
 });
+test('incomplete prefix diagnostic invalidates phase statistics while retaining every raw slot and denominator',()=>{
+ const tasks=c.cases('matrix'),rows=c.slots(tasks).map(r=>({...r,status:'PASS',latencyMs:100})),target=tasks.find(t=>t.arm==='B'&&t.pair===0);
+ const initialization={pendingCreates:0,observerErrors:0,dropped:0};
+ for(const prefixCoverage of [undefined,{pending:1,errors:0,dropped:0,restored:true},{pending:0,errors:1,dropped:0,restored:true},{pending:0,errors:0,dropped:1,restored:true},{pending:0,errors:0,dropped:0,restored:false}]){
+  const trusted=c.observerClean({storeInitialization:initialization,prefixCoverage});assert.equal(trusted,false);
+  const results=tasks.map(t=>({accepted:t.index===target.index?trusted:true,phaseTrust:Object.fromEntries(c.PHASES.map(p=>[p,t.index===target.index?trusted:true])),phases:Object.fromEntries(c.PHASES.map(p=>[p,{selection:t.arm==='A'?'original':'proxy'}]))}));
+  const summary=c.summarize(tasks,rows,results,'matrix');assert.equal(summary.status,'FAIL');assert.equal(rows.length,460);assert(rows.every(r=>r.status==='PASS'&&r.latencyMs===100));
+  for(const phase of c.PHASES){assert.equal(summary.phases[phase].bDenominator,23);assert.equal(summary.phases[phase].measuredBDenominator,20);assert.equal(summary.phases[phase].scenarios['cold-first-frame'].groups['B-proxy'].observed,20);assert.equal(summary.phases[phase].scenarios['cold-first-frame'].groups['B-proxy'].valid,19);}
+ }
+});
 test('seek confirmation cannot borrow another helper or endpoint even when generation number is reused',()=>{
  const own=owner(),events=[{...owner('other'),name:'seek-submit',value:3,at:1},{...own,name:'time-pos',value:3,at:2},{...own,name:'playback-restart',at:3}];assert.equal(c.seekSignals(events,0,own,3),null);
  events.unshift({...own,name:'seek-submit',value:3,at:0});assert.equal(c.seekSignals(events,0,own,3).after,3);assert.equal(c.seekSignals(events,0,owner('h1',131,'other-endpoint'),3),null);
@@ -146,8 +156,9 @@ test('cleanup revokes trust before awaiting, closes both owners and never restor
  }
 });
 test('restoration and unfinished/dropped bootstrap diagnostics cannot authorize phase statistics',()=>{
- const good={storeInitialization:{pendingCreates:0,observerErrors:0,dropped:0}};assert.equal(c.observerClean(good),true);
- for(const field of ['pendingCreates','observerErrors','dropped'])assert.equal(c.observerClean({storeInitialization:{...good.storeInitialization,[field]:1}}),false);
+ const good={storeInitialization:{pendingCreates:0,observerErrors:0,dropped:0},prefixCoverage:{pending:0,errors:0,dropped:0,restored:true}};assert.equal(c.observerClean(good),true);
+ for(const field of ['pendingCreates','observerErrors','dropped'])assert.equal(c.observerClean({...good,storeInitialization:{...good.storeInitialization,[field]:1}}),false);
+ for(const change of [undefined,{pending:1,errors:0,dropped:0,restored:true},{pending:0,errors:1,dropped:0,restored:true},{pending:0,errors:0,dropped:1,restored:true},{pending:0,errors:0,dropped:0,restored:false}])assert.equal(c.observerClean({...good,prefixCoverage:change}),false);
  assert.equal(c.observerClean({...good,restoreFailure:true}),false);assert.equal(c.observerClean({...good,finalizeFailure:true}),false);assert.equal(c.observerClean({}),false);
 });
 
