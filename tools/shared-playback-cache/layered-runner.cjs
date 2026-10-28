@@ -37,7 +37,7 @@ function readPlan(file, expectedHash) {
   const p = JSON.parse(bytes);
   need(p.schema === 2 && p.kind === 'ordinary-C-stop-A' && p.productCommit === contract.BASE && path.join(p.out, 'layered-plan-'+p.caseIndex+'.json') === file &&
     fs.readFileSync(physical(path.join(p.out,'owner')), 'utf8') === OWNER &&
-    JSON.stringify(p.cases) === JSON.stringify(cases(p.mode)) && JSON.stringify(p.limits) === JSON.stringify(contract.LIMITS), 'app-plan-contract');
+    JSON.stringify(p.cases) === JSON.stringify(cases(p.mode)) && JSON.stringify(p.limits) === JSON.stringify(contract.LIMITS)&&contract.OBSERVATION_MODES.includes(p.observationMode)&&/^[a-f0-9]{64}$/.test(p.storeSourceSha256||''), 'app-plan-contract');
   need(Array.isArray(p.fixture?.fixtures)&&p.fixture.fixtures.length===3&&p.fixture.fixtures.every(row=>row.encoding==='uncompressed-dib-bgr24'), 'app-plan-contract');contract.assertFixtureTiming(p.fixture);
   for (const target of ['repo','runtime','out']) physical(p[target], true);
   physical(p.installer);
@@ -99,10 +99,11 @@ async function settleCase({result,closeControl,closeSources,state,observationFai
  if(!failed&&!observationFailed()&&settled.errors.length===0&&settled.unknown===0&&contract.PHASES.every(p=>settled.phases[p].active===0)&&result)Object.assign(result,original);
  if(failed)throw Error(contract.failureCode(firstError,'layered-source-cleanup'));
 }
-async function run({repo,runtime,installer,installerSha256,productCommit,out,mode='entry'}) {
+async function run({repo,runtime,installer,installerSha256,productCommit,out,mode='entry',observationMode='full'}) {
   need(process.platform === 'win32', 'app-performance-windows-required');
   repo=physical(repo,true);runtime=physical(runtime,true);installer=physical(installer);
   need(productCommit===contract.BASE,'app-exact-product');
+  need(contract.OBSERVATION_MODES.includes(observationMode),'layered-observation-mode');
   const tasks=cases(mode);
   const identity=fixed.verifyCandidate({repo,runtime,installer,installerSha256,candidateCommit:productCommit}), tools=toolIdentity(repo);
   need(path.isAbsolute(out)&&!fs.existsSync(out),'app-output-exists');physical(path.dirname(out),true);fs.mkdirSync(out);
@@ -110,7 +111,8 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   let fixture;
   const trial=require('../../src/electronapp/enhanced/shared-playback-cache/trial');
   const rule={id:'app-fixture',sourcePrefix:'X:\\Media',mountPrefix:'X:\\Media',cloudPrefix:'/cloud/media',storageType:'cloud-mount',strategy:'cloud-first',originState:'USER',enabled:true};
-  const plan={schema:2,kind:'ordinary-C-stop-A',repo,runtime,installer,installerSha256,productCommit,out,mode,cases:tasks,limits:contract.LIMITS,fixture,
+  const storeSourceSha256=sha(fs.readFileSync(physical(path.join(runtime,'electronapp/enhanced/shared-playback-cache/store.js'))));
+  const plan={schema:2,kind:'ordinary-C-stop-A',repo,runtime,installer,installerSha256,productCommit,out,mode,observationMode,storeSourceSha256,cases:tasks,limits:contract.LIMITS,fixture,
     toolCommit:tools.toolCommit,tools:tools.files,identity};
   const tasksForRun=tasks, ledger=contract.createLedger(tasks), events=[],results=[],setupErrors=[];
   const samples=contract.slots(tasks);let closed=false;const began=Date.now();
@@ -160,11 +162,12 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
         const rows=receiptRows(receipt,processResult,task,productCommit,tools.toolCommit);
         if(rows)for(const row of rows){const at=samples.findIndex(r=>r.phase===row.phase&&r.scenario===row.scenario&&r.pair===row.pair&&r.arm===row.arm);samples[at]=row;}
         const sourceState=ledger.snapshot();
-        const phaseValid=Object.fromEntries(contract.PHASES.map(p=>[p,contract.validatePhase(p,task.arm,receipt?.phases?.[p])]));
+        const expectedObservation={mode:observationMode,storeSourceSha256,fixture};
+        const phaseValid=Object.fromEntries(contract.PHASES.map(p=>[p,contract.validatePhase(p,task.arm,receipt?.phases?.[p])&&contract.prefixPhaseEvidence(receipt,p,expectedObservation)]));
         const physicalGood=processResult.exitCode===0&&processResult.exitConfirmed&&processResult.streamsClosed&&!processResult.timedOut&&!processResult.overflow&&!processResult.evidenceWriteFailed;
-        const evidenceGood=contract.observerClean(receipt)&&receipt?.ownedHelpersClosed===true&&receipt.externalNetworkAttempts===0&&receipt.observationErrors===0&&sourceState.unknown===0&&sourceState.errors.length===0&&sourceState.initialAReads===0&&sourceState.aRequests>0&&
+        const evidenceGood=contract.observerClean(receipt,expectedObservation)&&receipt?.ownedHelpersClosed===true&&receipt.externalNetworkAttempts===0&&receipt.observationErrors===0&&sourceState.unknown===0&&sourceState.errors.length===0&&sourceState.initialAReads===0&&sourceState.aRequests>0&&
           contract.PHASES.every(p=>sourceState.phases[p].stoppedReports>0&&sourceState.phases[p].active===0)&&sourceState.quiet.opened===0&&sourceState.quiet.sourceBytes===0&&sourceState.quiet.ended-sourceState.quiet.started>=contract.LIMITS.quietMs;
-        const phaseTrust=Object.fromEntries(contract.PHASES.map(p=>[p,physicalGood&&contract.observerClean(receipt)&&receipt?.ownedHelpersClosed===true&&receipt.observationErrors===0&&receipt.externalNetworkAttempts===0&&sourceState.unknown===0&&sourceState.errors.length===0&&receipt?.phases?.[p]?.stopConfirmed===true&&sourceState.phases[p].active===0&&sourceState.phases[p].stoppedReports>0]));
+        const phaseTrust=Object.fromEntries(contract.PHASES.map(p=>[p,physicalGood&&contract.observerClean(receipt,expectedObservation)&&receipt?.ownedHelpersClosed===true&&receipt.observationErrors===0&&receipt.externalNetworkAttempts===0&&sourceState.unknown===0&&sourceState.errors.length===0&&receipt?.phases?.[p]?.stopConfirmed===true&&sourceState.phases[p].active===0&&sourceState.phases[p].stoppedReports>0]));
         const accepted=!!(physicalGood&&evidenceGood&&rows&&Object.values(phaseValid).every(Boolean)&&receipt.status==='PASS');
         results[task.index]={...processResult,accepted,evidenceGood,physicalGood,phaseValid,phaseTrust,phases:receipt?.phases?Object.fromEntries(contract.PHASES.map(p=>[p,{selection:receipt.phases[p]?.selection??null}])):null,code:receipt?.code??null};
         console.log('SHARED_CACHE_LAYERED_PROGRESS '+JSON.stringify({case:task.index,arm:task.arm,pair:task.pair,accepted,code:receipt?.code??null}));
@@ -181,7 +184,7 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   finally {
     ledger.deactivate();
     const summary=contract.summarize(tasks,samples,results,mode);
-    const report={schema:2,kind:'ordinary-C-stop-A',status:closed&&setupErrors.length===0&&results.length===tasks.length&&results.every(r=>r?.accepted)&&summary.status==='PASS'?'PASS':'FAIL',mode,productCommit,toolCommit:tools.toolCommit,samples,results,summary,setupErrors,events,sourceLedger:ledger.states,requestLedger:[...ledger.requests].map(([key,value])=>({key,...value})),
+    const report={schema:2,kind:'ordinary-C-stop-A',status:closed&&setupErrors.length===0&&results.length===tasks.length&&results.every(r=>r?.accepted)&&summary.status==='PASS'?'PASS':'FAIL',mode,observationMode,storeSourceSha256,productCommit,toolCommit:tools.toolCommit,samples,results,summary,setupErrors,events,sourceLedger:ledger.states,requestLedger:[...ledger.requests].map(([key,value])=>({key,...value})),
       resourceScope:'whole-case Electron and per-owned-helper observed lifetime peaks; both phases included; never subtracted into phase-only RSS',
       fixtureTiming:contract.FIXTURE_TIMING,sourceScope:'all filesystem stream bytes counted; one-byte reads separately retained; 0-0 probe candidates are not automatically proven access probes',
       durationMs:Date.now()-began,real115Requests:0};
@@ -192,5 +195,5 @@ async function run({repo,runtime,installer,installerSha256,productCommit,out,mod
   need(closed,'app-sources-not-closed');
 }
 module.exports={BASE:contract.BASE,TOOL_FILES,cases,physical,toolIdentity,readPlan,intersectionLength,receiptRows,settleCase,run};
-if(require.main===module){const values={};for(const arg of process.argv.slice(2)){const m=/^--(repo|runtime|installer|installer-sha256|product-sha|out|mode)=(.+)$/.exec(arg);need(m&&!Object.hasOwn(values,m[1]),'app-argument');values[m[1]]=m[2];}
-  run({repo:values.repo,runtime:values.runtime,installer:values.installer,installerSha256:values['installer-sha256'],productCommit:values['product-sha'],out:values.out,mode:values.mode}).catch(error=>{console.error('SHARED_CACHE_APP_ERROR '+(/^[a-z0-9-]{1,100}$/.test(error.message)?error.message:'app-performance-failed'));process.exitCode=1;});}
+if(require.main===module){const values={};for(const arg of process.argv.slice(2)){const m=/^--(repo|runtime|installer|installer-sha256|product-sha|out|mode|observation-mode)=(.+)$/.exec(arg);need(m&&!Object.hasOwn(values,m[1]),'app-argument');values[m[1]]=m[2];}
+  run({repo:values.repo,runtime:values.runtime,installer:values.installer,installerSha256:values['installer-sha256'],productCommit:values['product-sha'],out:values.out,mode:values.mode,observationMode:values['observation-mode']}).catch(error=>{console.error('SHARED_CACHE_APP_ERROR '+(/^[a-z0-9-]{1,100}$/.test(error.message)?error.message:'app-performance-failed'));process.exitCode=1;});}

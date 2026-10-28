@@ -5,6 +5,7 @@ const PHASES=Object.freeze(['cold-C','ready-A']);
 const ITEM=Object.freeze({'cold-C':'C','ready-A':'A'});
 const TARGETS=Object.freeze({'cold-C':base.TARGETS,'ready-A':base.TARGETS});
 const FIXTURE_TIMING='layered-equal-time-v1';
+const OBSERVATION_MODES=Object.freeze(['full','minimal-v1']);
 function assertFixtureTiming(f){
  const keys=['id','file','size','sha256','etag','durationSeconds','dataStart','frameStride','frames','width','height','fps','audio','encoding'];
  need(f?.timing===FIXTURE_TIMING&&['A','C'].every(id=>{const row=f.fixtures?.find(x=>x.id===id),m=f.media?.[id],meta=f.mediaMetadata?.[id];return row&&m&&keys.every(k=>m[k]===row[k])&&m.fps===12&&m.durationSeconds===16&&m.frames===192&&m.encoding==='uncompressed-dib-bgr24'&&meta?.aviFps===12&&meta.durationSeconds===16&&meta.embyReportedRealFrameRate===12;}),'layered-fixture-timing');
@@ -65,7 +66,54 @@ function createLedger(tasks,{now=()=>performance.now()}={}){
 function validClock(proof,start,fields){
  const c=proof?.clock;return !!c&&Number.isFinite(c.origin)&&fields.every(k=>Number.isFinite(c[k])&&proof[k]===c[k]-c.origin)&&c.deadline<=c[start]+5000;
 }
-function observerClean(receipt){return !!receipt&&receipt.restoreFailure!==true&&receipt.finalizeFailure!==true&&!!receipt.storeInitialization&&['pendingCreates','observerErrors','dropped'].every(k=>receipt.storeInitialization[k]===0)&&!!receipt.prefixCoverage&&['pending','errors','dropped'].every(k=>receipt.prefixCoverage[k]===0)&&receipt.prefixCoverage.restored===true;}
+function minimalPrefixRecordsClean(receipt,fixture){
+ if(!Array.isArray(receipt?.prefixCoverage?.samples)||!Array.isArray(receipt.prefixCoverage.bindings))return false;
+ try{assertFixtureTiming(fixture);}catch(_){return false;}
+ const prefix=receipt.prefixCoverage,hash=value=>crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+ return prefix.samples.every(row=>{
+  if(!row||!PHASES.includes(row.phase)||row.item!==ITEM[row.phase]||!sameOwner(row.owner,receipt.phases?.[row.phase]?.owner))return false;
+  const file=fixture.media[row.item],offset=base.frameRange(file,TARGETS[row.phase]['cached-seek']).start;
+  if(row.offset!==offset||row.threshold!==LIMITS.prefixBytes||typeof file.etag!=='string')return false;
+  if(row.key===null)return row.binding===null&&row.span===null&&(row.storeInstance===null||Number.isSafeInteger(row.storeInstance)&&row.storeInstance>0);
+  if(!Number.isSafeInteger(row.storeInstance)||row.storeInstance<=0)return false;
+  if(!/^[a-f0-9]{64}$/.test(row.key||''))return false;
+  // An observed absent binding or span is a functional miss, not fabricated
+  // clean telemetry. A successful phase separately requires a bound full span.
+  if(row.binding!==null){const b=row.binding,tagHash=crypto.createHash('sha256').update(file.etag).digest('hex');
+   if(!b||b.key!==row.key||b.storeInstance!==row.storeInstance||b.item!==row.item||!sameOwner(b.owner,row.owner)||b.total!==file.size||
+    !/^[a-f0-9]{64}$/.test(b.identityHash||'')||b.metadataHash!==hash([file.size,file.etag,null,null])||row.key!==hash([b.identityHash,file.size,tagHash,null,null])||
+    !prefix.bindings.some(binding=>JSON.stringify(binding)===JSON.stringify(b)))return false;
+  }
+  return row.span===null||Number.isSafeInteger(row.span?.start)&&Number.isSafeInteger(row.span?.end)&&row.span.start<=offset&&row.span.end>offset&&row.span.end<=file.size;
+ });
+}
+function prefixPhaseEvidence(receipt,phase,expected){
+ if(expected.mode==='full')return true;
+ if(expected.mode!=='minimal-v1')return false;
+ const p=receipt?.phases?.[phase];if(p?.selection==='original')return true;
+ return p?.selection==='proxy'&&minimalPrefixRecordsClean(receipt,expected.fixture)&&receipt.prefixCoverage.samples.some(row=>row.phase===phase&&row.binding!==null&&row.span?.end>=LIMITS.prefixBytes);
+}
+function cacheClosureClean(receipt){
+ const closure=receipt?.cacheClosure;if(closure?.assessment!=='OBSERVED_FINAL')return false;
+ if(!Number.isSafeInteger(closure.createdStores)||closure.createdStores<0||!Number.isSafeInteger(closure.createdProxies)||closure.createdProxies<0||
+  (closure.stores===null?0:closure.stores?.length)!==closure.createdStores||(closure.proxies===null?0:closure.proxies?.length)!==closure.createdProxies)return false;
+ const validRows=(rows,valid)=>rows===null||Array.isArray(rows)&&rows.length>0&&rows.every(r=>r&&Number.isSafeInteger(r.instance)&&r.instance>0&&valid(r))&&new Set(rows.map(r=>r.instance)).size===rows.length;
+ if(!validRows(closure.stores,r=>r.closed===true&&r.faulted===false&&['pending','pendingCount','readers','reserved'].every(k=>r[k]===0))||
+  !validRows(closure.proxies,r=>['routes','writes','jobs','openings','pendingKeys','activeOrigins','activeBodies','captureBytes','readReservedBytes'].every(k=>r[k]===0)))return false;
+ if(!Array.isArray(receipt.prefixCoverage?.bindings)||!receipt.prefixCoverage.bindings.every(b=>b&&closure.stores?.some(s=>s.instance===b.storeInstance)))return false;
+ if(!Array.isArray(receipt.prefixCoverage?.samples)||!receipt.prefixCoverage.samples.every(row=>row&&(row.storeInstance===null||closure.stores?.some(s=>s.instance===row.storeInstance))))return false;
+ return PHASES.every(p=>receipt.phases?.[p]?.selection!=='proxy'||closure.proxies?.some(r=>r.instance===receipt.phases[p].proxyInstance)===true);
+}
+function observerClean(receipt,expected={mode:'full'}){
+ if(!receipt||!expected||receipt.restoreFailure===true||receipt.finalizeFailure===true)return false;
+ if(expected.mode==='full')return (receipt.observationMode===undefined||receipt.observationMode==='full')&&!!receipt.storeInitialization&&['pendingCreates','observerErrors','dropped'].every(k=>receipt.storeInitialization[k]===0)&&!!receipt.prefixCoverage&&['pending','errors','dropped'].every(k=>receipt.prefixCoverage[k]===0)&&receipt.prefixCoverage.restored===true;
+ if(expected.mode!=='minimal-v1'||receipt.observationMode!==expected.mode||!/^[a-f0-9]{64}$/.test(expected.storeSourceSha256||''))return false;
+ const bootstrap=receipt.storeInitialization,prefix=receipt.prefixCoverage;
+ if(!bootstrap||bootstrap.mode!=='source-verified-not-observed-v1'||bootstrap.installed!==false||bootstrap.sourceSha256!==expected.storeSourceSha256||
+  !['pendingCreates','observerErrors','dropped','operations','summaries','elapsedMs','restored'].every(k=>bootstrap[k]===null))return false;
+ if(!prefix||prefix.mode!=='gate-only-v1'||prefix.putObservation!=='NOT_OBSERVED'||prefix.puts!==null||prefix.pending!==null||prefix.errors!==0||prefix.dropped!==0||prefix.restored!==true||!Array.isArray(prefix.samples)||!Array.isArray(prefix.bindings))return false;
+ return minimalPrefixRecordsClean(receipt,expected.fixture)&&cacheClosureClean(receipt);
+}
 function sampleEvidence(phase,receipt,sample){
  const proof=sample?.frameProof,expected=receipt?.owner;
  if(!proof||!sameOwner(proof.owner,expected)||!proof.profile?.supported||proof.profile.model!==require('./fixture-color-profile.cjs').MODEL||proof.evidence?.colorModel!==proof.profile.model||proof.evidence?.threshold!==2||
@@ -135,7 +183,7 @@ async function runStages({arm,play,beginQuiet,snapshot,backend,beginReady,wait,n
  if(arm==='B')need(quiet.backend?.state==='ready','layered-backend-not-ready');
  await beginReady();return await play('ready-A');
 }
-const CODES=new Set(['layered-local-not-drained','layered-local-read-during-quiet','layered-load-count','layered-fresh-budget-source','layered-owner-reused','layered-quiet-or-prefill','layered-backend-not-ready','layered-control-phase','layered-stop-unconfirmed','layered-cold-function-failed','layered-boundary-no-local-hit','layered-original-revived','layered-not-run']);
+const CODES=new Set(['layered-cache-close-unconfirmed','layered-local-not-drained','layered-local-read-during-quiet','layered-load-count','layered-fresh-budget-source','layered-owner-reused','layered-quiet-or-prefill','layered-backend-not-ready','layered-control-phase','layered-stop-unconfirmed','layered-cold-function-failed','layered-boundary-no-local-hit','layered-original-revived','layered-not-run']);
 function failureCode(error,fallback){return CODES.has(error?.message)?error.message:base.failureCode(error,fallback);}
 function recordTerminalFailure(report,error){base.recordTerminalFailure(report,error);report.terminalFailure.code=failureCode(error,'app-worker-failed');report.code=report.firstFailure?.code||report.terminalFailure.code;}
-module.exports={...base,failureCode,recordTerminalFailure,PHASES,ITEM,TARGETS,FIXTURE_TIMING,assertFixtureTiming,LIMITS,OWNER,cases,blank,slots,runStages,rendererAction,isMedia,loadSource,sameOwner,seekSignals,createLedger,observerClean,sampleEvidence,freshEvidence,validatePhase,receiptRows,summarize};
+module.exports={...base,failureCode,recordTerminalFailure,PHASES,ITEM,TARGETS,FIXTURE_TIMING,OBSERVATION_MODES,assertFixtureTiming,LIMITS,OWNER,cases,blank,slots,runStages,rendererAction,isMedia,loadSource,sameOwner,seekSignals,createLedger,observerClean,cacheClosureClean,prefixPhaseEvidence,sampleEvidence,freshEvidence,validatePhase,receiptRows,summarize};

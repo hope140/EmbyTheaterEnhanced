@@ -23,10 +23,10 @@ on:
         default: '4'
         options: ['4', '2', '6', '8']
       benchmark_warm_calls:
-        description: Warm calls; native-liveness/app-entry/app-matrix/app-layered-entry/app-layered-matrix only with smoke AND diagnostics
+        description: Warm calls; native-liveness/app-entry/app-matrix/app-layered-entry/app-layered-matrix/app-layered-minimal-entry/app-layered-minimal-matrix only with smoke AND diagnostics
         type: choice
         default: '3'
-        options: ['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix', 'app-layered-entry', 'app-layered-matrix']
+        options: ['3', '1', '5', '10', 'native-liveness', 'app-entry', 'app-matrix', 'app-layered-entry', 'app-layered-matrix', 'app-layered-minimal-entry', 'app-layered-minimal-matrix']
 
       shared_cache_smoke:
         description: Native smoke alone; enable diagnostics too for no-media runtime liveness (no build)
@@ -452,7 +452,7 @@ jobs:
 
 
   windows-shared-cache-layered:
-    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_smoke && inputs.shared_cache_diagnostics && contains(fromJSON('["app-layered-entry","app-layered-matrix"]'), inputs.benchmark_warm_calls)
+    if: github.event_name == 'workflow_dispatch' && inputs.shared_cache_smoke && inputs.shared_cache_diagnostics && contains(fromJSON('["app-layered-entry","app-layered-matrix","app-layered-minimal-entry","app-layered-minimal-matrix"]'), inputs.benchmark_warm_calls)
     runs-on: windows-2022
     timeout-minutes: 150
     permissions:
@@ -470,7 +470,7 @@ jobs:
           BENCHMARK_MODE: ${{ inputs.build_input_benchmark }}
           APP_MODE: ${{ inputs.benchmark_warm_calls }}
         run: |
-          if ($env:EXPECTED_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXPECTED_SHA -cne $env:GITHUB_SHA -or $env:RELEASE_MODE -eq 'true' -or $env:BENCHMARK_MODE -eq 'true' -or @('app-layered-entry','app-layered-matrix') -cnotcontains $env:APP_MODE) { throw 'Require only exact reviewed C Stop A verification mode.' }
+          if ($env:EXPECTED_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXPECTED_SHA -cne $env:GITHUB_SHA -or $env:RELEASE_MODE -eq 'true' -or $env:BENCHMARK_MODE -eq 'true' -or @('app-layered-entry','app-layered-matrix','app-layered-minimal-entry','app-layered-minimal-matrix') -cnotcontains $env:APP_MODE) { throw 'Require only exact reviewed C Stop A verification mode.' }
       - name: Check out exact layered tooling
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -494,7 +494,9 @@ jobs:
           APP_MODE: ${{ inputs.benchmark_warm_calls }}
         run: |
           $out = Join-Path $env:RUNNER_TEMP ('ete-layered-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
-          ./tools/shared-playback-cache/layered-ci.ps1 -ArtifactId $env:ARTIFACT_ID -ZipSha256 $env:ZIP_SHA -InstallerSha256 $env:INSTALLER_SHA -ExpectedToolSha $env:TOOL_SHA -OutputRoot $out -Mode $env:APP_MODE.Substring(12)
+          $observation = 'full'; $mode = $env:APP_MODE.Substring(12)
+          if ($env:APP_MODE.StartsWith('app-layered-minimal-', [StringComparison]::Ordinal)) { $observation = 'minimal-v1'; $mode = $env:APP_MODE.Substring(20) }
+          ./tools/shared-playback-cache/layered-ci.ps1 -ArtifactId $env:ARTIFACT_ID -ZipSha256 $env:ZIP_SHA -InstallerSha256 $env:INSTALLER_SHA -ExpectedToolSha $env:TOOL_SHA -OutputRoot $out -Mode $mode -ObservationMode $observation
       - name: Upload only safe layered receipts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

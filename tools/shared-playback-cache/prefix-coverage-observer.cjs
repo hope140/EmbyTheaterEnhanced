@@ -12,12 +12,13 @@ function storeState(store) {
   return {...fields(value, ['committed','reserved','pending','pendingCount','readers','current','next','entries','blocks','faulted','closed','unverifiedBytes']),currentKey:keyOf(value.currentKey)};
 }
 function proxyState(proxy) {
-  return fields(proxy?.status(), ['receivedBytes','deliveredBytes','hitBytes','committedBytes','skippedWrites','captureBytes','peakCaptureBytes','writes','jobs','activeOrigins','activeBodies','pendingKeys','localReadTimeouts','localReadRefusals','peakWriteJobs']);
+  return fields(proxy?.status(), ['receivedBytes','deliveredBytes','hitBytes','committedBytes','skippedWrites','captureBytes','peakCaptureBytes','writes','jobs','activeOrigins','activeBodies','pendingKeys','localReadTimeouts','localReadRefusals','peakWriteJobs','routes','openings','readReservedBytes']);
 }
-function create({now, context, onFailure = () => {}}) {
+function create({now, context, onFailure = () => {}, observePuts = true}) {
+  if(typeof observePuts!=='boolean')throw Error('prefix-observer-mode');
   const bindings = [], puts = [], samples = [], restores = [];
   const stores = new WeakMap();let storeSerial = 0;
-  let errors = 0, dropped = 0, pending = 0, polls = 0, lastSignature = null, lastSample = null;
+  let errors = 0, dropped = 0, pending = 0, polls = 0, lastSignature = null, lastSample = null, restored = false;
   const fail = () => {errors++;try {onFailure();} catch (_) {}};
   const safe = fn => {try {return fn();} catch (_) {fail();return null;}};
   const append = (rows, row) => {if(rows.length < 512) rows.push(row);else {dropped++;fail();}};
@@ -30,6 +31,7 @@ function create({now, context, onFailure = () => {}}) {
   function watch(store) {
     if(stores.has(store)){fail();return;}
     stores.set(store,++storeSerial);
+    if(!observePuts)return stores.get(store); // Register identity only: do not touch store.put.
     const original = store.put;
     const replacement = function (...args) {
       const row = safe(() => ({id:puts.length+1,...context(),storeInstance:stores.get(store),key:keyOf(args[0]),offset:Number.isSafeInteger(args[1])&&args[1]>=0?args[1]:null,length:Buffer.isBuffer(args[2])?args[2].length:null,
@@ -44,6 +46,7 @@ function create({now, context, onFailure = () => {}}) {
     };
     store.put=replacement;
     restores.push(()=>{if(store.put!==replacement)throw Error('prefix-observer-owner');store.put=original;});
+    return stores.get(store);
   }
   async function sample({store,proxy,key,offset,threshold,owner,item,phase}) {
     // Exactly the same one span call as the original prefix gate.
@@ -61,8 +64,9 @@ function create({now, context, onFailure = () => {}}) {
     });
     return {span,hit:proxy?.status().hitBytes??null};
   }
-  function restore(){for(const undo of restores.reverse())safe(undo);restores.length=0;}
-  function snapshot(){return structuredClone({bindings,puts,samples,lastSample,polls,pending,errors,dropped,restored:restores.length===0});}
+  function restore(){for(const undo of restores.reverse())safe(undo);restores.length=0;restored=true;}
+  function snapshot(){return structuredClone({bindings,puts:observePuts?puts:null,samples,lastSample,polls,pending:observePuts?pending:null,errors,dropped,restored,
+    ...(!observePuts?{mode:'gate-only-v1',putObservation:'NOT_OBSERVED'}:{})});}
   return {bind,watch,sample,restore,snapshot};
 }
 module.exports={create,storeState,proxyState};

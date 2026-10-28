@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory=$true)][string]$InstallerSha256,
     [Parameter(Mandatory=$true)][string]$ExpectedToolSha,
     [Parameter(Mandatory=$true)][string]$OutputRoot,
-    [ValidateSet('entry', 'matrix')][string]$Mode = 'entry'
+    [ValidateSet('entry', 'matrix')][string]$Mode = 'entry',
+    [ValidateSet('full', 'minimal-v1')][string]$ObservationMode = 'full'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -173,7 +174,7 @@ if ($AppPerformanceOnly) {
     $performanceRoot = Join-Path $ownedRoot 'performance'
     $performanceSucceeded = $false
     try {
-        & node (Join-Path $PSScriptRoot 'layered-runner.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$performanceRoot" "--mode=$AppPerformanceMode"
+        & node (Join-Path $PSScriptRoot 'layered-runner.cjs') "--repo=$repo" "--runtime=$(Join-Path $extracted '{app}')" "--installer=$($installers[0].FullName)" "--installer-sha256=$InstallerSha256" "--product-sha=$productSha" "--out=$performanceRoot" "--mode=$AppPerformanceMode" "--observation-mode=$ObservationMode"
         if ($LASTEXITCODE -ne 0) { throw 'Ordinary main performance failed; no fallback or retry.' }
         $performanceSucceeded = $true
     } finally {

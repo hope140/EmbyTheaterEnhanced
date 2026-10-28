@@ -23,6 +23,7 @@ async function main() {
   need(!fs.existsSync(output), 'app-worker-preserve-receipt');
   const get = member => require(path.join(plan.runtime, 'electronapp', member));
   const report = {schema: 2, kind:'ordinary-C-stop-A', phases:Object.fromEntries(contract.PHASES.map(p=>[p,{phase:p,item:contract.ITEM[p],selection:null,owner:null,stopConfirmed:false,samples:contract.blank(task,p)}])), status: 'FAIL', index, pair: task.pair, arm: task.arm, productCommit: plan.productCommit,
+    observationMode:plan.observationMode,
     fixtureFormat:Object.fromEntries(contract.PHASES.map(phase=>{const f=plan.fixture.media[contract.ITEM[phase]];return[phase,{timing:plan.fixture.timing,encoding:f.encoding,width:f.width,height:f.height,fps:f.fps,durationSeconds:f.durationSeconds,frames:f.frames,sourceBytes:f.size,sourceSha256:f.sha256,alphaChannel:false}];})),
     toolCommit: plan.toolCommit, scope: 'ordinary product main and unchanged web/API/PM; owned loopback fixture; decoded frame not visible presentation',
     resourceAssessment: {electron:'NOT_ASSESSED',native:'NOT_ASSESSED',disk:'NOT_ASSESSED'},
@@ -31,13 +32,13 @@ async function main() {
   need(/^[1-9][0-9]{12}$/.test(args['deadline-ms']), 'app-worker-deadline-argument');
   const started = performance.now(), deadline = started + Math.max(1, Math.min(contract.LIMITS.workerMs, Number(args['deadline-ms']) - Date.now()));
   let service, client, endpoint, mainWindow, cacheStore, cacheKey, cacheProxy, generation, retired = false, peakRss = 0, peakDisk = 0, observationErrors = 0;
-  const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyItems = new Map(), cacheKeys = new Map(), budgetReads = [], sourceContexts = [], cacheReadCalls = [], actualLoads = [], nativePeaks = new Map(), stopJobs = new Set();
+  const restores = [], clientList = [], events = [], storeKeys = new Set(), proxyItems = new Map(), cacheKeys = new Map(), budgetReads = [], sourceContexts = [], cacheReadCalls = [], actualLoads = [], nativePeaks = new Map(), stopJobs = new Set(), ownedStores=[],ownedProxies=[],proxyInstances=new Map();
   let phaseName='cold-C', mediaId='C', phaseSelection=null, phaseOwner=null,lastAcceptedFrameProof=null,measurementProof=null,measurementSeek=null;
   const ownerOf=(c,generationId=c?.currentGenerationId)=>({helper:c?.helperInstanceId??null,endpointId:c?.layeredEndpoint??endpoint,generationId});
   const prefixCoverage = require('./prefix-coverage-observer.cjs').create({now:()=>performance.now()-started,
-    context:()=>({phase:phaseName,item:mediaId,...ownerOf(client)}),onFailure:()=>{observationErrors++;}});
+    context:()=>({phase:phaseName,item:mediaId,...ownerOf(client)}),onFailure:()=>{observationErrors++;},observePuts:plan.observationMode==='full'});
   restores.push(()=>prefixCoverage.restore());
-  let storeBootstrap = null;
+  let storeBootstrap = null, storeSourceEvidence = null;
   let lastAuditableFrame = null, lastFixtureEvidence = null, frameColorProfile = null, carrierDisabled = null, carrierReader, pixelWritesDisabled = false;
   const previewAuditPhases = new Set(), carrierAuditPhases = new Set();
   const mark = (type, data = {}) => {if (report.observations.length < 8192) {const phase=contract.PHASES.includes(data.phase)||data.phase==='quiet'?data.phase:phaseName;report.observations.push({type, at: performance.now() - started, ...data,...(data.phase&&data.phase!==phase?{detailPhase:data.phase}:{}),phase});} else observationErrors++;};
@@ -103,8 +104,9 @@ async function main() {
     }, 'adapter-open');
   }, 'adapter-create');
   tap(get('enhanced/shared-playback-cache/proxy'), 'createProxy', proxy => {cacheProxy = proxy;
+    const proxyInstance=ownedProxies.length+1;ownedProxies.push({instance:proxyInstance,proxy});
     tap(proxy, 'open', (handle, values) => {
-      if (typeof handle?.url === 'string') for(const item of ['C','A']) if(contract.isMedia(values[0],plan.sources.origin,item))proxyItems.set(handle.url,item);
+      if (typeof handle?.url === 'string') for(const item of ['C','A']) if(contract.isMedia(values[0],plan.sources.origin,item)){proxyItems.set(handle.url,item);proxyInstances.set(handle.url,proxyInstance);}
       if (handle && typeof handle.ready === 'function') tap(handle, 'ready', () => {}, 'proxy-ready');
     }, 'proxy-open');
   }, 'proxy-create');
@@ -117,15 +119,22 @@ async function main() {
   const storeRow = JSON.parse(manifestBytes).files.find(row => row.path === storeMember);
   need(storeRow && /^[a-f0-9]{64}$/i.test(storeRow.sha256), 'app-observer-target');
   const storeFilename = path.join(plan.runtime, storeMember);
-  storeBootstrap = require('./store-bootstrap-observer.cjs').install({target: storeModule, filename: storeFilename,
-    source: physicalFs.readFileSync(storeFilename), expectedSha256: storeRow.sha256,
+  const storeSource=physicalFs.readFileSync(storeFilename);
+  need(crypto.createHash('sha256').update(storeSource).digest('hex')===storeRow.sha256&&storeRow.sha256===plan.storeSourceSha256,'app-observer-target');
+  if(plan.observationMode==='full'){
+   storeBootstrap = require('./store-bootstrap-observer.cjs').install({target: storeModule, filename: storeFilename,
+    source: storeSource, expectedSha256: storeRow.sha256,
     root: path.join(profile, 'userdata/shared-playback-byte-cache-v2'),
     context: () => ({generation: client?.currentGenerationId}), now: () => performance.now() - started,
     emit: row => mark('store-bootstrap', row), onFailure: () => {observationErrors++;}});
   restores.push(() => storeBootstrap.restore());
+  }else{
+   storeSourceEvidence={mode:'source-verified-not-observed-v1',installed:false,sourceSha256:storeRow.sha256,
+    pendingCreates:null,observerErrors:null,dropped:null,operations:null,summaries:null,elapsedMs:null,restored:null};
+  }
   tap(get('enhanced/shared-playback-cache/store'), 'createStore', store => {
     cacheStore = store;
-    prefixCoverage.watch(store);
+    const instance=prefixCoverage.watch(store);ownedStores.push({instance,store});
     tap(store,'read',()=>{},null,(_values,captured)=>{if(cacheReadCalls.length>=8192){observationErrors++;return;}cacheReadCalls.push({...captured,at:performance.now()-started});});
     tap(store, 'open', (key, values, _requestedAt, captured) => {for(const item of ['C','A'])if(contract.isMedia(values[0],plan.sources.origin,item)){cacheKeys.set(item,key);storeKeys.add(key);if(item===mediaId)cacheKey=key;prefixCoverage.bind(key,values[0],values[1],item,captured,store);}}, 'store-open');
   }, 'store-create');
@@ -169,6 +178,7 @@ async function main() {
       generation=this.currentGenerationId;phaseOwner=owned;phaseSelection=selected.proxied?'proxy':'original';
       actualLoads.push({phase:phaseName,...owned,selection:phaseSelection,at:performance.now()-started});
       const phase=report.phases[phaseName];if(phase){phase.owner={...owned};phase.selection=phaseSelection;phase.loadAt=performance.now()-started;}
+      if(phase&&plan.observationMode==='minimal-v1')phase.proxyInstance=selected.proxied?proxyInstances.get(values[1])??null:null;
       lastAuditableFrame=null;lastFixtureEvidence=null;frameColorProfile=null;
       let cache=null,cacheEnabled=null;try{const range=service.rangeStatus();cache=smoke.cacheSelectionSnapshot(range);cacheEnabled=range.enabled===true;}catch(_){observationErrors++;}
       mark('native-load',{...owned,generation,proxied:selected.proxied,item:mediaId,cacheEnabled,cache});
@@ -614,13 +624,20 @@ async function main() {
         c.operationErrors.length === 0 && report.helperExits.some(e => e.helper===c.helperInstanceId&&e.pid === c.child?.pid && e.exitCode === 0 && e.signal === null && e.streamsClosed && e.pending === 0) &&
         [c.child?.stdin,c.child?.stdout,c.child?.stderr].every(stream => !stream || stream.destroyed));
       report.helperExitAssessment = clientList.length ? (report.ownedHelpersClosed ? 'CONFIRMED' : 'UNCERTAIN') : 'NOT_STARTED';
+      if(plan.observationMode==='minimal-v1'){
+        try{const observer=require('./prefix-coverage-observer.cjs');report.cacheClosure={assessment:'OBSERVED_FINAL',createdStores:ownedStores.length,createdProxies:ownedProxies.length,
+          stores:ownedStores.length?ownedStores.map(({instance,store})=>({instance,...observer.storeState(store)})):null,
+          proxies:ownedProxies.length?ownedProxies.map(({instance,proxy})=>({instance,...observer.proxyState(proxy)})):null};}
+        catch(_){observationErrors++;report.cacheClosure={assessment:'OBSERVATION_FAILED',stores:null,proxies:null};}
+      }
       if (!report.ownedHelpersClosed || observationErrors || report.status === 'PASS' && (!knownPeaks||clientList.length<1||actualLoads.length!==2||!contract.PHASES.every(p=>actualLoads.filter(l=>l.phase===p).length===1))) report.status = 'FAIL';
       report.observationErrors = observationErrors; report.durationMs = performance.now() - started;
       for (const restore of restores.reverse()) {try {restore();} catch (_) {report.status = 'FAIL'; report.restoreFailure = true;}}
-      report.storeInitialization = storeBootstrap?.snapshot() || null;
-      if (report.storeInitialization && (report.storeInitialization.pendingCreates || report.storeInitialization.observerErrors || report.storeInitialization.dropped)) report.status = 'FAIL';
+      report.storeInitialization = storeBootstrap?.snapshot() || storeSourceEvidence;
+      if (storeBootstrap && (report.storeInitialization.pendingCreates || report.storeInitialization.observerErrors || report.storeInitialization.dropped)) report.status = 'FAIL';
       report.prefixCoverage = prefixCoverage.snapshot();
-      if (report.prefixCoverage.errors || report.prefixCoverage.dropped || report.prefixCoverage.pending || !report.prefixCoverage.restored) report.status = 'FAIL';
+      if (report.prefixCoverage.errors || report.prefixCoverage.dropped || (plan.observationMode==='full'&&report.prefixCoverage.pending) || !report.prefixCoverage.restored) report.status = 'FAIL';
+      if(plan.observationMode==='minimal-v1'&&!contract.cacheClosureClean(report)){report.status='FAIL';report.code||='layered-cache-close-unconfirmed';}
       fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag: 'wx'});
       console.log('SHARED_CACHE_LAYERED_CASE ' + JSON.stringify({index, status: report.status, code: report.code || null, sampleCount: report.samples.length, ownedHelpersClosed: report.ownedHelpersClosed}));
     };
