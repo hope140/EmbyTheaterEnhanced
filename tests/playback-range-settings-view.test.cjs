@@ -23,24 +23,24 @@ const turn = () => new Promise(resolve => setImmediate(resolve));
 test('preload appears once under the original video Advanced section with confirmed defaults and no runtime display or save button', () => {
     assert.equal((html.match(/<form\b/g) || []).length, 1);
     assert.equal((html.match(/<\/form>/g) || []).length, 1);
-    const advanced = html.indexOf('<h1>${Advanced}</h1>'), preload = html.indexOf('<h1>播放暂存与预载</h1>');
+    const advanced = html.indexOf('<h1>${Advanced}</h1>'), preload = html.indexOf('<div class="checkboxContainer checkboxContainer-withDescription">');
     assert(advanced >= 0 && advanced < preload, 'preload follows the existing Advanced heading');
     assert.equal((html.match(/<h1>\$\{Advanced\}<\/h1>/g) || []).length, 1);
-    assert.equal((html.match(/<h1>播放暂存与预载<\/h1>/g) || []).length, 1);
+    assert.doesNotMatch(html, /<h[1-6]>播放暂存与预载<\/h[1-6]>/);
     for (const name of ['chkRangeEnabled', 'selectRangeProgress', 'selectRangePreload']) {
         const marker = 'class="' + name + '"';
         assert.equal(html.split(marker).length - 1, 1, name + ' is not duplicated');
         assert(preload < html.indexOf(marker) && html.indexOf(marker) < html.indexOf('</form>'), name + ' remains in the original Advanced form');
     }
-    assert.match(html, /<h1>播放暂存与预载<\/h1>/); assert.match(html, /启用播放暂存与下一集预载/); assert.match(html, /下次播放生效/);
-    assert.match(html, /支持共享暂存的来源会保留最近实际播放视频/); assert.match(html, /其他来源仅预载下一集/);
-    assert.match(html, /关闭开关不主动删除/); assert.match(html, /预载量只限制下一集/);
+    assert.match(html, /启用播放暂存与下一集预载/); assert.doesNotMatch(html, /下次播放生效/);
+    assert.match(html, /来源支持时保留最近播放的视频暂存/);
+    assert.match(html, /只限制下一集预载量/); assert.match(html, /未播放的预载在退出时清除/);
     assert.doesNotMatch(html, /rangeRuntimeState|当前运行|btnSaveRange|type="submit"|maxBytes|bytesPerSecond/);
     const choices = name => html.match(new RegExp('class="' + name + '"[^>]*>([\\s\\S]*?)<\\/select>'))[1];
     assert.deepEqual([...choices('selectRangeProgress').matchAll(/value="(\d+)"/g)].map(m => Number(m[1])), [50, 60, 70, 80, 90]);
     assert.deepEqual([...choices('selectRangePreload').matchAll(/value="(\d+)"/g)].map(m => Number(m[1])), [100, 300, 500]);
     assert.match(choices('selectRangeProgress'), /value="70" selected/); assert.match(choices('selectRangePreload'), /value="300" selected/);
-    assert.doesNotMatch(html, /class="chkRangeEnabled"[^>]*checked/); assert.match(html, /来源需支持可校验的分段读取/); assert.match(html, /不支持时继续正常播放/);
+    assert.doesNotMatch(html, /class="chkRangeEnabled"[^>]*checked/);
 });
 
 test('GET unlocks only confirmed preload values and opening or leaving untouched settings never saves', async () => {
@@ -60,7 +60,7 @@ test('each change autosaves an immutable snapshot for next play without disablin
     await turn(); assert.equal(writes.length, 1, 'second save waits for the first');
     first.resolve({status: 'saved'}); await Promise.all([one, two]);
     assert.deepEqual(writes, [config({enabled: true}), config({enabled: true, progressPercent: 80, preloadMB: 500})]);
-    assert.equal(f.state.textContent, '已保存，下次播放生效。');
+    assert.equal(f.state.textContent, '');
 });
 
 for (const result of [null, {status: 'ok', config: config({progressPercent: 55})}]) test('failed or malformed GET keeps controls locked and pause cannot write defaults: ' + JSON.stringify(result), async () => {
@@ -76,7 +76,13 @@ test('failed autosave preserves the draft, reports fixed feedback and later chan
     });
     await f.page.resume(); f.enabled.checked = true; await f.enabled.listeners.change();
     assert.equal(f.enabled.checked, true); assert.equal(f.enabled.disabled, false); assert.match(f.state.textContent, /保存失败/); assert.doesNotMatch(f.state.textContent, /secret/);
-    f.progress.value = '90'; await f.progress.listeners.change(); assert.equal(count, 2); assert.match(f.state.textContent, /已保存/);
+    f.progress.value = '90'; await f.progress.listeners.change(); assert.equal(count, 2); assert.equal(f.state.textContent, '');
+});
+
+test('saved settings with a failed runtime application keep visible fixed error feedback',async()=>{
+    const f=fixture(async channel=>channel===GET?{status:'ok',config:config()}:{status:'saved',applyError:'runtime-unavailable'});
+    await f.page.resume();f.enabled.checked=true;await f.enabled.listeners.change();
+    assert.equal(f.enabled.checked,true);assert.equal(f.state.textContent,'设置已保存，暂存暂不可用。');
 });
 
 test('pause captures the final edited values before retiring the page, without waiting for async completion', async () => {

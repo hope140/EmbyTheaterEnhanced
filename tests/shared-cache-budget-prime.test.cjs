@@ -12,6 +12,22 @@ function fixture() {
   const reader = createBudgetReader((owned, generation) => owned === active && owned.currentGenerationId === generation && !owned.exited && !owned.transportTerminated);
   return {queue, helper, reader, replace() {active = {};}};
 }
+function servicePrime(f, routing, kind) {
+  const source = fs.readFileSync(require.resolve('../src/electronapp/native-helper/service'), 'utf8');
+  const start = source.indexOf('  function primeSharedBudget(helper) {'), end = source.indexOf('  function changesSharedBudget', start);
+  const sandbox = {rangeConfigKind: routing, rangeSession: {status: () => ({kind, current: {state: 'idle'}})}, sharedBudget: f.reader};
+  vm.runInNewContext(source.slice(start,end) + '; prime = primeSharedBudget;',sandbox);
+  return () => sandbox.prime(f.helper);
+}
+test('source-aware prepared shared backend primes the new generation budget while its old source is idle', async () => {
+  const f = fixture(); servicePrime(f,'source-aware','shared-byte-trial')();
+  assert.equal(f.queue.length,1,'do not defer the actual read until range-context');
+  const selected = f.reader.read(f.helper,1); assert.equal(f.queue.length,1);
+  f.queue[0].resolve(629145600); assert.equal((await selected).bytes,629145600);
+});
+for (const kind of ['source-aware','next-prefix']) test('source-aware '+kind+' does not add a shared-budget read without a prepared shared engine', () => {
+  const f = fixture(); servicePrime(f,'source-aware',kind)(); assert.equal(f.queue.length,0);
+});
 test('batch-tail actual read is shared by selection without another IPC request', async () => {
   const f = fixture(), primed = f.reader.read(f.helper, 1);
   assert.equal(f.reader.read(f.helper, 1), primed);
@@ -203,6 +219,7 @@ test('actual 50ms selection still expires and cannot publish work after its own 
   selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
   assert.deepEqual(v.deadlines, [50]);
   v.advance(50); assert.equal(await selecting, null);
+  assert.equal(v.session.status().current.diagnostic.phase,'budget');
   v.advance(51); f.queue[0].resolve(314572800); await primed;
   await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(v.counts(), {created: 0, opened: 0});
 });

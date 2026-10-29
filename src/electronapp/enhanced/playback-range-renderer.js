@@ -58,6 +58,7 @@
             text += ' · ' + mb(next.bytes) + ' / ' + mb(next.targetBytes);
         }
         if (current && current.route === 'original') text += ' · 当前视频直读';
+        else if (current && Number.isSafeInteger(current.localHitBytes) && current.localHitBytes > 0) text += ' · 暂存读取 ' + (current.localHitBytes / (1024 * 1024)).toFixed(1) + ' MiB';
         return {type: 'enhanced', name: 'Emby Theater Enhanced', stats: [{label: '预载:', value: text}]};
     }
     async function bind(options) {

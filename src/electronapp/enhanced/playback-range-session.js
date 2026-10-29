@@ -143,15 +143,18 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 }, SHARED_PREPARE_TIMEOUT_MS);});
                 const preparing = (async () => {
                     if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
+                    record.preparationPhase = 'budget';
                     budget = await readCurrentBytes(helper, generationId);
                     active();
                     if (!budget || typeof budget.isCurrent !== 'function' || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-budget-retired');
                     const currentBytes = budget.bytes;
                     active();
                     record.currentBytes = currentBytes;
+                    record.preparationPhase = 'adapter';
                     const cache = await ensure();
                     active();
                     const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
+                        onPreparationPhase(phase) {if (owns(record) && record.selection === 'preparing') record.preparationPhase = phase;},
                         currentBytes, isCurrent: () => owns(record) && ['preparing', 'proxy'].includes(record.selection) && !signal.aborted && budget.isCurrent() && (record.selection === 'proxy' || now() < expiresAt), signal});
                     try {
                         // Publishing a proxy is not proof its restored metadata
@@ -188,7 +191,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             }
             return {source: handle.source, canDispatch: () => owns(record) && record.handle === handle && (!budget || budget.isCurrent()),
                 ...(budget ? {commit: () => budget.commit()} : {}), cancel};
-        } catch (error) {if (owns(record)) {record.selection = 'original'; record.diagnostic = report(diagnostics.fromError(error, 'current-probe', 'cache-unavailable'));} return null;}
+        } catch (error) {if (owns(record)) {record.selection = 'original'; const diagnostic = diagnostics.fromError(error, 'current-probe', 'cache-unavailable'); record.diagnostic = report({...diagnostic, ...(diagnostic.reason === 'timeout' ? {phase: record.preparationPhase} : {})});} return null;}
     }
     function unproxied(reason, helper, generationId) {
         const record = current;
@@ -281,10 +284,11 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
     return {cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
             const backend = config.kind === 'shared-byte-trial' ? {state: cacheInstance ? cacheInstance.status().backendState : cacheFailed ? 'failed' : cachePromise ? 'initializing' : 'idle'} : undefined;
-            let bytes = 0; try {if (current && current.handle && current.handle.status) bytes = current.handle.status().bytes;} catch (_) {}
+            let bytes = 0, localHitBytes = null;
+            try {if (current && current.handle && current.handle.status) {const value = current.handle.status(); bytes = value.bytes; if (Number.isSafeInteger(value.localHitBytes) && value.localHitBytes >= 0) localHitBytes = value.localHitBytes;}} catch (_) {}
             return {enabled: true, ...policy, kind: config.kind, timeoutMs: config.timeoutMs,
                 ...(backend ? {backend} : {}),
-                current: {route: current ? current.handle ? 'proxy' : 'original' : 'idle', state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
+                current: {route: current ? current.handle ? 'proxy' : 'original' : 'idle', state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(localHitBytes === null ? {} : {localHitBytes}), ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
                 next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,
                 maxBytes: policy.prefetchBytes};
         },

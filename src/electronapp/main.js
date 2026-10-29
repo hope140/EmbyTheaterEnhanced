@@ -1048,6 +1048,7 @@
         return rangeSettingsStore.runtimeConfig();
     }
     unregisterRangeSettingsIpc = rangeSettingsModule.register({ipcMain: ipcMain, store: rangeSettingsStore, getWebContents: getWebContents,
+        applyRuntimeSettings: function () {return nativeHelperService ? nativeHelperService.applyRangeSettings() : {applyMode: 'immediate'};},
         getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!getRangeCacheRuntimeConfig()};}});
     cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog, sourceAuthority: preloadSourceAuthority});
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({

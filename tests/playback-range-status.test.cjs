@@ -6,6 +6,14 @@ const diagnostics=require('../src/electronapp/enhanced/playback-range-diagnostic
 const renderer=require('../src/electronapp/enhanced/playback-range-renderer');
 const routeStats=require('../src/electronapp/enhanced/playback-route-stats');
 const origin='http://127.0.0.1:19000';
+test('preload completion is not a current hit and only real current-route local read bytes render as cache reads',()=>{
+    const ready={bytes:300*1048576,targetBytes:300*1048576};
+    assert(!renderer.category('ready',null,ready,{route:'proxy',localHitBytes:0}).stats[0].value.includes('暂存读取'));
+    assert(!renderer.category('ready',null,ready,{route:'proxy'}).stats[0].value.includes('暂存读取'));
+    assert(renderer.category('waiting',null,null,{route:'proxy',localHitBytes:1048576}).stats[0].value.includes('暂存读取 1.0 MiB'));
+    const fallback=renderer.category('ready',null,ready,{route:'original',localHitBytes:1048576}).stats[0].value;
+    assert(fallback.includes('当前视频直读'));assert(!fallback.includes('暂存读取'));
+});
 function context(overrides={}) {return {source:origin+'/a.mp4?Static=true',serverOrigin:origin,serverId:'s',accountId:'u',itemId:'A',mediaSourceId:'mA',playSessionId:'p',mode:'DirectStream',mediaType:'Video',container:'mp4',live:false,...overrides};}
 const config={kind:'next-prefix',root:path.resolve('unused-controlled-root'),progressPercent:70,preloadMB:300,timeoutMs:1000};
 function fixture(t,{currentError,nextError,prefetch}={}) {

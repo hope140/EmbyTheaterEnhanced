@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const vm = require('node:vm');
 const {appUrl, eventFor} = require('./helpers/trusted-renderer.cjs');
 const settings = require('../src/electronapp/enhanced/playback-range-user-settings');
 
@@ -112,4 +113,59 @@ test('IPC applies accepted settings on next play, reports effective state separa
     unregister();
     assert.equal(handlers.size, 0);
     assert.deepEqual(removed.sort(), [settings.CHANNELS.GET, settings.CHANNELS.SAVE].sort());
+});
+
+test('saved settings await safe runtime application without confusing application failure with persistence failure', async () => {
+    const profileRoot = temporaryRoot('ete-range-apply-'), store = settings.createStore({profileRoot}), handlers = new Map();
+    const trusted = {mainFrame: {url: appUrl}, isDestroyed: () => false}; let applications = 0;
+    const unregister = settings.register({ipcMain: {handle(k,v) {handlers.set(k,v);}, removeHandler() {}}, store,
+        getWebContents: () => trusted, applyRuntimeSettings: async () => {if (++applications === 2) throw Error('synthetic-close-failure'); return {applyMode: 'immediate'};}});
+    try {
+        const save = handlers.get(settings.CHANNELS.SAVE);
+        assert.equal((await save(eventFor(trusted), config({enabled:true}))).applyMode,'immediate');
+        const pending = await save(eventFor(trusted),config({enabled:true,preloadMB:500}));
+        assert.equal(pending.status,'saved'); assert.equal(pending.applyMode,'next-play'); assert.equal(pending.applyError,'runtime-unavailable'); assert.equal(store.get().preloadMB,500);
+        assert.equal((await save({sender:{}},config())).reason,'untrusted_sender'); assert.equal(applications,2);
+    } finally {unregister();}
+});
+
+function runtimeFixture({playing=false,oldClose,failClose=false}={}) {
+    const source=fs.readFileSync(require.resolve('../src/electronapp/native-helper/service'),'utf8');
+    const begin=source.indexOf('  function applyRangeConfig('),end=source.indexOf('  function requireEndpoint(',begin);
+    const old={kind:'source-aware',preloadMB:300},next={kind:'source-aware',preloadMB:500};let closes=0,creates=0;
+    const sandbox={destroyed:false,generationEpoch:1,client:playing?{currentGenerationId:2}:null,rangeApplyTail:Promise.resolve(),rangePreloadEpoch:0,
+        rangeSession:{async close(){closes++;if(oldClose)await oldClose;if(failClose)throw Error('owned-close-failure');}},rangeConfigKey:JSON.stringify(old),rangeConfigKind:old.kind,
+        rangeCloseFailure:null,desired:next,readRangeConfig(){return sandbox.desired;},rangeKey:JSON.stringify,createRangeSession(value){creates++;return{config:value};}};
+    vm.runInNewContext(source.slice(begin,end)+'; apply = applyRangeSettings;',sandbox);
+    return {sandbox,apply:()=>sandbox.apply(),counts:()=>({closes,creates})};
+}
+test('idle runtime applies saved policy immediately without creating a Native helper',async()=>{
+    const f=runtimeFixture();assert.equal((await f.apply()).applyMode,'immediate');assert.deepEqual(f.counts(),{closes:1,creates:1});assert.equal(f.sandbox.client,null);
+});
+test('active runtime keeps its source and defers structural changes instead of closing the playing proxy',async()=>{
+    const f=runtimeFixture({playing:true}),old=f.sandbox.rangeSession;assert.equal((await f.apply()).applyMode,'next-play');assert.equal(f.sandbox.rangeSession,old);assert.deepEqual(f.counts(),{closes:0,creates:0});
+});
+test('queued idle apply rechecks generation ownership and publishes only the latest saved policy',async()=>{
+    let release;const close=new Promise(resolve=>{release=resolve;}),f=runtimeFixture({oldClose:close}),applying=f.apply();
+    await new Promise(resolve=>setImmediate(resolve));f.sandbox.desired={kind:'source-aware',preloadMB:100};release();
+    assert.equal((await applying).applyMode,'immediate');assert.equal(f.sandbox.rangeSession.config.preloadMB,100);
+    const g=runtimeFixture();g.sandbox.rangeApplyTail=Promise.resolve().then(()=>{g.sandbox.generationEpoch++;g.sandbox.client={currentGenerationId:3};});
+    assert.equal((await g.apply()).applyMode,'next-play');assert.deepEqual(g.counts(),{closes:0,creates:0});
+});
+test('failed idle close remains failed and cannot create a replacement cache session',async()=>{
+    const f=runtimeFixture({failClose:true});await assert.rejects(f.apply(),/owned-close-failure/);assert.deepEqual(f.counts(),{closes:1,creates:0});
+    await assert.rejects(f.apply(),/owned-close-failure/);assert.deepEqual(f.counts(),{closes:1,creates:0});
+});
+test('disable then failed close cannot hide the runtime error on another disabled Save',async()=>{
+    const f=runtimeFixture({failClose:true});f.sandbox.desired=null;
+    const profileRoot=temporaryRoot('ete-range-disable-failed-'),store=settings.createStore({profileRoot}),handlers=new Map();store.save(config({enabled:true}));
+    const trusted={mainFrame:{url:appUrl},isDestroyed:()=>false};
+    const unregister=settings.register({ipcMain:{handle(k,v){handlers.set(k,v);},removeHandler(){}},store,getWebContents:()=>trusted,applyRuntimeSettings:f.apply});
+    try {
+        for(let i=0;i<2;i++) {
+            const saved=await handlers.get(settings.CHANNELS.SAVE)(eventFor(trusted),config());
+            assert.equal(saved.status,'saved');assert.equal(saved.applyError,'runtime-unavailable');assert.equal(saved.applyMode,'next-play');
+        }
+        assert.equal(store.get().enabled,false);assert.deepEqual(f.counts(),{closes:1,creates:0});
+    } finally {unregister();}
 });

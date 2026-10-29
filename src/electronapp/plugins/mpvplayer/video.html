@@ -56,11 +56,9 @@
 
             <h1>${Advanced}</h1>
 
-            <h1>播放暂存与预载</h1>
-
             <div class="checkboxContainer checkboxContainer-withDescription">
                 <label><input type="checkbox" is="emby-checkbox" disabled class="chkRangeEnabled" /><span>启用播放暂存与下一集预载</span></label>
-                <div class="fieldDescription checkboxFieldDescription">启用期间，支持共享暂存的来源会保留最近实际播放视频的暂存；其他来源仅预载下一集并在退出后丢弃。尚未播放的下一集预载退出后丢弃。下次播放生效；关闭开关不主动删除已保留暂存。</div>
+                <div class="fieldDescription checkboxFieldDescription">来源支持时保留最近播放的视频暂存，并提前读取下一集。</div>
             </div>
             <div class="selectContainer">
                 <select is="emby-select" disabled class="selectRangeProgress" label="开始预载的播放进度">
@@ -71,7 +69,7 @@
                 <select is="emby-select" disabled class="selectRangePreload" label="预载量">
                     <option value="100">100 MiB</option><option value="300" selected>300 MiB</option><option value="500">500 MiB</option>
                 </select>
-                <div class="fieldDescription">预载量只限制下一集。共享暂存另沿用实际内存缓存预算，磁盘媒体总额不超过两者之和（另有少量索引）。来源需支持可校验的分段读取；不支持时继续正常播放。当前播放优先，不保证每次使用暂存或提升速度。</div>
+                <div class="fieldDescription">只限制下一集预载量；未播放的预载在退出时清除。</div>
             </div>
             <div class="rangeSettingsState secondaryText" role="status" aria-live="polite"></div>
 

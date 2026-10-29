@@ -36,6 +36,7 @@
     function snapshot(value) {
         value = value || {};
         var result = {stage: stages.indexOf(value.stage) >= 0 ? value.stage : 'lifecycle', reason: knownReason(value.reason) ? value.reason : 'unexpected'};
+        if (['budget', 'adapter', 'source-probe', 'backend', 'metadata'].indexOf(value.phase) >= 0) result.phase = value.phase;
         if (Number.isInteger(value.httpStatus) && value.httpStatus >= 100 && value.httpStatus <= 599) result.httpStatus = value.httpStatus;
         return result;
     }

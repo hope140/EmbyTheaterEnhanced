@@ -154,7 +154,7 @@ function createService(options) {
   function readSharedCurrentBytes(helper, generationId) {return sharedBudget.read(helper, generationId);}
   function primeSharedBudget(helper) {
     if (rangeSession && (rangeConfigKind === 'shared-byte-trial' || rangeConfigKind === 'source-aware' &&
-        rangeSession.status().kind === 'shared-byte-trial' && rangeSession.status().current.state !== 'idle')) sharedBudget.read(helper, helper.currentGenerationId);
+        rangeSession.status().kind === 'shared-byte-trial')) sharedBudget.read(helper, helper.currentGenerationId);
   }
   function changesSharedBudget(name) {return name === 'demuxer-max-bytes' || name === 'profile';}
   function createRangeSession(config) {
@@ -732,12 +732,14 @@ function createService(options) {
     const owned = rangeSession; return owned ? owned.retire() : Promise.resolve();
   }
 
-  function applyRangeConfig(expectedEpoch) {
+  function applyRangeConfig(expectedEpoch, idleOnly = false) {
     const job = rangeApplyTail.then(async function () {
       if (destroyed || expectedEpoch !== generationEpoch) return;
+      if (rangeCloseFailure) throw rangeCloseFailure;
+      // Never close a live source's proxy merely because its settings were saved.
+      if (idleOnly && client && client.currentGenerationId != null && !client.exited && !client.transportTerminated) return;
       const desired = readRangeConfig();
       if (rangeKey(desired) === rangeConfigKey) return;
-      if (rangeCloseFailure) throw rangeCloseFailure;
       ++rangePreloadEpoch;
       const old = rangeSession; rangeSession = null; rangeConfigKey = rangeKey(null);
       if (old) {
@@ -750,6 +752,12 @@ function createService(options) {
       rangeConfigKey = rangeKey(latest); rangeConfigKind = latest && latest.kind;
     });
     rangeApplyTail = job.catch(function () {}); return job;
+  }
+
+  async function applyRangeSettings() {
+    const expectedEpoch = generationEpoch;
+    await applyRangeConfig(expectedEpoch, true);
+    return {applyMode: !destroyed && expectedEpoch === generationEpoch && rangeKey(readRangeConfig()) === rangeConfigKey ? 'immediate' : 'next-play'};
   }
 
   function requireEndpoint(endpointId) {
@@ -1121,7 +1129,7 @@ function createService(options) {
     }());
     return record.promise;
   }
-  return {call, destroy, mode, notify, prewarm, status, rangeStatus: function () { return rangeSession ? rangeSession.status() : {enabled: false}; }, capturePreview, isPreviewOwner, kernelStatus: function () { return status().kernel; },
+  return {call, destroy, mode, notify, prewarm, status, applyRangeSettings, rangeStatus: function () { return rangeSession ? rangeSession.status() : {enabled: false}; }, capturePreview, isPreviewOwner, kernelStatus: function () { return status().kernel; },
     getVideoWindow: function () { return !destroyed && surfaceWindow && !surfaceWindow.isDestroyed() ? surfaceWindow : null; }};
 }
 

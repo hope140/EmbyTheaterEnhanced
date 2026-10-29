@@ -50,7 +50,7 @@ function createStore({profileRoot}) {
 
     };
 }
-function register({ipcMain, store, getWebContents, getRuntimeStatus = () => ({enabled: false})}) {
+function register({ipcMain, store, getWebContents, getRuntimeStatus = () => ({enabled: false}), applyRuntimeSettings}) {
     function snapshot(status, config) {return {status, config, runtime: getRuntimeStatus()};}
     function handler(save) {return (event, request) => {
         if (!boundary.isTrusted(event, getWebContents())) return {status: 'error', reason: 'untrusted_sender'};
@@ -58,7 +58,14 @@ function register({ipcMain, store, getWebContents, getRuntimeStatus = () => ({en
         try {
             if (!save && request !== undefined) throw Error('invalid-config');
             if (save) {
-                return {...snapshot('saved', store.save(request)), requiresRestart: false, applyMode: 'next-play'};
+                const saved = store.save(request);
+                if (typeof applyRuntimeSettings !== 'function') return {...snapshot('saved', saved), requiresRestart: false, applyMode: 'next-play'};
+                // Persistence succeeded even if a live source must retain its
+                // existing session. Failure to apply must not masquerade as a
+                // failed disk save, or retire a playing proxy to force success.
+                return Promise.resolve().then(() => applyRuntimeSettings()).then(result => ({
+                    ...snapshot('saved', saved), requiresRestart: false, applyMode: result && result.applyMode === 'immediate' ? 'immediate' : 'next-play'
+                }), () => ({...snapshot('saved', saved), requiresRestart: false, applyMode: 'next-play', applyError: 'runtime-unavailable'}));
             }
             return snapshot('ok', store.get());
         } catch (_) {return {status: 'error', reason: 'invalid-config'};}

@@ -426,7 +426,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             }
             useRecord(record); if (signal.aborted) throw cancelled();
             if (epoch !== record.metadataEpoch || key !== record.key) throw problem('stale-read');
-            if (data) {stats.hitBytes += data.length; await write(data); offset += data.length; continue;}
+            if (data) {stats.hitBytes += data.length; record.localHitBytes += data.length; await write(data); offset += data.length; continue;}
             // Invalid/missing local data falls through to ordinary origin IO.
           }
           const next = readCache && record.ready && await store.nextOffset(record.key, offset);
@@ -455,10 +455,11 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     const grant = grantOf(await authorize(identity, {reason: 'open', signal: controller.signal}));
     if (closed || controller.signal.aborted) throw cancelled();
     const record = {identity, role, grant, metadata: {...grant.metadata}, controller, retired: false, metadataEpoch: 0,
-      ready: false, accessChecked: grant.accessChecked, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false};
+      ready: false, accessChecked: grant.accessChecked, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0};
     prepareKey(record, grant.metadata);
     const route = '/' + crypto.randomBytes(24).toString('hex'); routes.set(route, record);
     return {url: 'http://127.0.0.1:' + server.address().port + route,
+      status: () => ({localHitBytes: record.localHitBytes}),
       ready: () => record.keyPromise, actual: () => {
         useRecord(record); const revision = ++actualRevision;
         return track(controls, (async () => {

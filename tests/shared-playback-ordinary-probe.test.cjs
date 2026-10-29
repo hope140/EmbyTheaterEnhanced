@@ -25,7 +25,8 @@ async function fixture(t,{response={},hold=false,holdClose=false}={}){
  return{cache,requests,grants,context,open,release,releaseClose,get proxyOptions(){return proxyOptions;},stats:()=>({closed,proxyClosed})};
 }
 test('ordinary size comes from exactly one closed 0-0 probe and is pinned for all later access',async t=>{
- const f=await fixture(t),ctx=f.context(),handle=await f.open(ctx);await handle.ready();assert.equal(f.requests.length,1);assert(f.requests[0].closed);assert.deepEqual(f.requests[0].options.headers,{Range:'bytes=0-0','Accept-Encoding':'identity',Connection:'close'});
+ const f=await fixture(t),ctx=f.context(),phases=[];ctx.onPreparationPhase=value=>{phases.push(value);throw Error('synthetic-observer-failure');};
+ const handle=await f.open(ctx);await handle.ready();assert.deepEqual(phases,['source-probe','backend','metadata']);assert.equal(f.requests.length,1);assert(f.requests[0].closed);assert.deepEqual(f.requests[0].options.headers,{Range:'bytes=0-0','Accept-Encoding':'identity',Connection:'close'});
  assert.equal(f.grants.length,1);assert.equal(f.grants[0].grant.metadata.total,64);assert.equal(f.grants[0].grant.metadata.etag,'"ordinary-v1"');assert.equal(handle.status().total,64);
  const access=await f.proxyOptions.resolveAccess(f.grants[0].identity,null,{signal:new AbortController().signal});assert.equal(access.expectedSize,64);assert.equal(f.requests.length,1,'no duplicate size probe');await handle.markPlaying();await handle.stop();await f.cache.close();assert(f.stats().closed);assert.equal(f.stats().proxyClosed,1);
 });

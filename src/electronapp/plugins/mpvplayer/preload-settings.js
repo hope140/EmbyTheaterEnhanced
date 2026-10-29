@@ -27,7 +27,7 @@
             // while their replies may only update the page that issued them.
             tail = tail.then(function () {return invoke(SAVE, config);}).then(function (result) {
                 if (!result || result.status !== 'saved') throw Error('save-failed');
-                if (current(ticket) && revision === requestRevision) state.textContent = '已保存，下次播放生效。';
+                if (current(ticket) && revision === requestRevision) state.textContent = result.applyError ? '设置已保存，暂存暂不可用。' : '';
             }).catch(function () {
                 if (current(ticket) && revision === requestRevision) state.textContent = '保存失败，请重新选择后重试。';
             });

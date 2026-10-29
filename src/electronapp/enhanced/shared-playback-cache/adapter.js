@@ -186,13 +186,17 @@ async function createCache(config, dependencies = {}) {
                 // until that probe succeeds; close still owns late recovery.
                 const preparing = ensure(options.currentBytes);
                 preparing.catch(() => {});
+                const phase = value => {try {options.onPreparationPhase?.(value);} catch (_) {}};
+                phase('source-probe');
                 const metadata = await probe(initial, record.signal, timeoutMs, record.ordinary);
                 guard(record);
                 record.total = metadata.total;
                 record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
                     metadata, accessChecked: true};
+                phase('backend');
                 const owned = await preparing;
                 guard(record);
+                phase('metadata');
                 const route = await owned.proxy.open(identity, 'next');
                 record.route = route;
                 // A recovered backend can establish a prepared first hit before
@@ -232,7 +236,10 @@ async function createCache(config, dependencies = {}) {
                         });
                         guard(record);
                     })()),
-                    status: () => ({bytes: record.bytes, total: record.total}),
+                    status: () => {
+                        const stats = typeof route.status === 'function' ? route.status() : null;
+                        return {bytes: record.bytes, total: record.total, ...(stats && Number.isSafeInteger(stats.localHitBytes) && stats.localHitBytes >= 0 ? {localHitBytes: stats.localHitBytes} : {})};
+                    },
                     markPlaying: () => track((async () => {
                         guard(record);
                         const changed = await route.actual();

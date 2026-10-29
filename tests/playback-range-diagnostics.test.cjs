@@ -46,6 +46,13 @@ test('errors retain legacy messages while rendering only allowlisted metadata or
     assert.deepEqual(diagnostics.fromError(Error(canary), canary, canary), {stage: 'lifecycle', reason: 'unexpected'});
 });
 
+test('preparation phase is a fixed enum and cannot disclose a source or arbitrary diagnostic text', () => {
+    for (const phase of ['budget','adapter','source-probe','backend','metadata']) {
+        assert.deepEqual(diagnostics.snapshot({stage:'current-probe',reason:'timeout',phase,url:canary}),{stage:'current-probe',reason:'timeout',phase});
+    }
+    for (const phase of [canary,'__proto__',{},null]) assert.equal(diagnostics.snapshot({phase}).phase,undefined);
+});
+
 async function fixture(t, respond, timeoutMs = 1000) {
     const rows = [], sockets = new Set();
     const server = http.createServer((req, res) => {rows.push(req.headers); respond(req, res);});

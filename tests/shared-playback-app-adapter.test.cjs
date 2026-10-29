@@ -529,6 +529,7 @@ test('ordinary known-version bytes survive close/reopen and a fresh probe cannot
     await actual.ready();
     assert.equal(actual.status().total, f.data.length, 'learned from the fresh one-byte response');
     assert.equal((await actual.prefetch({maxBytes:f.data.length, signal:new AbortController().signal})).bytes, f.data.length);
+    assert.equal(actual.status().localHitBytes,0,'preloading is not a foreground local read');
     await actual.markPlaying();
     const unplayed = await first.open(f.source('B'));
     await unplayed.prefetch({maxBytes:32768, signal:new AbortController().signal});
@@ -548,6 +549,7 @@ test('ordinary known-version bytes survive close/reopen and a fresh probe cannot
     await route.ready();
     assert.equal(reopened.status().nextBytes,0,'unplayed B is not restored');
     assert.equal((await get(route.source,0,f.data.length)).hash,hash(f.data));
+    assert.equal(route.status().localHitBytes,f.data.length,'only this reopened foreground route supplied these cached bytes');
     assert(cacheReadBytes >= f.data.length,'actual reopened disk reads supplied the response');
     assert.equal(f.requests.length-before,1,'only one fresh0-0 probe, no repeated origin body');
     assert.equal(f.requests[before].range,'bytes=0-0');

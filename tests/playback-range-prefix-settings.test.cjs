@@ -102,7 +102,7 @@ test('IPC supports explicit enabled settings with next-play application and no r
 
 test('video settings contain the preload controls and use the existing next-play IPC contract', () => {
     assert.match(htmlSource, /启用播放暂存与下一集预载/);
-    assert.match(htmlSource, /下次播放生效/);
+    assert.doesNotMatch(htmlSource, /下次播放生效/);
     assert.doesNotMatch(htmlSource, /rangeRuntimeState|btnSaveRange|当前运行/);
     assert.match(controllerSource, /enhanced-playback-range-settings-get/);
     assert.match(controllerSource, /enhanced-playback-range-settings-save/);
