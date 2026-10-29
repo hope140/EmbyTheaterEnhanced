@@ -22,6 +22,7 @@ function fixture(t,{openGate}={}){
  const config={kind:'source-aware',root:path.resolve('/workspace/ordinary-unit-unused/legacy'),sharedRoot:path.resolve('/workspace/ordinary-unit-unused/shared'),progressPercent:70,preloadMB:300,timeoutMs:30000};
  const authorizeOrdinary=(...args)=>{ordinaryCalls++;return sandbox.ordinary(...args);};
  const create=options=>range.createSession({...options,create:async()=>cache,now:()=>clock});
+ const evidenceRows=[];sandbox.reportRangeEvidence=row=>evidenceRows.push(row);
  sandbox.authorizeOrdinaryRange=authorizeOrdinary;sandbox.readSharedCurrentBytes=budget.read;sandbox.reportPreload=()=>{};
  sandbox.require=name=>name==='../enhanced/playback-range-source-session'?{createSourceSession:options=>createSourceSession(options,{createSession:create})}:name==='../enhanced/playback-range-session'?{...range,createSession:create}:createRequire(serviceFile)(name);
  const factoryStart=source.indexOf('  function createRangeSession(config)'),factoryEnd=source.indexOf('  function rangeKey(',factoryStart);assert(factoryStart>0&&factoryEnd>factoryStart);
@@ -33,10 +34,10 @@ function fixture(t,{openGate}={}){
  async function select(value){await session.setContext(value,helper,helper.currentGenerationId);return session.select(value.source,helper,helper.currentGenerationId,['loadfile',value.source]);}
  async function play(value){const selected=await select(value);selected?.commit?.();await session.started(helper,helper.currentGenerationId);return selected;}
  function nextGeneration(){helper.currentGenerationId++;budget.retire();sandbox.rangeGenerationOwner={helper,generationId:helper.currentGenerationId,label:'play-'+helper.currentGenerationId,scope:crypto.randomUUID(),principal:authority.principalFor(web)};}
- return{session,helper,authority,sandbox,web,context,branded,select,play,nextGeneration,budgetCalls,opens,promoted,stops,ordinary:authorizeOrdinary,get ordinaryCalls(){return ordinaryCalls;},get closes(){return closes;},setClock:v=>{clock=v;}};
+ return{session,helper,authority,sandbox,web,evidenceRows,context,branded,select,play,nextGeneration,budgetCalls,opens,promoted,stops,ordinary:authorizeOrdinary,get ordinaryCalls(){return ordinaryCalls;},get closes(){return closes;},setClock:v=>{clock=v;}};
 }
 test('qualified ordinary source selects the existing shared M/P path and reauthorizes a new actual Play',async t=>{
- const f=fixture(t);assert(await f.play(f.context('A')));assert.equal(f.session.status().kind,'shared-byte-trial');assert.equal(f.budgetCalls.length,1);assert.deepEqual(f.budgetCalls[0],['demuxer-max-bytes',50]);
+ const f=fixture(t);assert(await f.play(f.context('A')));assert.equal(f.session.status().kind,'shared-byte-trial');assert(f.evidenceRows.some(row=>row.event==='play-open'));assert(f.evidenceRows.some(row=>row.event==='selection'&&row.details.route==='proxy'));assert.equal(f.budgetCalls.length,1);assert.deepEqual(f.budgetCalls[0],['demuxer-max-bytes',50]);
  assert.equal((await f.session.preload(f.context('B'),f.helper,1)).state,'ready');assert.equal(f.session.status().next.bytes,32);assert(f.opens.every(v=>authorityModule.isOrdinaryTransport(v.transport)));assert.equal(f.opens[1].role,'next');
  f.nextGeneration();assert(await f.play(f.context('B')));assert.equal(f.budgetCalls.length,2);assert.deepEqual(f.promoted,['A','B']);assert.notEqual(f.opens[1].transport,f.opens[2].transport);assert.equal(f.opens[1].transport.representation,f.opens[2].transport.representation);await f.session.close();assert.equal(f.closes,1);
 });
