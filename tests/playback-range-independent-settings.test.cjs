@@ -1,13 +1,14 @@
 'use strict';
 const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs/promises'), os = require('node:os'), path = require('node:path');
+const {temporaryRoot} = require('./helpers/range-fixture-root.cjs');
 const {createSourceSession} = require('../src/electronapp/enhanced/playback-range-source-session');
 const {createSession} = require('../src/electronapp/enhanced/playback-range-session');
 const {createStore} = require('../src/electronapp/enhanced/shared-playback-cache/store');
 const {uncachedIdentity} = require('../src/electronapp/enhanced/shared-playback-cache/adapter');
 const context = {source:'http://synthetic.invalid/a.mkv', serverOrigin:'http://synthetic.invalid', serverId:'server', accountId:'account', itemId:'item', mediaSourceId:'media', playSessionId:'session', mode:'DirectPlay', mediaType:'Video', container:'mkv'};
 for (const retainPlayback of [false,true]) test('legacy maintenance obeys explicit retention '+retainPlayback+' for the same actual media', async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(),'ete-independent-maintenance-')), sharedRoot = path.join(root,'shared');
+    const root = temporaryRoot('ete-independent-maintenance-', ['shared', 'legacy']), sharedRoot = path.join(root,'shared');
     let session, owned, commits=0, creates=0;
     try {
         owned = await createStore({root:sharedRoot,currentBytes:262144,nextBytes:104857600});
