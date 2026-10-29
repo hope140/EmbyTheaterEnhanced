@@ -53,6 +53,8 @@ function livePolicyBinding(current) {
   const text=current.toString('utf8'),canonical=Buffer.from(text.replace(/\r\n/g,'\n'));
   const lf=canonical.equals(current),crlf=Buffer.from(canonical.toString('utf8').replace(/\n/g,'\r\n')).equals(current);
   need(Buffer.from(text,'utf8').equals(current)&&(lf||crlf),'probe-current-source');
+  // This product changes prepared-route control flow. It is identified, never executed as a historical arm.
+  if(sha(canonical)==='ee46a864ad2b90e0d5fe192dc2e830c7cd22cdf99ff977b268425f3ac8a8e020')return {relation:'prepared-handoff-v1-not-benchmarked',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
   if(sha(canonical)==='e12d4939498354bddfe19b608084328f51e666ecfd8f01a31a4a3e9caff8ee6e')return {relation:'historical-source-identical',checkoutSha256:sha(current),byteIdentical:true};
   let policy=canonical.toString('utf8');
   const retention=policy.includes('cacheForeground = true');

@@ -754,3 +754,16 @@ test('disabling retention drops previously retained actual bytes during recovery
     try {assert.equal(reopened.status().committed,0); assert.equal(await reopened.read(key,0,11),null);}
     finally {await reopened.close();}
 });
+
+test('prepared P-to-M transfer preserves the playback-near prefix within M, not a newer distant tail',async t=>{
+    const {store,root}=await fixture(t,{currentBytes:8,nextBytes:12});
+    const a=await store.open(identity('account','previous'),metadata(),'current');await store.actual(a);await store.put(a,0,Buffer.from('old!'));
+    const b=await store.open(identity('account','prepared'),metadata(),'next');
+    for(const [offset,data]of [[0,'aaaa'],[4,'bbbb'],[100,'tail']])assert.equal(await store.put(b,offset,Buffer.from(data)),true);
+    assert.deepEqual(await store.read(a,0,4),Buffer.from('old!'),'preparation has not replaced the actual owner');
+    assert.equal(await store.actual(b,{preferredOffset:0}),true);
+    assert.equal(store.status().current,8);assert.equal(store.status().next,0);assert.equal(await store.read(a,0,4),null);
+    assert.deepEqual(await store.read(b,0,8),Buffer.from('aaaabbbb'));assert.equal(await store.span(b,100),null);
+    await store.close();const reopened=await createStore({root,currentBytes:8,nextBytes:12});
+    try{assert.deepEqual(await reopened.read(b,0,8),Buffer.from('aaaabbbb'));assert.equal(reopened.status().current,8);}finally{await reopened.close();}
+});

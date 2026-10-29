@@ -36,7 +36,7 @@ function grantOf(value) {
   if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || u.hash || u.origin !== value.origin) throw problem('source-invalid');
   const ua = value.userAgent;
   if (ua !== undefined && (typeof ua !== 'string' || !/^[\x20-\x7e]{1,1024}$/.test(ua) || /[,\\]/.test(ua))) throw problem('source-options');
-  return {url: u.href, origin: u.origin, userAgent: ua, metadata: {...value.metadata}, accessChecked: value.accessChecked === true,
+  return {url: u.href, origin: u.origin, userAgent: ua, metadata: {...value.metadata}, accessChecked: value.accessChecked === true, preparedHandoff: value.preparedHandoff === true,
     expiresAt: Math.min(Date.now() + 300000, Number.isFinite(value.expiresAt) ? value.expiresAt : Infinity)};
 }
 async function waitDone(promise, signal) {
@@ -59,7 +59,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
   const track = (set, promise) => {set.add(promise); promise.finally(() => set.delete(promise)).catch(() => {}); return promise;};
   function useRecord(record) {if (closed || record.retired) throw cancelled();}
   function retire(record, purge = false) {
-    record.retired = true; record.accessChecked = false; record.controller.abort();
+    record.retired = true; record.accessChecked = false; record.finishFirstAccess?.(false); record.controller.abort();
     if (purge) track(controls, record.keyPromise.then(key => store.invalidate(key)).catch(() => {}));
   }
   function prepareKey(record, metadata) {
@@ -315,10 +315,42 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     // readiness still cannot be published until the write actually succeeds.
     if (finalRequiredWrite) await waitDone(finalRequiredWrite, combined);
   }
+  function validatePrepared(record) {
+    if (record.preparedCheck) return record.preparedCheck;
+    // One transaction is shared by every Range GET/HEAD and actual() waiter.
+    // No response can deliver bytes before this validation/fallback resolves.
+    record.preparedValidation = 'checking';
+    record.preparedCheck = track(controls, (async () => {
+      try {
+        await fetchRange(record, 0, 1, {kind: 'foreground', signal: record.controller.signal, save: false, probe: true});
+        useRecord(record); if (record.stopped || closed) throw cancelled();
+        await record.keyPromise; useRecord(record);
+        record.preparedValidation = 'ready'; record.finishFirstAccess(true); return true;
+      } catch (error) {
+        record.finishFirstAccess(false);
+        // A new authorized original may be selected only before any playback
+        // byte. All other readers still wait on this same transaction.
+        if (!closed && !record.stopped && !record.deliveredBytes && routes.get(record.routeToken) === record) {
+          try {
+            const signal = record.fallbackController.signal;
+            const access = resolveAccess ? await resolveAccess(record.identity, record.grant, {signal}) :
+              await authorize(record.identity, {reason: 'fallback', signal});
+            const checked = grantOf({...access, metadata: record.metadata});
+            if (checked.origin !== record.grant.origin || checked.userAgent !== record.grant.userAgent || closed ||
+                signal.aborted || record.stopped || record.deliveredBytes || routes.get(record.routeToken) !== record) throw cancelled();
+            record.grant.url = checked.url; record.fallbackOriginal = true;
+            record.preparedValidation = 'fallback'; return false;
+          } catch (_) {}
+        }
+        record.preparedValidation = 'failed'; throw error;
+      }
+    })());
+    record.preparedCheck.catch(() => {}); return record.preparedCheck;
+  }
   async function serve(req, res) {
     const record = routes.get(req.url), expectedHost = '127.0.0.1:' + server.address().port;
     if (closed || !record || req.headers.host !== expectedHost || req.headers.origin || req.headers.referer || !['GET', 'HEAD'].includes(req.method)) {res.writeHead(403); res.end(); return;}
-    if (record.retired) {res.writeHead(410); res.end(); return;}
+    if (record.retired && !record.fallbackOriginal && record.preparedValidation !== 'checking') {res.writeHead(410); res.end(); return;}
     if (stats.activeBodies >= 2) {res.writeHead(503); res.end(); return;}
     const range = rangeOf(req.headers.range, record.metadata.total);
     if (!range) {res.writeHead(416); res.end(); return;}
@@ -334,7 +366,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     const write = (bytes, ticket) => {
       useRecord(record); if (signal.aborted) throw cancelled();
       if (!res.headersSent) res.writeHead(range.partial ? 206 : 200, headers);
-      stats.deliveredBytes += bytes.length;
+      stats.deliveredBytes += bytes.length; record.deliveredBytes += bytes.length;
       stats.localWrites++;
       if (!res.write(bytes)) {
         stats.backpressureWrites++;
@@ -355,8 +387,21 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         })();
       }
     };
+    const redirectOriginal = async () => {
+      const access = resolveAccess ? await resolveAccess(record.identity, record.grant, {signal: controller.signal}) :
+        await authorize(record.identity, {reason: 'fallback', signal: controller.signal});
+      const checked = grantOf({...access, metadata: record.metadata});
+      if (checked.origin !== record.grant.origin || checked.userAgent !== record.grant.userAgent || closed ||
+          controller.signal.aborted || record.stopped || record.deliveredBytes || routes.get(req.url) !== record) throw cancelled();
+      record.grant.url = checked.url;
+      res.writeHead(307, {Location: record.grant.url, 'Cache-Control': 'no-store'}); res.end();
+    };
     const work = (async () => {
       try {
+        if (record.grant.preparedHandoff) {
+          record.firstMediaOffset ??= range.start;
+          if (!await waitDone(validatePrepared(record), controller.signal)) {await redirectOriginal(); return;}
+        }
         if (req.method === 'HEAD') {res.writeHead(range.partial ? 206 : 200, headers); res.end(); return;}
         // Experiment only: an open-ended request can choose one complete
         // origin response rather than splice a cached prefix into a new gap.
@@ -455,15 +500,19 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     try {
     const grant = grantOf(await authorize(identity, {reason: 'open', signal: controller.signal}));
     if (closed || controller.signal.aborted) throw cancelled();
+    if (grant.preparedHandoff && requestPolicy !== 'sparse') throw problem('configuration');
     const record = {identity, role, grant, metadata: {...grant.metadata}, controller, retired: false, metadataEpoch: 0,
-      ready: false, accessChecked: grant.accessChecked, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0};
+      ready: false, accessChecked: grant.accessChecked, fallbackOriginal: false, deliveredBytes: 0, stopped: false, fallbackController: new AbortController(), preparedValidation: grant.preparedHandoff ? 'pending' : undefined, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0};
+    record.firstAccess = grant.preparedHandoff ? new Promise(resolve => {let done = false; record.finishFirstAccess = value => {if (!done) {done = true; resolve(value);}};}) : Promise.resolve(true);
     prepareKey(record, grant.metadata);
-    const route = '/' + crypto.randomBytes(24).toString('hex'); routes.set(route, record);
+    const route = '/' + crypto.randomBytes(24).toString('hex'); record.routeToken = route; routes.set(route, record);
     return {url: 'http://127.0.0.1:' + server.address().port + route,
-      status: () => ({localHitBytes: record.localHitBytes}),
+      status: () => ({localHitBytes: record.localHitBytes, ...(record.preparedValidation ? {preparedValidation: record.preparedValidation} : {}), ...(record.fallbackOriginal ? {fallbackOriginal: true} : {})}),
       ready: () => record.keyPromise, actual: () => {
+        if (record.fallbackOriginal) return Promise.resolve(false);
         useRecord(record); const revision = ++actualRevision;
         return track(controls, (async () => {
+          if (!await record.firstAccess) return false;
           while (true) {
             const epoch = record.metadataEpoch;
             let key;
@@ -477,7 +526,8 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             useRecord(record); if (revision !== actualRevision) throw cancelled();
             if (epoch !== record.metadataEpoch) continue;
             if (store.status().currentKey === key) {record.role = 'current'; record.actualStarted = true; return true;}
-            const changed = await store.actual(key, {isCurrent: () => !closed && !record.retired && revision === actualRevision && epoch === record.metadataEpoch});
+            const changed = await store.actual(key, {isCurrent: () => !closed && !record.retired && revision === actualRevision && epoch === record.metadataEpoch,
+              preferredOffset: record.grant.preparedHandoff ? record.firstMediaOffset ?? 0 : null});
             useRecord(record); if (revision !== actualRevision) throw cancelled();
             if (epoch !== record.metadataEpoch) continue;
             if (changed) {record.role = 'current'; record.actualStarted = true;}
@@ -497,9 +547,9 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
           return {interruptedBodies: controllers.length};
         };
       },
-      retire() {retire(record); routes.delete(route);},
+      retire() {record.stopped = true; record.fallbackController.abort(); retire(record); routes.delete(route);},
       async stop() {
-        retire(record); routes.delete(route);
+        record.stopped = true; record.fallbackController.abort(); retire(record); routes.delete(route);
         await Promise.allSettled([...record.bodyJobs, ...record.writeJobs, record.preloadJob].filter(Boolean));
       },
       coverage() {return record.ready ? store.coverage(record.key) : {bytes: 0, total: record.metadata.total, verifiedBytes: 0};},
@@ -551,7 +601,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
   function close() {
     if (closePromise) return closePromise;
     closePromise = (async () => {
-      closed = true; for (const record of routes.values()) {record.retired = true; record.controller.abort();}
+      closed = true; for (const record of routes.values()) {record.stopped = true; record.fallbackController.abort(); retire(record);}
       routes.clear(); for (const controller of openings) controller.abort();
       for (const ticket of active) ticket.controller.abort();
       server.closeAllConnections(); await new Promise(resolve => server.close(resolve));

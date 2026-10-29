@@ -46,7 +46,7 @@ function createStore({profileRoot}) {
         // P is the selected next-prefix budget, not a second last-play quota.
         runtimeConfig() {return config.enabled || config.retainPlayback ? {kind: 'source-aware', root: path.join(profileRoot, 'next-episode-prefix-v1'),
             sharedRoot: path.join(profileRoot, 'shared-playback-byte-cache-v2'),
-            ...selection(config), preloadEnabled: config.enabled, retainPlayback: config.retainPlayback, timeoutMs: 30000} : null;}
+            ...selection(config), preparedHandoff: true, preloadEnabled: config.enabled, retainPlayback: config.retainPlayback, timeoutMs: 30000} : null;}
 
     };
 }

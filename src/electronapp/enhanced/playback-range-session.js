@@ -157,7 +157,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                     if (budget) record.preparationPhase = 'adapter';
                     const cache = await ensure();
                     active();
-                    const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
+                    const value = await cache.open({source, role: 'current', identity: record.value.identity, transport: record.value.transport,
                         onPreparationPhase(phase) {if (owns(record) && record.selection === 'preparing') record.preparationPhase = phase;},
                         currentBytesReady, isCurrent: () => owns(record) && ['preparing', 'proxy'].includes(record.selection) && !signal.aborted && (!budget || budget.isCurrent()) && (record.selection === 'proxy' || now() < expiresAt), signal});
                     try {
@@ -213,9 +213,9 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
         const promotion = record.handle ? record.handle.markPlaying() : null;
         return track((async () => {
             const cache = await ensure();
-            if (promotion) await promotion;
+            const promoted = promotion ? await promotion : false;
             if (config.kind === 'shared-byte-trial') {
-                if (!promotion && playedEpoch === play && typeof cache.markUncachedPlaying === 'function') await cache.markUncachedPlaying(record.value, () => playedEpoch === play && owns(record));
+                if (!promoted && playedEpoch === play && typeof cache.markUncachedPlaying === 'function') await cache.markUncachedPlaying(record.value, () => playedEpoch === play && owns(record));
             } else if (playedEpoch === play) await cache.discardNext();
         })());
     }
@@ -291,11 +291,11 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
     return {cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
             const backend = config.kind === 'shared-byte-trial' ? {state: cacheInstance ? cacheInstance.status().backendState : cacheFailed ? 'failed' : cachePromise ? 'initializing' : 'idle'} : undefined;
-            let bytes = 0, localHitBytes = null;
-            try {if (current && current.handle && current.handle.status) {const value = current.handle.status(); bytes = value.bytes; if (Number.isSafeInteger(value.localHitBytes) && value.localHitBytes >= 0) localHitBytes = value.localHitBytes;}} catch (_) {}
+            let bytes = 0, localHitBytes = null, fallbackOriginal = false, preparedHandoff = false, preparedValidation;
+            try {if (current && current.handle && current.handle.status) {const value = current.handle.status(); bytes = value.bytes; fallbackOriginal = value.fallbackOriginal === true; preparedHandoff = value.preparedHandoff === true; if (['pending','checking','ready','fallback','failed'].includes(value.preparedValidation)) preparedValidation = value.preparedValidation; if (Number.isSafeInteger(value.localHitBytes) && value.localHitBytes >= 0) localHitBytes = value.localHitBytes;}} catch (_) {}
             return {enabled: true, ...(config.preloadEnabled === false ? {preloadEnabled: false} : {}), ...policy, kind: config.kind, timeoutMs: config.timeoutMs,
                 ...(backend ? {backend} : {}),
-                current: {route: current ? current.handle ? 'proxy' : 'original' : 'idle', state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(localHitBytes === null ? {} : {localHitBytes}), ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
+                current: {route: current ? current.handle && !fallbackOriginal ? 'proxy' : 'original' : 'idle', state: current ? current.handle && !fallbackOriginal ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(preparedHandoff ? {preparedHandoff: true, preparedValidation} : {}), ...(fallbackOriginal ? {diagnostic: diagnostics.snapshot({stage: 'current-probe', reason: 'cache-unavailable'})} : {}), ...(localHitBytes === null ? {} : {localHitBytes}), ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
                 next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,
                 maxBytes: policy.prefetchBytes};
         },

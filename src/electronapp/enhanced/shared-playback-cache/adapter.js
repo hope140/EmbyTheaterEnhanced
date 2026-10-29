@@ -100,7 +100,7 @@ async function createCache(config, dependencies = {}) {
     if (!config || config.kind !== 'shared-byte-trial' || typeof config.root !== 'string' || !path.isAbsolute(config.root)) throw error('cache-unavailable');
     const policy = selection(config), timeoutMs = config.timeoutMs ?? 30000;
     if (!positive(timeoutMs) || timeoutMs > 30000) throw error('cache-unavailable');
-    const records = new Set(), openings = new Set();
+    const records = new Set(), openings = new Set(), prepared = new Map();
     let manager, managerPromise, managerBytes, resetting, closed = false, closing, backendClosed = false, backendFailed = false;
     let pendingUncachedIntent;
     let unavailable = false;
@@ -127,6 +127,7 @@ async function createCache(config, dependencies = {}) {
     async function ensure(currentBytes) {
         if (resetting) throw error('cache-unavailable');
         if (managerBytes !== undefined && managerBytes !== currentBytes) {
+            prepared.clear();
             if (records.size > 1) throw error('cache-unavailable');
             resetting = Promise.resolve(managerPromise).then(value => value.proxy.close()).finally(() => {
                 manager = managerPromise = managerBytes = undefined; resetting = undefined; backendFailed = false;
@@ -182,26 +183,39 @@ async function createCache(config, dependencies = {}) {
                     : ['loadfile', options.source, 'replace', '-1', 'user-agent=' + initial.userAgent];
                 if (!record.transport.matchesLoadOptions(load)) throw error('source-proof-invalid');
                 record.total = initial.expectedSize;
-                // Recover the owned backend within this same selection, while
-                // the fresh probe is pending. No route/key or body is admitted
-                // until that probe succeeds; close still owns late recovery.
+                // The candidate is metadata/coverage only, never an old
+                // transport. The new Play has already bound its own authority.
+                const candidate = config.preparedHandoff === true && options.role === 'current' ? prepared.get(signature) : null;
                 const phase = value => {try {options.onPreparationPhase?.(value);} catch (_) {}};
-                let budgetReady = options.currentBytesReady === undefined, probeReady = false;
-                const preparing = Promise.resolve(options.currentBytesReady ?? options.currentBytes).then(bytes => {
+                let metadata, owned, adopted = false;
+                if (candidate && candidate.origin === initial.origin && candidate.userAgent === initial.userAgent &&
+                    (initial.expectedSize === undefined || initial.expectedSize === candidate.metadata.total)) {
+                    prepared.delete(signature);
+                    phase('budget');
+                    const bytes = await (options.currentBytesReady ?? options.currentBytes);
                     guard(record);
                     if (!positive(bytes) || !Number.isSafeInteger(bytes + policy.prefetchBytes)) throw error('source-proof-invalid');
-                    budgetReady = true; if (probeReady) phase('backend');
-                    return ensure(bytes);
-                });
-                phase('source-probe');
-                pendingProbe = probe(initial, record.signal, timeoutMs, record.ordinary).then(metadata => {
-                    probeReady = true; phase(budgetReady ? 'backend' : 'budget'); return metadata;
-                });
-                const [metadata, owned] = await Promise.all([pendingProbe, preparing]);
+                    phase('backend'); owned = await ensure(bytes); guard(record);
+                    // Consume once; a failed/retired adoption cannot resurrect it.
+                    metadata = {...candidate.metadata}; adopted = true;
+                } else {
+                    let budgetReady = options.currentBytesReady === undefined, probeReady = false;
+                    const preparing = Promise.resolve(options.currentBytesReady ?? options.currentBytes).then(bytes => {
+                        guard(record);
+                        if (!positive(bytes) || !Number.isSafeInteger(bytes + policy.prefetchBytes)) throw error('source-proof-invalid');
+                        budgetReady = true; if (probeReady) phase('backend');
+                        return ensure(bytes);
+                    });
+                    phase('source-probe');
+                    pendingProbe = probe(initial, record.signal, timeoutMs, record.ordinary).then(value => {
+                        probeReady = true; phase(budgetReady ? 'backend' : 'budget'); return value;
+                    });
+                    [metadata, owned] = await Promise.all([pendingProbe, preparing]);
+                }
                 guard(record);
                 record.total = metadata.total;
                 record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
-                    metadata, accessChecked: true};
+                    metadata, accessChecked: !adopted, ...(adopted ? {preparedHandoff: true} : {})};
                 guard(record);
                 phase('metadata');
                 const route = await owned.proxy.open(identity, 'next');
@@ -245,7 +259,7 @@ async function createCache(config, dependencies = {}) {
                     })()),
                     status: () => {
                         const stats = typeof route.status === 'function' ? route.status() : null;
-                        return {bytes: record.bytes, total: record.total, ...(stats && Number.isSafeInteger(stats.localHitBytes) && stats.localHitBytes >= 0 ? {localHitBytes: stats.localHitBytes} : {})};
+                        return {bytes: record.bytes, total: record.total, ...(stats?.fallbackOriginal ? {fallbackOriginal: true} : {}), ...(stats?.preparedValidation ? {preparedValidation: stats.preparedValidation} : {}), ...(record.grant.preparedHandoff ? {preparedHandoff: true} : {}), ...(stats && Number.isSafeInteger(stats.localHitBytes) && stats.localHitBytes >= 0 ? {localHitBytes: stats.localHitBytes} : {})};
                     },
                     markPlaying: () => track((async () => {
                         guard(record);
@@ -265,6 +279,11 @@ async function createCache(config, dependencies = {}) {
                         guard(record, combined);
                         if (!coverage || !Number.isSafeInteger(coverage.bytes) || coverage.bytes < 0 || coverage.bytes > record.total) throw error('cache-unavailable');
                         record.bytes = Math.min(coverage.bytes, args.maxBytes, policy.prefetchBytes, record.total);
+                        if (config.preparedHandoff === true && record.role === 'next' && record.bytes > 0 &&
+                            require('../playback-range-identity').strongTag(record.grant.metadata.etag)) {
+                            prepared.clear(); prepared.set(record.signature, {origin: record.grant.origin,
+                                userAgent: record.grant.userAgent, metadata: {...record.grant.metadata}});
+                        }
                         if (typeof args.onProgress === 'function') {
                             try {args.onProgress({bytes: record.bytes, targetBytes: Math.min(args.maxBytes, policy.prefetchBytes, record.total)});} catch (_) {}
                         }
@@ -298,6 +317,7 @@ async function createCache(config, dependencies = {}) {
             return owned.store.forgetActualUnlessMedia(identity, {isCurrent});
         },
         async discardNext() {
+            prepared.clear();
             const next = [...records].filter(record => record.role !== 'current');
             await Promise.all(next.map(record => record.handle ? record.handle.stop() : (record.controller.abort(), Promise.resolve())));
             if (managerPromise) await (await managerPromise).store.discardNext();
@@ -314,7 +334,7 @@ async function createCache(config, dependencies = {}) {
         },
         close() {
             if (closing) return closing;
-            closed = true;
+            closed = true; prepared.clear();
             for (const record of records) record.controller.abort();
             closing = (async () => {
                 await Promise.allSettled([...openings]);

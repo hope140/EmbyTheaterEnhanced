@@ -123,3 +123,15 @@ test('a next Emby source never inherits the current CD2 source proof',async t=>{
     const controller=await renderer.bind(f.input);t.after(()=>controller.close());controller.started();await controller.tick();await new Promise(setImmediate);
     assert(selected);assert.equal(Object.hasOwn(selected,'sourceProof'),false);
 });
+
+test('prepared original fallback stays visibly original and clears prior actual ownership instead of promoting its proxy',async t=>{
+    const helper={currentGenerationId:1};let uncached=0;
+    const handle={source:'http://127.0.0.1:19001/prepared',ready:async()=>{},stop:async()=>{},markPlaying:async()=>false,
+        status:()=>({bytes:0,localHitBytes:0,preparedHandoff:true,preparedValidation:'fallback',fallbackOriginal:true})};
+    const cache={open:async()=>handle,status:()=>({bytes:0,backendState:'ready'}),close:async()=>{},discardNext:async()=>{},
+        async markUncachedPlaying(value,isCurrent){assert.equal(value.itemId,'A');assert.equal(isCurrent(),true);uncached++;}};
+    const session=createSession({config:{kind:'shared-byte-trial'},create:async()=>cache,readCurrentBytes:async()=>({bytes:262144,isCurrent:()=>true,commit(){}})});t.after(()=>session.close());
+    const value=context();await session.setContext(value,helper,1);assert(await session.select(value.source,helper,1,['loadfile',value.source]));
+    await session.started(helper,1);assert.equal(uncached,1);const current=session.status().current;
+    assert.equal(current.route,'original');assert.equal(current.state,'original');assert.equal(current.preparedValidation,'fallback');assert.equal(current.localHitBytes,0);
+});

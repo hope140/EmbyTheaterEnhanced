@@ -653,9 +653,10 @@ async function createStore({
     });
   }
 
-  async function actual(key, {isCurrent = () => true} = {}) {
+  async function actual(key, {isCurrent = () => true, preferredOffset = null} = {}) {
     ensureOpen();
     if (typeof isCurrent !== 'function') throw new TypeError('isCurrent must be a function');
+    if (preferredOffset !== null && !nonnegativeSafeInteger(preferredOffset)) throw new TypeError('invalid preferred offset');
     return enqueue(async () => {
       if (closed || faulted) return false;
       if (!isLive(isCurrent)) return false;
@@ -671,7 +672,17 @@ async function createStore({
       actualKey = key;
       await persist();
       await drainRetired();
-      await trim('current', currentBytes);
+      if (preferredOffset !== null) {
+        // M remains the quota. Prefer the adopted playback's nearby ranges
+        // over a newer preloaded tail when P was larger than M.
+        const distance = block => preferredOffset < block.start ? block.start - preferredOffset :
+          preferredOffset >= block.start + block.length ? preferredOffset - block.start - block.length + 1 : -1;
+        for (const block of [...entry.blocks].sort((a, b) => distance(b) - distance(a))) {
+          if (used('current') <= currentBytes) break;
+          await appendMutation('remove', entry, block);
+          entry.blocks.splice(entry.blocks.indexOf(block), 1); retire(block, 'current'); await deleteRetired(block);
+        }
+      } else await trim('current', currentBytes);
       await persist();
       await drainRetired();
       return true;

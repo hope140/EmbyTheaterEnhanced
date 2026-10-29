@@ -79,12 +79,12 @@ test('runtime config stays default-off and exposes fixed owned roots for source-
         progressPercent: 60,
         preloadMB: 100,
         prefetchBytes: (100 * 1024 * 1024),
-        preloadEnabled: true, retainPlayback: true,
+        preparedHandoff: true, preloadEnabled: true, retainPlayback: true,
         timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false, 'configuration lookup creates no cache');
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),
-        ['kind', 'prefetchBytes', 'preloadEnabled', 'preloadMB', 'progressPercent', 'retainPlayback', 'root', 'sharedRoot', 'timeoutMs']);
+        ['kind', 'prefetchBytes', 'preloadEnabled', 'preloadMB', 'preparedHandoff', 'progressPercent', 'retainPlayback', 'root', 'sharedRoot', 'timeoutMs']);
 });
 
 test('IPC supports explicit enabled settings with next-play application and no restart gate', async () => {

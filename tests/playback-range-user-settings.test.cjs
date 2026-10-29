@@ -56,11 +56,11 @@ test('store clones snapshots, atomically persists enabled choices, reopens, and 
     assert.deepEqual(settings.createStore({profileRoot}).get(), saved);
     assert.deepEqual(store.runtimeConfig(), {
         kind: 'source-aware', root: path.join(profileRoot, 'next-episode-prefix-v1'), sharedRoot: path.join(profileRoot, 'shared-playback-byte-cache-v2'),
-        progressPercent: 60, preloadMB: 100, prefetchBytes: (100 * 1024 * 1024), preloadEnabled: true, retainPlayback: true, timeoutMs: 30000
+        progressPercent: 60, preloadMB: 100, prefetchBytes: (100 * 1024 * 1024), preparedHandoff: true, preloadEnabled: true, retainPlayback: true, timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false);
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),
-        ['kind', 'prefetchBytes', 'preloadEnabled', 'preloadMB', 'progressPercent', 'retainPlayback', 'root', 'sharedRoot', 'timeoutMs']);
+        ['kind', 'prefetchBytes', 'preloadEnabled', 'preloadMB', 'preparedHandoff', 'progressPercent', 'retainPlayback', 'root', 'sharedRoot', 'timeoutMs']);
 });
 
 test('store refuses a symlinked profile root without touching its target', t => {

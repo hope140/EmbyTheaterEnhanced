@@ -6,7 +6,7 @@ const {EventEmitter}=require('node:events'),{createRequire}=require('node:module
 const authorityModule=require('../src/electronapp/enhanced/preload-source-authority');
 const filename=require.resolve('../src/electronapp/enhanced/shared-playback-cache/adapter');
 const source=fs.readFileSync(filename,'utf8');
-async function fixture(t,{response={},hold=false,holdClose=false}={}){
+async function fixture(t,{response={},hold=false,holdClose=false,preparedHandoff=false}={}){
  const authority=authorityModule.createAuthority(),web=new EventEmitter();web.isDestroyed=()=>false;const principal=authority.principalFor(web),requests=[],grants=[];let proxyOptions,closed=false,proxyClosed=0,storeCreates=0,release,releaseClose;
  const barrier=new Promise(resolve=>{release=resolve;}),closeBarrier=new Promise(resolve=>{releaseClose=resolve;});
  const http={request(url,options){const request=new EventEmitter();request.destroyed=false;const row={url,options,closed:false};requests.push(row);
@@ -16,7 +16,7 @@ async function fixture(t,{response={},hold=false,holdClose=false}={}){
  const originalRequire=createRequire(filename),module={exports:{}};
  const requireFor=key=>key==='node:http'||key==='node:https'?http:key==='./proxy'?{async createProxy(options){proxyOptions=options;return{async open(identity){const grant=await options.authorize(identity,{signal:new AbortController().signal});grants.push({identity,grant});return{url:'http://127.0.0.1:19001/event-double-route',async ready(){},async actual(){return true;},async stop(){},async preload(){},async coverage(){return{bytes:grant.metadata.total};}};},status:()=>({hitBytes:0}),async close(){proxyClosed++;await options.store.close();}};}}:originalRequire(key);
  new Function('require','module','exports',source)(requireFor,module,module.exports);
- const cache=await module.exports.createCache({kind:'shared-byte-trial',root:path.resolve('/workspace/ordinary-probe-unit-unused'),progressPercent:70,preloadMB:100,timeoutMs:30000},{createStore:async()=>{storeCreates++;return {status:()=>({closed,committed:0,current:0,next:0}),async close(){closed=true;},async forgetActualUnlessMedia(){}};}});
+ const cache=await module.exports.createCache({kind:'shared-byte-trial',preparedHandoff,root:path.resolve('/workspace/ordinary-probe-unit-unused'),progressPercent:70,preloadMB:100,timeoutMs:30000},{createStore:async()=>{storeCreates++;return {status:()=>({closed,committed:0,current:0,next:0}),async close(){closed=true;},async forgetActualUnlessMedia(){}};}});
  t.after(async()=>{release();releaseClose();await cache.close();authority.close();});
  function context({kind='emby-http',size,token='synthetic'}={}){const url='https://emby.invalid/Videos/A/stream.avi?Static=true&api_key='+token;
   const proof=authority.issue({principal,source:url,requestId:'play',sourceKind:kind,resourceKey:'opaque-main-identity',...(size===undefined?{}:{expectedSize:size})});
@@ -86,4 +86,35 @@ test('source refusal finishes without waiting for pending budget or admitting a 
  const opening=f.cache.open({...ctx,currentBytesReady:budget.promise,isCurrent:()=>true,signal:ctx.owner.signal});await assert.rejects(opening,/auth-required/);
  assert.equal(f.requests.length,1);assert.equal(f.requests[0].closed,true);assert.equal(f.stats().storeCreates,0);assert.equal(f.grants.length,0);
  budget.resolve(262144);await new Promise(resolve=>setImmediate(resolve));assert.equal(f.stats().storeCreates,0);
+});
+
+test('prepared metadata is claimed by a new transport without another selection probe and is consumed once',async t=>{
+ const f=await fixture(t,{preparedHandoff:true}),old=f.context();const next=await f.open(old);
+ await next.prefetch({maxBytes:64,signal:new AbortController().signal});await next.stop();old.owner.abort();
+ assert.equal(f.requests.length,1);const fresh=f.context({token:'new-authorized-token'});fresh.role='current';
+ const current=await f.open(fresh);await current.ready();assert.equal(f.requests.length,1);assert.equal(f.grants.length,2);
+ assert.equal(f.grants[1].grant.preparedHandoff,true);assert.equal(f.grants[1].grant.accessChecked,false);
+ assert.equal(f.grants[1].grant.url,fresh.source);assert.equal(f.grants[1].grant.metadata.etag,'"ordinary-v1"');
+ assert.equal(current.status().preparedHandoff,true);await current.stop();
+ const again=f.context({token:'another-request'});again.role='current';const handle=await f.open(again);
+ assert.equal(f.requests.length,2,'the consumed snapshot is not reused a second time');assert.equal(f.grants.at(-1).grant.preparedHandoff,undefined);await handle.stop();
+});
+test('different account cannot claim another prepared identity',async t=>{
+ const response={},f=await fixture(t,{preparedHandoff:true,response}),next=await f.open(f.context());
+ await next.prefetch({maxBytes:64,signal:new AbortController().signal});await next.stop();response.status=403;
+ const fresh=f.context();fresh.role='current';fresh.identity.accountId='another-account';
+ await assert.rejects(f.open(fresh),/auth-required/);assert.equal(f.requests.length,2);assert.equal(f.grants.length,1);
+});
+test('failed budget consumes the claimed metadata and cannot revive its old route or skip the next fresh probe',async t=>{
+ const f=await fixture(t,{preparedHandoff:true}),next=await f.open(f.context());await next.prefetch({maxBytes:64,signal:new AbortController().signal});await next.stop();
+ const fresh=f.context();await assert.rejects(f.cache.open({...fresh,role:'current',currentBytesReady:Promise.reject(Error('owned-budget-failure')),isCurrent:()=>true,signal:fresh.owner.signal}));
+ assert.equal(f.requests.length,1);assert.equal(f.grants.length,1);
+ const again=f.context();again.role='current';const current=await f.open(again);assert.equal(f.requests.length,2);assert.equal(f.grants.at(-1).grant.preparedHandoff,undefined);await current.stop();
+});
+
+test('a weak validator cannot produce a prepared handoff even for an otherwise supported known-size source',async t=>{
+ const f=await fixture(t,{preparedHandoff:true,response:{headers:{etag:'W/"known-v1"'}}}),ctx=f.context({kind:'direct-url',size:64});
+ const next=await f.open(ctx);await next.prefetch({maxBytes:64,signal:new AbortController().signal});await next.stop();
+ const fresh=f.context({kind:'direct-url',size:64});fresh.role='current';const handle=await f.open(fresh);
+ assert.equal(f.requests.length,2);assert.equal(f.grants.at(-1).grant.preparedHandoff,undefined);await handle.stop();
 });
