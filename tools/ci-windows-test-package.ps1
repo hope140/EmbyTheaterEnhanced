@@ -1,4 +1,4 @@
-param([switch]$ReleasePackage)
+param([switch]$ReleasePackage, [string]$ExpectedSourceCommit = $env:GITHUB_SHA)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -7,7 +7,7 @@ Set-Location -LiteralPath $root
 if (-not $IsWindows) { throw 'This test package job requires Windows.' }
 $source = ([string](& git rev-parse HEAD)).Trim()
 if ($LASTEXITCODE -ne 0 -or $source -notmatch '^[a-f0-9]{40}$') { throw 'Cannot resolve exact source commit.' }
-if ($env:GITHUB_SHA -and $source -ne $env:GITHUB_SHA) { throw 'Checkout differs from workflow source commit.' }
+if ($ExpectedSourceCommit -and ($ExpectedSourceCommit -cnotmatch '^[a-f0-9]{40}$' -or $source -cne $ExpectedSourceCommit)) { throw 'Checkout differs from expected source commit.' }
 # A package test starts from Git inputs, never a pre-populated Work cache.
 foreach ($unexpected in @('.work','dist','node_modules','vendor/libmpv/20260809')) {
     if (Test-Path -LiteralPath (Join-Path $root $unexpected)) { throw ('Manual package requires a fresh checkout; unexpected prepared input: ' + $unexpected) }
