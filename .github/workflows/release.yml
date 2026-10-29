@@ -44,7 +44,7 @@ concurrency:
 
 jobs:
   preflight:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'hope140/EmbyTheaterEnhanced'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'hope140/EmbyTheaterEnhanced' && startsWith(github.ref, 'refs/heads/') && (inputs.mode == 'verify' || (inputs.mode == 'publish' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -160,7 +160,7 @@ jobs:
         run: node tools/actions-release.cjs verify release-artifact
 
   publish:
-    if: inputs.mode == 'publish'
+    if: inputs.mode == 'publish' && github.ref == 'refs/heads/main'
     needs: [preflight, build]
     runs-on: ubuntu-latest
     timeout-minutes: 15

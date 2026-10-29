@@ -1,10 +1,10 @@
 # 手动触发的构建与发布
 
-本流程由 `.github/workflows/release.yml` 和 `tools/actions-release.cjs` 实现。只有显式选择 `publish` 才会进入发布作业；默认 `verify` 沿同一材料校验链只读演练。只读模式目前为本地候选，是否已部署及实际 Actions 验证结果以准确远端提交和 run 为准。
+本流程由 `.github/workflows/release.yml` 和 `tools/actions-release.cjs` 实现。只有显式选择 `publish` 才会进入发布作业；默认 `verify` 沿同一材料校验链只读演练。只读模式目前为独立分支候选，实际 Actions 验证结果以准确远端提交和 run 为准。
 
 ## 入口与来源
 
-工作流就绪后，只能从本仓库 main 的 Actions 页面手动选择 `Manual verified release`。没有 push、PR、schedule 或 workflow_run 自动发布入口，不使用 PAT，不调整仓库默认 token 权限、安全设置或审批设置。
+从本仓库 Actions 页面手动选择 `Manual verified release`。verify 可选择独立分支；publish 必须选择 main，工作流和控制脚本分别检查。没有 push、PR、schedule 或 workflow_run 自动发布入口，不使用 PAT，不调整仓库默认 token 权限、安全设置或审批设置。
 
 手动输入：
 
@@ -19,7 +19,7 @@
 
 根 package／lock 三处版本须与 Tag 一致，准确 source 的 RELEASE_NOTES 首行须为 `# <Tag> 测试版` 或 `# <Tag> 正式版`，与所选渠道一致。发布模式要求版本高于当前正式 Latest，已有同 Tag 的草稿或已公开 Release 均拒绝；不将旧测试版直接转为正式版。正式渠道须事先准备正式版说明，不从测试版说明猜测或自动替换。
 
-控制脚本固定从触发时 main 的工作流提交执行；构建 checkout 单独固定到已核准的 source_sha。预检同时验证远端 Tag 与 main 包含关系，构建完成后再次核对远端 Tag。新构建参数 `ExpectedSourceCommit` 明确绑定目标 checkout；原 `public-ci.yml` 的手动构建调用不变，参数缺省继续核对 GITHUB_SHA，不覆盖 GitHub 的身份环境变量。
+控制脚本固定从触发分支的准确工作流提交执行，发布控制始终来自 main；构建 checkout 单独固定到已核准的 source_sha。演练分支也只能校验已包含在 main 的目标源码。预检同时验证远端 Tag 与 main 包含关系，构建完成后再次核对远端 Tag。新构建参数 `ExpectedSourceCommit` 明确绑定目标 checkout；原 `public-ci.yml` 的手动构建调用不变，参数缺省继续核对 GITHUB_SHA，不覆盖 GitHub 的身份环境变量。
 
 ## 权限与作业隔离
 

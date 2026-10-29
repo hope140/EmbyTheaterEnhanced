@@ -88,6 +88,17 @@ test('preflight binds tag, source versions, channel notes and current Latest wit
     assert.equal(result.notes_sha256, hash(notes)); assert.equal(result.latest_id, '40');
     assert(f.calls.every(call => call.method === 'GET'));
 });
+test('only verification accepts independent branches; publishing requires main and tags never run', () => {
+    for (const ref of ['refs/heads/main', 'refs/heads/feature/release-readonly-rehearsal']) {
+        assert.equal(release.controlRefAllowed('verify', ref), true);
+        assert.equal(release.controlRefAllowed('publish', ref), ref === 'refs/heads/main');
+    }
+    for (const ref of ['refs/tags/v0.4.5', 'refs/pull/1/merge', 'refs/heads/', '', undefined]) {
+        assert.equal(release.controlRefAllowed('verify', ref), false);
+        assert.equal(release.controlRefAllowed('publish', ref), false);
+    }
+    assert.equal(release.controlRefAllowed('unknown', 'refs/heads/main'), false);
+});
 test('annotated tags resolve to the pinned commit', async () => {
     const api = async (method, resource) => resource.includes('/git/ref/') ? {object: {type: 'tag', sha: 'b'.repeat(40)}} : {object: {type: 'commit', sha: source}};
     assert.equal(await release.resolveTag(api, plan.tag), source);
@@ -251,17 +262,17 @@ test('API transport uses only official hosts, forbids redirects and never retrie
     assert.equal(calls.length, 1); assert.equal(new URL(calls[0].url).hostname, 'uploads.github.com');
     assert.equal(calls[0].options.redirect, 'error');
 });
-test('workflow is manual/main-only and grants write permission only after a successful build', () => {
+test('workflow permits manual branch verification and grants write only to main publication after a successful build', () => {
     const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/release.yml'), 'utf8').replace(/\r\n/g, '\n');
     assert.match(workflow, /on:\n  workflow_dispatch:/);
     assert.doesNotMatch(workflow, /^  (?:push|pull_request|pull_request_target|workflow_run|schedule):/m);
-    assert.match(workflow, /github.ref == 'refs\/heads\/main'/);
+    assert.match(workflow, /startsWith\(github.ref, 'refs\/heads\/'\) && \(inputs.mode == 'verify' \|\| \(inputs.mode == 'publish' && github.ref == 'refs\/heads\/main'\)\)/);
     assert.match(workflow, /group: ete-verified-release\n  cancel-in-progress: false/);
     const [beforePublish, publish] = workflow.split('\n  publish:\n');
     assert.doesNotMatch(beforePublish, /contents: write|actions: write|id-token: write/);
     assert.match(publish, /needs: \[preflight, build\]/);
     assert.match(workflow, /mode:\n[\s\S]*?default: verify\n        options: \[verify, publish\]/);
-    assert.match(publish, /if: inputs.mode == 'publish'/);
+    assert.match(publish, /if: inputs.mode == 'publish' && github.ref == 'refs\/heads\/main'/);
     const verify = beforePublish.split('\n  verify:\n')[1];
     assert.match(verify, /if: inputs.mode == 'verify'/);
     assert.match(verify, /contents: read\n      actions: read/);

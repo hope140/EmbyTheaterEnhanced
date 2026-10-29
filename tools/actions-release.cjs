@@ -196,10 +196,14 @@ function githubApi(token, fetcher = fetch) {
         return response.json();
     };
 }
+function controlRefAllowed(mode, ref) {
+    return mode === 'publish' ? ref === 'refs/heads/main' :
+        mode === 'verify' && typeof ref === 'string' && /^refs\/heads\/.+/.test(ref);
+}
 async function main(command, directory, env = process.env) {
-    requireThat(env.GITHUB_ACTIONS === 'true' && env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
-        env.GITHUB_REF === 'refs/heads/main' && env.GITHUB_REPOSITORY === REPO && SHA.test(env.GITHUB_SHA || ''), 'manual-main-workflow-required');
     const plan = inputs(env);
+    requireThat(env.GITHUB_ACTIONS === 'true' && env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
+        controlRefAllowed(plan.mode, env.GITHUB_REF) && env.GITHUB_REPOSITORY === REPO && SHA.test(env.GITHUB_SHA || ''), 'manual-workflow-context-required');
     requireThat(command === 'preflight' || command === plan.mode, 'release-mode-command-mismatch');
     const transport = githubApi(env.GH_TOKEN), api = plan.mode === 'verify' ? readOnlyApi(transport) : transport;
     if (command === 'preflight') {
@@ -226,7 +230,7 @@ async function main(command, directory, env = process.env) {
         console.log(JSON.stringify(result));
     }
 }
-module.exports = {inputs, newer, preflight, verifyFiles, verifyAssets, publish, verifyPackage, readOnlyApi, githubApi, resolveTag, checkRemote, verifiedBuild};
+module.exports = {inputs, newer, preflight, verifyFiles, verifyAssets, publish, verifyPackage, readOnlyApi, controlRefAllowed, githubApi, resolveTag, checkRemote, verifiedBuild};
 if (require.main === module) main(process.argv[2], process.argv[3]).catch(error => {
     // Do not print response bodies, request URLs, authentication or raw errors.
     const code = /^[a-z][a-z0-9-]+$/.test(error.message || '') ? error.message : 'release-operation-failed';

@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-29 — 独立分支只读演练入口
+
+工作流和 CLI 的分支守卫仅对 verify 放行本仓库普通分支，publish 仍在预检、发布作业和 CLI 三处限定 main；演练目标源码仍须已包含在 main。权限、既有 Release／Tag／Latest 保护及 GET 限制保持，相关回归 34/34 通过。此调整不合 main、不派发发布；实际手动演练仍需正常可用的 workflow_dispatch 能力，未把分支 CI 或本地回归写成真实演练成功。
+
 ## 2026-10-29 — Actions 只读演练本地候选
 
 基于已部署 main `2d0acf3` 增加默认 verify／显式 publish 模式。演练复用原预检、构建或精确旧 run 的 artifact 及五附件校验，允许只读核验已有公开版本；发布对重复 Release 的保护保持。新增 verify 作业只申请 contents:read／actions:read，演练跳过唯一写权限作业，脚本 GET 限制和显式发布守卫提供第二层约束。不增加 PAT、持久权限或仓库安全设置。
