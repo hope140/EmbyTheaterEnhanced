@@ -27,15 +27,22 @@ function uncachedIdentity(context) {
         return cacheIdentity({...context, representation: 'uncached-media-identity'});
     } catch (_) {return null;}
 }
-function validAccess(access, expectedSize) {
+function validAccess(access, expectedSize, ordinary) {
     let url;
     try {url = new URL(access.source);} catch (_) {throw error('source-invalid');}
     if (!['http:', 'https:'].includes(url.protocol) || url.origin !== access.origin || url.username || url.password || url.hash) throw error('source-invalid');
-    if (!positive(access.expectedSize)) throw error('file-size-unavailable');
+    if (!positive(access.expectedSize)) {
+        if (access.expectedSize !== undefined || !ordinary) throw error('file-size-unavailable');
+        if (expectedSize !== undefined) {
+            if (!positive(expectedSize)) throw error('representation-changed');
+            return {...access, expectedSize};
+        }
+        return access;
+    }
     if (expectedSize !== undefined && access.expectedSize !== expectedSize) throw error('representation-changed');
     return access;
 }
-function probe(access, signal, timeoutMs) {
+function probe(access, signal, timeoutMs, ordinary) {
     return new Promise((resolve, reject) => {
         if (signal.aborted) {reject(error('request-cancelled')); return;}
         const headers = {Range: 'bytes=0-0', 'Accept-Encoding': 'identity', Connection: 'close'};
@@ -52,7 +59,14 @@ function probe(access, signal, timeoutMs) {
             if (incoming.statusCode >= 300 && incoming.statusCode < 400) return fail('redirect');
             if ([401, 403].includes(incoming.statusCode)) return fail('auth-required');
             if (incoming.statusCode !== 206) return fail('status-not-206');
-            if (!match || Number(match[1]) !== access.expectedSize) return fail('representation-changed');
+            const total = match && Number(match[1]);
+            if (!positive(total) || access.expectedSize !== undefined && total !== access.expectedSize) return fail('representation-changed');
+            if (ordinary) {
+                const tag = incoming.headers.etag;
+                if (tag === undefined || tag === '') return fail('etag-missing');
+                if (typeof tag === 'string' && tag.startsWith('W/')) return fail('etag-weak');
+                if (!require('../playback-range-identity').strongTag(tag)) return fail('etag-invalid');
+            }
             if (Number(incoming.headers['content-length']) !== 1) return fail('length-mismatch');
             if (incoming.headers['content-encoding'] && incoming.headers['content-encoding'] !== 'identity') return fail('encoding-unsupported');
             let bytes = 0;
@@ -61,7 +75,7 @@ function probe(access, signal, timeoutMs) {
             incoming.once('error', () => fail('response-interrupted'));
             incoming.once('end', () => {
                 if (bytes !== 1) return fail('body-invalid');
-                metadata = {total: access.expectedSize};
+                metadata = {total};
                 for (const [field, header] of [['etag', 'etag'], ['lastModified', 'last-modified']]) {
                     const value = incoming.headers[header];
                     if (typeof value === 'string' && value.length && value.length <= 1024) metadata[field] = value;
@@ -105,7 +119,7 @@ async function createCache(config, dependencies = {}) {
     async function access(record, signal) {
         guard(record, signal);
         const combined = AbortSignal.any([record.signal, ...(signal ? [signal] : [])]);
-        const value = validAccess(await record.transport.access(combined), record.total);
+        const value = validAccess(await record.transport.access(combined), record.total, record.ordinary);
         guard(record, signal);
         if (record.grant && (value.origin !== record.grant.origin || value.userAgent !== record.grant.userAgent)) throw error('source-options-changed');
         return value;
@@ -155,7 +169,7 @@ async function createCache(config, dependencies = {}) {
             const identity = cacheIdentity(options.identity), signature = keyOf(identity);
             if ([...records].some(record => record.signature === signature && !record.stopped)) throw error('cache-unavailable');
             const controller = new AbortController();
-            const record = {identity, signature, transport: options.transport, isCurrent: options.isCurrent,
+            const record = {identity, signature, transport: options.transport, ordinary: authority.isOrdinaryTransport(options.transport), isCurrent: options.isCurrent,
                 signal: AbortSignal.any([controller.signal, options.transport.signal, ...(options.signal ? [options.signal] : [])]),
                 controller, stopped: false, role: 'next', bytes: 0, jobs: new Set()};
             records.add(record);
@@ -172,8 +186,9 @@ async function createCache(config, dependencies = {}) {
                 // until that probe succeeds; close still owns late recovery.
                 const preparing = ensure(options.currentBytes);
                 preparing.catch(() => {});
-                const metadata = await probe(initial, record.signal, timeoutMs);
+                const metadata = await probe(initial, record.signal, timeoutMs, record.ordinary);
                 guard(record);
+                record.total = metadata.total;
                 record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
                     metadata, accessChecked: true};
                 const owned = await preparing;

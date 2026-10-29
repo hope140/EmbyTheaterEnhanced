@@ -3,12 +3,12 @@
 // never gets a second attempt through the legacy source policy.
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const {createSession} = require('./playback-range-session');
+const {createSession, parseContext} = require('./playback-range-session');
 const {selection} = require('./playback-range-policy');
 const sharedAdapter = require('./shared-playback-cache/adapter');
 const diagnostics = require('./playback-range-diagnostics');
 
-function createSourceSession({config, authorize, readCurrentBytes, onDiagnostic = () => {}}, dependencies = {}) {
+function createSourceSession({config, authorize, authorizeOrdinary, readCurrentBytes, onDiagnostic = () => {}}, dependencies = {}) {
     if (!config || config.kind !== 'source-aware' || !path.isAbsolute(config.root || '') ||
         !path.isAbsolute(config.sharedRoot || '') || path.resolve(config.root) === path.resolve(config.sharedRoot)) throw Error('source-cache-config-invalid');
     const policy = selection(config), jobs = new Set();
@@ -66,7 +66,7 @@ function createSourceSession({config, authorize, readCurrentBytes, onDiagnostic 
             await previousMaintenance;
             if (closed || ticket !== epoch) return {state: 'unavailable'};
             if (maintenanceFailure) return {state: 'unavailable', diagnostic: maintenanceFailure};
-            const kind = context && context.sourceProof !== undefined ? 'shared-byte-trial' : 'next-prefix';
+            const kind = context && (context.sourceProof !== undefined || typeof authorizeOrdinary === 'function' && parseContext(context)) ? 'shared-byte-trial' : 'next-prefix';
             if (active && active.kind !== kind) {
                 try {await active.session.close();} catch (error) {maintenanceCloseError = error; maintenanceFailure = report(error); return {state: 'unavailable', diagnostic: maintenanceFailure};}
                 if (active.kind === 'shared-byte-trial') retainedBytes = active.session.status().diskBytes;
@@ -76,7 +76,7 @@ function createSourceSession({config, authorize, readCurrentBytes, onDiagnostic 
             if (!active) {
                 const {sharedRoot, ...base} = config;
                 active = {kind, session: sessionFactory({config: {...base, kind, root: kind === 'next-prefix' ? config.root : sharedRoot},
-                    authorize, onDiagnostic, ...(kind === 'shared-byte-trial' ? {create: sharedAdapter.createCache, readCurrentBytes} : {})})};
+                    authorize, onDiagnostic, ...(kind === 'shared-byte-trial' ? {create: sharedAdapter.createCache, readCurrentBytes, authorizeOrdinary} : {})})};
             }
             const selected = active;
             const result = await selected.session.setContext(context, helper, generationId);

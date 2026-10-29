@@ -2,7 +2,7 @@
 
 // Main owns issuance and refresh. No renderer-provided descriptor is transport authority.
 const {createHash, randomUUID} = require('node:crypto');
-const transports = new WeakSet();
+const transports = new WeakSet(), ordinaryTransports = new WeakSet();
 const failures = new WeakSet();
 const PENDING_TTL_MS = 60000;
 const MAX_PENDING = 64;
@@ -88,7 +88,10 @@ function createAuthority({now = Date.now} = {}) {
         for (const [proof, grant] of pending) if (!alive(grant.principal) || currentTime >= grant.pendingUntil) forget(proof, grant);
     }
     function descriptor(value, currentTime, requireAcquired = false) {
-        if (!value || !['cd2-url', 'direct-url'].includes(value.sourceKind)) throw failure('source-proof-invalid');
+        if (!value || !['cd2-url', 'direct-url', 'emby-http'].includes(value.sourceKind)) throw failure('source-proof-invalid');
+        // Ordinary Emby uses only its existing same-origin URL authorization.
+        // Its total is learned by the existing one-byte probe, never renderer Size.
+        if (value.sourceKind === 'emby-http' && [value.expectedSize, value.requestOptions, value.refresh, value.acquiredAt, value.expiresAt].some(field => field !== undefined)) throw failure('source-proof-invalid');
         const origin = parseSource(value.source), agent = userAgent(value.requestOptions);
         if (value.expectedSize !== undefined && (!Number.isSafeInteger(value.expectedSize) || value.expectedSize <= 0)) throw failure('source-proof-invalid');
         if (requireAcquired || value.acquiredAt !== undefined || value.expiresAt !== undefined) {
@@ -200,7 +203,9 @@ function createAuthority({now = Date.now} = {}) {
                     return agent === undefined ? args.length === 2 : args.length === 5 && args[2] === 'replace' && args[3] === '-1' && args[4] === 'user-agent=' + agent;
                 } catch (_) {return false;}
             }});
-        transports.add(transport); return transport;
+        transports.add(transport);
+        if (grant.descriptor.sourceKind === 'emby-http') ordinaryTransports.add(transport);
+        return transport;
     }
     function close() {
         if (closed) return;
@@ -213,4 +218,5 @@ function createAuthority({now = Date.now} = {}) {
     }
     return {principalFor: safe(principalFor), issue: safe(issue), bind: safe(bind), close: safe(close)};
 }
-module.exports = {createAuthority, isTransport: value => !!value && transports.has(value)};
+module.exports = {createAuthority, isTransport: value => !!value && transports.has(value),
+    isOrdinaryTransport: value => !!value && ordinaryTransports.has(value)};

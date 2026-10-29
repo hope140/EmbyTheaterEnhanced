@@ -137,6 +137,18 @@ function createService(options) {
     return authority.bind({sourceProof: value.sourceProof, source: value.source, principal: owner.principal, signal,
       ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
   }
+  function authorizeOrdinaryRange(value, role, signal, helper, generationId) {
+    const owner = rangeGenerationOwner, authority = settings.sourceAuthority;
+    if (!authority || !owner || !['current', 'next'].includes(role) || owner.helper !== helper || owner.generationId !== generationId || !helper || helper.exited || helper.transportTerminated || helper.currentGenerationId !== generationId ||
+        owner.principal !== authority.principalFor(getWebContents()) || value && value.sourceProof !== undefined) throw preloadDiagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+    const parsed = require('../enhanced/playback-range-session').parseContext(value);
+    if (!parsed) throw preloadDiagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+    const requestId = role === 'current' ? owner.label : owner.scope + '-next-emby';
+    const proof = authority.issue({principal: owner.principal, requestId, source: parsed.source, sourceKind: 'emby-http',
+      resourceKey: crypto.createHash('sha256').update(JSON.stringify(parsed.identity)).digest('hex')});
+    return authority.bind({sourceProof: proof, source: parsed.source, principal: owner.principal, signal,
+      ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
+  }
   const sharedBudget = require('./shared-cache-budget').createBudgetReader((helper, generationId) =>
     !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId);
   function readSharedCurrentBytes(helper, generationId) {return sharedBudget.read(helper, generationId);}
@@ -147,9 +159,11 @@ function createService(options) {
   function changesSharedBudget(name) {return name === 'demuxer-max-bytes' || name === 'profile';}
   function createRangeSession(config) {
     if (config.kind === 'source-aware') return require('../enhanced/playback-range-source-session').createSourceSession({config,
-      onDiagnostic: reportPreload, readCurrentBytes: readSharedCurrentBytes, authorize: settings.sourceAuthority ? authorizeRange : undefined});
+      onDiagnostic: reportPreload, readCurrentBytes: readSharedCurrentBytes, authorize: settings.sourceAuthority ? authorizeRange : undefined,
+      authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined});
     return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
-    ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes} : {}),
+    ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes,
+      authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined} : {}),
     authorize: settings.sourceAuthority ? authorizeRange : undefined});}
   function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'sharedRoot', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();

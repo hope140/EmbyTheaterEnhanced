@@ -47,7 +47,7 @@ function playbackContext(value) {
     if (!value || Object.keys(value).some(k => !contextFields.includes(k)) || value.mediaType !== 'Video' || ['serverId', 'serverOrigin', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId'].some(k => typeof value[k] !== 'string' || !value[k] || value[k].length > 2048)) return null;
     return {...value, identity: null};
 }
-function createSession({config, create = createCache, onDiagnostic = () => {}, authorize, readCurrentBytes, now = () => require('node:perf_hooks').performance.now()}) {
+function createSession({config, create = createCache, onDiagnostic = () => {}, authorize, authorizeOrdinary, readCurrentBytes, now = () => require('node:perf_hooks').performance.now()}) {
     if (!config) return null;
     if (!['next-prefix', 'shared-byte-trial'].includes(config.kind)) throw Error('next-prefix-required');
     const policy = selection(config), work = new Set();
@@ -68,7 +68,13 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
         retirement = cleanup.catch(() => {}); return cleanup;
     }
     function ownedContext(value, role, helper, generationId, signal) {
-        if (!value || value.sourceProof === undefined) return parseContext(value);
+        if (!value || value.sourceProof === undefined) {
+            const parsed = parseContext(value);
+            if (!parsed || config.kind !== 'shared-byte-trial' || typeof authorizeOrdinary !== 'function') return parsed;
+            const transport = authorizeOrdinary(value, role, signal, helper, generationId);
+            if (!require('./preload-source-authority').isTransport(transport)) throw diagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+            return {...parsed, identity: {...parsed.identity, representation: transport.representation}, transport};
+        }
         const base = playbackContext(value);
         if (!base || typeof authorize !== 'function' || typeof value.sourceProof !== 'string' || value.sourceProof.length > 128 ||
             value.live === true || !['DirectPlay', 'DirectStream'].includes(value.mode) ||

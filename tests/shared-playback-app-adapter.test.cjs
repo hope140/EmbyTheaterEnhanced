@@ -22,7 +22,7 @@ async function cleanup(actions, remove) {
     if (errors.length) throw new AggregateError(errors, 'owned-adapter-fixture-cleanup-failed');
 }
 
-async function fixture(t, {etag = '"owned-v1"', probeGate} = {}) {
+async function fixture(t, {etag = '"owned-v1"', probeGate, ordinary = false} = {}) {
     const parent = temporaryRoot('ete-app-shared-', ['cache']);
     const root = path.join(parent, 'cache'), data = Buffer.alloc(64 * 1024, 0x5a), requests = [];
     const caches = [];
@@ -63,10 +63,10 @@ async function fixture(t, {etag = '"owned-v1"', probeGate} = {}) {
     const principal = authority.principalFor(web);
     function source(item = 'A', extra = {}) {
         const owner = new AbortController(), requestId = 'play-' + item;
-        const descriptor = {source: url, expectedSize: data.length, ...extra};
-        const proof = authority.issue({principal, requestId, sourceKind: 'direct-url', resourceKey: 'owned-file-' + item, ...descriptor});
+        const descriptor = {source: url, ...(ordinary ? {} : {expectedSize: data.length}), ...extra};
+        const proof = authority.issue({principal, requestId, sourceKind: ordinary ? 'emby-http' : 'direct-url', resourceKey: 'owned-file-' + item, ...descriptor});
         const transport = authority.bind({sourceProof: proof, source: descriptor.source, principal, requestId, signal: owner.signal});
-        return {owner, source: descriptor.source, transport, identity: {...identity(item), representation: transport.representation}, isCurrent: () => true,
+        return {owner, source: descriptor.source, transport, identity: {...identity(item), ...(ordinary ? {serverOrigin: new URL(url).origin} : {}), representation: transport.representation}, isCurrent: () => true,
             signal: owner.signal, currentBytes: 2 * 1024 * 1024};
     }
     const config = {kind: 'shared-byte-trial', root, preloadMB: 100, progressPercent: 70, timeoutMs: 1000};
@@ -504,4 +504,39 @@ test('backend state is lazy and failed recovery is never ready or a body hit', a
     assert.equal(creates, 1); assert.equal(f.requests.length, 1);
     await handle.stop(); await cache.close();
     assert.equal(cache.status().backendState, 'closed');
+});
+
+test('ordinary known-version bytes survive close/reopen and a fresh probe cannot be bypassed', {timeout:10000}, async t => {
+    // Real HTTP, disk store and OS guard. This case must run only in the allowed
+    // Windows/CI environment; it is not a Native playback or user-source result.
+    const f = await fixture(t, {ordinary: true}), first = await f.cache();
+    const actual = await first.open(f.source('A'));
+    await actual.ready();
+    assert.equal(actual.status().total, f.data.length, 'learned from the fresh one-byte response');
+    assert.equal((await actual.prefetch({maxBytes:f.data.length, signal:new AbortController().signal})).bytes, f.data.length);
+    await actual.markPlaying();
+    const unplayed = await first.open(f.source('B'));
+    await unplayed.prefetch({maxBytes:32768, signal:new AbortController().signal});
+    assert.equal(first.status().currentBytes, f.data.length); assert.equal(first.status().nextBytes, 32768);
+    await first.close();
+    let cacheReadBytes = 0;
+    const reopened = await f.cache({createStore: async options => {
+        const store = await createStore(options), original = store.read;
+        store.read = function(...args) {
+            const promise = original.apply(this,args);
+            promise.then(value => {if (Buffer.isBuffer(value)) cacheReadBytes += value.length;},()=>{});
+            return promise;
+        };
+        return store;
+    }});
+    const before = f.requests.length, route = await reopened.open(f.source('A'));
+    await route.ready();
+    assert.equal(reopened.status().nextBytes,0,'unplayed B is not restored');
+    assert.equal((await get(route.source,0,f.data.length)).hash,hash(f.data));
+    assert(cacheReadBytes >= f.data.length,'actual reopened disk reads supplied the response');
+    assert.equal(f.requests.length-before,1,'only one fresh0-0 probe, no repeated origin body');
+    assert.equal(f.requests[before].range,'bytes=0-0');
+    await route.stop(); f.mode('denied');
+    await assert.rejects(reopened.open(f.source('A')),/auth-required/);
+    assert.equal(reopened.status().routes,0,'retained bytes cannot bypass fresh access refusal');
 });
