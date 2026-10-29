@@ -55,13 +55,19 @@ function livePolicyBinding(current) {
   need(Buffer.from(text,'utf8').equals(current)&&(lf||crlf),'probe-current-source');
   if(sha(canonical)==='e12d4939498354bddfe19b608084328f51e666ecfd8f01a31a4a3e9caff8ee6e')return {relation:'historical-source-identical',checkoutSha256:sha(current),byteIdentical:true};
   let policy=canonical.toString('utf8');
+  const retention=policy.includes('cacheForeground = true');
+  if(retention)for(const [added,original] of [
+    ['cacheEnabled = true, cacheForeground = true, requestPolicy','cacheEnabled = true, requestPolicy'],
+    ["  if (typeof cacheForeground !== 'boolean' || resolveAccess !== undefined",'  if (resolveAccess !== undefined'],
+    ["    save = save && (kind !== 'foreground' || cacheForeground);\n",'']
+  ]) {need(policy.split(added).length===2,'probe-current-source');policy=policy.replace(added,original);}
   for(const [instrumented,historical] of [
     ['stats.hitBytes += data.length; record.localHitBytes += data.length;','stats.hitBytes += data.length;'],
     ['preloadReady: false, localHitBytes: 0};','preloadReady: false};'],
     ['      status: () => ({localHitBytes: record.localHitBytes}),\n','']
   ]) {need(policy.split(instrumented).length===2,'probe-current-source');policy=policy.replace(instrumented,historical);}
   need(sha(Buffer.from(policy))==='e12d4939498354bddfe19b608084328f51e666ecfd8f01a31a4a3e9caff8ee6e','probe-current-source');
-  return {relation:'exact-route-counter-v1-only',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
+  return {relation:retention?'exact-route-counter-v1-retention-write-policy-v1':'exact-route-counter-v1-only',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
 }
 function historicalSource(root) {
   try {

@@ -144,23 +144,29 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
                 const preparing = (async () => {
                     if (typeof readCurrentBytes !== 'function') throw diagnostics.error('identity-missing', 'range-shared-budget-unavailable');
                     record.preparationPhase = 'budget';
-                    budget = await readCurrentBytes(helper, generationId);
-                    active();
-                    if (!budget || typeof budget.isCurrent !== 'function' || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-budget-retired');
-                    const currentBytes = budget.bytes;
-                    active();
-                    record.currentBytes = currentBytes;
-                    record.preparationPhase = 'adapter';
+                    // Metadata access and the actual Native budget are independent.
+                    // Both retain the same explicit-Play deadline; no store or
+                    // media body is admitted before the budget becomes valid.
+                    const currentBytesReady = Promise.resolve(readCurrentBytes(helper, generationId)).then(value => {
+                        budget = value; active();
+                        if (!budget || typeof budget.isCurrent !== 'function' || !budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-budget-retired');
+                        record.currentBytes = budget.bytes;
+                        return budget.bytes;
+                    });
+                    currentBytesReady.catch(() => {});
+                    if (budget) record.preparationPhase = 'adapter';
                     const cache = await ensure();
                     active();
                     const value = await cache.open({source, identity: record.value.identity, transport: record.value.transport,
                         onPreparationPhase(phase) {if (owns(record) && record.selection === 'preparing') record.preparationPhase = phase;},
-                        currentBytes, isCurrent: () => owns(record) && ['preparing', 'proxy'].includes(record.selection) && !signal.aborted && budget.isCurrent() && (record.selection === 'proxy' || now() < expiresAt), signal});
+                        currentBytesReady, isCurrent: () => owns(record) && ['preparing', 'proxy'].includes(record.selection) && !signal.aborted && (!budget || budget.isCurrent()) && (record.selection === 'proxy' || now() < expiresAt), signal});
                     try {
                         // Publishing a proxy is not proof its restored metadata
                         // is ready. Keep this wait inside the existing load cap;
                         // cancellation retires late recovery without a cold body.
                         if (typeof value.ready === 'function') await value.ready();
+                        if (!budget) record.preparationPhase = 'budget';
+                        await currentBytesReady;
                         active();
                         if (!budget.isCurrent()) throw diagnostics.error('generation-retired', 'range-shared-retired');
                         return value;
@@ -214,6 +220,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
         })());
     }
     function preload(value, helper, generationId) {
+        if (config.preloadEnabled === false) return Promise.resolve({state: 'disabled'});
         return track((async () => {
             const owner = current;
             function refuse(diagnostic) {
@@ -286,7 +293,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             const backend = config.kind === 'shared-byte-trial' ? {state: cacheInstance ? cacheInstance.status().backendState : cacheFailed ? 'failed' : cachePromise ? 'initializing' : 'idle'} : undefined;
             let bytes = 0, localHitBytes = null;
             try {if (current && current.handle && current.handle.status) {const value = current.handle.status(); bytes = value.bytes; if (Number.isSafeInteger(value.localHitBytes) && value.localHitBytes >= 0) localHitBytes = value.localHitBytes;}} catch (_) {}
-            return {enabled: true, ...policy, kind: config.kind, timeoutMs: config.timeoutMs,
+            return {enabled: true, ...(config.preloadEnabled === false ? {preloadEnabled: false} : {}), ...policy, kind: config.kind, timeoutMs: config.timeoutMs,
                 ...(backend ? {backend} : {}),
                 current: {route: current ? current.handle ? 'proxy' : 'original' : 'idle', state: current ? current.handle ? current.playing ? 'active' : 'preparing' : 'original' : 'idle', bytes, ...(localHitBytes === null ? {} : {localHitBytes}), ...(current && current.diagnostic ? {diagnostic: diagnostics.snapshot(current.diagnostic)} : {})},
                 next: {...nextProgress}, diskBytes: cacheInstance ? cacheInstance.status().bytes : 0,

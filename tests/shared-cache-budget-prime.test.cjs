@@ -162,7 +162,7 @@ function virtualSelection(f, {historicalBudget, openWait} = {}) {
   vm.runInNewContext(fs.readFileSync(require.resolve('../src/electronapp/enhanced/playback-range-session'), 'utf8'), sandbox);
   const session = sandbox.module.exports.createSession({config: {kind: 'shared-byte-trial'},
     onDiagnostic: value => diagnostics.push(value),
-    readCurrentBytes: (...args) => f.reader.read(...args), async create() {++created; return {async close() {}, async discardNext() {}, async open() {++opened; if (openWait) await openWait; return {source: 'http://127.0.0.1/local', async stop() {}};}};}});
+    readCurrentBytes: (...args) => f.reader.read(...args), async create() {++created; return {status(){return {bytes:0,backendState:'idle'};},async close() {}, async discardNext() {}, async open() {++opened; if (openWait) await openWait; return {source: 'http://127.0.0.1/local', async stop() {}};}};}});
   const context = {source: 'http://127.0.0.1/source.mkv', serverOrigin: 'http://127.0.0.1', serverId: 'owned', accountId: 'owned', itemId: 'A', mediaSourceId: 'A', playSessionId: 'owned', mode: 'DirectPlay', mediaType: 'Video', container: 'mkv'};
   return {session, context, deadlines, diagnostics, counts: () => ({created, opened}), advance(value) {now = value; for (const timer of timers) if (timer.at <= now) {timers.delete(timer); timer.fn();}}};
 }
@@ -182,7 +182,7 @@ test('historical 25ms selection rejects a late batch-tail read without creating 
   v.advance(30); assert.equal(await selecting, null);
   v.advance(31); f.queue[0].resolve(314572800); await primed;
   await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(v.counts(), {created: 0, opened: 0}); assert.equal(f.queue.length, 1);
+  assert.deepEqual(v.counts(), {created: 1, opened: 0}, 'only the inert adapter is created; no route opens after the deadline'); assert.equal(f.queue.length, 1);
 });
 test('historical 25ms policy fails a valid 31ms read with only 1ms head start', async t => {
   const f = fixture(), v = virtualSelection(f, {historicalBudget: 25}); t.after(() => v.session.close());
@@ -193,7 +193,7 @@ test('historical 25ms policy fails a valid 31ms read with only 1ms head start', 
   v.advance(31); f.queue[0].resolve(314572800); await primed;
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(f.queue.length, 1, 'no settings invalidation or duplicate read is needed to reproduce the timeout');
-  assert.deepEqual(v.counts(), {created: 0, opened: 0});
+  assert.deepEqual(v.counts(), {created: 1, opened: 0}, 'only the inert adapter is created; no route opens after the deadline');
 });
 test('measured-shape native read plus required preparation fits 50ms, while the same work misses historical 25ms', async t => {
   for (const limit of [25, 50]) {
@@ -223,7 +223,7 @@ test('actual 50ms selection still expires and cannot publish work after its own 
   assert.equal(v.diagnostics.at(-1).phase,'budget');
   assert.deepEqual(Object.keys(v.session.status().current.diagnostic).sort(),['reason','stage']);
   v.advance(51); f.queue[0].resolve(314572800); await primed;
-  await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(v.counts(), {created: 0, opened: 0});
+  await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(v.counts(), {created: 1, opened: 0}, 'only the inert adapter is created; no route opens after the deadline');
 });
 test('ordinary seek commands do not enter the optional source-selection budget', async () => {
   const source = fs.readFileSync(require.resolve('../src/electronapp/native-helper/service'), 'utf8');
@@ -234,4 +234,18 @@ test('ordinary seek commands do not enter the optional source-selection budget',
     rangeSession: {select() {assert.fail('seek must not reselect source');}}};
   vm.runInNewContext('call = async function () {' + source.slice(start, end) + '}', sandbox);
   assert.equal((await sandbox.call()).status, 'accepted'); assert.equal(calls[0], sandbox.payload.data);
+});
+
+test('new explicit Play overlaps source preparation with its pending actual budget but cannot publish early',async t=>{
+  const helper={currentGenerationId:1}, budget=deferred(), probe=deferred(), entered=deferred();let current=true,opens=0,stopped=0;
+  const session=createSession({config:{kind:'shared-byte-trial'},readCurrentBytes:()=>budget.promise,async create(){return {
+    async open(options){opens++;entered.resolve();await probe.promise;await options.currentBytesReady;return {source:'http://synthetic.invalid/local',async stop(){stopped++;}};},
+    status(){return {bytes:0,backendState:'ready'};},async close(){},async discardNext(){}};}});
+  t.after(()=>{current=false;probe.resolve();budget.resolve({bytes:314572800,isCurrent:()=>false});return session.close();});
+  const value={source:'http://synthetic.invalid/source.mkv',serverOrigin:'http://synthetic.invalid',serverId:'server',accountId:'account',itemId:'item',mediaSourceId:'media',playSessionId:'play',mode:'DirectPlay',mediaType:'Video',container:'mkv'};
+  await session.setContext(value,helper,1);let published=false;
+  const selecting=session.select(value.source,helper,1,['loadfile',value.source]).then(value=>{published=true;return value;});
+  await entered.promise;assert.equal(opens,1);assert.equal(published,false,'source preparation begins before budget resolves');
+  probe.resolve();assert.equal(published,false);budget.resolve({bytes:314572800,isCurrent:()=>current,commit(){assert(current);}});
+  const selected=await selecting;assert(selected);current=false;assert.equal(selected.canDispatch(),false);await selected.cancel();assert.equal(stopped,1);
 });

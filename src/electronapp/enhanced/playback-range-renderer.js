@@ -96,7 +96,7 @@
                 var state = options.position(), context = current(), next = nextItem(options, context);
                 var id = next && next.Id;
                 if (id !== candidateId) {candidateId = id; attemptId = null; await cancelNext();}
-                if (!next || attemptId === id || !state || !Number.isFinite(state.positionTicks) || !Number.isFinite(state.durationTicks) || state.durationTicks <= 0 ||
+                if (endpoint.rangeCache.preloadEnabled === false || !next || attemptId === id || !state || !Number.isFinite(state.positionTicks) || !Number.isFinite(state.durationTicks) || state.durationTicks <= 0 ||
                     state.positionTicks / state.durationTicks * 100 < endpoint.rangeCache.progressPercent) return;
                 attemptId = id; nextState = 'checking'; nextDiagnostic = null; var owner = new AbortController(); nextController = owner;
                 function ownsCandidate() {var c = valid(), n = c && nextItem(options, c); return c && n && n.Id === id && candidateId === id && nextController === owner;}

@@ -29,13 +29,13 @@ test('comparison permits only the exact Git LF-to-CRLF checkout relation, not al
  for(const bytes of [Buffer.concat([Buffer.from([239,187,191]),actual]),Buffer.from(crlf.toString('utf8').replace('\r\n','\n')),Buffer.concat([actual,Buffer.from(' ')])])assert.throws(()=>probe.sourceVariants(bytes),/probe-current-source/);
 });
 
-test('live source differs only by three exact route counters and is never relabeled as the historical executed blob',()=>{
+test('live source has exact route counters and a separate retention write policy and is never relabeled as the historical executed blob',()=>{
  const current=fs.readFileSync(path.join(__dirname,'../src/electronapp/enhanced/shared-playback-cache/proxy.js'));
- const binding=probe.livePolicyBinding(current);assert.equal(binding.relation,'exact-route-counter-v1-only');assert.equal(binding.byteIdentical,false);assert.equal(binding.bytes,undefined);
+ const binding=probe.livePolicyBinding(current);assert.equal(binding.relation,'exact-route-counter-v1-retention-write-policy-v1');assert.equal(binding.byteIdentical,false);assert.equal(binding.bytes,undefined);
  assert.throws(()=>probe.sourceVariants(current),/probe-current-source/);
  const canonical=Buffer.from(current.toString('utf8').replace(/\r\n/g,'\n')),crlf=Buffer.from(canonical.toString('utf8').replace(/\n/g,'\r\n'));
- assert.equal(probe.livePolicyBinding(crlf).relation,'exact-route-counter-v1-only');
- for(const bytes of [Buffer.concat([Buffer.from([239,187,191]),canonical]),Buffer.from(crlf.toString('utf8').replace('\r\n','\n')),Buffer.concat([canonical,Buffer.from(' ')]),Buffer.from(canonical.toString('utf8').replace('readStarted + 15 + readGracePerBlock','readStarted + 16 + readGracePerBlock'))]) assert.throws(()=>probe.livePolicyBinding(bytes),/probe-current-source/);
+ assert.equal(probe.livePolicyBinding(crlf).relation,'exact-route-counter-v1-retention-write-policy-v1');
+ for(const bytes of [Buffer.concat([Buffer.from([239,187,191]),canonical]),Buffer.from(crlf.toString('utf8').replace('\r\n','\n')),Buffer.concat([canonical,Buffer.from(' ')]),Buffer.from(canonical.toString('utf8').replace('readStarted + 15 + readGracePerBlock','readStarted + 16 + readGracePerBlock')),Buffer.from(canonical.toString('utf8').replace("save = save && (kind !== 'foreground' || cacheForeground);",'save = cacheForeground;'))]) assert.throws(()=>probe.livePolicyBinding(bytes),/probe-current-source/);
  const tool=fs.readFileSync(path.join(__dirname,'../tools/shared-playback-cache/read-grace-ab.cjs'),'utf8');
  assert.match(tool,/scope:'historical-policy-reproduction'/);assert.match(tool,/currentProductPerformance:'NOT_ASSESSED'/);
 });

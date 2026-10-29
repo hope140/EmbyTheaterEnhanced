@@ -57,8 +57,12 @@
             <h1>${Advanced}</h1>
 
             <div class="checkboxContainer checkboxContainer-withDescription">
-                <label><input type="checkbox" is="emby-checkbox" disabled class="chkRangeEnabled" /><span>启用播放暂存与下一集预载</span></label>
-                <div class="fieldDescription checkboxFieldDescription">来源支持时保留最近播放的视频暂存，并提前读取下一集。</div>
+                <label><input type="checkbox" is="emby-checkbox" disabled class="chkRetainPlayback" /><span>保留播放暂存</span></label>
+                <div class="fieldDescription checkboxFieldDescription">保留最近实际播放的视频暂存，重播时校验后复用。</div>
+            </div>
+            <div class="checkboxContainer checkboxContainer-withDescription">
+                <label><input type="checkbox" is="emby-checkbox" disabled class="chkRangeEnabled" /><span>启用下一集预载</span></label>
+                <div class="fieldDescription checkboxFieldDescription">达到指定进度后，提前读取下一集。</div>
             </div>
             <div class="selectContainer">
                 <select is="emby-select" disabled class="selectRangeProgress" label="开始预载的播放进度">

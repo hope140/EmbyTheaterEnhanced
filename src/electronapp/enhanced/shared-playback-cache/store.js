@@ -113,6 +113,7 @@ async function createStore({
   maxEntries = MAX_ROWS,
   recoveryMode = 'verified',
   existingOnly = false,
+  retainPlayback = true,
   io = fs,
 } = {}) {
   if (typeof root !== 'string' || !path.isAbsolute(root)) {
@@ -122,6 +123,7 @@ async function createStore({
       !positiveSafeInteger(maxPendingBytes) || !positiveSafeInteger(maxEntries)) {
     throw new TypeError('cache limits must be positive safe integers');
   }
+  if (typeof retainPlayback !== 'boolean') throw new TypeError('invalid retention policy');
   if (maxEntries > MAX_ROWS || !['verified', 'on-demand'].includes(recoveryMode)) throw new TypeError('cache entry limit or recovery mode is invalid');
   if (!Number.isSafeInteger(currentBytes + nextBytes)) {
     throw new TypeError('combined cache limit is unsafe');
@@ -482,7 +484,7 @@ async function createStore({
     }
     // Only the last actually played object survives restart. Other entries
     // remain untrusted until an application open() establishes fresh authority.
-    if (stored.key !== diskIndex.actual) continue;
+    if (!retainPlayback || stored.key !== diskIndex.actual) continue;
     if (stored.mediaKey !== undefined && !/^[a-f0-9]{64}$/.test(stored.mediaKey)) throw new Error('invalid cache media owner');
     const entry = {key: stored.key, baseKey: stored.baseKey, mediaKey: stored.mediaKey, meta: stored.meta, role: 'current',
       touched: Number.isSafeInteger(stored.touched) ? stored.touched : Date.now(), blocks: []};
@@ -768,6 +770,7 @@ async function createStore({
       return Promise.resolve(false);
     }
     const role = entry.role;
+    if (!retainPlayback && role === 'current') return Promise.resolve(false);
     const limit = role === 'current' ? currentBytes : nextBytes;
     // Keep one metadata row available to open the next actual route without
     // evicting the last played object's bytes during speculative open().
@@ -922,7 +925,7 @@ async function createStore({
     closing = true;
     closePromise = enqueue(async () => {
       for (const entry of [...entries.values()]) {
-        if (entry.key !== actualKey) await retireEntry(entry);
+        if (!retainPlayback || entry.key !== actualKey) await retireEntry(entry);
       }
       await persist();
       await drainRetired();

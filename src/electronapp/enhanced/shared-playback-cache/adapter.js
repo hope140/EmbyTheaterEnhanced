@@ -137,13 +137,13 @@ async function createCache(config, dependencies = {}) {
         if (managerPromise) return managerPromise;
         managerBytes = currentBytes;
         const store = createDeferredStore({root: config.root, currentBytes, nextBytes: policy.prefetchBytes,
-            maxPendingBytes: 2 * 1024 * 1024, recoveryMode: 'on-demand'}, {create: factory});
+            maxPendingBytes: 2 * 1024 * 1024, retainPlayback: config.retainPlayback !== false, recoveryMode: 'on-demand'}, {create: factory});
         if (pendingUncachedIntent !== undefined) {
             store.forgetActualUnlessMedia(pendingUncachedIntent.identity,
                 {isCurrent: pendingUncachedIntent.isCurrent}).catch(() => {unavailable = true;});
             pendingUncachedIntent = undefined;
         }
-        managerPromise = require('./proxy').createProxy({store, timeoutMs, requestPolicy: 'sparse',
+        managerPromise = require('./proxy').createProxy({store, timeoutMs, requestPolicy: 'sparse', cacheForeground: config.retainPlayback !== false,
             async authorize(identity, {signal}) {
                 const record = lookup(identity), value = await access(record, signal);
                 return {...record.grant, url: value.source};
@@ -162,8 +162,9 @@ async function createCache(config, dependencies = {}) {
         if (options) options = {...options, identity: options.identity && {...options.identity}};
         const job = (async () => {
             if (closed || records.size >= 4 || !options || !authority.isTransport(options.transport) ||
-                typeof options.isCurrent !== 'function' || !positive(options.currentBytes) ||
-                !Number.isSafeInteger(options.currentBytes + policy.prefetchBytes) ||
+                typeof options.isCurrent !== 'function' ||
+                (options.currentBytesReady === undefined ? !positive(options.currentBytes) || !Number.isSafeInteger(options.currentBytes + policy.prefetchBytes) :
+                    options.currentBytes !== undefined || !(options.currentBytesReady instanceof Promise)) ||
                 options.signal !== undefined && !(options.signal instanceof AbortSignal)) throw error('source-proof-invalid');
             if (options.identity?.representation !== options.transport.representation) throw error('source-proof-invalid');
             const identity = cacheIdentity(options.identity), signature = keyOf(identity);
@@ -173,7 +174,7 @@ async function createCache(config, dependencies = {}) {
                 signal: AbortSignal.any([controller.signal, options.transport.signal, ...(options.signal ? [options.signal] : [])]),
                 controller, stopped: false, role: 'next', bytes: 0, jobs: new Set()};
             records.add(record);
-            let transferred = false;
+            let transferred = false, pendingProbe;
             try {
                 guard(record);
                 const initial = await access(record);
@@ -184,17 +185,23 @@ async function createCache(config, dependencies = {}) {
                 // Recover the owned backend within this same selection, while
                 // the fresh probe is pending. No route/key or body is admitted
                 // until that probe succeeds; close still owns late recovery.
-                const preparing = ensure(options.currentBytes);
-                preparing.catch(() => {});
                 const phase = value => {try {options.onPreparationPhase?.(value);} catch (_) {}};
+                let budgetReady = options.currentBytesReady === undefined, probeReady = false;
+                const preparing = Promise.resolve(options.currentBytesReady ?? options.currentBytes).then(bytes => {
+                    guard(record);
+                    if (!positive(bytes) || !Number.isSafeInteger(bytes + policy.prefetchBytes)) throw error('source-proof-invalid');
+                    budgetReady = true; if (probeReady) phase('backend');
+                    return ensure(bytes);
+                });
                 phase('source-probe');
-                const metadata = await probe(initial, record.signal, timeoutMs, record.ordinary);
+                pendingProbe = probe(initial, record.signal, timeoutMs, record.ordinary).then(metadata => {
+                    probeReady = true; phase(budgetReady ? 'backend' : 'budget'); return metadata;
+                });
+                const [metadata, owned] = await Promise.all([pendingProbe, preparing]);
                 guard(record);
                 record.total = metadata.total;
                 record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
                     metadata, accessChecked: true};
-                phase('backend');
-                const owned = await preparing;
                 guard(record);
                 phase('metadata');
                 const route = await owned.proxy.open(identity, 'next');
@@ -270,6 +277,7 @@ async function createCache(config, dependencies = {}) {
             } finally {
                 if (!transferred) {
                     record.stopped = true; controller.abort();
+                    if (pendingProbe) await Promise.allSettled([pendingProbe]);
                     if (record.route) await record.route.stop();
                     records.delete(record);
                 }

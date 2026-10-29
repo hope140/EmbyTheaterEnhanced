@@ -165,7 +165,7 @@ function createService(options) {
     ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes,
       authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined} : {}),
     authorize: settings.sourceAuthority ? authorizeRange : undefined});}
-  function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'sharedRoot', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
+  function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'sharedRoot', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'preloadEnabled', 'retainPlayback', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
   const initialRangeConfig = readRangeConfig();
   let rangeSession = initialRangeConfig ? createRangeSession(initialRangeConfig) : null;
   let rangeConfigKind = initialRangeConfig && initialRangeConfig.kind;

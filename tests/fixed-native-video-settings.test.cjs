@@ -13,7 +13,7 @@ const html = fs.readFileSync(path.join(pluginRoot, 'video.html'), 'utf8');
 const source = fs.readFileSync(path.join(pluginRoot, 'video.js'), 'utf8');
 const preloadSettings = require(path.join(pluginRoot, 'preload-settings.js'));
 const GET = 'enhanced-playback-range-settings-get', SAVE = 'enhanced-playback-range-settings-save';
-const preloadConfig = {schema: 1, enabled: false, progressPercent: 70, preloadMB: 300};
+const preloadConfig = {schema: 1, enabled: false, retainPlayback: false, progressPercent: 70, preloadMB: 300};
 const fixed = {status: 'ok', mode: 'native-helper', fixedNativeRenderPath: 'vo=gpu-next; gpu-api=d3d11'};
 function deferred() { let resolve; const promise = new Promise(yes => {resolve = yes;}); return {promise, resolve}; }
 function classList(text) { const values = new Set(text.split(/\s+/)); return {contains: c => values.has(c), toggle(c, enabled) {if (enabled) values.add(c); else values.delete(c);}}; }

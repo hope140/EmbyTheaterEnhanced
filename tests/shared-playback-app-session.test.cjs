@@ -155,7 +155,7 @@ async function fixture(t, options = {}) {
   const nativeBudgetCalls = [];
   helper.getProperty = async (...args) => {nativeBudgetCalls.push(args);return budgetBytes;};
   const realBudget = options.realBudget ? require('../src/electronapp/native-helper/shared-cache-budget').createBudgetReader((owned,generation) => owned===helper&&generation===helper.currentGenerationId&&budgetCurrent) : null;
-  let bindingPrincipal = principalA, currentRequestId = 'play-A', nextRequestPrefix = 'play-A-next-', cache, createCount = 0;
+  let bindingPrincipal = principalA, currentRequestId = 'play-A', nextRequestPrefix = 'play-A-next-', cache, createCount = 0, storeCreateCount = 0;
   const currentBytesReads = [];
   const selectionDiagnostics = [];
   const config = {kind: 'shared-byte-trial', root, progressPercent: 50, preloadMB: PRELOAD_MB, timeoutMs: 1000};
@@ -166,6 +166,7 @@ async function fixture(t, options = {}) {
       if (options.createGate) await options.createGate;
       if (options.slowCreateMs) await delay(options.slowCreateMs);
       cache = await createCache(value, {async createStore(options) {
+        storeCreateCount++;
         if (optionsForFixture.storeGate) await optionsForFixture.storeGate;
         try {return await createStore(options);}
         catch (error) {
@@ -200,7 +201,7 @@ async function fixture(t, options = {}) {
   const loadOptions = value => ['loadfile', value.source, 'replace', '-1', `user-agent=${UA}`];
   return {root, origin, authority, principalA, principalB, helper, session, config, candidate, loadOptions, clock,
     webA, webB,
-    get cache() {return cache;}, get createCount() {return createCount;}, currentBytesReads, selectionDiagnostics,
+    get cache() {return cache;}, get createCount() {return createCount;}, get storeCreateCount() {return storeCreateCount;}, currentBytesReads, selectionDiagnostics,
     setBudget(bytes, current = true) {budgetBytes = bytes; budgetCurrent = current;},
     setBudgetGate(value) {options.currentBytesGate = value;}, get budgetCommits() {return budgetCommits;},realBudget,nativeBudgetCalls,
     setBindingPrincipal(value) {bindingPrincipal = value;}, setCurrentRequestId(value) {currentRequestId = value;},
@@ -329,17 +330,19 @@ test('foreign principal proof and changed account identity cannot reuse A bytes'
 
 test('shared-trial exact 50ms logical deadline retires gated budget, initialization, and probe work', {timeout:10000}, async t => {
   await t.test('gated current-byte read', async st => {
-    const hold = gate(), f = await fixture(st, {currentBytesGate: hold.promise}), a = f.candidate('A');
+    const hold = gate(), f = await fixture(st, {currentBytesGate: hold.promise,observeRequests:true}), a = f.candidate('A');
     try {
       const selecting = selectCurrent(f, a);
       assert.ok(await waitFor(() => f.clock.status().pending === 1)); f.clock.expire();
       assert.equal(await selecting, null);
-      assert.equal(f.origin.requests.length, 0, 'expiry precedes any fresh source probe');
+      assert.equal(f.storeCreateCount,0,'pending budget cannot start a store');
+      assert.ok(f.origin.clientRequests.length<=1);assert.ok(f.origin.clientRequests.every(row=>row.range==='bytes=0-0'));
       assert.deepEqual(f.session.status().current.diagnostic, {stage:'current-probe',reason:'timeout'});
     } finally {hold.release();}
     await f.session.close(); await delay(0);
-    assert.equal(f.createCount, 0, 'late M cannot initialize a cache or issue a probe');
-    assert.equal(f.origin.requests.length, 0); assert.deepEqual(f.currentBytesReads,[1]);
+    assert.equal(f.createCount,1,'only an inert adapter may precede the actual budget');assert.equal(f.storeCreateCount,0,'late M cannot initialize a store');
+    assert.ok(f.origin.clientRequests.length<=1);assert.ok(f.origin.clientRequests.every(row=>row.range==='bytes=0-0'&&row.closed));
+    assert.ok(f.origin.requests.every(row=>row.start===0&&row.end===0)); assert.deepEqual(f.currentBytesReads,[1]);
     assert.equal(f.clock.status().fired, 1); assert.equal(f.clock.status().pending, 0);
   });
   await t.test('gated cache initialization', async st => {
@@ -622,7 +625,7 @@ for (const phase of ['budget','store']) test('absolute prepare expiry rejects la
   assert.equal(f.clock.status().fired, 0, 'only the monotonic clock crossed the deadline');
   assert.equal(f.session.status().current.route, 'original');
   assert.deepEqual(f.session.status().current.diagnostic, {stage:'current-probe',reason:'timeout'});
-  if (phase === 'budget') assert.equal(f.createCount, 0);
+  if (phase === 'budget') {assert.equal(f.createCount,1);assert.equal(f.storeCreateCount,0);}
   else {
     assert.ok(await waitFor(() => f.cache.status().backendState === 'ready'));
     assert.equal(f.cache.status().bytes, 0);

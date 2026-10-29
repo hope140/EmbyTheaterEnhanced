@@ -22,7 +22,8 @@ function temporaryRoot(prefix) {
 }
 
 function config(overrides) {
-    return Object.assign({schema: 1, enabled: false, progressPercent: 70, preloadMB: 300}, overrides || {});
+    const value = Object.assign({schema: 1, enabled: false, progressPercent: 70, preloadMB: 300}, overrides || {});
+    return {...value, retainPlayback: value.retainPlayback ?? value.enabled};
 }
 
 function ipcFixture(store) {
@@ -78,11 +79,12 @@ test('runtime config stays default-off and exposes fixed owned roots for source-
         progressPercent: 60,
         preloadMB: 100,
         prefetchBytes: (100 * 1024 * 1024),
+        preloadEnabled: true, retainPlayback: true,
         timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false, 'configuration lookup creates no cache');
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),
-        ['kind', 'prefetchBytes', 'preloadMB', 'progressPercent', 'root', 'sharedRoot', 'timeoutMs']);
+        ['kind', 'prefetchBytes', 'preloadEnabled', 'preloadMB', 'progressPercent', 'retainPlayback', 'root', 'sharedRoot', 'timeoutMs']);
 });
 
 test('IPC supports explicit enabled settings with next-play application and no restart gate', async () => {
@@ -101,7 +103,7 @@ test('IPC supports explicit enabled settings with next-play application and no r
 });
 
 test('video settings contain the preload controls and use the existing next-play IPC contract', () => {
-    assert.match(htmlSource, /启用播放暂存与下一集预载/);
+    assert.match(htmlSource, /启用下一集预载/);
     assert.doesNotMatch(htmlSource, /下次播放生效/);
     assert.doesNotMatch(htmlSource, /rangeRuntimeState|btnSaveRange|当前运行/);
     assert.match(controllerSource, /enhanced-playback-range-settings-get/);

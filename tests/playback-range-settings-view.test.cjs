@@ -6,17 +6,17 @@ const path = require('node:path');
 const settings = require('../src/electronapp/plugins/mpvplayer/preload-settings.js');
 const GET = 'enhanced-playback-range-settings-get', SAVE = 'enhanced-playback-range-settings-save';
 const html = fs.readFileSync(path.join(__dirname, '../src/electronapp/plugins/mpvplayer/video.html'), 'utf8');
-const config = overrides => ({schema: 1, enabled: false, progressPercent: 70, preloadMB: 300, ...overrides});
+const config = overrides => ({schema: 1, enabled: false, retainPlayback: false, progressPercent: 70, preloadMB: 300, ...overrides});
 function deferred() {let resolve, reject; const promise = new Promise((a, b) => {resolve = a; reject = b;}); return {promise, resolve, reject};}
 function fixture(invoke) {
-    const nodes = Object.fromEntries(['.chkRangeEnabled', '.selectRangeProgress', '.selectRangePreload', '.rangeSettingsState'].map(key => [key, {
+    const nodes = Object.fromEntries(['.chkRangeEnabled', '.chkRetainPlayback', '.selectRangeProgress', '.selectRangePreload', '.rangeSettingsState'].map(key => [key, {
         value: '', checked: false, disabled: false, textContent: '', listeners: {},
         addEventListener(name, callback) {this.listeners[name] = callback;},
         removeEventListener(name, callback) {if (this.listeners[name] === callback) delete this.listeners[name];}
     }]));
     const view = {querySelector(selector) {assert.ok(nodes[selector], selector); return nodes[selector];}};
     const page = settings.create(view, invoke);
-    return {page, nodes, enabled: nodes['.chkRangeEnabled'], progress: nodes['.selectRangeProgress'], amount: nodes['.selectRangePreload'], state: nodes['.rangeSettingsState']};
+    return {page, nodes, enabled: nodes['.chkRangeEnabled'], retained: nodes['.chkRetainPlayback'], progress: nodes['.selectRangeProgress'], amount: nodes['.selectRangePreload'], state: nodes['.rangeSettingsState']};
 }
 const turn = () => new Promise(resolve => setImmediate(resolve));
 
@@ -27,13 +27,13 @@ test('preload appears once under the original video Advanced section with confir
     assert(advanced >= 0 && advanced < preload, 'preload follows the existing Advanced heading');
     assert.equal((html.match(/<h1>\$\{Advanced\}<\/h1>/g) || []).length, 1);
     assert.doesNotMatch(html, /<h[1-6]>播放暂存与预载<\/h[1-6]>/);
-    for (const name of ['chkRangeEnabled', 'selectRangeProgress', 'selectRangePreload']) {
+    for (const name of ['chkRangeEnabled', 'chkRetainPlayback', 'selectRangeProgress', 'selectRangePreload']) {
         const marker = 'class="' + name + '"';
         assert.equal(html.split(marker).length - 1, 1, name + ' is not duplicated');
         assert(preload < html.indexOf(marker) && html.indexOf(marker) < html.indexOf('</form>'), name + ' remains in the original Advanced form');
     }
-    assert.match(html, /启用播放暂存与下一集预载/); assert.doesNotMatch(html, /下次播放生效/);
-    assert.match(html, /来源支持时保留最近播放的视频暂存/);
+    assert.match(html, /启用下一集预载/); assert.doesNotMatch(html, /下次播放生效/);
+    assert.match(html, /保留最近实际播放的视频暂存/);
     assert.match(html, /只限制下一集预载量/); assert.match(html, /未播放的预载在退出时清除/);
     assert.doesNotMatch(html, /rangeRuntimeState|当前运行|btnSaveRange|type="submit"|maxBytes|bytesPerSecond/);
     const choices = name => html.match(new RegExp('class="' + name + '"[^>]*>([\\s\\S]*?)<\\/select>'))[1];
@@ -120,4 +120,18 @@ test('destroy retires pending reads and removes change listeners', async () => {
     const read = deferred(), f = fixture(() => read.promise); const pending = f.page.resume(); await turn(); f.page.dispose();
     read.resolve({status: 'ok', config: config({enabled: true})}); await pending;
     assert.equal(f.enabled.checked, false); assert.equal(f.enabled.disabled, true); assert.equal(f.enabled.listeners.change, undefined);
+});
+
+test('preload and retention switches save independently without forcing the other choice', async () => {
+    const writes = [], f = fixture(async (channel, value) => channel === GET ? {status:'ok', config:config()} : (writes.push(value), {status:'saved'}));
+    await f.page.resume();
+    f.retained.checked = true; await f.retained.listeners.change();
+    assert.deepEqual(writes[0], config({retainPlayback:true})); assert.equal(f.enabled.checked, false);
+    f.enabled.checked = true; await f.enabled.listeners.change();
+    assert.deepEqual(writes[1], config({enabled:true,retainPlayback:true}));
+    f.retained.checked = false; await f.retained.listeners.change();
+    assert.deepEqual(writes[2], config({enabled:true,retainPlayback:false})); assert.equal(f.enabled.checked,true);
+    await f.page.pause(); await f.page.resume(); // read uses the fixture's explicit persisted false/false snapshot
+    assert.equal(f.enabled.checked,false); assert.equal(f.retained.checked,false);
+    f.page.dispose(); assert.equal(f.retained.listeners.change, undefined);
 });

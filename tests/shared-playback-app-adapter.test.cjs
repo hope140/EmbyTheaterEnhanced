@@ -557,3 +557,32 @@ test('ordinary known-version bytes survive close/reopen and a fresh probe cannot
     await assert.rejects(reopened.open(f.source('A')),/auth-required/);
     assert.equal(reopened.status().routes,0,'retained bytes cannot bypass fresh access refusal');
 });
+
+test('preload-only refuses foreground capture before Native started but still serves actual next-prefix bytes', {timeout:10000}, async t => {
+    const f=await fixture(t); f.config.retainPlayback=false;
+    let backend; const puts=[];
+    const cache=await f.cache({createStore:async options=>{assert.equal(options.retainPlayback,false);backend=await createStore(options);const put=backend.put;backend.put=(key,...args)=>{puts.push(key);return put(key,...args);};return backend;}});
+    const a=await cache.open(f.source('A')); await a.ready();
+    assert.equal((await get(a.source,0,f.data.length)).hash,hash(f.data));
+    assert.equal(backend.status().committed,0,'foreground before markPlaying is still a next role, never a background preload');
+    await a.markPlaying(); const aKey=backend.status().currentKey;
+    assert.equal((await get(a.source,0,f.data.length)).hash,hash(f.data)); assert.equal(backend.status().committed,0);
+    const b=await cache.open(f.source('B'));await b.ready();
+    const warmed=await b.prefetch({maxBytes:f.data.length,signal:new AbortController().signal});assert.equal(warmed.bytes,f.data.length);
+    assert.equal(backend.status().committed,f.data.length);await a.stop();await b.markPlaying();
+    const requests=f.requests.length;
+    assert.equal((await get(b.source,0,f.data.length)).hash,hash(f.data));assert.equal(f.requests.length,requests);
+    assert.equal(b.status().localHitBytes,f.data.length);
+    await b.stop();await cache.close();assert.equal(backend.status().committed,0);assert.equal(puts.filter(key=>key===aKey).length,0);assert(puts.some(key=>key!==aKey),'real next-prefix writes were observed');
+});
+
+test('fresh 1B source probe overlaps pending Native budget without starting a store or media body', {timeout:10000}, async t => {
+    const budget=gate();t.after(()=>budget.release());const f=await fixture(t);let creates=0;
+    const cache=await f.cache({createStore:options=>{creates++;return createStore(options);}});
+    const options=f.source();delete options.currentBytes;options.currentBytesReady=budget.wait.then(()=>262144);
+    let published=false;const opening=cache.open(options).then(value=>{published=true;return value;});
+    for(let n=0;n<1000&&!f.requests.some(row=>row.closed);n++)await delay(2);
+    assert.equal(f.requests.length,1);assert.equal(f.requests[0].range,'bytes=0-0');assert.equal(f.requests[0].closed,true);
+    assert.equal(creates,0);assert.equal(published,false);
+    budget.release();const handle=await opening;await handle.ready();assert.equal(creates,1);await handle.stop();
+});

@@ -16,7 +16,8 @@ function temporaryRoot(prefix) {
     temporaryRoots.add(root);
     return root;
 }
-function config(overrides) {return Object.assign({schema: 1, enabled: false, progressPercent: 70, preloadMB: 300}, overrides || {});}
+function config(overrides) {const value = Object.assign({schema: 1, enabled: false, progressPercent: 70, preloadMB: 300}, overrides || {});
+    return {...value, retainPlayback: value.retainPlayback ?? value.enabled};}
 
 test('normalize applies defaults and accepts enabled next-prefix settings without user resource fields', () => {
     assert.deepEqual(settings.normalize({schema: 1, enabled: false}), config());
@@ -55,11 +56,11 @@ test('store clones snapshots, atomically persists enabled choices, reopens, and 
     assert.deepEqual(settings.createStore({profileRoot}).get(), saved);
     assert.deepEqual(store.runtimeConfig(), {
         kind: 'source-aware', root: path.join(profileRoot, 'next-episode-prefix-v1'), sharedRoot: path.join(profileRoot, 'shared-playback-byte-cache-v2'),
-        progressPercent: 60, preloadMB: 100, prefetchBytes: (100 * 1024 * 1024), timeoutMs: 30000
+        progressPercent: 60, preloadMB: 100, prefetchBytes: (100 * 1024 * 1024), preloadEnabled: true, retainPlayback: true, timeoutMs: 30000
     });
     assert.equal(fs.existsSync(path.join(profileRoot, 'cache')), false);
     assert.deepEqual(Object.keys(store.runtimeConfig()).sort(),
-        ['kind', 'prefetchBytes', 'preloadMB', 'progressPercent', 'root', 'sharedRoot', 'timeoutMs']);
+        ['kind', 'prefetchBytes', 'preloadEnabled', 'preloadMB', 'progressPercent', 'retainPlayback', 'root', 'sharedRoot', 'timeoutMs']);
 });
 
 test('store refuses a symlinked profile root without touching its target', t => {
@@ -168,4 +169,30 @@ test('disable then failed close cannot hide the runtime error on another disable
         }
         assert.equal(store.get().enabled,false);assert.deepEqual(f.counts(),{closes:1,creates:0});
     } finally {unregister();}
+});
+
+for (const enabled of [false, true]) for (const retainPlayback of [false, true]) test('independent preload/retention persists '+enabled+'/'+retainPlayback, () => {
+    const profileRoot = temporaryRoot('ete-independent-range-'), store = settings.createStore({profileRoot});
+    const saved = config({enabled, retainPlayback, progressPercent: 90, preloadMB: 500});
+    assert.deepEqual(store.save(saved), saved);
+    assert.deepEqual(settings.createStore({profileRoot}).get(), saved);
+    const runtime = store.runtimeConfig();
+    if (!enabled && !retainPlayback) assert.equal(runtime, null);
+    else {assert.equal(runtime.preloadEnabled, enabled); assert.equal(runtime.retainPlayback, retainPlayback); assert.equal(runtime.preloadMB, 500);}
+});
+for (const enabled of [false, true]) test('missing retention flag migrates old combined choice without rewriting '+enabled, () => {
+    const profileRoot = temporaryRoot('ete-range-migration-'), directory = path.join(profileRoot, 'config'); fs.mkdirSync(directory);
+    const file = path.join(directory, 'playback-range.json'), original = JSON.stringify({schema: 1, enabled, progressPercent: 80, preloadMB: 100});
+    fs.writeFileSync(file, original);
+    assert.deepEqual(settings.createStore({profileRoot}).get(), config({enabled, retainPlayback: enabled, progressPercent: 80, preloadMB: 100}));
+    assert.equal(fs.readFileSync(file, 'utf8'), original);
+});
+test('malformed persisted retention cannot enable either feature', () => {
+    const profileRoot = temporaryRoot('ete-range-invalid-'), directory = path.join(profileRoot, 'config'); fs.mkdirSync(directory);
+    const file = path.join(directory, 'playback-range.json');
+    for (const retainPlayback of [null, 1, 'true', {}]) {
+        fs.writeFileSync(file, JSON.stringify({schema:1, enabled:true, retainPlayback}));
+        assert.deepEqual(settings.createStore({profileRoot}).get(), config());
+        assert.throws(() => settings.normalize({schema:1, enabled:true, retainPlayback}));
+    }
 });

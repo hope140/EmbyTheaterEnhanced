@@ -50,7 +50,7 @@ function createSourceSession({config, authorize, authorizeOrdinary, readCurrentB
         const ownsCleanup = () => cleanupPending;
         try {
             store = await storeFactory({root: config.sharedRoot, currentBytes: budget.bytes,
-                nextBytes: policy.prefetchBytes, recoveryMode: 'on-demand', existingOnly: true});
+                nextBytes: policy.prefetchBytes, retainPlayback: config.retainPlayback !== false, recoveryMode: 'on-demand', existingOnly: true});
             await store.forgetActualUnlessMedia(actualIdentity, {isCurrent: ownsCleanup});
             retainedBytes = store.status().current;
         } finally {cleanupPending = false; if (store) {try {await store.close();} catch (error) {maintenanceCloseError = error; maintenanceFailure = report(error); throw error;}}}
@@ -109,6 +109,7 @@ function createSourceSession({config, authorize, authorizeOrdinary, readCurrentB
         select: (...args) => !maintenanceFailure && owner && live(owner) ? track(owner.session.select(...args)) : Promise.resolve(null),
         unproxied: (...args) => {if (owner && live(owner)) owner.session.unproxied(...args);},
         preload(context, helper, generationId) {
+            if (config.preloadEnabled === false) return Promise.resolve({state: 'disabled'});
             const record = owner, ticket = nextEpoch;
             return track((async () => {
                 if (!record || !live(record)) return {state: 'cancelled'};
@@ -122,10 +123,10 @@ function createSourceSession({config, authorize, authorizeOrdinary, readCurrentB
         status() {
             const status = active ? active.session.status() : {enabled: true, ...policy, kind: 'source-aware', timeoutMs: config.timeoutMs,
                 maxBytes: policy.prefetchBytes, current: {route: 'idle', state: 'idle', bytes: 0}, next: {state: 'idle'}, diskBytes: null, sharedRetainedBytes: null};
-            if (active && active.kind === 'next-prefix') return {...status, routing: 'source-aware',
+            if (active && active.kind === 'next-prefix') return {...status, ...(config.preloadEnabled === false ? {preloadEnabled: false} : {}), routing: 'source-aware',
                 diskBytes: retainedBytes === null ? null : status.diskBytes + retainedBytes, legacyDiskBytes: status.diskBytes,
                 sharedRetainedBytes: retainedBytes, ...(maintenanceFailure || owner && owner.failure ? {next: {...status.next, state: 'unavailable', diagnostic: maintenanceFailure || owner.failure}} : {})};
-            return {...status, routing: 'source-aware', ...(maintenanceFailure ? {next: {...status.next, state: 'unavailable', diagnostic: maintenanceFailure}} : {})};
+            return {...status, ...(config.preloadEnabled === false ? {preloadEnabled: false} : {}), routing: 'source-aware', ...(maintenanceFailure ? {next: {...status.next, state: 'unavailable', diagnostic: maintenanceFailure}} : {})};
         },
         close() {
             if (closing) return closing;

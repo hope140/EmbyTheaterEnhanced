@@ -46,8 +46,8 @@ async function waitDone(promise, signal) {
   try {return await Promise.race([promise, aborted]);}
   finally {signal.removeEventListener('abort', stop);}
 }
-async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, mediaBufferBytes = 8 * 1024 * 1024, cacheEnabled = true, requestPolicy = 'sparse', onOriginChunk}) {
-  if (resolveAccess !== undefined && typeof resolveAccess !== 'function' || onOriginChunk !== undefined && typeof onOriginChunk !== 'function' || !['sparse', 'coherent'].includes(requestPolicy) || !store || typeof authorize !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 30000 ||
+async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, mediaBufferBytes = 8 * 1024 * 1024, cacheEnabled = true, cacheForeground = true, requestPolicy = 'sparse', onOriginChunk}) {
+  if (typeof cacheForeground !== 'boolean' || resolveAccess !== undefined && typeof resolveAccess !== 'function' || onOriginChunk !== undefined && typeof onOriginChunk !== 'function' || !['sparse', 'coherent'].includes(requestPolicy) || !store || typeof authorize !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 30000 ||
       !Number.isSafeInteger(mediaBufferBytes) || mediaBufferBytes < BLOCK) throw problem('configuration');
   const routes = new Map(), writes = new Set(), controls = new Set(), jobs = new Set(), openings = new Set(), pendingKeyRecords = new Set();
   const stats = {originRequests: 0, probeRequests: 0, attemptedBytes: 0, receivedBytes: 0, deliveredBytes: 0,
@@ -133,6 +133,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     return work;
   }
   async function fetchRange(record, start, length, {kind, signal, onData, save = true, probe = false}) {
+    save = save && (kind !== 'foreground' || cacheForeground);
     await refresh(record);
     const ticket = await acquire(kind, signal), combined = AbortSignal.any([signal, ticket.controller.signal, record.controller.signal]);
     let request, response, requestClosed, timer, capture, finalRequiredWrite, count = 0, blockOffset = 0, blockPosition = 0, blockCapacity = 0;

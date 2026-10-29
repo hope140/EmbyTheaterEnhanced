@@ -730,3 +730,27 @@ test('retired queued actual returns false without clearing the following preload
     assert.equal(await store.put(nextKey, 0, Buffer.from('preload')), true);
     assert.deepEqual(await store.read(nextKey, 0, 7), Buffer.from('preload'));
 });
+
+for (const retainPlayback of [false, true]) test('retention '+retainPlayback+' keeps preloaded bytes readable after actual promotion and controls writes/reopen', async t => {
+    const {root, store} = await fixture(t, {retainPlayback});
+    const key = await store.open(identity(), metadata(), 'next');
+    assert.equal(await store.put(key, 0, Buffer.from('prefix')), true);
+    assert.equal(await store.actual(key), true);
+    assert.deepEqual(await store.read(key, 0, 6), Buffer.from('prefix'));
+    assert.equal(await store.put(key, 6, Buffer.from('current')), retainPlayback);
+    await store.close();
+    const reopened = await createStore({root, currentBytes:64, nextBytes:64, retainPlayback});
+    try {
+        assert.equal(reopened.status().committed, retainPlayback ? 13 : 0);
+        if (retainPlayback) assert.deepEqual(await reopened.read(key, 0, 13), Buffer.from('prefixcurrent'));
+        else assert.equal(await reopened.read(key, 0, 6), null);
+    } finally {await reopened.close();}
+});
+test('disabling retention drops previously retained actual bytes during recovery', async t => {
+    const {root, store} = await fixture(t);
+    const key = await store.open(identity(), metadata(), 'current'); await store.actual(key);
+    assert.equal(await store.put(key, 0, Buffer.from('old-current')), true); await store.close();
+    const reopened = await createStore({root, currentBytes:64, nextBytes:64, retainPlayback:false});
+    try {assert.equal(reopened.status().committed,0); assert.equal(await reopened.read(key,0,11),null);}
+    finally {await reopened.close();}
+});

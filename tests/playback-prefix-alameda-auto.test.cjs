@@ -334,7 +334,7 @@ async function automaticCase(t, scenario) {
         const selectors = ['form', ...[...html.matchAll(/class="([^"]+)"/g)].map(match => '.' + match[1].split(/\s+/)[0])];
         const nodes = Object.fromEntries(selectors.map(name => [name, new Node()]));
         const view = new Node(); view.getAttribute = () => null;
-        view.querySelector = name => nodes[name] || null; view.querySelectorAll = () => [nodes['.chkRangeEnabled'], nodes['.selectRangeProgress'], nodes['.selectRangePreload']];
+        view.querySelector = name => nodes[name] || null; view.querySelectorAll = () => [nodes['.chkRangeEnabled'], nodes['.chkRetainPlayback'], nodes['.selectRangeProgress'], nodes['.selectRangePreload']];
         const page = new Controller(view); await page.onResume({refresh: true});
         await waitFor(() => !nodes['.chkRangeEnabled'].disabled, details);
         assert.equal(nodes['.selectRangeProgress'].value, '70'); assert.equal(nodes['.selectRangePreload'].value, '300'); assert.equal(nodes['.chkRangeEnabled'].checked, false);
@@ -344,7 +344,7 @@ async function automaticCase(t, scenario) {
         await waitFor(() => trace.some(row => row.type === 'range-settings-saved' && row.status === 'saved'), details);
         const saved = trace.find(row => row.type === 'range-settings-saved');
         assert.equal(saved.applyMode,'next-play'); assert.equal(saved.applyError,null);
-        assert.deepEqual(preferences.get(), {schema: 1, enabled: true, progressPercent: 70, preloadMB: 300});
+        assert.deepEqual(preferences.get(), {schema: 1, enabled: true, retainPlayback: false, progressPercent: 70, preloadMB: 300});
         assert.equal(service.rangeStatus().enabled, false); assert.equal(clients[0].currentGenerationId, before, 'Save does not retire the active native generation'); assert.equal(clients.length, 1); assert.equal(clients[0].exited, false);
         const manager = (await window.require(['playbackManager']))[0];
         await manager.stop(); record('manual-next-play');
