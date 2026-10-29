@@ -200,7 +200,7 @@ test('API transport uses only official hosts, forbids redirects and never retrie
     assert.equal(calls[0].options.redirect, 'error');
 });
 test('workflow is manual/main-only and grants write permission only after a successful build', () => {
-    const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/release.yml'), 'utf8');
+    const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/release.yml'), 'utf8').replace(/\r\n/g, '\n');
     assert.match(workflow, /on:\n  workflow_dispatch:/);
     assert.doesNotMatch(workflow, /^  (?:push|pull_request|pull_request_target|workflow_run|schedule):/m);
     assert.match(workflow, /github.ref == 'refs\/heads\/main'/);
