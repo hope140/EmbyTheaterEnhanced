@@ -3,6 +3,12 @@ name: Manual verified release
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Verify runs read-only checks; publish explicitly creates a new Release
+        required: true
+        type: choice
+        default: verify
+        options: [verify, publish]
       tag:
         description: Existing version tag (vX.Y.Z); this workflow never creates or moves tags
         required: true
@@ -45,6 +51,8 @@ jobs:
       contents: read
       actions: read
     outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      existing_release_id: ${{ steps.plan.outputs.existing_release_id }}
       source: ${{ steps.plan.outputs.source }}
       tag: ${{ steps.plan.outputs.tag }}
       version: ${{ steps.plan.outputs.version }}
@@ -68,6 +76,7 @@ jobs:
         id: plan
         env:
           GH_TOKEN: ${{ github.token }}
+          ETE_RELEASE_MODE: ${{ inputs.mode }}
           ETE_RELEASE_TAG: ${{ inputs.tag }}
           ETE_RELEASE_SOURCE: ${{ inputs.source_sha }}
           ETE_RELEASE_CHANNEL: ${{ inputs.channel }}
@@ -114,7 +123,44 @@ jobs:
           compression-level: 0
           include-hidden-files: false
 
+  verify:
+    if: inputs.mode == 'verify'
+    needs: [preflight, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+      - name: Download only this run's verified package artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ETE_RELEASE_ARTIFACT: ete-release-${{ needs.preflight.outputs.source }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$ETE_RELEASE_ARTIFACT" --dir release-artifact
+      - name: Verify files and remote state without creating or changing a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ETE_RELEASE_MODE: verify
+          ETE_RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
+          ETE_RELEASE_SOURCE: ${{ needs.preflight.outputs.source }}
+          ETE_RELEASE_CHANNEL: ${{ needs.preflight.outputs.channel }}
+          ETE_RELEASE_LATEST_TAG: ${{ needs.preflight.outputs.latest_tag }}
+          ETE_RELEASE_LATEST_ID: ${{ needs.preflight.outputs.latest_id }}
+          ETE_RELEASE_EXISTING_ID: ${{ needs.preflight.outputs.existing_release_id }}
+          ETE_RELEASE_NOTES_SHA256: ${{ needs.preflight.outputs.notes_sha256 }}
+          ETE_RELEASE_BUILD_RUN: ${{ needs.preflight.outputs.build_run }}
+          ETE_RELEASE_BUILD_ATTEMPT: ${{ needs.preflight.outputs.build_attempt }}
+        run: node tools/actions-release.cjs verify release-artifact
+
   publish:
+    if: inputs.mode == 'publish'
     needs: [preflight, build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -139,6 +185,7 @@ jobs:
       - name: Verify five files, create a new draft, upload and publish
         env:
           GH_TOKEN: ${{ github.token }}
+          ETE_RELEASE_MODE: publish
           ETE_RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
           ETE_RELEASE_SOURCE: ${{ needs.preflight.outputs.source }}
           ETE_RELEASE_CHANNEL: ${{ needs.preflight.outputs.channel }}

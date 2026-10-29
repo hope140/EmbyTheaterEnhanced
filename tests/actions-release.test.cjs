@@ -9,7 +9,7 @@ const release = require('../tools/actions-release.cjs');
 const hash = data => crypto.createHash('sha256').update(data).digest('hex');
 const source = 'a'.repeat(40);
 const notes = Buffer.from('# v0.4.6 测试版\n\nSynthetic notes.\n');
-const plan = {tag: 'v0.4.6', version: '0.4.6', source, channel: 'testing', latest_tag: 'v0.4.0', latest_id: '40', notes_sha256: hash(notes)};
+const plan = {mode: 'publish', tag: 'v0.4.6', version: '0.4.6', source, channel: 'testing', latest_tag: 'v0.4.0', latest_id: '40', notes_sha256: hash(notes)};
 const originalLatest = {id: 40, tag_name: 'v0.4.0', draft: false, prerelease: false};
 
 function fakeApi(options = {}) {
@@ -24,6 +24,7 @@ function fakeApi(options = {}) {
             {name: `ete-test-win-x64-${options.tagSource || source}-123-1`, expired: !!options.expired}
         ]};
         if (resource.startsWith('/git/ref/tags/')) return {object: {type: 'commit', sha: options.tagSource || source}};
+        if (resource.startsWith('/releases/tags/')) return options.existing?.find(row => row.tag_name === plan.tag) || null;
         if (resource === '/releases/latest') return latest;
         if (resource.startsWith('/releases?')) return [...(options.existing || []), ...(draft ? [draft] : [])];
         if (resource === '/releases' && method === 'POST') return draft = {...data, id: 100, assets};
@@ -74,7 +75,9 @@ function artifact(t, value = plan, text = notes) {
 test('manual inputs reject unsafe tags, nonexact source and unknown channels', () => {
     const env = {ETE_RELEASE_TAG: plan.tag, ETE_RELEASE_SOURCE: source, ETE_RELEASE_CHANNEL: 'testing', ETE_RELEASE_LATEST_TAG: 'v0.4.0'};
     assert.equal(release.inputs(env).version, '0.4.6');
-    for (const extra of [{ETE_RELEASE_TAG: 'v0.4.6;echo bad'}, {ETE_RELEASE_SOURCE: 'main'}, {ETE_RELEASE_CHANNEL: 'other'}, {ETE_RELEASE_LATEST_TAG: 'latest'}]) {
+    assert.equal(release.inputs(env).mode, 'verify');
+    assert.equal(release.inputs({...env, ETE_RELEASE_MODE: 'publish'}).mode, 'publish');
+    for (const extra of [{ETE_RELEASE_TAG: 'v0.4.6;echo bad'}, {ETE_RELEASE_SOURCE: 'main'}, {ETE_RELEASE_CHANNEL: 'other'}, {ETE_RELEASE_LATEST_TAG: 'latest'}, {ETE_RELEASE_MODE: 'dry-run-ish'}]) {
         assert.throws(() => release.inputs({...env, ...extra}), /invalid/);
     }
     assert.equal(release.newer('v0.4.10', 'v0.4.9'), true);
@@ -132,6 +135,55 @@ test('existing draft and published releases are both protected', async () => {
 });
 test('Latest identity drift is refused even if the tag text stays the same', async () => {
     const f = fakeApi(); await assert.rejects(release.checkRemote(f.api, {...plan, latest_id: '39'}), /latest-changed/);
+});
+test('verification accepts an existing published release and checks all five digests without writes', async t => {
+    const files = artifact(t), rows = files.rows();
+    const existing = {id:50, tag_name:plan.tag, draft:false, prerelease:true,
+        name:plan.tag + ' 测试版', body:notes.toString(),
+        assets:rows.map(row => ({name:row.name,size:row.size,digest:'sha256:'+row.sha256,state:'uploaded'}))};
+    const f = fakeApi({existing:[existing]});
+    const value = await release.preflight({...plan,mode:'verify'}, f.api, sourceFile);
+    assert.equal(value.existing_release_id, '50');
+    const result = await release.verifyPackage(value, rows, f.api);
+    assert.equal(result.status, 'passed'); assert.equal(result.uploadVerified, false);
+    assert.equal(result.files.length, 5); assert(f.calls.every(call => call.method === 'GET'));
+    await assert.rejects(release.publish(value, rows, f.api), /explicit-publish-mode-required/);
+    assert(f.calls.every(call => call.method === 'GET'));
+});
+test('verification also accepts an unpublished target and retains explicit old-build reuse', async t => {
+    const f = fakeApi(), files = artifact(t);
+    const value = await release.preflight({...plan,mode:'verify',build_run:'123'}, f.api, name => sourceFile(name, {
+        'tools/ci-windows-test-package.ps1':'param([switch]$ReleasePackage)'
+    }));
+    assert.equal(value.existing_release_id, '0'); assert.equal(value.build_run, '123');
+    assert.equal((await release.verifyPackage(value, files.rows(), f.api)).status, 'passed');
+    assert(f.calls.every(call => call.method === 'GET'));
+});
+test('verification stops on a draft, replaced release, incorrect metadata or digest', async t => {
+    const files = artifact(t), rows = files.rows();
+    const existing = {id:50,tag_name:plan.tag,draft:false,prerelease:true,
+        name:plan.tag+' 测试版',body:notes.toString(),
+        assets:rows.map(row => ({name:row.name,size:row.size,digest:'sha256:'+row.sha256,state:'uploaded'}))};
+    for (const [patch,code] of [[{draft:true},/invalid-verification-release/],
+        [{id:51},/verification-release-changed/], [{body:'changed'},/verification-release-metadata-mismatch/],
+        [{assets:[]},/release-asset-count-mismatch/]]) {
+        const f = fakeApi({existing:[{...existing,...patch}]});
+        await assert.rejects(release.verifyPackage({...plan,mode:'verify',existing_release_id:'50'}, rows, f.api), code);
+        assert(f.calls.every(call => call.method === 'GET'));
+    }
+});
+test('verification preserves source and Latest guards and the API rejects every write verb', async t => {
+    const rows = artifact(t).rows();
+    for (const options of [{tagSource:'b'.repeat(40)}]) {
+        const f = fakeApi(options);
+        await assert.rejects(release.verifyPackage({...plan,mode:'verify',existing_release_id:'0'}, rows, f.api), /tag-source-changed/);
+        assert(f.calls.every(call => call.method === 'GET'));
+    }
+    const f = fakeApi();
+    await assert.rejects(release.verifyPackage({...plan,mode:'verify',existing_release_id:'0',latest_id:'39'}, rows, f.api), /latest-changed/);
+    const before = f.calls.length, api = release.readOnlyApi(f.api);
+    for (const verb of ['POST','PATCH','PUT','DELETE']) assert.throws(() => api(verb,'/releases'), /verification-write-forbidden/);
+    assert.equal(f.calls.length, before);
 });
 test('five-file verification binds provenance, checksums, notes and this run; evidence is not published', t => {
     const f = artifact(t); const rows = f.rows();
@@ -208,6 +260,14 @@ test('workflow is manual/main-only and grants write permission only after a succ
     const [beforePublish, publish] = workflow.split('\n  publish:\n');
     assert.doesNotMatch(beforePublish, /contents: write|actions: write|id-token: write/);
     assert.match(publish, /needs: \[preflight, build\]/);
+    assert.match(workflow, /mode:\n[\s\S]*?default: verify\n        options: \[verify, publish\]/);
+    assert.match(publish, /if: inputs.mode == 'publish'/);
+    const verify = beforePublish.split('\n  verify:\n')[1];
+    assert.match(verify, /if: inputs.mode == 'verify'/);
+    assert.match(verify, /contents: read\n      actions: read/);
+    assert.match(verify, /ETE_RELEASE_MODE: verify/);
+    assert.match(verify, /node tools\/actions-release.cjs verify release-artifact/);
+    assert.match(publish, /ETE_RELEASE_MODE: publish/);
     assert.match(publish, /contents: write\n      actions: read/);
     assert.match(publish, /ref: \$\{\{ github.sha \}\}/);
     assert.doesNotMatch(workflow, /secrets\.|PAT|--clobber|git push|git tag|gh release/);

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-29 — Actions 只读演练本地候选
+
+基于已部署 main `2d0acf3` 增加默认 verify／显式 publish 模式。演练复用原预检、构建或精确旧 run 的 artifact 及五附件校验，允许只读核验已有公开版本；发布对重复 Release 的保护保持。新增 verify 作业只申请 contents:read／actions:read，演练跳过唯一写权限作业，脚本 GET 限制和显式发布守卫提供第二层约束。不增加 PAT、持久权限或仓库安全设置。
+
+相关合成回归 33/33、Node 语法及 diff 检查通过。本轮仅本地分支，未推送、合入或派发 Actions；没有重新下载被拒的 artifact。真实 runner 入口与作业串联尚未验证，演练也不能证明真实上传或最终公开。用法与 v0.4.5 既有构建复用条件见[流程合同](ACTIONS_RELEASE.md#只读演练)。
+
 ## 2026-10-29 — 手动 Actions 发布流程启用准备
 
 新增 main 手动触发的 testing／stable 发布入口，沿原 ETE 构建；构建只读，只有发布作业获 contents:write，使用作业内 GITHUB_TOKEN、不新增 PAT。固定既有 Tag／source，核验五附件，保护已有 Release 与正式 Latest，并为旧 Tag 提供显式的同源码成功发行构建复用途径。用户已允许公开部署该流程，相关合成回归 29/29 通过，远端启用提交和 CI 按实际结果记录；部署不触发发布，不修改仓库安全设置。本轮上传拒绝仍等待相关权限审查，不因流程存在而改用其它执行端绕过。v0.4.5 兼容条件及权限明细见[流程合同](ACTIONS_RELEASE.md)。

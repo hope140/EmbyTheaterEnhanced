@@ -20,7 +20,9 @@ function inputs(env) {
     requireThat(latest_tag === 'NONE' || TAG.test(latest_tag || ''), 'invalid-expected-latest');
     const build_run = env.ETE_RELEASE_BUILD_RUN || '0';
     requireThat(/^(0|[1-9]\d*)$/.test(build_run), 'invalid-build-run');
-    return {tag, source, channel, version: tag.slice(1), latest_tag, build_run};
+    const mode = env.ETE_RELEASE_MODE || 'verify';
+    requireThat(['verify', 'publish'].includes(mode), 'invalid-release-mode');
+    return {tag, source, channel, version: tag.slice(1), latest_tag, build_run, mode};
 }
 function newer(tag, prior) {
     if (prior === 'NONE') return true;
@@ -59,6 +61,28 @@ async function checkRemote(api, plan, allowedId) {
         (plan.latest_id === undefined || latest.latest_id === plan.latest_id), 'latest-changed');
     return latest;
 }
+function readOnlyApi(api) {
+    return (method, ...args) => {
+        requireThat(method === 'GET', 'verification-write-forbidden');
+        return api(method, ...args);
+    };
+}
+async function verificationRemote(api, plan, rows) {
+    api = readOnlyApi(api);
+    const existing = await api('GET', `/releases/tags/${plan.tag}`, undefined, {allow404: true});
+    if (existing) requireThat(Number.isSafeInteger(existing.id) && existing.id > 0 &&
+        existing.draft === false && existing.tag_name === plan.tag, 'invalid-verification-release');
+    const existing_release_id = String(existing?.id || 0);
+    requireThat(plan.existing_release_id === undefined || plan.existing_release_id === existing_release_id, 'verification-release-changed');
+    const latest = await checkRemote(api, plan, existing?.id);
+    if (existing && rows) {
+        verifyAssets(existing, rows);
+        requireThat(existing.name === `${plan.tag} ${plan.channel === 'testing' ? '测试版' : '正式版'}` &&
+            existing.prerelease === (plan.channel === 'testing') &&
+            existing.body === rows.find(row => row.name === 'RELEASE_NOTES.md').bytes.toString('utf8'), 'verification-release-metadata-mismatch');
+    }
+    return {...latest, existing_release_id};
+}
 async function verifiedBuild(api, plan) {
     requireThat(/^[1-9]\d*$/.test(plan.build_run || ''), 'invalid-build-run');
     const run = await api('GET', `/actions/runs/${plan.build_run}`);
@@ -73,8 +97,9 @@ async function verifiedBuild(api, plan) {
     return {build_attempt: String(run.run_attempt), build_artifact: artifact};
 }
 async function preflight(plan, api, readSource) {
-    requireThat(newer(plan.tag, plan.latest_tag), 'version-must-exceed-latest');
-    const latest = await checkRemote(api, plan);
+    requireThat(['verify', 'publish'].includes(plan.mode), 'invalid-release-mode');
+    if (plan.mode === 'publish') requireThat(newer(plan.tag, plan.latest_tag), 'version-must-exceed-latest');
+    const latest = plan.mode === 'verify' ? await verificationRemote(api, plan) : await checkRemote(api, plan);
     const pkg = JSON.parse(readSource('package.json'));
     const lock = JSON.parse(readSource('package-lock.json'));
     requireThat(pkg.version === plan.version && lock.version === plan.version && lock.packages?.['']?.version === plan.version, 'source-version-mismatch');
@@ -125,6 +150,7 @@ function verifyAssets(release, rows) {
     }
 }
 async function publish(plan, rows, api, onDraft = () => {}) {
+    requireThat(plan.mode === 'publish', 'explicit-publish-mode-required');
     await checkRemote(api, plan);
     const testing = plan.channel === 'testing';
     const name = `${plan.tag} ${testing ? '测试版' : '正式版'}`;
@@ -148,6 +174,12 @@ async function publish(plan, rows, api, onDraft = () => {}) {
     return {id: result.id, tag: plan.tag, source: plan.source, channel: plan.channel,
         url: `https://github.com/${REPO}/releases/tag/${plan.tag}`, files: rows.map(({name: file, size, sha256: digest}) => ({name: file, size, sha256: digest}))};
 }
+async function verifyPackage(plan, rows, api) {
+    requireThat(plan.mode === 'verify' && /^(0|[1-9]\d*)$/.test(plan.existing_release_id || ''), 'verification-plan-required');
+    const remote = await verificationRemote(api, plan, rows);
+    return {mode: 'verify', status: 'passed', tag: plan.tag, source: plan.source, ...remote,
+        uploadVerified: false, files: rows.map(({name, size, sha256}) => ({name, size, sha256}))};
+}
 function githubApi(token, fetcher = fetch) {
     requireThat(typeof token === 'string' && token.length > 0, 'github-token-required');
     return async (method, resource, data, options = {}) => {
@@ -167,7 +199,9 @@ function githubApi(token, fetcher = fetch) {
 async function main(command, directory, env = process.env) {
     requireThat(env.GITHUB_ACTIONS === 'true' && env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
         env.GITHUB_REF === 'refs/heads/main' && env.GITHUB_REPOSITORY === REPO && SHA.test(env.GITHUB_SHA || ''), 'manual-main-workflow-required');
-    const plan = inputs(env), api = githubApi(env.GH_TOKEN);
+    const plan = inputs(env);
+    requireThat(command === 'preflight' || command === plan.mode, 'release-mode-command-mismatch');
+    const transport = githubApi(env.GH_TOKEN), api = plan.mode === 'verify' ? readOnlyApi(transport) : transport;
     if (command === 'preflight') {
         const git = args => cp.execFileSync('git', args);
         requireThat(git(['rev-parse', 'HEAD']).toString().trim() === env.GITHUB_SHA, 'control-checkout-mismatch');
@@ -176,9 +210,9 @@ async function main(command, directory, env = process.env) {
         for (const [key, value] of Object.entries(result)) fs.appendFileSync(env.GITHUB_OUTPUT, `${key}=${value}\n`);
         console.log(JSON.stringify(result));
     } else {
-        requireThat(command === 'publish', 'invalid-release-command');
         plan.latest_id = env.ETE_RELEASE_LATEST_ID;
         plan.notes_sha256 = env.ETE_RELEASE_NOTES_SHA256;
+        plan.existing_release_id = env.ETE_RELEASE_EXISTING_ID;
         requireThat(/^(0|[1-9]\d*)$/.test(plan.latest_id || ''), 'invalid-latest-id');
         let buildRun = env.GITHUB_RUN_ID, buildAttempt = env.GITHUB_RUN_ATTEMPT;
         if (plan.build_run !== '0') {
@@ -187,11 +221,12 @@ async function main(command, directory, env = process.env) {
             buildRun = plan.build_run; buildAttempt = build.build_attempt;
         }
         const rows = verifyFiles(directory, plan, buildRun, buildAttempt);
-        const result = await publish(plan, rows, api, id => console.log(`Created draft release ${id}; failures leave it for explicit review.`));
+        const result = command === 'verify' ? await verifyPackage(plan, rows, api) :
+            await publish(plan, rows, api, id => console.log(`Created draft release ${id}; failures leave it for explicit review.`));
         console.log(JSON.stringify(result));
     }
 }
-module.exports = {inputs, newer, preflight, verifyFiles, verifyAssets, publish, githubApi, resolveTag, checkRemote, verifiedBuild};
+module.exports = {inputs, newer, preflight, verifyFiles, verifyAssets, publish, verifyPackage, readOnlyApi, githubApi, resolveTag, checkRemote, verifiedBuild};
 if (require.main === module) main(process.argv[2], process.argv[3]).catch(error => {
     // Do not print response bodies, request URLs, authentication or raw errors.
     const code = /^[a-z][a-z0-9-]+$/.test(error.message || '') ? error.message : 'release-operation-failed';
