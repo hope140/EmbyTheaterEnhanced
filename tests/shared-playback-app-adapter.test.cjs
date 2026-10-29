@@ -373,12 +373,12 @@ test('deferred close joins resource release and preserves an actual cleanup fail
 });
 
 
-test('fresh-manager restored route readies metadata before its first foreground read without prefetch', async t => {
+test('fresh-manager restored route readies metadata before controlled fast delivery without prefetch', async t => {
     const f = await fixture(t), seeded = await f.cache();
     const first = await seeded.open(f.source('B'));
     await first.prefetch({maxBytes:f.data.length,signal:new AbortController().signal});
     await first.markPlaying(); await seeded.close();
-    const blocked = gate(); let backend;
+    const blocked = gate(); let backend, originalRead;
     const reopened = await f.cache({createStore:async options => {
         await blocked.wait; backend=await createStore(options); return backend;
     }});
@@ -390,10 +390,25 @@ test('fresh-manager restored route readies metadata before its first foreground 
         await new Promise(resolve=>setImmediate(resolve)); assert.equal(ready,false);
         blocked.release(); await preparing;
         assert.equal(reopened.status().currentBytes,f.data.length);
+        // Recovery/readiness is this case's contract, not a filesystem latency
+        // guarantee. Verify real recovered disk bytes outside the proxy deadline,
+        // then deliver exactly those bytes under a controlled fast read. Separate
+        // flow tests keep the unchanged 30ms timeout/fallback/late-read contract.
+        const recoveredKey = backend.status().currentKey;
+        assert.equal(typeof recoveredKey,'string');
+        const recovered = await backend.read(recoveredKey,0,f.data.length);
+        assert(Buffer.isBuffer(recovered)); assert.equal(hash(recovered),hash(f.data));
+        let controlledReads = 0; originalRead = backend.read;
+        backend.read = async (key,offset,length) => {
+            assert.equal(key,recoveredKey);
+            assert(Number.isSafeInteger(offset) && Number.isSafeInteger(length) && offset >= 0 && length > 0 && offset + length <= recovered.length);
+            controlledReads++; return recovered.subarray(offset,offset+length);
+        };
         assert.equal((await get(handle.source,0,f.data.length)).hash,hash(f.data));
+        assert.equal(controlledReads,1,'foreground must read the restored key');
         assert.equal(f.requests.length-before,1,'only fresh identity probe reaches the origin');
         assert.equal(f.requests.at(-1).range,'bytes=0-0');
-    } finally {blocked.release();}
+    } finally {if (originalRead) backend.read=originalRead; blocked.release();}
 });
 
 test('cancelled metadata readiness does not wait for blocked recovery or dispatch late hits', async t => {
