@@ -279,10 +279,11 @@ async function createCache(config, dependencies = {}) {
                         guard(record, combined);
                         if (!coverage || !Number.isSafeInteger(coverage.bytes) || coverage.bytes < 0 || coverage.bytes > record.total) throw error('cache-unavailable');
                         record.bytes = Math.min(coverage.bytes, args.maxBytes, policy.prefetchBytes, record.total);
+                        const preparedMetadata = typeof route.preparedMetadata === 'function' ? route.preparedMetadata() : null;
                         if (config.preparedHandoff === true && record.role === 'next' && record.bytes > 0 &&
-                            require('../playback-range-identity').strongTag(record.grant.metadata.etag)) {
+                            preparedMetadata?.total === record.total && require('../playback-range-identity').strongTag(preparedMetadata.etag)) {
                             prepared.clear(); prepared.set(record.signature, {origin: record.grant.origin,
-                                userAgent: record.grant.userAgent, metadata: {...record.grant.metadata}});
+                                userAgent: record.grant.userAgent, metadata: {...preparedMetadata}});
                         }
                         if (typeof args.onProgress === 'function') {
                             try {args.onProgress({bytes: record.bytes, targetBytes: Math.min(args.maxBytes, policy.prefetchBytes, record.total)});} catch (_) {}

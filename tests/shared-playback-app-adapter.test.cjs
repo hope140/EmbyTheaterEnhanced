@@ -43,7 +43,8 @@ async function fixture(t, {etag = '"owned-v1"', probeGate, ordinary = false} = {
         const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
         if (!range) {res.writeHead(416); res.end(); return;}
         const start = Number(range[1]), end = Number(range[2]);
-        if (mode === 'changed' && req.headers['if-match']) {res.writeHead(412); res.end(); return;}
+        if (mode === 'changed' && req.headers['if-match'] && req.headers['if-match'] !== '"owned-v2"') {res.writeHead(412); res.end(); return;}
+        if (mode === 'full-response') {res.writeHead(200, {'Content-Length': data.length});res.end(data);return;}
         const headers = {'Content-Range': `bytes ${start}-${end}/${data.length + (mode === 'total' ? 1 : 0)}`,
             'Content-Length': end - start + 1, 'Set-Cookie': 'owned-probe-cookie=must-not-replay'};
         if (etag !== null) headers.ETag = mode === 'changed' ? '"owned-v2"' : etag;
@@ -51,9 +52,10 @@ async function fixture(t, {etag = '"owned-v1"', probeGate, ordinary = false} = {
             if (res.destroyed) return;
             res.writeHead(206, headers);
             if (req.url.includes('hold=1') && end > start) {res.write(data.subarray(start, start + 1)); return;}
-            res.end(mode === 'short' ? Buffer.alloc(0) : mode === 'changed' ? Buffer.alloc(end - start + 1,0x59) : data.subarray(start, end + 1));
+            const body = () => {if (!res.destroyed) res.end(mode === 'short' ? Buffer.alloc(0) : mode === 'changed' ? Buffer.alloc(end - start + 1,0x59) : data.subarray(start, end + 1));};
+            if (mode === 'probe-hangs') {res.flushHeaders();const timer=setTimeout(body,80);res.once('close',()=>clearTimeout(timer));}else body();
         };
-        if (mode === 'hold-first-byte' && start === 0 && end === 0) heldFirstBytes.push(send);
+        if (['hold-first-byte','probe-hangs'].includes(mode) && start === 0 && end === 0) heldFirstBytes.push(send);
         else if (probeGate && start === 0 && end === 0) probeGate.then(send);
         else send();
     });
@@ -589,25 +591,31 @@ test('fresh 1B source probe overlaps pending Native budget without starting a st
     budget.release();const handle=await opening;await handle.ready();assert.equal(creates,1);await handle.stop();
 });
 
-for(const preloadBytes of [32768,65536])test('prepared '+preloadBytes+'-byte prefix selects without HTTP and validates a source delayed beyond50ms before cache delivery', {timeout:10000}, async t=>{
+for(const preloadBytes of [32768,65536])test('prepared '+preloadBytes+'-byte prefix uses ordinary Range while0-0would hang', {timeout:10000}, async t=>{
     const f=await fixture(t,{ordinary:true});f.config.preparedHandoff=true;f.config.retainPlayback=false;let backend,reads=0;
     const cache=await f.cache({createStore:async options=>{backend=await createStore(options);const read=backend.read;backend.read=(...args)=>{reads++;return read(...args);};return backend;}});
     const old=f.source('B'),next=await cache.open(old);await next.ready();await next.prefetch({maxBytes:preloadBytes,signal:new AbortController().signal});await next.stop();old.owner.abort();
-    const before=f.requests.length;f.mode('hold-first-byte');
+    const before=f.requests.length;f.mode('probe-hangs');
     const current=await cache.open({...f.source('B'),role:'current'});await current.ready();assert.equal(f.requests.length,before,'selection did not repeat the expensive probe');assert.equal(current.status().preparedHandoff,true);
     const first=get(current.source,0,f.data.length);first.catch(()=>{});
-    for(let n=0;n<1000&&!f.heldCount();n++)await delay(2);assert.equal(f.heldCount(),1);await delay(80);assert.equal(reads,0,'even parallel GETs cannot read cache before the complete fresh validation');
-    f.releaseFirstBytes();const result=await first;assert.equal(result.status,206);assert.equal(result.hash,hash(f.data));
-    assert.equal(f.requests.length,before+(preloadBytes===f.data.length?1:2));assert.equal(f.requests[before].range,'bytes=0-0');assert.equal(f.requests[before].match,'"owned-v1"');
+    const result=await first;assert.equal(f.heldCount(),0,'no separate0-0 was attempted');assert.equal(result.status,206);assert.equal(result.hash,hash(f.data));
+    assert.equal(f.requests.length,before+(preloadBytes===f.data.length?1:2));assert.equal(f.requests[before].range,'bytes=0-'+(f.data.length-1));assert.equal(f.requests[before].match,undefined);assert(f.requests.slice(before).every(row=>row.range!=='bytes=0-0'));
     assert.equal(current.status().localHitBytes,preloadBytes);assert.equal(current.status().preparedValidation,'ready');assert.equal(await current.markPlaying(),true);await current.stop();await cache.close();assert.equal(backend.status().committed,0,'preload-only never forces last-play retention');
 });
-test('prepared version change redirects the HTTP client to authorized current bytes and never serves old cache', {timeout:10000},async t=>{
+test('prepared version change streams the same authorized response with no old cache or redirect', {timeout:10000},async t=>{
     const f=await fixture(t,{ordinary:true});f.config.preparedHandoff=true;const cache=await f.cache();
     const next=await cache.open(f.source('B'));await next.prefetch({maxBytes:f.data.length,signal:new AbortController().signal});await next.stop();f.mode('changed');
     const current=await cache.open({...f.source('B'),role:'current'});await current.ready();
-    // This is a real HTTP client's redirect behavior, not Native/mpv evidence.
+    const before=f.requests.length;
     const response=await fetch(current.source,{headers:{Range:'bytes=0-'+(f.data.length-1)}});
-    assert.equal(response.status,206);assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.alloc(f.data.length,0x59));
+    assert.equal(response.status,206);assert.equal(response.redirected,false);assert.deepEqual(Buffer.from(await response.arrayBuffer()),Buffer.alloc(f.data.length,0x59));assert.equal(f.requests.length,before+1);
     assert.equal(current.status().localHitBytes,0);assert.equal(current.status().fallbackOriginal,true);assert.equal(await current.markPlaying(),false);
-    const count=f.requests.length;f.mode('normal');assert.equal((await get(current.source,0,f.data.length)).status,307);assert.equal(f.requests.length,count,'fallback does not revive old metadata or issue another cache probe');await current.stop();
+    assert.equal((await get(current.source,0,f.data.length)).hash,hash(Buffer.alloc(f.data.length,0x59)));assert.equal(current.status().localHitBytes,0);await current.stop();
+});
+
+test('a now-unusable Range source redirects before bytes and Node HTTP follows original200 without old cache', {timeout:10000},async t=>{
+    const f=await fixture(t,{ordinary:true});f.config.preparedHandoff=true;const cache=await f.cache();const next=await cache.open(f.source('B'));
+    await next.prefetch({maxBytes:f.data.length,signal:new AbortController().signal});await next.stop();f.mode('full-response');
+    const current=await cache.open({...f.source('B'),role:'current'}),response=await fetch(current.source,{headers:{Range:'bytes=0-'+(f.data.length-1)}});
+    assert.equal(response.status,200);assert.equal(response.redirected,true);assert.deepEqual(Buffer.from(await response.arrayBuffer()),f.data);assert.equal(current.status().localHitBytes,0);assert.equal(await current.markPlaying(),false);await current.stop();
 });

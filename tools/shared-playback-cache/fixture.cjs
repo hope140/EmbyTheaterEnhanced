@@ -38,7 +38,11 @@ async function source({bytes = 2 * 1024 * 1024, firstDelay = 20, tailDelay = 100
     if (!res.destroyed) res.end();
   });
   server.on('connection', socket => {sockets.add(socket); socket.once('close', () => sockets.delete(socket));});
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  await new Promise((resolve, reject) => {
+    const failed = error => {server.removeListener('listening', listening); reject(error);};
+    const listening = () => {server.removeListener('error', failed); resolve();};
+    server.once('error', failed); server.once('listening', listening); server.listen(0, '127.0.0.1');
+  });
   const url = 'http://127.0.0.1:' + server.address().port + '/owned-binary';
   return {url, get data() {return data;}, requests,
     metadata: () => ({total: data.length, lastModified: modified, ...(etag ? {etag: tag} : {})}),

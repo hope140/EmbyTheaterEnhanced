@@ -675,10 +675,17 @@ test('a missing verified block is an immediate local refusal with zero grace bef
   let origin, store, proxy;
   t.after(async () => cleanup([() => proxy?.close(), () => store?.close(), () => origin?.close()],
     () => fs.rm(root, {recursive: true, force: true})));
-  origin = await source({bytes, firstDelay: 0, tailDelay: 0});
-  store = await createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes});
+  const setupStep = async (stage, action) => {
+    try {return await action();} catch (error) {
+      console.log(JSON.stringify({type: 'owned-shared-flow-setup-failed', stage, code: ['EACCES','EADDRINUSE','EPERM'].includes(error?.code) ? error.code : 'unknown',
+        address: error?.address === '127.0.0.1' ? error.address : null, port: Number.isInteger(error?.port) ? error.port : null, bindRetries: 0}));
+      throw error;
+    }
+  };
+  origin = await setupStep('origin', () => source({bytes, firstDelay: 0, tailDelay: 0}));
+  store = await setupStep('store-guard', () => createStore({root, currentBytes: bytes, nextBytes: bytes, maxPendingBytes: bytes}));
   const clock = await controlledReadClock();
-  proxy = await clock.createProxy({store, authorize: async () => origin.grant()});
+  proxy = await setupStep('proxy', () => clock.createProxy({store, authorize: async () => origin.grant()}));
   const handle = await proxy.open(identity()), key = await handle.ready();
   const first = await get(handle.url, 0, bytes); await proxy.drain(); await handle.actual();
   assert.deepEqual(await store.span(key, 0), {start: 0, end: bytes});

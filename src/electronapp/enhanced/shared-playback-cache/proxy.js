@@ -53,7 +53,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
   const stats = {originRequests: 0, probeRequests: 0, attemptedBytes: 0, receivedBytes: 0, deliveredBytes: 0,
     hitBytes: 0, committedBytes: 0, skippedWrites: 0, captureBytes: 0, peakCaptureBytes: 0,
     activeOrigins: 0, peakOrigins: 0, activeBodies: 0, peakBodies: 0, queued: 0, peakQueued: 0,
-    localReadTimeouts: 0, localReadRefusals: 0, localReadGraceMs: 0, readReservedBytes: 0, peakMediaReservedBytes: 0, localWrites: 0, backpressureWrites: 0, originReadHighWaterMarkBytes: 0, localWriteHighWaterMarkBytes: 0, wholeResponseRequests: 0, partialPrefixBypasses: 0, bypassedPrefixBytes: 0, observerErrors: 0, peakWriteJobs: 0};
+    localReadTimeouts: 0, localReadRefusals: 0, localReadGraceMs: 0, readReservedBytes: 0, peakMediaReservedBytes: 0, localWrites: 0, backpressureWrites: 0, originReadHighWaterMarkBytes: 0, localWriteHighWaterMarkBytes: 0, wholeResponseRequests: 0, partialPrefixBypasses: 0, bypassedPrefixBytes: 0, observerErrors: 0, peakWriteJobs: 0, preparedCacheWins: 0, preparedSourceWins: 0};
   let closed = false, closePromise, foregroundWaiters = 0;
   const active = new Set();
   const track = (set, promise) => {set.add(promise); promise.finally(() => set.delete(promise)).catch(() => {}); return promise;};
@@ -88,8 +88,8 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     catch {retire(record); throw problem('source-unavailable');}
     useRecord(record);
     if (updated.origin !== record.grant.origin || updated.userAgent !== record.grant.userAgent ||
-        metadataKey(updated.metadata) !== metadataKey(record.grant.metadata)) {retire(record, true); throw problem('representation-changed');}
-    record.grant = updated; record.accessChecked = false;
+        !record.fallbackOriginal && metadataKey(updated.metadata) !== metadataKey(record.grant.metadata)) {retire(record, true); throw problem('representation-changed');}
+    record.grant = record.fallbackOriginal ? {...updated, metadata: {...record.metadata}} : updated; record.accessChecked = false;
   }
   async function acquire(kind, signal) {
     if (stats.queued >= 4) throw problem('queue-full');
@@ -132,12 +132,12 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     track(record.writeJobs, track(writes, work)); stats.peakWriteJobs = Math.max(stats.peakWriteJobs, writes.size);
     return work;
   }
-  async function fetchRange(record, start, length, {kind, signal, onData, save = true, probe = false}) {
+  async function fetchRange(record, start, length, {kind, signal, onData, save = true, probe = false, preparedRead, onValidated, headersOnly = false}) {
     save = save && (kind !== 'foreground' || cacheForeground);
     await refresh(record);
     const ticket = await acquire(kind, signal), combined = AbortSignal.any([signal, ticket.controller.signal, record.controller.signal]);
     let request, response, requestClosed, timer, capture, finalRequiredWrite, count = 0, blockOffset = 0, blockPosition = 0, blockCapacity = 0;
-    const recordKeyPromise = record.keyPromise;
+    const recordKeyPromise = record.keyPromise; let preparedChosen;
     try {
       useRecord(record);
       if (combined.aborted) throw cancelled();
@@ -155,7 +155,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       }
       const headers = {Range: `bytes=${start}-${start + length - 1}`, 'Accept-Encoding': 'identity', Connection: 'close'};
       if (record.grant.userAgent !== undefined) headers['User-Agent'] = record.grant.userAgent;
-      if (strong(record.metadata.etag)) headers['If-Match'] = record.metadata.etag;
+      if (!onValidated && strong(record.metadata.etag)) headers['If-Match'] = record.metadata.etag;
       stats.originRequests++; const requestId = stats.originRequests; if (probe) stats.probeRequests++;
       stats.attemptedBytes += length; stats.activeOrigins++; stats.peakOrigins = Math.max(stats.peakOrigins, stats.activeOrigins);
       request = (record.grant.url.startsWith('https:') ? https : http).request(record.grant.url, {method: 'GET', headers, agent: false, highWaterMark: IO_HIGH_WATER});
@@ -167,6 +167,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       request.end();
       try {
         response = await incoming;
+        useRecord(record); if (combined.aborted) throw cancelled();
         stats.originReadHighWaterMarkBytes = Math.max(stats.originReadHighWaterMarkBytes, response.readableHighWaterMark);
         arm();
         const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers['content-range'] || '');
@@ -176,13 +177,29 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             Number(response.headers['content-length']) !== length ||
             response.headers['content-encoding'] && response.headers['content-encoding'] !== 'identity') throw problem('origin-range');
         const tag = response.headers.etag, modified = response.headers['last-modified'];
-        if (strong(record.metadata.etag) && tag !== record.metadata.etag ||
-            record.metadata.lastModified !== undefined && modified !== record.metadata.lastModified) throw problem('representation-changed');
+        const changed = strong(record.metadata.etag) && tag !== record.metadata.etag ||
+          record.metadata.lastModified !== undefined && modified !== record.metadata.lastModified;
+        if (changed && !(onValidated && record.grant.preparedHandoff && !record.deliveredBytes && strong(tag))) throw problem('representation-changed');
         const nextMetadata = {...record.metadata};
         if (strong(tag)) nextMetadata.etag = tag;
-        if (typeof modified === 'string') nextMetadata.lastModified = modified;
-        if (JSON.stringify(nextMetadata) !== JSON.stringify(record.metadata)) prepareKey(record, nextMetadata);
+        if (record.grant.preparedHandoff && strong(record.metadata.etag) && tag === record.metadata.etag && record.metadata.lastModified === undefined) delete nextMetadata.lastModified;
+        else if (typeof modified === 'string') nextMetadata.lastModified = modified; else if (changed) delete nextMetadata.lastModified;
+        if (changed) {
+          // This exact, authorized Range response is itself playable. Its new
+          // version cannot use old cache bytes; forward the SAME response at
+          // once instead of adding a redirect/retry before the first frame.
+          record.fallbackOriginal = true; record.diskUnavailable = true;
+          record.metadata = nextMetadata; record.grant.metadata = {...nextMetadata}; record.metadataEpoch++;
+          save = false;
+          if (preparedRead) {preparedRead.then(value => value?.release(), () => {}); preparedRead = undefined;}
+          track(controls, recordKeyPromise.then(key => store.invalidate(key)).catch(() => {}));
+        } else if (JSON.stringify(nextMetadata) !== JSON.stringify(record.metadata)) {
+          if (record.fallbackOriginal) {record.metadata = nextMetadata; record.grant.metadata = {...nextMetadata}; record.metadataEpoch++;}
+          else prepareKey(record, nextMetadata);
+        }
         record.accessChecked = true;
+        if (onValidated) onValidated();
+        if (headersOnly) return;
         if (kind === 'background') {
           // Background work has no player waiting for these bytes: throttle
           // this one response to durable admission instead of dropping blocks
@@ -230,8 +247,15 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         // Flowing events avoid the async iterator's per-chunk queue/Promise
         // overhead. Exactly one chunk can wait for player drain; disk remains
         // an optional bounded tap and never participates in that wait.
+        let cacheWinner;
         await new Promise((resolve, reject) => {
-          let done = false, ended = false, blocked = false;
+          let done = false, ended = false, blocked = false, sourceStarted = false;
+          const chooseCache = value => {
+            if (!value || value === preparedChosen) return;
+            if (done || sourceStarted || !value.data || value.key !== record.key || value.epoch !== record.metadataEpoch || combined.aborted || closed || record.retired) {value.release(); return;}
+            cacheWinner = preparedChosen = value; done = true; clearTimeout(timer); stats.preparedCacheWins++; resolve();
+          };
+          if (preparedRead) preparedRead.then(chooseCache, () => {});
           const fail = error => {if (done) return; done = true; clearTimeout(timer); reject(error);};
           const finish = () => {
             if (done || !ended || blocked) return;
@@ -253,6 +277,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
                 try {onOriginChunk({requestId, start: start + count, length: chunk.length, kind, probe});}
                 catch {stats.observerErrors++;}
               }
+              if (!sourceStarted) {sourceStarted = true; if (preparedRead) stats.preparedSourceWins++;}
               // Deliver first, then tap for disk. Foreground store hashing and
               // admission run after the current poll batch, within the same
               // existing capture reservations and write-job limit.
@@ -295,7 +320,9 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
               if (!pending) arm();
             } catch (error) {fail(error);}
           });
+          if (preparedRead?.available) chooseCache(preparedRead.available);
         });
+        if (cacheWinner) return {cache: cacheWinner};
         }
       } finally {combined.removeEventListener('abort', abort);}
     } catch (error) {
@@ -305,47 +332,83 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       }
       throw problem(combined.aborted ? 'cancelled' : error.reason || 'origin-unavailable');
     } finally {
+      if (preparedRead) preparedRead.then(value => {if (value && value !== preparedChosen) value.release();}, () => {});
       if (capture) stats.captureBytes -= capture.length;
       clearTimeout(timer); if (response && !response.destroyed) response.destroy();
-      if (request) {request.destroy(); await requestClosed; stats.activeOrigins--;}
-      ticket.release();
+      if (request) {
+        request.destroy();
+        if (preparedChosen) {
+          // The selected local bytes need not wait for socket teardown, but
+          // that teardown still owns its connection slot and is joined on exit.
+          track(controls, requestClosed.then(() => {stats.activeOrigins--; ticket.release();}));
+        } else {await requestClosed; stats.activeOrigins--; ticket.release();}
+      } else ticket.release();
     }
     // Network ownership is released before the last durable write drains.
     // Cancellation can therefore close/preempt a response independently of IO;
     // readiness still cannot be published until the write actually succeeds.
     if (finalRequiredWrite) await waitDone(finalRequiredWrite, combined);
   }
-  function validatePrepared(record) {
-    if (record.preparedCheck) return record.preparedCheck;
-    // One transaction is shared by every Range GET/HEAD and actual() waiter.
-    // No response can deliver bytes before this validation/fallback resolves.
-    record.preparedValidation = 'checking';
-    record.preparedCheck = track(controls, (async () => {
+  function preparedRead(record, offset, maximum) {
+    // Speculative LOCAL IO only. Version authorization below still gates every
+    // byte. A slow/missing disk read never holds up the ordinary origin body.
+    const job = (async () => {
+      if (!cacheEnabled || !record.ready || record.diskUnavailable ||
+          2 * stats.captureBytes + stats.readReservedBytes + 1048576 > mediaBufferBytes) return null;
+      const key = record.key, epoch = record.metadataEpoch;
+      const span = await store.span(key, offset); if (!span) return null;
+      const boundary = await store.nextOffset(key, offset);
+      const length = Math.min(BLOCK, maximum, span.end - offset, boundary === null ? Infinity : boundary - offset);
+      if (!(length > 0) || record.retired || record.stopped || key !== record.key || epoch !== record.metadataEpoch) return null;
+      if (closed || record.stopped || record.retired || key !== record.key || epoch !== record.metadataEpoch ||
+          2 * stats.captureBytes + stats.readReservedBytes + 1048576 > mediaBufferBytes) return null;
+      stats.readReservedBytes += 1048576;
+      stats.peakMediaReservedBytes = Math.max(stats.peakMediaReservedBytes, 2 * stats.captureBytes + stats.readReservedBytes);
+      const deadline = performance.now() + 30;
+      let ioDone = false, releaseWanted = false, released = false, retained = false, value;
+      const release = () => {releaseWanted = true; if (ioDone && !released) {released = true; stats.readReservedBytes -= 1048576;} if (value) value.data = null;};
+      const read = track(controls, Promise.resolve().then(() => store.read(key, offset, length)).finally(() => {ioDone = true; if (releaseWanted) release();}));
+      let timer;
       try {
-        await fetchRange(record, 0, 1, {kind: 'foreground', signal: record.controller.signal, save: false, probe: true});
-        useRecord(record); if (record.stopped || closed) throw cancelled();
-        await record.keyPromise; useRecord(record);
-        record.preparedValidation = 'ready'; record.finishFirstAccess(true); return true;
-      } catch (error) {
-        record.finishFirstAccess(false);
-        // A new authorized original may be selected only before any playback
-        // byte. All other readers still wait on this same transaction.
-        if (!closed && !record.stopped && !record.deliveredBytes && routes.get(record.routeToken) === record) {
-          try {
-            const signal = record.fallbackController.signal;
-            const access = resolveAccess ? await resolveAccess(record.identity, record.grant, {signal}) :
-              await authorize(record.identity, {reason: 'fallback', signal});
-            const checked = grantOf({...access, metadata: record.metadata});
-            if (checked.origin !== record.grant.origin || checked.userAgent !== record.grant.userAgent || closed ||
-                signal.aborted || record.stopped || record.deliveredBytes || routes.get(record.routeToken) !== record) throw cancelled();
-            record.grant.url = checked.url; record.fallbackOriginal = true;
-            record.preparedValidation = 'fallback'; return false;
-          } catch (_) {}
-        }
-        record.preparedValidation = 'failed'; throw error;
+        const data = await Promise.race([read, new Promise(resolve => {timer = setTimeout(() => resolve(null),30);})]);
+        if (!Buffer.isBuffer(data) || data.length !== length || performance.now() >= deadline || record.retired || record.stopped || key !== record.key || epoch !== record.metadataEpoch) return null;
+        retained = true; return value = {data, length, key, epoch, release};
+      } catch {return null;} finally {clearTimeout(timer); if (!retained) release();}
+    })();
+    const candidate = track(controls, job);
+    candidate.then(value => {candidate.available = value;}, () => {});
+    return candidate;
+  }
+  function startPreparedRead(record, range, {signal, onData, head}) {
+    if (record.preparedCheck) return false;
+    record.preparedValidation = 'checking'; let decide, decided = false;
+    record.preparedCheck = new Promise(resolve => {decide = value => {if (!decided) {decided = true; resolve(value);}};});
+    const candidate = head ? undefined : preparedRead(record, range.start, range.end - range.start + 1);
+    let transferredWinner;
+    // This is the player's ordinary Range request, not an extra 0-0 probe.
+    // Exact response headers must authorize the saved strong version. Cache
+    // may win before the first origin chunk; otherwise that body flows at once.
+    record.initialFetch = track(controls, fetchRange(record, range.start, range.end - range.start + 1,
+      {kind: 'foreground', signal, onData, preparedRead: candidate, headersOnly: head,
+       onValidated() {useRecord(record); record.preparedValidation = record.fallbackOriginal ? 'fallback' : 'ready'; record.finishFirstAccess(!record.fallbackOriginal); decide(true);}}).then(result => {transferredWinner = result && result.cache; return result;}).catch(async error => {
+      if (decided) throw error;
+      record.finishFirstAccess(false);
+      if (!closed && !record.stopped && !record.deliveredBytes && routes.get(record.routeToken) === record) {
+        try {
+          const accessSignal = record.fallbackController.signal;
+          const access = resolveAccess ? await resolveAccess(record.identity, record.grant, {signal: accessSignal}) :
+            await authorize(record.identity, {reason: 'fallback', signal: accessSignal});
+          const checked = grantOf({...access, metadata: record.metadata});
+          if (checked.origin !== record.grant.origin || checked.userAgent !== record.grant.userAgent || closed ||
+              accessSignal.aborted || record.stopped || record.deliveredBytes || routes.get(record.routeToken) !== record) throw cancelled();
+          record.grant.url = checked.url; record.fallbackOriginal = true; record.preparedValidation = 'fallback'; decide(false); return;
+        } catch (_) {}
       }
-    })());
-    record.preparedCheck.catch(() => {}); return record.preparedCheck;
+      record.preparedValidation = 'failed'; decide(false); throw error;
+    }).finally(() => {
+      if (candidate) candidate.then(value => {if (value && value !== transferredWinner) value.release();}, () => {});
+    }));
+    record.initialFetch.catch(() => {}); return true;
   }
   async function serve(req, res) {
     const record = routes.get(req.url), expectedHost = '127.0.0.1:' + server.address().port;
@@ -397,10 +460,21 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       res.writeHead(307, {Location: record.grant.url, 'Cache-Control': 'no-store'}); res.end();
     };
     const work = (async () => {
+      let firstCached, ownsInitial = false;
       try {
         if (record.grant.preparedHandoff) {
           record.firstMediaOffset ??= range.start;
-          if (!await waitDone(validatePrepared(record), controller.signal)) {await redirectOriginal(); return;}
+          const first = startPreparedRead(record, range, {signal, onData: write, head: req.method === 'HEAD'}); ownsInitial = first;
+          if (!await waitDone(record.preparedCheck, controller.signal)) {
+            if (!record.fallbackOriginal) throw cancelled();
+            await redirectOriginal(); return;
+          }
+          if (first) {
+            const result = await waitDone(record.initialFetch, controller.signal);
+            record.initialFetch = null;
+            firstCached = result && result.cache;
+            if (req.method !== 'HEAD' && !firstCached) {res.end(); return;}
+          }
         }
         if (req.method === 'HEAD') {res.writeHead(range.partial ? 206 : 200, headers); res.end(); return;}
         // Experiment only: an open-ended request can choose one complete
@@ -421,8 +495,15 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         // splice newly captured probe bytes back into this load: that can make
         // the demuxer block at an artificial HTTP gap before a queued seek.
         // Pre-existing/restored data and explicitly finished preloads stay live.
-        const readCache = cacheEnabled && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
+        const readCache = cacheEnabled && !record.fallbackOriginal && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
         let offset = range.start;
+        if (firstCached) {
+          try {
+            useRecord(record); if (signal.aborted || firstCached.key !== record.key || firstCached.epoch !== record.metadataEpoch) throw cancelled();
+            stats.hitBytes += firstCached.data.length; record.localHitBytes += firstCached.data.length;
+            await write(firstCached.data); offset += firstCached.data.length;
+          } finally {firstCached.release(); firstCached = null; record.initialFetch = null;}
+        }
         // Each physical block has a finite read window. Fast/missing reads do not wait.
         // Another seek owns a separate cancellable response; late IO retains its owner.
         const readGracePerBlock = 15;
@@ -484,7 +565,13 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         res.end();
       } catch {
         if (!res.headersSent) {res.writeHead(502); res.end();} else res.destroy();
-      } finally {await responseClosed; stats.activeBodies--; record.bodyControllers.delete(controller); res.removeListener('close', abort); req.removeListener('aborted', abort);}
+      } finally {
+        if (firstCached) firstCached.release();
+        if (ownsInitial && record.initialFetch) {
+          const pending = record.initialFetch;
+          pending.then(result => {result?.cache?.release(); if (record.initialFetch === pending) record.initialFetch = null;}, () => {if (record.initialFetch === pending) record.initialFetch = null;});
+        }
+        await responseClosed; stats.activeBodies--; record.bodyControllers.delete(controller); res.removeListener('close', abort); req.removeListener('aborted', abort);}
     })();
     track(jobs, track(record.bodyJobs, work));
   }
@@ -500,7 +587,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     try {
     const grant = grantOf(await authorize(identity, {reason: 'open', signal: controller.signal}));
     if (closed || controller.signal.aborted) throw cancelled();
-    if (grant.preparedHandoff && requestPolicy !== 'sparse') throw problem('configuration');
+    if (grant.preparedHandoff && (requestPolicy !== 'sparse' || !strong(grant.metadata.etag))) throw problem('configuration');
     const record = {identity, role, grant, metadata: {...grant.metadata}, controller, retired: false, metadataEpoch: 0,
       ready: false, accessChecked: grant.accessChecked, fallbackOriginal: false, deliveredBytes: 0, stopped: false, fallbackController: new AbortController(), preparedValidation: grant.preparedHandoff ? 'pending' : undefined, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0};
     record.firstAccess = grant.preparedHandoff ? new Promise(resolve => {let done = false; record.finishFirstAccess = value => {if (!done) {done = true; resolve(value);}};}) : Promise.resolve(true);
@@ -508,6 +595,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     const route = '/' + crypto.randomBytes(24).toString('hex'); record.routeToken = route; routes.set(route, record);
     return {url: 'http://127.0.0.1:' + server.address().port + route,
       status: () => ({localHitBytes: record.localHitBytes, ...(record.preparedValidation ? {preparedValidation: record.preparedValidation} : {}), ...(record.fallbackOriginal ? {fallbackOriginal: true} : {})}),
+      preparedMetadata: () => record.ready && !record.retired && !record.diskUnavailable ? {...record.metadata} : null,
       ready: () => record.keyPromise, actual: () => {
         if (record.fallbackOriginal) return Promise.resolve(false);
         useRecord(record); const revision = ++actualRevision;
