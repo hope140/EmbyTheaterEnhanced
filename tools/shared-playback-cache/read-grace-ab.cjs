@@ -3,10 +3,12 @@
 // It is not a disk benchmark or Native/ordinary-app latency measurement.
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto'),os=require('node:os');
 const {createRequire}=require('node:module');
+const {execFileSync}=require('node:child_process');
 const {performance}=require('node:perf_hooks');
 const {createStore}=require('./store.cjs'),{source,get,identity,hash,delay}=require('./fixture.cjs');
 const {temporaryRoot}=require('../../tests/helpers/range-fixture-root.cjs');
 const BASE='7a569c8e36f3d26f65d71aead369f0e6e9f70aad', SHARED='e43c3d83b2bfb04e84853759dd3ace4f52aa1012', BLOCK=262144;
+const HISTORICAL_SOURCE_COMMIT='f9bd1c4c271f619f54decfd36b2a4d6afefc5e4f', HISTORICAL_SOURCE_BLOB='eef7df7f0d4e7ee7ea1ccec24f94557df4954b0c';
 const need=(v,c)=>{if(!v)throw Error(c);};
 const SCENARIOS=Object.freeze({fast:{blocks:1,lag:0},'valid-20ms':{blocks:1,lag:20},'valid-50ms':{blocks:1,lag:50},
   'two-valid-20ms':{blocks:3,lag:20,slowReads:2},'two-valid-20ms-fast-origin':{blocks:3,lag:20,slowReads:2,firstDelay:0},
@@ -46,6 +48,29 @@ function sourceVariants(current) {
   need(sha(old)==='ac9b3b267d3e2643fe0d4fe876d0de90dcda2395497337a1840d3971eff98349','probe-base-source');
   return {A:old,B:shared,C:perBlockPolicy(shared),D:current};
 }
+function livePolicyBinding(current) {
+  need(Buffer.isBuffer(current),'probe-current-source');
+  const text=current.toString('utf8'),canonical=Buffer.from(text.replace(/\r\n/g,'\n'));
+  const lf=canonical.equals(current),crlf=Buffer.from(canonical.toString('utf8').replace(/\n/g,'\r\n')).equals(current);
+  need(Buffer.from(text,'utf8').equals(current)&&(lf||crlf),'probe-current-source');
+  if(sha(canonical)==='e12d4939498354bddfe19b608084328f51e666ecfd8f01a31a4a3e9caff8ee6e')return {relation:'historical-source-identical',checkoutSha256:sha(current),byteIdentical:true};
+  let policy=canonical.toString('utf8');
+  for(const [instrumented,historical] of [
+    ['stats.hitBytes += data.length; record.localHitBytes += data.length;','stats.hitBytes += data.length;'],
+    ['preloadReady: false, localHitBytes: 0};','preloadReady: false};'],
+    ['      status: () => ({localHitBytes: record.localHitBytes}),\n','']
+  ]) {need(policy.split(instrumented).length===2,'probe-current-source');policy=policy.replace(instrumented,historical);}
+  need(sha(Buffer.from(policy))==='e12d4939498354bddfe19b608084328f51e666ecfd8f01a31a4a3e9caff8ee6e','probe-current-source');
+  return {relation:'exact-route-counter-v1-only',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
+}
+function historicalSource(root) {
+  try {
+    const blob=execFileSync('git',['rev-parse',HISTORICAL_SOURCE_COMMIT+':src/electronapp/enhanced/shared-playback-cache/proxy.js'],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+    need(blob===HISTORICAL_SOURCE_BLOB,'probe-historical-source-mismatch');
+    const bytes=execFileSync('git',['cat-file','blob',HISTORICAL_SOURCE_BLOB],{cwd:root,stdio:['ignore','pipe','pipe']});
+    sourceBinding(bytes);return bytes;
+  } catch (_) {throw Error('probe-historical-source-unavailable');}
+}
 async function sample(factory,scenario){
   const spec=SCENARIOS[scenario],bytes=spec.blocks*BLOCK,root=temporaryRoot('ete-read-grace-ab-',['']);
   let origin,store,proxy,slow=false,ordinal=0,measuring=false,received=0,ioBytes=0;const reads=[],wholeReads=[],receivedIntervals=[];
@@ -82,9 +107,10 @@ async function sample(factory,scenario){
 async function run(out){
   need(typeof out==='string'&&path.isAbsolute(out),'probe-output');await fs.mkdir(out,{recursive:false});
   const file=require.resolve('../../src/electronapp/enhanced/shared-playback-cache/proxy');
-  const checkout=await fs.readFile(file),binding=sourceBinding(checkout),variants=sourceVariants(checkout),old=variants.A,shared=variants.B,perBlock=variants.C,bounded30=variants.D;
+  const checkout=await fs.readFile(file),observedCheckout=livePolicyBinding(checkout),executed=historicalSource(path.resolve(__dirname,'../..'));
+  const binding=sourceBinding(executed),variants=sourceVariants(executed),old=variants.A,shared=variants.B,perBlock=variants.C,bounded30=variants.D;
   const factories=Object.fromEntries(Object.entries(variants).map(([arm,source])=>[arm,load(source,file)])),scenarios={};
-  const report={schema:1,baseCommit:BASE,sharedAllowanceCommit:SHARED,checkoutBinding:{relation:binding.relation,sha256:binding.checkoutSha256},policies:{A:'15ms per block',B:'15ms +10ms shared response allowance',C:'25ms per block',D:'30ms per block'},sourceSha256:{A:sha(old),B:sha(shared),C:sha(perBlock),D:sha(bounded30)},node:process.version,platform:process.platform,os:os.release(),
+  const report={schema:2,scope:'historical-policy-reproduction',currentProductPerformance:'NOT_ASSESSED',baseCommit:BASE,sharedAllowanceCommit:SHARED,historicalSource:{commit:HISTORICAL_SOURCE_COMMIT,blob:HISTORICAL_SOURCE_BLOB,sha256:binding.checkoutSha256},observedCheckout,policies:{A:'15ms per block',B:'15ms +10ms shared response allowance',C:'25ms per block',D:'30ms per block'},sourceSha256:{A:sha(old),B:sha(shared),C:sha(perBlock),D:sha(bounded30)},node:process.version,platform:process.platform,os:os.release(),
     conditions:'real owned filesystem/HTTP; explicit FileHandle.read delay;20ms or0ms configured origin first-byte delay;no Native/Emby/115;not hardware latency',
     pairedSamples:20,warmupPairs:3,order:'ABCD/DCBA alternating from warmup-3',scenarios};
   for(const name of Object.keys(SCENARIOS)){
@@ -108,5 +134,5 @@ async function run(out){
   }
   return report;
 }
-module.exports={BASE,SHARED,SCENARIOS,perBlockPolicy,sourceVariants,sourceBinding,run};
+module.exports={BASE,SHARED,HISTORICAL_SOURCE_COMMIT,HISTORICAL_SOURCE_BLOB,SCENARIOS,perBlockPolicy,sourceVariants,sourceBinding,livePolicyBinding,historicalSource,run};
 if(require.main===module){const args=process.argv.slice(2);need(args.length===1&&args[0].startsWith('--out='),'probe-argument');run(args[0].slice(6)).catch(()=>{console.error('SHARED_CACHE_READ_GRACE_ERROR probe-failed');process.exitCode=1;});}

@@ -251,7 +251,7 @@ async function automaticCase(t, scenario) {
         });
     }
     if (settingsCase) settings.register({ipcMain: {handle: (name, fn) => settingsHandlers.set(name, fn), removeHandler: name => settingsHandlers.delete(name)},
-        store: preferences, getWebContents: () => main.webContents, getRuntimeStatus: () => service.rangeStatus()});
+        store: preferences, getWebContents: () => main.webContents, getRuntimeStatus: () => service.rangeStatus(), applyRuntimeSettings: () => service.applyRangeSettings()});
     const eventTarget = new EventTarget();
     const body = {insertBefore(element) {element.parentNode = body;}, removeChild(element) {element.parentNode = null;}, firstChild: null};
     const document = {body, querySelector: () => null};
@@ -266,6 +266,7 @@ async function automaticCase(t, scenario) {
             if (settingsHandlers.has(_channel)) {
                 if (_channel === 'enhanced-cd2-resolve') record('cd2-resolve-ipc', {requestId: request.requestId, mode: request.mode});
                 const result = await settingsHandlers.get(_channel)(trusted.eventFor(main.webContents), request);
+                if (_channel === settings.CHANNELS.SAVE) record('range-settings-saved', {status: result.status, applyMode: result.applyMode, applyError: result.applyError || null});
                 if (_channel === 'enhanced-cd2-resolve') record('cd2-resolve-result', {status: result.status, sourceKind: result.sourceKind, privateProof: typeof result.sourceProof === 'string'});
                 return result;
             }
@@ -340,7 +341,9 @@ async function automaticCase(t, scenario) {
         assert(trace.some(row => row.type === 'synthetic-property' && row.name === 'core-idle' && row.value === false), details());
         const before = clients[0].currentGenerationId, userBefore = await (await fetch(origin.origin + '/Users/anonymous')).json();
         nodes['.chkRangeEnabled'].checked = true; nodes['.chkRangeEnabled'].dispatchEvent(new Event('change'));
-        await waitFor(() => nodes['.rangeSettingsState'].textContent.startsWith('已保存'), details);
+        await waitFor(() => trace.some(row => row.type === 'range-settings-saved' && row.status === 'saved'), details);
+        const saved = trace.find(row => row.type === 'range-settings-saved');
+        assert.equal(saved.applyMode,'next-play'); assert.equal(saved.applyError,null);
         assert.deepEqual(preferences.get(), {schema: 1, enabled: true, progressPercent: 70, preloadMB: 300});
         assert.equal(service.rangeStatus().enabled, false); assert.equal(clients[0].currentGenerationId, before, 'Save does not retire the active native generation'); assert.equal(clients.length, 1); assert.equal(clients[0].exited, false);
         const manager = (await window.require(['playbackManager']))[0];

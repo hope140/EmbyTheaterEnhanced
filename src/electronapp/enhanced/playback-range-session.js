@@ -191,7 +191,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             }
             return {source: handle.source, canDispatch: () => owns(record) && record.handle === handle && (!budget || budget.isCurrent()),
                 ...(budget ? {commit: () => budget.commit()} : {}), cancel};
-        } catch (error) {if (owns(record)) {record.selection = 'original'; const diagnostic = diagnostics.fromError(error, 'current-probe', 'cache-unavailable'); record.diagnostic = report({...diagnostic, ...(diagnostic.reason === 'timeout' ? {phase: record.preparationPhase} : {})});} return null;}
+        } catch (error) {if (owns(record)) {record.selection = 'original'; record.diagnostic = diagnostics.fromError(error, 'current-probe', 'cache-unavailable'); report({...record.diagnostic, ...(record.diagnostic.reason === 'timeout' ? {phase: record.preparationPhase} : {})});} return null;}
     }
     function unproxied(reason, helper, generationId) {
         const record = current;

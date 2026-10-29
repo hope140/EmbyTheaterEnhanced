@@ -156,14 +156,15 @@ test('actual load dispatch cancels a selected route that lost its lease before s
 
 function virtualSelection(f, {historicalBudget, openWait} = {}) {
   let now = 0, created = 0, opened = 0;
-  const deadlines = [], timers = new Set(), sandbox = {module: {exports: {}}, require: name => require(require.resolve(name, {paths: [require('node:path').dirname(require.resolve('../src/electronapp/enhanced/playback-range-session'))]})),
+  const deadlines = [], diagnostics = [], timers = new Set(), sandbox = {module: {exports: {}}, require: name => require(require.resolve(name, {paths: [require('node:path').dirname(require.resolve('../src/electronapp/enhanced/playback-range-session'))]})),
     URL, AbortController, AbortSignal,
     setTimeout(fn, ms) {deadlines.push(ms); const timer = {fn, at: now + (historicalBudget ?? ms)}; timers.add(timer); return timer;}, clearTimeout(timer) {timers.delete(timer);}};
   vm.runInNewContext(fs.readFileSync(require.resolve('../src/electronapp/enhanced/playback-range-session'), 'utf8'), sandbox);
   const session = sandbox.module.exports.createSession({config: {kind: 'shared-byte-trial'},
+    onDiagnostic: value => diagnostics.push(value),
     readCurrentBytes: (...args) => f.reader.read(...args), async create() {++created; return {async close() {}, async discardNext() {}, async open() {++opened; if (openWait) await openWait; return {source: 'http://127.0.0.1/local', async stop() {}};}};}});
   const context = {source: 'http://127.0.0.1/source.mkv', serverOrigin: 'http://127.0.0.1', serverId: 'owned', accountId: 'owned', itemId: 'A', mediaSourceId: 'A', playSessionId: 'owned', mode: 'DirectPlay', mediaType: 'Video', container: 'mkv'};
-  return {session, context, deadlines, counts: () => ({created, opened}), advance(value) {now = value; for (const timer of timers) if (timer.at <= now) {timers.delete(timer); timer.fn();}}};
+  return {session, context, deadlines, diagnostics, counts: () => ({created, opened}), advance(value) {now = value; for (const timer of timers) if (timer.at <= now) {timers.delete(timer); timer.fn();}}};
 }
 test('historical 25ms policy fits a 27ms read only with enough priming lead', async t => {
   const f = fixture(), v = virtualSelection(f, {historicalBudget: 25}); t.after(() => v.session.close());
@@ -219,7 +220,8 @@ test('actual 50ms selection still expires and cannot publish work after its own 
   selecting = v.session.select(v.context.source, f.helper, 1, ['loadfile', v.context.source]);
   assert.deepEqual(v.deadlines, [50]);
   v.advance(50); assert.equal(await selecting, null);
-  assert.equal(v.session.status().current.diagnostic.phase,'budget');
+  assert.equal(v.diagnostics.at(-1).phase,'budget');
+  assert.deepEqual(Object.keys(v.session.status().current.diagnostic).sort(),['reason','stage']);
   v.advance(51); f.queue[0].resolve(314572800); await primed;
   await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(v.counts(), {created: 0, opened: 0});
 });
