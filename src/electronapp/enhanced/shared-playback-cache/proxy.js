@@ -6,6 +6,7 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const {once} = require('node:events');
 const {performance} = require('node:perf_hooks');
+const evidence = require('./evidence');
 const BLOCK = 256 * 1024;
 const IO_HIGH_WATER = 256 * 1024;
 const CAPTURE_JOBS = 8;
@@ -46,7 +47,7 @@ async function waitDone(promise, signal) {
   try {return await Promise.race([promise, aborted]);}
   finally {signal.removeEventListener('abort', stop);}
 }
-async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, mediaBufferBytes = 8 * 1024 * 1024, cacheEnabled = true, cacheForeground = true, requestPolicy = 'sparse', onOriginChunk}) {
+async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, mediaBufferBytes = 8 * 1024 * 1024, cacheEnabled = true, cacheForeground = true, requestPolicy = 'sparse', onOriginChunk, onEvidence}) {
   if (typeof cacheForeground !== 'boolean' || resolveAccess !== undefined && typeof resolveAccess !== 'function' || onOriginChunk !== undefined && typeof onOriginChunk !== 'function' || !['sparse', 'coherent'].includes(requestPolicy) || !store || typeof authorize !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 30000 ||
       !Number.isSafeInteger(mediaBufferBytes) || mediaBufferBytes < BLOCK) throw problem('configuration');
   const routes = new Map(), writes = new Set(), controls = new Set(), jobs = new Set(), openings = new Set(), pendingKeyRecords = new Set();
@@ -60,6 +61,10 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
   function useRecord(record) {if (closed || record.retired) throw cancelled();}
   function retire(record, purge = false) {
     record.retired = true; record.accessChecked = false; record.finishFirstAccess?.(false); record.controller.abort();
+    if (!record.evidenceEnding) {
+      record.evidenceEnding = true;
+      track(controls, Promise.allSettled([...record.bodyJobs]).then(() => record.observe('route-end', {selectedLocalBytes: record.localHitBytes, queuedLocalBytes: record.queuedLocalBytes, queuedSourceBytes: record.queuedSourceBytes, flushedLocalBytes: record.flushedLocalBytes, flushedSourceBytes: record.flushedSourceBytes, rangeCount: record.rangeCount, omittedRanges: Math.max(0, record.rangeCount - 8)})));
+    }
     if (purge) track(controls, record.keyPromise.then(key => store.invalidate(key)).catch(() => {}));
   }
   function prepareKey(record, metadata) {
@@ -74,7 +79,10 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         if (!current()) throw cancelled();
         record.coldAtOpen = !first && later === null;
       }
-      record.key = key; record.ready = true; return key;
+      record.key = key; record.ready = true;
+      let coverage; try {coverage = typeof store.coverage === 'function' ? store.coverage(key) : null;} catch (_) {}
+      record.observe('index-ready', {coldIndex: record.coldAtOpen, retainedBytes: coverage?.bytes, ...evidence.version(record.metadata)});
+      return key;
     }).finally(() => {
       record.pendingKeys--; if (!record.pendingKeys) pendingKeyRecords.delete(record);
     }));
@@ -177,6 +185,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             Number(response.headers['content-length']) !== length ||
             response.headers['content-encoding'] && response.headers['content-encoding'] !== 'identity') throw problem('origin-range');
         const tag = response.headers.etag, modified = response.headers['last-modified'];
+        if (record.rangeCount <= 8) record.observe('source-headers', {rangeStart: start, rangeEnd: start + length - 1, totalBytes: record.metadata.total, ...evidence.version({total: record.metadata.total, etag: tag, lastModified: modified})});
         const changed = strong(record.metadata.etag) && tag !== record.metadata.etag ||
           record.metadata.lastModified !== undefined && modified !== record.metadata.lastModified;
         if (changed && !(onValidated && record.grant.preparedHandoff && !record.deliveredBytes && strong(tag))) throw problem('representation-changed');
@@ -326,6 +335,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         }
       } finally {combined.removeEventListener('abort', abort);}
     } catch (error) {
+      if (record.rangeCount <= 8) record.observe('source-refused', {reason: error.reason || 'origin-unavailable', rangeStart: start, rangeEnd: start + length - 1});
       if (error.reason === 'representation-changed') {
         retire(record);
         track(controls, recordKeyPromise.then(key => store.invalidate(key)).catch(() => {}));
@@ -423,15 +433,23 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     const responseClosed = new Promise(resolve => {res.once('finish', resolve); res.once('close', resolve);});
     stats.localWriteHighWaterMarkBytes = Math.max(stats.localWriteHighWaterMarkBytes, res.writableHighWaterMark);
     stats.activeBodies++; stats.peakBodies = Math.max(stats.peakBodies, stats.activeBodies);
+    const ordinal = ++record.rangeCount; let selectedLocalBytes = 0, queuedLocalBytes = 0, queuedSourceBytes = 0, flushedLocalBytes = 0, flushedSourceBytes = 0, complete = false;
     const headers = {'Content-Type': 'application/octet-stream', 'Content-Length': range.end - range.start + 1,
       'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store'};
     if (range.partial) headers['Content-Range'] = `bytes ${range.start}-${range.end}/${record.metadata.total}`;
-    const write = (bytes, ticket) => {
+    const write = (bytes, ticket, local = false) => {
       useRecord(record); if (signal.aborted) throw cancelled();
       if (!res.headersSent) res.writeHead(range.partial ? 206 : 200, headers);
       stats.deliveredBytes += bytes.length; record.deliveredBytes += bytes.length;
       stats.localWrites++;
-      if (!res.write(bytes)) {
+      const accepted = res.write(bytes, error => {
+        if (error) return;
+        if (local) {flushedLocalBytes += bytes.length; record.flushedLocalBytes += bytes.length;}
+        else {flushedSourceBytes += bytes.length; record.flushedSourceBytes += bytes.length;}
+      });
+      if (local) {queuedLocalBytes += bytes.length; record.queuedLocalBytes += bytes.length;}
+      else {queuedSourceBytes += bytes.length; record.queuedSourceBytes += bytes.length;}
+      if (!accepted) {
         stats.backpressureWrites++;
         return (async () => {
         if (ticket) {ticket.idle = true; ticket.idleAt = performance.now();}
@@ -500,8 +518,8 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         if (firstCached) {
           try {
             useRecord(record); if (signal.aborted || firstCached.key !== record.key || firstCached.epoch !== record.metadataEpoch) throw cancelled();
-            stats.hitBytes += firstCached.data.length; record.localHitBytes += firstCached.data.length;
-            await write(firstCached.data); offset += firstCached.data.length;
+            stats.hitBytes += firstCached.data.length; record.localHitBytes += firstCached.data.length; selectedLocalBytes += firstCached.data.length;
+            await write(firstCached.data, undefined, true); offset += firstCached.data.length;
           } finally {firstCached.release(); firstCached = null; record.initialFetch = null;}
         }
         // Each physical block has a finite read window. Fast/missing reads do not wait.
@@ -553,7 +571,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             }
             useRecord(record); if (signal.aborted) throw cancelled();
             if (epoch !== record.metadataEpoch || key !== record.key) throw problem('stale-read');
-            if (data) {stats.hitBytes += data.length; record.localHitBytes += data.length; await write(data); offset += data.length; continue;}
+            if (data) {stats.hitBytes += data.length; record.localHitBytes += data.length; selectedLocalBytes += data.length; await write(data, undefined, true); offset += data.length; continue;}
             // Invalid/missing local data falls through to ordinary origin IO.
           }
           const next = readCache && record.ready && await store.nextOffset(record.key, offset);
@@ -571,7 +589,10 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
           const pending = record.initialFetch;
           pending.then(result => {result?.cache?.release(); if (record.initialFetch === pending) record.initialFetch = null;}, () => {if (record.initialFetch === pending) record.initialFetch = null;});
         }
-        await responseClosed; stats.activeBodies--; record.bodyControllers.delete(controller); res.removeListener('close', abort); req.removeListener('aborted', abort);}
+        await responseClosed;
+        complete = req.method === 'HEAD' ? res.writableFinished === true : res.writableFinished === true && flushedLocalBytes + flushedSourceBytes === range.end - range.start + 1;
+        if (ordinal <= 8) record.observe('range-end', {method: req.method, rangeOrdinal: ordinal, rangeStart: range.start, rangeEnd: range.end, selectedLocalBytes, queuedLocalBytes, queuedSourceBytes, flushedLocalBytes, flushedSourceBytes, complete, fallbackOriginal: record.fallbackOriginal});
+        stats.activeBodies--; record.bodyControllers.delete(controller); res.removeListener('close', abort); req.removeListener('aborted', abort);}
     })();
     track(jobs, track(record.bodyJobs, work));
   }
@@ -589,8 +610,9 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     if (closed || controller.signal.aborted) throw cancelled();
     if (grant.preparedHandoff && (requestPolicy !== 'sparse' || !strong(grant.metadata.etag))) throw problem('configuration');
     const record = {identity, role, grant, metadata: {...grant.metadata}, controller, retired: false, metadataEpoch: 0,
-      ready: false, accessChecked: grant.accessChecked, fallbackOriginal: false, deliveredBytes: 0, stopped: false, fallbackController: new AbortController(), preparedValidation: grant.preparedHandoff ? 'pending' : undefined, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0};
+      ready: false, accessChecked: grant.accessChecked, fallbackOriginal: false, deliveredBytes: 0, stopped: false, fallbackController: new AbortController(), preparedValidation: grant.preparedHandoff ? 'pending' : undefined, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0, queuedLocalBytes: 0, queuedSourceBytes: 0, flushedLocalBytes: 0, flushedSourceBytes: 0, rangeCount: 0, observe: evidence.create(onEvidence, identity)};
     record.firstAccess = grant.preparedHandoff ? new Promise(resolve => {let done = false; record.finishFirstAccess = value => {if (!done) {done = true; resolve(value);}};}) : Promise.resolve(true);
+    record.observe('route-open', {role, preparedHandoff: grant.preparedHandoff, totalBytes: grant.metadata.total, ...evidence.version(grant.metadata)});
     prepareKey(record, grant.metadata);
     const route = '/' + crypto.randomBytes(24).toString('hex'); record.routeToken = route; routes.set(route, record);
     return {url: 'http://127.0.0.1:' + server.address().port + route,

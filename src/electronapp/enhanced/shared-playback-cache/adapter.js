@@ -7,6 +7,7 @@ const crypto = require('node:crypto');
 const {selection} = require('../playback-range-policy');
 const authority = require('../preload-source-authority');
 const diagnostics = require('../playback-range-diagnostics');
+const evidence = require('./evidence');
 const {createDeferredStore} = require('./deferred-store');
 
 const error = reason => diagnostics.error(reason, 'shared-byte-' + reason);
@@ -138,13 +139,13 @@ async function createCache(config, dependencies = {}) {
         if (managerPromise) return managerPromise;
         managerBytes = currentBytes;
         const store = createDeferredStore({root: config.root, currentBytes, nextBytes: policy.prefetchBytes,
-            maxPendingBytes: 2 * 1024 * 1024, retainPlayback: config.retainPlayback !== false, recoveryMode: 'on-demand'}, {create: factory});
+            maxPendingBytes: 2 * 1024 * 1024, retainPlayback: config.retainPlayback !== false, recoveryMode: 'on-demand', onEvidence: dependencies.onEvidence}, {create: factory});
         if (pendingUncachedIntent !== undefined) {
             store.forgetActualUnlessMedia(pendingUncachedIntent.identity,
                 {isCurrent: pendingUncachedIntent.isCurrent}).catch(() => {unavailable = true;});
             pendingUncachedIntent = undefined;
         }
-        managerPromise = require('./proxy').createProxy({store, timeoutMs, requestPolicy: 'sparse', cacheForeground: config.retainPlayback !== false,
+        managerPromise = require('./proxy').createProxy({store, timeoutMs, requestPolicy: 'sparse', cacheForeground: config.retainPlayback !== false, onEvidence: dependencies.onEvidence,
             async authorize(identity, {signal}) {
                 const record = lookup(identity), value = await access(record, signal);
                 return {...record.grant, url: value.source};
@@ -169,6 +170,7 @@ async function createCache(config, dependencies = {}) {
                 options.signal !== undefined && !(options.signal instanceof AbortSignal)) throw error('source-proof-invalid');
             if (options.identity?.representation !== options.transport.representation) throw error('source-proof-invalid');
             const identity = cacheIdentity(options.identity), signature = keyOf(identity);
+            const observe = evidence.create(dependencies.onEvidence, identity);
             if ([...records].some(record => record.signature === signature && !record.stopped)) throw error('cache-unavailable');
             const controller = new AbortController();
             const record = {identity, signature, transport: options.transport, ordinary: authority.isOrdinaryTransport(options.transport), isCurrent: options.isCurrent,
@@ -220,6 +222,7 @@ async function createCache(config, dependencies = {}) {
                 phase('metadata');
                 const route = await owned.proxy.open(identity, 'next');
                 record.route = route;
+                observe('adapter-open', {sourceClass: record.ordinary ? 'emby-http' : 'resolved-http', role: options.role === 'current' ? 'current' : 'next', totalBytes: metadata.total, preparedHandoff: adopted, ...evidence.version(metadata)});
                 // A recovered backend can establish a prepared first hit before
                 // the engine asks for it. Pending recovery remains off this path.
                 if (owned.store.status().available === true) {
@@ -280,6 +283,7 @@ async function createCache(config, dependencies = {}) {
                         if (!coverage || !Number.isSafeInteger(coverage.bytes) || coverage.bytes < 0 || coverage.bytes > record.total) throw error('cache-unavailable');
                         record.bytes = Math.min(coverage.bytes, args.maxBytes, policy.prefetchBytes, record.total);
                         const preparedMetadata = typeof route.preparedMetadata === 'function' ? route.preparedMetadata() : null;
+                        observe('preload-complete', {preloadedBytes: record.bytes, totalBytes: record.total, ...(preparedMetadata ? evidence.version(preparedMetadata) : {})});
                         if (config.preparedHandoff === true && record.role === 'next' && record.bytes > 0 &&
                             preparedMetadata?.total === record.total && require('../playback-range-identity').strongTag(preparedMetadata.etag)) {
                             prepared.clear(); prepared.set(record.signature, {origin: record.grant.origin,
@@ -294,6 +298,9 @@ async function createCache(config, dependencies = {}) {
                 guard(record);
                 transferred = true;
                 return handle;
+            } catch (failure) {
+                observe('adapter-failed', {role: options.role === 'current' ? 'current' : 'next', reason: diagnostics.fromError(failure, 'current-probe', 'cache-unavailable').reason});
+                throw failure;
             } finally {
                 if (!transferred) {
                     record.stopped = true; controller.abort();

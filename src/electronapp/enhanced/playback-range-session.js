@@ -6,6 +6,7 @@ const diagnostics = require('./playback-range-diagnostics');
 // Optional load/replace preparation includes the actual Native budget read,
 // fresh source probe and ready cache key. Steady-state seek does not enter it.
 const SHARED_PREPARE_TIMEOUT_MS = 50;
+const evidence = require('./shared-playback-cache/evidence');
 const hash = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const contextFields = ['source', 'serverOrigin', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId', 'mode', 'mediaType', 'container', 'live', 'sourceProof'];
 function parseContext(value) {
@@ -47,20 +48,25 @@ function playbackContext(value) {
     if (!value || Object.keys(value).some(k => !contextFields.includes(k)) || value.mediaType !== 'Video' || ['serverId', 'serverOrigin', 'accountId', 'itemId', 'mediaSourceId', 'playSessionId'].some(k => typeof value[k] !== 'string' || !value[k] || value[k].length > 2048)) return null;
     return {...value, identity: null};
 }
-function createSession({config, create = createCache, onDiagnostic = () => {}, authorize, authorizeOrdinary, readCurrentBytes, now = () => require('node:perf_hooks').performance.now()}) {
+function createSession({config, create = createCache, onDiagnostic = () => {}, onEvidence, authorize, authorizeOrdinary, readCurrentBytes, now = () => require('node:perf_hooks').performance.now()}) {
     if (!config) return null;
     if (!['next-prefix', 'shared-byte-trial'].includes(config.kind)) throw Error('next-prefix-required');
     const policy = selection(config), work = new Set();
     let cacheInstance = null, nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
     let cacheFailed = false;
     let cachePromise, current = null, next = null, epoch = 0, playedEpoch = 0, closed = false, closing, retirement = Promise.resolve();
-    const ensure = () => cachePromise ||= Promise.resolve(create(config)).then(value => {cacheInstance = value; return value;}, error => {cacheFailed = true; throw error;});
+    const ensure = () => cachePromise ||= Promise.resolve(create(config, {onEvidence})).then(value => {cacheInstance = value; return value;}, error => {cacheFailed = true; throw error;});
     const track = promise => {work.add(promise); promise.finally(() => work.delete(promise)).catch(() => {}); return promise;};
     function report(value) {const safe = diagnostics.snapshot(value); try {onDiagnostic(safe);} catch (_) {} return safe;}
     function retire(preserveNext = true) {
         ++epoch; const old = current, oldNext = next; current = next = null;
         nextProgress = {state: 'idle', bytes: 0, targetBytes: policy.prefetchBytes};
-        if (old) old.controller.abort(); if (oldNext) oldNext.controller.abort();
+        if (old) {
+            let localBytes, fallbackOriginal; try {const status = old.handle?.status(); localBytes = status?.localHitBytes; fallbackOriginal = status?.fallbackOriginal;} catch (_) {}
+            old.evidence?.('play-end', {route: old.handle && !fallbackOriginal ? 'proxy' : 'original', fallbackOriginal, selectedLocalBytes: localBytes, decoderObserved: old.decoderObserved.size > 0});
+            old.controller.abort();
+        }
+        if (oldNext) oldNext.controller.abort();
         const cleanup = retirement.then(async () => {
             await Promise.allSettled([old && old.handle && old.handle.stop(), oldNext && oldNext.handle && oldNext.handle.stop()]);
             if (!preserveNext && cachePromise) {try {await (await cachePromise).discardNext();} catch (_) {}}
@@ -100,14 +106,15 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             parsed ||= playbackContext(value);
             if (closed || epoch !== ticket || helper.exited || helper.transportTerminated || helper.currentGenerationId !== generationId) {controller.abort(); return {state: 'unavailable', diagnostic: diagnostics.snapshot({stage: 'lifecycle', reason: 'generation-retired'})};}
             if (!parsed) {controller.abort(); return {state: 'unavailable', diagnostic: report(diagnostic || contextDiagnostic(value))};}
-            const record = {value: parsed, helper, generationId, epoch, controller, handle: null, playing: false, selection: 'idle', diagnostic: parsed.identity ? null : report(diagnostic || contextDiagnostic(value))}; current = record;
+            const record = {value: parsed, helper, generationId, epoch, controller, handle: null, playing: false, selection: 'idle', diagnostic: parsed.identity ? null : report(diagnostic || contextDiagnostic(value)), decoderObserved: new Set(), evidence: evidence.create(onEvidence, parsed.identity || parsed)}; current = record;
+            record.evidence('play-open', {sourceClass: parsed.transport ? require('./preload-source-authority').isOrdinaryTransport(parsed.transport) ? 'emby-http' : 'resolved-http' : 'legacy', generationHash: evidence.digest(generationId), preloadEnabled: config.preloadEnabled !== false, retainPlayback: config.retainPlayback !== false});
             return {state: 'ready', ...(record.diagnostic ? {diagnostic: record.diagnostic} : {})};
         })());
     }
     function owns(record) {return !closed && current === record && epoch === record.epoch && !record.controller.signal.aborted &&
         !record.helper.exited && !record.helper.transportTerminated && record.helper.currentGenerationId === record.generationId;}
     async function select(source, helper, generationId, loadOptions) {
-        const record = current;
+        const record = current, selectionAt = now();
         if (!record || !record.value.identity || !owns(record) || record.value.source !== source || record.helper !== helper || record.generationId !== generationId) return null;
         // One attempt belongs to this explicit Play. Late backend readiness is
         // reusable infrastructure, never permission to replace its fallback.
@@ -188,6 +195,8 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             }
             if (!owns(record) || budget && !budget.isCurrent()) {await handle.stop(); return null;}
             record.handle = handle; record.selection = 'proxy';
+            let preparedHandoff; try {preparedHandoff = handle.status?.().preparedHandoff === true;} catch (_) {}
+            record.evidence('selection', {route: 'proxy', elapsedMs: Math.max(0, now() - selectionAt), preparedHandoff});
             let cancelling;
             function cancel() {
                 // Clear synchronously: original-source fallback must not later
@@ -197,7 +206,7 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             }
             return {source: handle.source, canDispatch: () => owns(record) && record.handle === handle && (!budget || budget.isCurrent()),
                 ...(budget ? {commit: () => budget.commit()} : {}), cancel};
-        } catch (error) {if (owns(record)) {record.selection = 'original'; record.diagnostic = diagnostics.fromError(error, 'current-probe', 'cache-unavailable'); report({...record.diagnostic, ...(record.diagnostic.reason === 'timeout' ? {phase: record.preparationPhase} : {})});} return null;}
+        } catch (error) {if (owns(record)) {record.selection = 'original'; record.diagnostic = diagnostics.fromError(error, 'current-probe', 'cache-unavailable'); report({...record.diagnostic, ...(record.diagnostic.reason === 'timeout' ? {phase: record.preparationPhase} : {})}); record.evidence('selection', {route: 'original', reason: record.diagnostic.reason, phase: record.preparationPhase, elapsedMs: Math.max(0, now() - selectionAt)});} return null;}
     }
     function unproxied(reason, helper, generationId) {
         const record = current;
@@ -288,7 +297,17 @@ function createSession({config, create = createCache, onDiagnostic = () => {}, a
             if (cachePromise) await (await cachePromise).discardNext();
         })());
     }
-    return {cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
+    return {
+        mediaEvent(name, value) {
+            const record = current; if (!record || !owns(record)) return;
+            if (name === 'core-idle' && value === false) record.evidence('core-playing');
+            else if (['file-loaded','end-file','playback-restart','seek-requested'].includes(name)) record.evidence(name, ['playback-restart','seek-requested'].includes(name) ? {positionSeconds: value} : {});
+        },
+        mediaProperty(name, value) {
+            const record = current; if (!record || !owns(record) || record.decoderObserved.has(name)) return;
+            const details = evidence.decoder(name, value);
+            if (details) {record.decoderObserved.add(name); record.evidence('decode-state', details);}
+        }, cancelNext, setContext, unproxied, select: (...args) => track(select(...args)), started, preload, retire,
         status: () => {
             const backend = config.kind === 'shared-byte-trial' ? {state: cacheInstance ? cacheInstance.status().backendState : cacheFailed ? 'failed' : cachePromise ? 'initializing' : 'idle'} : undefined;
             let bytes = 0, localHitBytes = null, fallbackOriginal = false, preparedHandoff = false, preparedValidation;

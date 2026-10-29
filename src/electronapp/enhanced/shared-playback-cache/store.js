@@ -6,6 +6,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const {acquireGuard} = require('../playback-range-identity');
+const evidence = require('./evidence');
 const {MAX_ROWS, MAX_INDEX_BYTES, MAX_JOURNAL_BYTES, MAX_RECORDS,
   packBlock, decodeCheckpoint, encodeCheckpoint, encodeFrame, replayJournal} = require('./index');
 
@@ -106,7 +107,7 @@ async function readMetadataBounded(io, indexPath, limit) {
 }
 
 async function createStore({
-  root,
+  root, onEvidence,
   currentBytes,
   nextBytes,
   maxPendingBytes = 2 * 1024 * 1024,
@@ -417,7 +418,9 @@ async function createStore({
     retired.set(block.file, block);
   }
 
-  async function retireEntry(entry) {
+  let refusedBlocks = 0;
+  async function retireEntry(entry, reason = 'policy') {
+    evidence.create(onEvidence, {knownMediaHash: entry.mediaKey, knownRepresentationHash: entry.baseKey})('entry-retired', {reason, role: entry.role, retainedBytes: entry.blocks.reduce((sum, b) => sum + b.length, 0), totalBytes: entry.meta.total, versionHash: evidence.storedVersion(entry.meta)});
     entries.delete(entry.key);
     if (actualKey === entry.key) actualKey = null;
     for (const block of entry.blocks) retire(block, entry.role);
@@ -602,7 +605,7 @@ async function createStore({
       let retiredVersion = false;
       for (const stale of [...entries.values()]) {
         if (stale.baseKey === baseKey && stale.key !== key) {
-          retireEntry(stale);
+          retireEntry(stale, 'version-changed');
           retiredVersion = true;
         }
       }
@@ -630,7 +633,7 @@ async function createStore({
             .sort((a, b) => a.touched - b.touched)[0];
           if (!candidate) throw new Error('cache entry limit');
           if (!isLive(isCurrent)) throw new Error('cache request retired');
-          retireEntry(candidate);
+          retireEntry(candidate, 'metadata-limit');
           await persist();
           await drainRetired();
         }
@@ -664,7 +667,7 @@ async function createStore({
       if (!entry) return false;
       for (const other of [...entries.values()]) {
         if (other.key !== key && (other.key === actualKey || other.role === 'next')) {
-          retireEntry(other);
+          retireEntry(other, 'actual-advanced');
         }
       }
       entry.role = 'current';
@@ -685,6 +688,7 @@ async function createStore({
       } else await trim('current', currentBytes);
       await persist();
       await drainRetired();
+      evidence.create(onEvidence, {knownMediaHash: entry.mediaKey, knownRepresentationHash: entry.baseKey})('actual-promoted', {retainedBytes: used('current'), preloadedBytes: used('next'), totalBytes: entry.meta.total, versionHash: evidence.storedVersion(entry.meta)});
       return true;
     });
   }
@@ -745,6 +749,8 @@ async function createStore({
       for (const block of selected) {
         const data = await readBlockBounded(block);
         if (!data || sha256(data) !== block.hash) {
+          refusedBlocks++;
+          if (refusedBlocks <= 2) evidence.create(onEvidence, {knownMediaHash: entry.mediaKey, knownRepresentationHash: entry.baseKey})('block-refused', {reason: data ? 'integrity-mismatch' : 'block-unavailable', rangeStart: block.start, rangeEnd: block.start + block.length - 1, versionHash: evidence.storedVersion(entry.meta)});
           if (closing) corruptBlocks.add(block);
           else enqueue(() => removeCorruptBlock(block)).catch(() => {});
           return null;
@@ -882,7 +888,7 @@ async function createStore({
     if (closing || closed) return Promise.resolve(false);
     return enqueue(async () => {
       for (const entry of [...entries.values()]) {
-        if (entry.key !== actualKey && entry.role === 'next') await retireEntry(entry);
+        if (entry.key !== actualKey && entry.role === 'next') await retireEntry(entry, 'next-cancelled');
       }
       await persist(); await drainRetired(); return true;
     });
@@ -895,8 +901,12 @@ async function createStore({
     return enqueue(async () => {
       if (!isLive(isCurrent)) return false;
       const actual = entries.get(actualKey);
-      if (!actual || owner && actual.mediaKey === owner) return false;
-      await retireEntry(actual); await persist(); await drainRetired(); return true;
+      if (!actual) return false;
+      if (owner && actual.mediaKey === owner) {
+        evidence.create(onEvidence, {knownMediaHash: actual.mediaKey, knownRepresentationHash: actual.baseKey})('actual-preserved', {retainedBytes: used('current'), totalBytes: actual.meta.total, versionHash: evidence.storedVersion(actual.meta)});
+        return false;
+      }
+      await retireEntry(actual, 'actual-media-changed'); await persist(); await drainRetired(); return true;
     });
   }
 
@@ -936,7 +946,7 @@ async function createStore({
     closing = true;
     closePromise = enqueue(async () => {
       for (const entry of [...entries.values()]) {
-        if (!retainPlayback || entry.key !== actualKey) await retireEntry(entry);
+        if (!retainPlayback || entry.key !== actualKey) await retireEntry(entry, !retainPlayback ? 'retention-disabled' : 'unplayed-next');
       }
       await persist();
       await drainRetired();
@@ -953,6 +963,8 @@ async function createStore({
         throw new Error('cache cleanup incomplete');
       }
       await guard.close();
+      const kept = entries.get(actualKey);
+      evidence.create(onEvidence, {knownMediaHash: kept?.mediaKey, knownRepresentationHash: kept?.baseKey})('store-close', {retainedBytes: used('current'), preloadedBytes: used('next'), retainPlayback, refusedBlocks});
       closed = true;
     });
     return closePromise;

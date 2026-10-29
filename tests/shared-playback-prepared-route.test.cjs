@@ -5,9 +5,10 @@ const {EventEmitter}=require('node:events'),{createRequire}=require('node:module
 const filename=require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return{promise,resolve};}
-async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,status=206,etag='"v1"',bodyBytes,bodyFill=65,headerTotal=8,accessGate,readGate,refreshGate,mediaBufferBytes=8*1024*1024}={}){
+async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,status=206,etag='"v1"',bodyBytes,bodyFill=65,headerTotal=8,accessGate,readGate,refreshGate,mediaBufferBytes=8*1024*1024,writeError=false,flushError=false}={}){
  let handler,owner=true,reads=0,actuals=0,missing=false,accesses=0,authorizations=0,closed=false;
- const requests=[],heldHeaders=[],heldBodies=[],heldCloses=[],responses=[];
+ const timers=new Set(),setOwnedTimer=(fn,ms)=>{const timer={fn,ms};timers.add(timer);return timer;},clearOwnedTimer=timer=>timers.delete(timer);
+ const evidenceRows=[],requests=[],heldHeaders=[],heldBodies=[],heldCloses=[],responses=[];
  const origin={status,etag,bodyBytes,bodyFill,headerTotal};
  const releaseHeaders=()=>{holdHeaders=false;for(const send of heldHeaders.splice(0))send();};
  const releaseBodies=()=>{holdBody=false;for(const send of heldBodies.splice(0))send();};
@@ -34,19 +35,21 @@ async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,statu
  const authorize=async()=>{authorizations++;if(authorizations>1&&refreshGate){await refreshGate.promise;throw Error('refresh-refused');}return {url:'http://origin.invalid/source',origin:'http://origin.invalid',metadata:{total:8,etag:'"v1"'},accessChecked:false,preparedHandoff:true,...(refreshGate?{expiresAt:0}:{})};};
  const resolveAccess=async()=>{accesses++;if(accesses>1&&accessGate)await accessGate.promise;if(!owner)throw Error('retired-owner');return{url:'http://origin.invalid/source',origin:'http://origin.invalid',expectedSize:8};};
  const module={exports:{}},originalRequire=createRequire(filename);
- new Function('require','module','exports',fs.readFileSync(filename,'utf8'))(key=>key==='node:http'||key==='node:https'?http:key==='node:perf_hooks'?{performance:{now:()=>0}}:originalRequire(key),module,module.exports);
- const proxy=await module.exports.createProxy({store,authorize,resolveAccess,timeoutMs:1000,mediaBufferBytes});
+ // Functional event ordering uses one controlled clock for now() and timers.
+ // Host scheduling stalls must not secretly expire a synthetic origin request.
+ new Function('require','module','exports','setTimeout','clearTimeout',fs.readFileSync(filename,'utf8'))(key=>key==='node:http'||key==='node:https'?http:key==='node:perf_hooks'?{performance:{now:()=>0}}:originalRequire(key),module,module.exports,setOwnedTimer,clearOwnedTimer);
+ const proxy=await module.exports.createProxy({store,authorize,resolveAccess,timeoutMs:1000,mediaBufferBytes,onEvidence:row=>evidenceRows.push(row)});
  const route=await proxy.open({server:'server',account:'account',item:'item',mediaSource:'media',resource:'resource',representation:'original'},'next');await route.ready();
  function get({target=route,holdDrain=false}={}){
   const req=new EventEmitter();req.url=new URL(target.url).pathname;req.method='GET';req.headers={host:'127.0.0.1:19001',range:'bytes=0-7'};
   const res=new EventEmitter(),done=deferred();res.chunks=[];res.headersSent=false;res.writableHighWaterMark=262144;res.finished=false;
   res.writeHead=(code,headers)=>{res.status=code;res.headers=headers;res.headersSent=true;};
-  res.write=data=>{res.chunks.push(Buffer.from(data));return !holdDrain;};
-  res.end=()=>{if(res.finished)return;res.finished=true;res.emit('finish');res.emit('close');done.resolve(res);};res.destroy=()=>{res.destroyed=true;res.end();};
+  res.write=(data,callback)=>{if(writeError)throw Error('synthetic-private-error');res.chunks.push(Buffer.from(data));callback?.(flushError?Error('synthetic-private-error'):undefined);return !holdDrain;};
+  res.end=()=>{if(res.finished)return;res.finished=true;res.writableFinished=!res.destroyed;res.emit('finish');res.emit('close');done.resolve(res);};res.destroy=()=>{res.destroyed=true;res.end();};
   responses.push(res);handler(req,res);return{res,promise:done.promise};
  }
- t.after(async()=>{owner=false;accessGate?.resolve();readGate?.resolve();refreshGate?.resolve();releaseHeaders();releaseBodies();releaseCloses();await proxy.close();});
- return{proxy,route,get,requests,origin,releaseHeaders,releaseBodies,releaseCloses,stats:()=>({reads,actuals,accesses,closed}),retireOwner(){owner=false;},miss(){missing=true;}};
+ t.after(async()=>{owner=false;accessGate?.resolve();readGate?.resolve();refreshGate?.resolve();releaseHeaders();releaseBodies();releaseCloses();await proxy.close();assert.equal(timers.size,0,'all synthetic deadlines are cleared by their owner');});
+ return{proxy,route,get,evidenceRows,requests,origin,expireTimers(){for(const timer of [...timers]){timers.delete(timer);timer.fn();}},releaseHeaders,releaseBodies,releaseCloses,stats:()=>({reads,actuals,accesses,closed}),retireOwner(){owner=false;},miss(){missing=true;}};
 }
 
 test('all responses wait for real Range headers, then ready cache wins without a separate0-0 or waiting for body',async t=>{
@@ -104,4 +107,26 @@ for(const tag of [undefined,'W/"weak"'])test('unversioned initial source falls b
  const f=await fixture(t,{etag:tag===undefined?'"v1"':tag});if(tag===undefined)f.origin.etag=undefined;
  const first=await f.get().promise;assert.equal(first.status,307);assert.equal(first.chunks.length,0);assert.equal(f.route.status().localHitBytes,0);
  f.origin.etag='"v3"';f.origin.bodyFill=67;const later=await f.get().promise;assert.equal(later.status,307);assert.equal(later.chunks.length,0);assert.equal(f.requests.length,1);await f.proxy.drain();assert.equal(f.proxy.status().readReservedBytes,0);
+});
+
+
+test('evidence distinguishes selected cached bytes from queued and socket-flushed bytes on failed writes',async t=>{
+ for(const mode of ['writeError','flushError']){
+  const f=await fixture(t,{holdHeaders:true,holdBody:true,[mode]:true}),a=f.get();await turn();f.releaseHeaders();await a.promise;await f.route.stop();await f.proxy.drain();
+  const range=f.evidenceRows.find(x=>x.event==='range-end').details,summary=f.evidenceRows.find(x=>x.event==='route-end').details;
+  assert.equal(range.selectedLocalBytes,8);assert.equal(range.queuedLocalBytes,mode==='writeError'?0:8);assert.equal(range.flushedLocalBytes,0);assert.equal(range.complete,false);
+  assert.equal(summary.selectedLocalBytes,8);assert.equal(summary.flushedLocalBytes,0);assert(!JSON.stringify(f.evidenceRows).includes('synthetic-private-error'));
+ }
+});
+test('range evidence is capped but route totals retain repeated reads and their original denominator',async t=>{
+ const f=await fixture(t,{holdHeaders:true,holdBody:true}),first=f.get();await turn();f.releaseHeaders();await first.promise;
+ for(let i=1;i<11;i++)await f.get().promise;
+ await f.route.stop();await f.proxy.drain();
+ const ranges=f.evidenceRows.filter(x=>x.event==='range-end');assert.equal(ranges.length,8);assert.equal(ranges[0].details.flushedLocalBytes,8);assert.equal(ranges[0].details.complete,true);
+ const end=f.evidenceRows.find(x=>x.event==='route-end').details;assert.equal(end.rangeCount,11);assert.equal(end.omittedRanges,3);assert.equal(end.selectedLocalBytes,88);assert.equal(end.queuedLocalBytes,88);assert.equal(end.flushedLocalBytes,88);
+});
+
+test('an explicitly expired origin deadline still refuses cache and records fallback without waiting for host time',async t=>{
+ const f=await fixture(t,{holdHeaders:true,holdBody:true}),a=f.get();await turn();f.expireTimers();const result=await a.promise;
+ assert.equal(result.status,307);assert.equal(f.route.status().localHitBytes,0);assert(f.evidenceRows.some(x=>x.event==='source-refused'&&x.details.reason==='origin-timeout'));
 });

@@ -130,6 +130,9 @@ function createService(options) {
     try {if (typeof settings.logger === 'function') settings.logger({category: 'preload', event: 'decision', details: safe});} catch (_) {}
     return safe;
   }
+  const rangeEvidence = require('../enhanced/bounded-diagnostics').createRecorder(
+    typeof settings.logger === 'function' ? settings.logger : () => {}, 'playback-cache', 120);
+  function reportRangeEvidence(value) {rangeEvidence(value.event, value.details);}
   function authorizeRange(value, role, signal, helper, generationId) {
     const owner = rangeGenerationOwner, authority = settings.sourceAuthority;
     if (!authority || !owner || owner.helper !== helper || owner.generationId !== generationId ||
@@ -159,9 +162,9 @@ function createService(options) {
   function changesSharedBudget(name) {return name === 'demuxer-max-bytes' || name === 'profile';}
   function createRangeSession(config) {
     if (config.kind === 'source-aware') return require('../enhanced/playback-range-source-session').createSourceSession({config,
-      onDiagnostic: reportPreload, readCurrentBytes: readSharedCurrentBytes, authorize: settings.sourceAuthority ? authorizeRange : undefined,
+      onDiagnostic: reportPreload, onEvidence: reportRangeEvidence, readCurrentBytes: readSharedCurrentBytes, authorize: settings.sourceAuthority ? authorizeRange : undefined,
       authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined});
-    return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload,
+    return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload, onEvidence: reportRangeEvidence,
     ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes,
       authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined} : {}),
     authorize: settings.sourceAuthority ? authorizeRange : undefined});}
@@ -562,6 +565,7 @@ function createService(options) {
       onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
       onEvent: function (message) {
         if (client !== owned) return;
+        if (rangeSession && typeof rangeSession.mediaEvent === 'function' && message.generationId === owned.currentGenerationId) rangeSession.mediaEvent(message.name, message.value);
         if (rangeSession && message.name === 'core-idle' && message.value === false) {
           rangeSession.started(owned, message.generationId).catch(function () {log('range-cache-unavailable', {});});
         }
@@ -926,7 +930,9 @@ function createService(options) {
     if (operation === 'get-property') {
       requireGeneration(active, payload);
       const name = validatePropertyName(payload.name, GET_PROPERTIES);
-      return {status: 'ok', value: await active.getProperty(name, 2000)};
+      const value = await active.getProperty(name, 2000);
+      if (active === client && active.currentGenerationId === payload.generationId && rangeSession && typeof rangeSession.mediaProperty === 'function') rangeSession.mediaProperty(name, value);
+      return {status: 'ok', value};
     }
     if (operation === 'command') {
       const args = validateCommand(payload.data);
@@ -972,6 +978,7 @@ function createService(options) {
         active.stop().catch(function () {});
         return {status: 'accepted'};
       }
+      if (args[0] === 'seek' && rangeSession && typeof rangeSession.mediaEvent === 'function') rangeSession.mediaEvent('seek-requested', args[2] === 'absolute' ? Number(args[1]) : undefined);
       active.submitCommand(args);
       return {status: 'accepted'};
     }
