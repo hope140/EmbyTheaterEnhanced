@@ -20,7 +20,7 @@
 - 重点支持现有 STRM／CD2。可播放来源应尽可能下载，但必须测量影片本体、鉴权、换签和 Range；播放能力不自动证明完整下载能力。
 - 关闭 ETE 停止传输并保留未完成任务，下次打开并登录原账户后继续；不做后台常驻。
 - 设置中可改默认目录，仅新任务使用新目录，已有任务及文件不自动搬迁。
-- 不接管旧下载、不删除已下载文件，不修改预载／最后播放暂存的 M+P、归属和清理规则。
+- 不接管旧下载、不自动删除已下载文件；仅在使用者明确确认时删除经核验的本任务文件，默认删除操作只清记录。不修改预载／最后播放暂存的 M+P、归属和清理规则。
 
 在线完整下载、真正离线客户端与 Emby Downloads & Sync 仍是不同层次。官方网页直接下载不属于 Downloads & Sync；Folder Sync 是服务端插件复制到服务端可访问目录。当前无需先将 ETE 广告为同步设备，也不创建服务端同步任务。来源：[Download Options](https://emby.media/support/articles/Sync.html)、[Offline Access](https://emby.media/support/articles/Offline-Access.html)、[Folder Sync](https://emby.media/support/articles/Folder-Sync.html)。
 
