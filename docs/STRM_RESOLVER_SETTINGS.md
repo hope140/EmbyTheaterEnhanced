@@ -21,6 +21,10 @@ Electron main process 在应用 `userData` 下维护：
 
 设置保存会立即写入文件，但当前 CD2 service 生命周期不做 hot reload。页面会提示重启后播放链生效；重启时由持久化配置重新创建 service。
 
+配置和 Token 写入使用随机、独占创建的临时文件，再 rename 提交。普通保存、禁用／恢复自动规则及 discovery 都在文件提交成功后更新 store 的内存快照；写入失败保持旧文件和旧快照，允许重试。失败收尾关闭描述符，并尽力清除身份仍属于本次写入的临时文件，避免普通写入／rename 失败遗留明文 Token；文件被替换、路径不可访问或清理被拒绝时不冒险删除其他文件，也不掩盖原保存错误。这不是加密存储或断电恢复保证；用户资料备份仍需保护。
+
+回归命令：`node --test tests/strm-config-persistence.test.cjs tests/strm-resolver-settings.test.cjs`。使用临时目录和合成 Token，覆盖部分写入、rename 失败、独占创建冲突、清理失败／文件替换，以及规则写入失败后重试与重启读取。
+
 ## Schema
 
 公开配置语义如下，`tokenConfigured` 是运行时派生字段，不会写入配置文件：
