@@ -161,6 +161,7 @@ function createFixture(root) {
     for (const relativePath of [
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
+        'tools/patch-advance-download.cjs',
         'tools/patch-videoosd-lifecycle.cjs',
         'tools/patch-connectionmanager-transport.cjs',
         'tools/patch-externalplayer-residue.cjs',
