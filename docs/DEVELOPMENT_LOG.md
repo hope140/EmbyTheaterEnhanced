@@ -2,6 +2,12 @@
 
 ## 2026-10-30 — Windows 无硬链接提交与自动CI准备
 
+最终代码`93ffb1a38080a6c4d61320e57f62d8904af35114`已推至`feature/advance-download-foundation-20261030`。自动[Public offline CI run 41001272123](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41001272123)为push事件，head／checkout均为该准确源码，`windows-public-offline`终态success且执行full路线：2243项，2238 pass／0 fail／5既有skip；按原合同排除6材料文件。新增Win32 API成功提交、Unicode、同名文件／目录不覆盖、精确源／目录身份与mtime拒绝、强制无硬链接完整HTTP传输、移动应答丢失恢复／替换文件拒绝全部通过。其余JS／PowerShell语法、固定快照／libmpv、有限凭据及diff门禁通过；打包和A/B任务均skipped，未触发发布或合main。
+
+中间源码`49cc8b4`的run`41000911187`为2242项：2232 pass／5 fail／5 skip，仍是相同助手路径，不隐去失败。改用NULL RootDirectory＋绝对目标形式后上述实际API测试通过；旧候选未保留原始Win32数字码，不将原因断言为某一个错误码。最终本地相关122项为118 pass／0 fail／4 Windows skip；源码`49cc8b4`Linux公开2242项为2213 pass／0 fail／29平台skip。最终源码另显式overlay／统计／真实媒体自测9/9，540份JS语法、637份维护文本有限凭据扫描和diff通过。Linux结果不替代Windows，Windows普通临时目录上的模拟无硬链接不冒称实际FAT／exFAT卷验证。
+
+真实FAT／exFAT、可移动盘重挂载／断电、网络盘／ReFS、受限PowerShell／Add-Type策略、真实Emby／CD2和GUI仍未验收；没有改动用户目录或Work前台。FAT32单文件上限仍存在。移动后若崩溃且文件ID已改变，仅保留文件，不擅自认领。
+
 首轮远端Windows运行`41000162270`（push，准确源码`3d427d0ac5fef8eb2593702fa511eb4594401055`）为2240项：2230 pass／5 fail／5 skip。五项均为新助手的成功提交／同名保护及依赖它的应答丢失恢复；旧路径和取源／重启回归通过。首轮不能称Windows兼容通过。下一候选改用Win32常见的NULL RootDirectory＋绝对目标路径形式，祖先句柄仍保持锁定；补充仅固定阶段／Win32数字码诊断，并要求拒绝测试命中准确身份／时间校验阶段，避免“任意失败也算安全验证”的假通过。准确后续结果另记。
 
 新增独立Windows提交助手：仅固定代码和主进程白名单数据，经隐藏Windows PowerShell运行C#句柄API；不接受shell命令、不带下载Token或URL。目录祖先禁止rename/delete，源句柄禁止外部写／删且核对根／源ID、单链接、长度和修改时间；FileRenameInfo禁止覆盖目标。临时文件先sync并记录移动意图，再进入不可分割提交；未知应答保留意图。恢复时缺失临时文件只接受同一物理最终文件并读全摘要，身份不符时不改动任何文件。FAT32大小错误有明确提示。
