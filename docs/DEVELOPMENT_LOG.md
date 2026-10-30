@@ -1431,3 +1431,12 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 The manual Windows package route now calls `tools/ci-source-built-host.ps1` after the existing independent component recovery. It recovers the fixed official 55 source files as raw Git blobs, verifies their recorded SHA256 values, and acquires only the two pinned NuGet inputs without installation. Repository build tools materialize the current unified source kit; a new Framework/x86 process must compile and run its own matching-byte verification before a generated lock can enter assembly. Runner evidence binds the checkout, run identity, source, compiler receipt, probe receipt and EXE/PDB. External Work receipts and original-Host fallback are not substitutes.
 
 This is local integration preparation, not a successful GitHub run. Work's exact validated builder delta has now been applied:16941 bytes, SHA256 ad98235870d72c4e5ce48227fcae6b8f01d8a0500dadc3e69cd55ae2deb926ed. It moves the search-path property into generated XML, adds compile-only references from the already pinned net462 pack, and corrects metadata enumeration initialization; business source identity is unchanged. Work reported MSB3277 separately; pure net462 runtime compatibility is not established by this transfer. `tools/Test-SourceBuiltHost.ps1` is still pending the verified portable harness handoff. Its absence stops before compilation/acceptance, so the current skeleton cannot produce a package or claim runner acceptance. Local checks cover recovery/receipt contracts and syntax only. Full README/project-document consolidation remains deferred until test-package user acceptance.
+
+
+## 2026-10-30 — 下载管理、目录选择顺序和预检失败
+
+改为先选择／读取目录再预检；保留有界、账户隔离的当前进程预检失败记录，显示固定阶段和原因并可重试，不构造媒体授权receipt。设置取消选择→原按钮下载的真实selector／manager合成集成测试通过；不能将取消本身认定为真实故障根因。资料显式协商JSON；STRM按既有sidecar身份判断，不以Container或Size误拒本体。两类合成协议回归通过，但真实服务根因尚未确认。
+
+下载管理增加完整路径、字节／百分比、键控任务行和原生主题按钮；main只允许打开已保存默认目录／当前账户任务目录，renderer路径被忽略，shell失败仅返回固定原因。新增vendor菜单overlay隐藏旧sync／synclocal，实际固定输入菜单夹具验证保留唯一download及其他命令，不改冻结输入或服务器同步。
+
+定向87项为83 pass／0 fail／4 Windows skip；菜单首轮夹具缺self，补齐浏览器对象后通过。首轮公开回归的生产Web装配因未提交生成器触发“Tracked generator differs from HEAD”而失败，保留门禁，提交后重新核验。语法541文件与有限凭据模式638文件扫描通过；不称完整凭据扫描。完整材料／公开与Windows结果待追加；真实来源、原生目录弹窗、Explorer和完整客户端未运行。

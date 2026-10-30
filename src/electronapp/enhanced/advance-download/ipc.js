@@ -6,7 +6,7 @@ const {createManager} = require('./manager');
 const probe = require('./source-probe');
 const CHANNELS = Object.freeze({START: 'enhanced-download-start', ATTACH: 'enhanced-download-attach',
     DETACH: 'enhanced-download-detach',
-    STATUS: 'enhanced-download-status', DIRECTORY: 'enhanced-download-directory', RETRY: 'enhanced-download-retry',
+    OPEN_FOLDER: 'enhanced-download-open-folder', STATUS: 'enhanced-download-status', DIRECTORY: 'enhanced-download-directory', RETRY: 'enhanced-download-retry',
     LOOKUP: 'enhanced-download-lookup', CANCEL_LOOKUP: 'enhanced-download-lookup-cancel', PROGRESS: 'enhanced-download-progress'});
 function context(value) {
     if (!value || ['serverId', 'accountId'].some(key => typeof value[key] !== 'string' || !/^[A-Za-z0-9_-]{1,256}$/.test(value[key])) ||
@@ -73,7 +73,8 @@ function register(options) {
     }
     handle(CHANNELS.ATTACH, request => {manager.attach(context(request.context)); return {status: 'ok'};});
     handle(CHANNELS.DETACH, async () => {await manager.pauseAll(); return {status: 'ok'};});
-    handle(CHANNELS.START, request => manager.enqueue({...context(request.context), ...media(request)}));
+    handle(CHANNELS.START, request => manager.enqueue({...context(request.context), ...media(request),
+        displayTitle: typeof request.title === 'string' ? request.title.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 256) : undefined}));
     handle(CHANNELS.STATUS, request => {
         const current = context(request.context); manager.attach(current);
         return {status: 'ok', directory: store.read(), tasks: manager.list(current)};
@@ -83,6 +84,18 @@ function register(options) {
         const controller = new AbortController(); dialogs.add(controller);
         try {return await selector.select({force: true, signal: controller.signal});}
         finally {dialogs.delete(controller);}
+    });
+    handle(CHANNELS.OPEN_FOLDER, async request => {
+        const current = context(request.context);
+        if (request.taskId !== undefined && (typeof request.taskId !== 'string' || request.taskId.length > 80)) throw probe.failure('invalid-request');
+        const directory = request.taskId === undefined ? store.read() : manager.directory(current, request.taskId);
+        if (!directory) throw probe.failure('directory-unavailable');
+        const root = preferences.physicalDirectory(directory);
+        if (!options.shell || typeof options.shell.openPath !== 'function') throw probe.failure('folder-open-failed');
+        let result;
+        try {result = await options.shell.openPath(root);} catch (_) {throw probe.failure('folder-open-failed');}
+        if (result) throw probe.failure('folder-open-failed');
+        return {status: 'ok'};
     });
     handle(CHANNELS.RETRY, request => manager.retry(context(request.context), request.taskId));
     handle(CHANNELS.LOOKUP, request => {

@@ -1,0 +1,15 @@
+.ete-download-management { max-width: 76em; }
+.ete-download-management .ete-settings-card { margin-bottom: 1em; }
+.downloadListHeader, .downloadActions { display: flex; align-items: center; gap: .7em; flex-wrap: wrap; }
+.downloadListHeader { justify-content: space-between; margin-bottom: .8em; }
+.downloadListHeader h2 { margin: 0; }
+.downloadCount, .downloadHint { opacity: .7; font-size: .9em; }
+.downloadPath { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; font-family: inherit; margin: .65em 0; }
+.downloadHint { line-height: 1.6; margin-bottom: 0; }
+.downloadTask { border-top: 1px solid rgba(128,128,128,.3); padding: 1em 0; }
+.downloadTask h3 { margin: 0 0 .5em; overflow-wrap: anywhere; }
+.downloadTask p { margin: .5em 0; line-height: 1.5; }
+.downloadTask progress { display: block; width: 100%; height: .55em; accent-color: var(--theme-accent-color, #52b54b); }
+.downloadTask .downloadActions { margin-top: .75em; }
+.downloadTaskReason { opacity: .85; }
+.ete-download-management [hidden] { display: none !important; }

@@ -1,15 +1,18 @@
 <div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-mousewheel="true" data-horizontal="false" data-forcescrollbar="true" data-bindheader="true">
-    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page">
-        <section class="ete-settings-card">
-            <h2>默认下载目录</h2>
-            <p class="downloadDirectory">首次下载时选择</p>
-            <button type="button" is="emby-button" class="raised ete-settings-button btnDownloadDirectory">更改默认目录</button>
-            <p>新任务使用新目录；已有任务和文件保持原位置。关闭客户端会停止传输并保留任务，登录对应账户后继续。</p>
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page ete-download-management">
+        <section class="ete-settings-card downloadLocationCard">
+            <h2>保存位置</h2>
+            <p class="downloadDirectory downloadPath">尚未选择目录，首次下载时会提示选择。</p>
+            <div class="downloadActions">
+                <button type="button" is="emby-button" class="raised ete-settings-button btnDownloadDirectory">选择 / 更改目录</button>
+                <button type="button" is="emby-button" class="raised ete-settings-button btnOpenDownloadDirectory">打开文件夹</button>
+            </div>
+            <p class="downloadHint">更改目录只影响新任务，已有任务和文件保留原位置。退出客户端会停止传输，下次登录后继续。</p>
         </section>
         <section class="ete-settings-card">
-            <h2>下载任务</h2>
-            <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshDownloads">刷新</button>
-            <div class="downloadTasks" aria-live="polite"></div>
+            <div class="downloadListHeader"><h2>下载任务 <span class="downloadCount"></span></h2>
+                <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshDownloads">刷新</button></div>
+            <div class="downloadTasks"></div>
         </section>
         <div class="downloadStatus ete-settings-status" role="status" aria-live="polite"></div>
     </div>

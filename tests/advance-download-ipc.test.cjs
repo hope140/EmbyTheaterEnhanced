@@ -14,11 +14,11 @@ function fixture(overrides = {}) {
     const manager = {attach(value) {calls.push(['attach', value]);}, enqueue: async value => {calls.push(['start', value]); return {status: 'queued'};},
         list: () => [], retry: () => ({status: 'queued'}), pauseAll: async () => {calls.push(['pause']);},
         close: async () => {calls.push(['close']);}, localSource: async () => null, ...overrides.manager};
-    let chosen;
+    let chosen = overrides.directory;
     const unregister = api.register({ipcMain, getWebContents: () => sender,
         preferences: {read: () => chosen || null, save: value => {calls.push(['save-directory']); chosen = value; return value;}},
         dialog: {showOpenDialog: overrides.dialog || (async () => ({canceled: true, filePaths: []}))},
-        createManager(value) {config = value; return manager;}});
+        shell: overrides.shell, createManager(value) {config = value; return manager;}});
     return {handlers, calls, sent, sender, ipcMain, manager, unregister, get config() {return config;},
         invoke(name, request = {}) {return handlers.get(api.CHANNELS[name])(eventFor(sender), request);}};
 }
@@ -79,5 +79,29 @@ test('navigation retires in-flight results and progress updates are bounded and 
     assert.equal((await lookup).status, 'cancelled');
     f.config.onChange({id: 'task', state: 'complete', reason: null});
     assert.equal(f.sent.length, 1);
+    await f.unregister();
+});
+
+test('open folder uses only saved default or account-scoped task directories, never renderer paths or shell URLs', async t => {
+    const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-folder-ipc-')));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const opened = [];
+    const f = fixture({directory: root, shell: {async openPath(value) {opened.push(value); return '';}},
+        manager: {directory(current, id) {return current.accountId === 'account' && id === 'owned' ? root : null;}}});
+    assert.equal((await f.invoke('OPEN_FOLDER', {context, path: 'https://untrusted.invalid/'})).status, 'ok');
+    assert.equal((await f.invoke('OPEN_FOLDER', {context, taskId: 'owned', path: '/ignored'})).status, 'ok');
+    assert.equal((await f.invoke('OPEN_FOLDER', {context: {...context, accountId: 'other'}, taskId: 'owned'})).reason, 'directory-unavailable');
+    assert.equal((await f.invoke('OPEN_FOLDER', {context, taskId: 'missing'})).reason, 'directory-unavailable');
+    assert.deepEqual(opened, [root, root]);
+    fs.rmdirSync(root);
+    assert.equal((await f.invoke('OPEN_FOLDER', {context})).reason, 'directory-unavailable');
+    assert.equal(opened.length, 2);
+    await f.unregister();
+});
+
+test('native folder-open errors expose a fixed reason rather than system paths', async () => {
+    const f = fixture({directory: require('node:fs').realpathSync.native(require('node:os').tmpdir()), shell: {async openPath() {return 'private-system-error';}}});
+    assert.deepEqual(await f.invoke('OPEN_FOLDER', {context}), {status: 'error', reason: 'folder-open-failed'});
     await f.unregister();
 });

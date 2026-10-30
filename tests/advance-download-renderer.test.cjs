@@ -71,3 +71,24 @@ test('the pinned command overlay routes video only and preserves original audio,
     assert.throws(() => patch.patchCommandProcessor('unrelated'));
     assert.throws(() => patch.patchCommandProcessor(base + base));
 });
+
+test('context menu hides legacy device sync but retains unified download and unrelated actions', () => {
+    const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/itemcontextmenu.js'), 'utf8');
+    function load(source) {
+        const exports = {};
+        const helper = new Proxy({canSync: () => true, canEdit: () => true}, {get(target, key) {return target[key] || (() => false);}});
+        vm.runInNewContext(source, {self: {}, define(names, factory) {factory(...names.map(name =>
+            name === 'exports' ? exports : name.includes('servicelocator') ? {appHost: {supports: () => true}} :
+            name.includes('globalize') ? {default: {translate: value => value}} :
+            name.includes('connectionmanager') ? {default: {getApiClient: () => ({serverId: () => 'server'})}} :
+            name.includes('itemhelper') ? {default: helper} : name.includes('playbackmanager') ? {default: {canPlay: () => false}} : {default: {}}));}});
+        return exports.default.getCommands({item: {Id: 'item', Type: 'Movie', MediaType: 'Video', CanDownload: true}, user: {Policy: {}}});
+    }
+    const original = load(base).map(command => command.id), modified = load(patch.patchItemContextMenu(base)).map(command => command.id);
+    assert.ok(original.includes('sync')); assert.ok(original.includes('synclocal'));
+    assert.equal(modified.filter(id => id === 'download').length, 1);
+    assert.ok(modified.includes('edit'));
+    assert.deepEqual(Array.from(modified), Array.from(original.filter(id => id !== 'sync' && id !== 'synclocal')));
+    assert.throws(() => patch.patchItemContextMenu('unrelated'));
+    assert.throws(() => patch.patchItemContextMenu(base + base));
+});

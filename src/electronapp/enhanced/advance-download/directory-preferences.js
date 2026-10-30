@@ -82,4 +82,4 @@ function createSelector({store, dialog, getWindow = () => null}) {
     return Object.freeze({select});
 }
 
-module.exports = {createStore, createSelector};
+module.exports = {createStore, createSelector, physicalDirectory};

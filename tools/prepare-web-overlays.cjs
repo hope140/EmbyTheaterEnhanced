@@ -37,6 +37,14 @@ const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
+        id: 'advance-download-menu', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/modules/itemcontextmenu.js', inputPath: null,
+        runtimePath: 'electronapp/www/modules/itemcontextmenu.js',
+        expectedBaseSha256: '23946853EB776414F36372529DBB64FA1607FCD991281D18AB806599FF50CACB', expectedInputSha256: null,
+        expectedOutputSha256: '3CC0B77841D8E50D0618A8E4E3BE3C642100BA369AC8E843C166586B2B056EB7',
+        generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-advance-download.cjs'])
+    }),
+    Object.freeze({
         id: 'advance-download-command',
         mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/modules/commandprocessor.js',
@@ -357,6 +365,7 @@ function retireCustomCssJs(text) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.id === 'advance-download-menu') return {base, input: Buffer.from(advanceDownload.patchItemContextMenu(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};
     if (contract.id === 'connectionmanager-transport') return {base, input: Buffer.from(connectionManagerTransport.patchConnectionManager(base.toString('utf8')), 'utf8')};
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};

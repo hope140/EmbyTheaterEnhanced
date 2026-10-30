@@ -25,7 +25,7 @@ const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/apphost.
     ...['response-contract', 'source-probe', 'source-session', 'directory-preferences', 'transfer', 'publication', 'task-store', 'manager', 'ipc', 'renderer']
         .map(name => 'electronapp/enhanced/advance-download/' + name + '.js'),
     'electronapp/enhanced/advance-download/windows-publish.cs',
-    'electronapp/plugins/mpvplayer/downloads.html', 'electronapp/plugins/mpvplayer/downloads.js', 'electronapp/enhanced/home/home-tab.js',
+    'electronapp/plugins/mpvplayer/downloads.css', 'electronapp/plugins/mpvplayer/downloads.html', 'electronapp/plugins/mpvplayer/downloads.js', 'electronapp/enhanced/home/home-tab.js',
     'electronapp/enhanced/home/server-sections.js', 'electronapp/enhanced/page-cache/page-data-cache.js',
     'electronapp/enhanced/page-cache/home-layout-cache.js', 'electronapp/enhanced/page-cache/test-options.js',
     'electronapp/enhanced/page-cache/test-session.js', 'electronapp/enhanced/cache-management-ipc.js',

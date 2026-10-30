@@ -86,7 +86,7 @@ function requestBuffer(urlValue, {headers = {}, signal, limit, prefix = false, t
 }
 
 async function jsonRequest(url, headers, signal, timeoutMs) {
-    const response = await requestBuffer(url, {headers, signal, timeoutMs, limit: 2097152});
+    const response = await requestBuffer(url, {headers: {...headers, Accept: 'application/json'}, signal, timeoutMs, limit: 2097152});
     if (response.statusCode !== 200) throw failure(response.statusCode >= 300 && response.statusCode < 400 ? 'metadata-redirect' : statusError(response.statusCode));
     if (!response.messageComplete) throw failure('response-interrupted');
     try {

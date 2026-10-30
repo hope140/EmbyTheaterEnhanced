@@ -3,14 +3,26 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
     var started = false, timer = null, lastIdentity = null, sequence = 0;
     var lastStates = Object.create(null), restarts = Object.create(null);
     var channels = {start: 'enhanced-download-start', attach: 'enhanced-download-attach', detach: 'enhanced-download-detach', status: 'enhanced-download-status',
-        directory: 'enhanced-download-directory', retry: 'enhanced-download-retry', lookup: 'enhanced-download-lookup',
+        openFolder: 'enhanced-download-open-folder', directory: 'enhanced-download-directory', retry: 'enhanced-download-retry', lookup: 'enhanced-download-lookup',
         cancel: 'enhanced-download-lookup-cancel', progress: 'enhanced-download-progress'};
     var reasons = {
+        'invalid-metadata': '服务器返回的资料不是有效 JSON，无法核对下载权限和来源。',
+        'metadata-redirect': '服务器资料接口发生跳转，请检查服务器地址或代理配置。',
+        'network-failed': '连接下载来源失败，请检查网络、证书和服务器地址。',
+        'timeout': '核对下载来源超时，请稍后重试。',
+        'server-changed': '服务器身份与当前登录不一致，请重新登录。',
+        'http-status': '下载来源返回错误响应，请稍后重试。',
+        'directory-invalid': '下载目录无效，请重新选择。',
+        'settings-invalid': '下载目录设置无法读取，原设置已保留。',
+        'settings-save-failed': '无法保存下载目录，请检查客户端配置目录权限。',
+        'folder-open-failed': '系统无法打开此下载文件夹，请检查目录是否可用。',
+        'source-close-failed': '下载来源连接未能正常关闭，请重试。',
+        'stream-unsupported': '此来源暂不支持完整视频文件下载。',
         'auth-required': '下载需要重新登录服务器。', 'download-not-permitted': '服务器未允许当前账户下载此视频。',
         'source-selection-required': '请先选择媒体版本，再下载。', 'source-unavailable': '当前来源暂时无法下载。',
         'pointer-response': '服务器返回的是 STRM 地址文本，未取得影片本体。', 'segmented-source': '此来源是分段流，暂不支持完整文件下载。',
         'container-unrecognized': '无法确认响应是受支持的视频文件，未保存为完成下载。', 'length-unavailable': '来源未提供可核验的文件长度。',
-        'directory-unavailable': '下载目录不可用，请在下载设置中重新选择。', 'directory-unwritable': '下载目录不可写。',
+        'directory-unavailable': '下载目录不可用，请在下载管理中重新选择。', 'directory-unwritable': '下载目录不可写。',
         'temporary-changed': '未完成文件的归属已变化，已停止操作，未覆盖或删除该文件。',
         'disk-full': '下载空间不足，任务已保留。', 'representation-changed': '来源版本发生变化，请继续任务以重新下载。',
         'file-too-large': '文件超出此目录文件系统的单文件大小限制，请为新任务选择支持大文件的目录。',
@@ -18,7 +30,9 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         'publication-unavailable': '此目录无法安全提交文件，任务已保留。',
         'task-store-unsafe': '下载任务记录无法安全读取，已保留原文件。'
     };
-    function message(reason) {return reasons[reason] || '下载暂未完成，请在下载设置中查看状态或重试。';}
+    var stages = {'server-check': '服务器核验', 'permission-check': '账户权限', 'item-check': '视频资料',
+        'version-check': '媒体版本', 'resolve-source': '解析来源', 'probe-source': '影片本体验证', prepare: '准备下载'};
+    function message(reason) {return reasons[reason] || '下载未完成' + (typeof reason === 'string' && /^[a-z-]{1,64}$/.test(reason) ? '（' + reason + '）' : '') + '，请在下载管理中重试。';}
     function context(api) {
         try {
             if (!api) return null;
@@ -47,7 +61,7 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
                 value.reason === 'partial-corrupt-restarting' ? '已下载部分校验不通过，正在从头下载。' : '无法安全续传本次未完成文件，正在从头下载。');
         }
         if (lastStates[value.id] !== value.state) {
-            if (value.state === 'complete') toast('下载完成，可在下载设置中查看文件位置。');
+            if (value.state === 'complete') toast('下载完成，可在下载管理中查看文件位置。');
             if (value.state === 'failed') toast(message(value.reason));
             lastStates[value.id] = value.state;
         }
@@ -70,11 +84,11 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         start();
         var value = context(api);
         if (!value || !item || item.ServerId && item.ServerId !== value.serverId) {toast('请登录当前视频所在服务器后再下载。'); return;}
-        toast('正在核对下载来源…');
-        var result = await invoke('start', {context: value, itemId: item.Id, mediaSourceId: mediaSourceId});
-        if (result.status === 'queued') toast('已加入下载任务，可在设置中的“下载”查看进度。');
-        else if (result.status === 'downloaded') toast('已有完整下载，可在下载设置中查看位置。');
-        else if (result.status === 'error') toast(message(result.reason));
+        toast('请选择或确认下载目录，随后核对来源…');
+        var result = await invoke('start', {context: value, itemId: item.Id, mediaSourceId: mediaSourceId, title: item.Name});
+        if (result.status === 'queued') toast('已加入下载任务，可在设置中的“下载管理”查看进度。');
+        else if (result.status === 'downloaded') toast('已有完整下载，可在下载管理中查看位置。');
+        else if (result.status === 'error') toast((stages[result.stage] ? stages[result.stage] + '：' : '') + message(result.reason));
         return result;
     }
     async function localSource(api, item, source, signal) {
@@ -96,7 +110,8 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
             return JSON.stringify(context(current())) === JSON.stringify(value) ? result : {status: 'cancelled'};
         });
     }
-    return {start: start, begin: begin, localSource: localSource, message: message,
+    return {start: start, begin: begin, localSource: localSource, message: message, stage: function (value) {return stages[value] || '准备下载';},
         status: function () {return settings('status');}, directory: function () {return settings('directory');},
+        openFolder: function (id) {return settings('openFolder', id ? {taskId: id} : {});},
         retry: function (id) {return settings('retry', {taskId: id});}};
 });

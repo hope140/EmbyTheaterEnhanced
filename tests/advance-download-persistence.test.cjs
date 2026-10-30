@@ -185,3 +185,48 @@ test('switching accounts during source acquisition or an open folder dialog reti
         assert.deepEqual(fs.readdirSync(directory), []);
     }
 });
+
+test('cancel in settings then original download selects directory before failed preflight, leaves diagnostics and allows retry', async t => {
+    const {createStore: preferences, createSelector} = require('../src/electronapp/enhanced/advance-download/directory-preferences');
+    const probe = require('../src/electronapp/enhanced/advance-download/source-probe');
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-preflight-')));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const directory = path.join(root, 'videos'); fs.mkdirSync(directory);
+    const events = [];
+    const prefs = preferences(root);
+    const selector = createSelector({store: prefs, dialog: {async showOpenDialog() {
+        events.push('picker'); return events.length === 1 ? {canceled: true, filePaths: []} : {canceled: false, filePaths: [directory]};
+    }}});
+    assert.equal((await selector.select({force: true})).status, 'cancelled');
+    assert.equal(prefs.read(), null);
+    const manager = createManager({profileRoot: root, selectDirectory: value => selector.select(value), createSession() {return {
+        async acquire() {events.push('source'); const error = probe.failure('invalid-metadata'); error.downloadStage = 'permission-check'; throw error;}, close() {}
+    };}});
+    t.after(() => manager.close());
+    const context = {serverId: 'server', accountId: 'account', itemId: 'item', token: 'synthetic', serverAddress: 'http://127.0.0.1', displayTitle: 'Fixture video'};
+    const result = await manager.enqueue(context);
+    assert.equal(result.reason, 'invalid-metadata');
+    assert.deepEqual(events, ['picker', 'picker', 'source']);
+    assert.equal(prefs.read(), directory);
+    const failed = manager.list(context)[0];
+    assert.equal(failed.directory, directory); assert.equal(failed.stage, 'permission-check');
+    assert.equal(failed.title, 'Fixture video'); assert.equal(failed.state, 'failed');
+    assert.ok(!JSON.stringify(failed).includes('synthetic'));
+    assert.deepEqual(fs.readdirSync(directory), []);
+    assert.equal((await manager.retry(context, failed.id)).reason, 'invalid-metadata');
+    assert.deepEqual(events, ['picker', 'picker', 'source', 'source']);
+    assert.equal(manager.list(context).length, 1);
+    assert.deepEqual(manager.list({...context, accountId: 'other'}), []);
+});
+
+test('closing during first native picker does not wait and cannot start source work after late selection', async t => {
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-picker-close-')));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    let release, entered, sourceCalls = 0;
+    const held = new Promise(resolve => {release = resolve;}), gate = new Promise(resolve => {entered = resolve;});
+    const manager = createManager({profileRoot: root, selectDirectory() {entered(); return held;}, createSession() {sourceCalls++; throw Error('must not start');}});
+    const pending = manager.enqueue({serverId: 'server', accountId: 'account', token: 'synthetic'});
+    await gate; await manager.close();
+    release({status: 'selected', directory: root});
+    assert.equal((await pending).status, 'cancelled'); assert.equal(sourceCalls, 0);
+});

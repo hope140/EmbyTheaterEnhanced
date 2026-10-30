@@ -62,11 +62,11 @@ async function fixture(t) {
     const emby = await listen((req, res) => {
         if (req.headers['x-emby-token'] !== token) {res.writeHead(401); res.end('secret-server-message'); return;}
         const url = new URL(req.url, 'http://fixture');
-        const json = value => {res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value));};
+        const json = value => {if (state.requireJsonAccept && req.headers.accept !== 'application/json') {res.end('<xml>metadata</xml>'); return;} res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value));};
         if (url.pathname === '/base/System/Info/Public') return json({Id: state.serverId});
         if (url.pathname === '/base/Users/account') return json({Id: 'account', Policy: {EnableContentDownloading: state.downloadAllowed}});
         if (url.pathname === '/base/Users/account/Items/item') return json({Id: 'item', ServerId: 'server', Name: 'Synthetic Movie', MediaType: 'Video', CanDownload: state.itemDownloadAllowed !== false,
-            Path: '/server/movie.mkv.strm', MediaSources: state.multiple ? [{Id: 'one'}, {Id: 'two'}] : [{Id: state.sourceId,
+            Path: state.itemPath || '/server/movie.mkv.strm', MediaSources: state.multiple ? [{Id: 'one'}, {Id: 'two'}] : [{Id: state.sourceId,
                 Container: 'mkv', Size: state.sizeHint ?? state.body.length, Path: state.sourcePath || 'X:\\Media\\movie.mkv',
                 RequiredHttpHeaders: state.requiredHeaders}]});
         if (url.pathname === '/base/Items/item/Download') {

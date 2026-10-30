@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-30 — 下载管理及预检诊断修正候选
+
+独立分支将入口统一为下载管理，显示完整保存位置、任务进度／失败阶段和打开文件夹；原设备同步菜单隐藏，服务器任务和已有文件保持。目录选择前移，设置取消后再下载重新选择。资料显式请求JSON，STRM不再将可能的sidecar Size当影片大小；两类兼容问题已有合成复现，不能据此确定真实服务失败原因。真正传输任务持久化保持，未授权来源的预检失败只存当前进程诊断。
+
+定向87项为83 pass／0 fail／4 Windows skip；本轮Windows、真实服务与完整GUI仍待验证。完整回归及材料门禁正在核验，未合main或发布。
+
 ## 2026-10-30 — 提前下载独立验收产物可用
 
 候选源码`933eed8871e1acc21b1521b7f25e142243e5d20d`已同步main `a958d52`／0.4.6，不包含独立预载暂存分支。[Windows公开CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023709274)为2250 pass／0 fail／5既有skip；修复材料夹具后的[独立包构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023736236)及上传成功，未发布或合main。临时[下载产物](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023736236/artifacts/12964046005)保留至`2026-10-31T08:24:12Z`；构建版本沿用0.4.6但文件名带test，不能用普通0.4.6发行包代替。

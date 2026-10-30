@@ -29,7 +29,7 @@ function createSession(input, dependencies = {}) {
         active = true;
         const timeout = AbortSignal.timeout(30000);
         const combined = AbortSignal.any([controller.signal, timeout, ...(signal ? [signal] : [])]);
-        let service;
+        let service, stage = 'server-check';
         async function resolveCd2(request) {
             alive(combined);
             const abort = () => service.cancel(request.requestId);
@@ -44,12 +44,15 @@ function createSession(input, dependencies = {}) {
             const info = await json(apiUrl('System/Info/Public'), headers, combined);
             alive(combined);
             if (info.Id !== identity.serverId) throw failure('server-changed');
+            stage = 'permission-check';
             const user = await json(apiUrl('Users/' + identity.accountId), headers, combined);
             alive(combined);
             if (user.Id !== identity.accountId || user.Policy?.EnableContentDownloading !== true) throw failure('download-not-permitted');
+            stage = 'item-check';
             const item = await json(apiUrl('Users/' + identity.accountId + '/Items/' + identity.itemId), headers, combined);
             alive(combined);
             if (item.Id !== identity.itemId || item.ServerId && item.ServerId !== identity.serverId || item.MediaType !== 'Video' || item.CanDownload !== true) throw failure('download-not-permitted');
+            stage = 'version-check';
             const sources = Array.isArray(item.MediaSources) ? item.MediaSources : [];
             const source = selectedId ? sources.find(value => value.Id === selectedId) : sources.length === 1 ? sources[0] : null;
             if (!source || !identifier(source.Id)) throw failure(selectedId ? 'source-unavailable' : 'source-selection-required');
@@ -64,6 +67,7 @@ function createSession(input, dependencies = {}) {
             if (strmResolver.isStrm(context) && config.resolver.enabled && config.runtime.enabled && dependencies.createCd2Service) service = dependencies.createCd2Service(config.runtime);
             const requestId = 'download-' + randomUUID();
             const transport = service && {resolve: resolveCd2, cancel: id => service.cancel(id)};
+            stage = 'resolve-source';
             const resolved = await strmResolver.resolveAsync(context, {config: config.resolver, fs: dependencies.fs || require('node:fs'),
                 signal: combined, requestId, cd2Transport: transport});
             alive(combined);
@@ -91,12 +95,13 @@ function createSession(input, dependencies = {}) {
                 }});
             }
             candidates.push({url: original.href, headers, kind: 'emby-original'});
+            stage = 'probe-source';
             let lastError;
             for (let candidate of candidates) {
                 try {
                     alive(combined);
                     if (candidate.resolve) candidate = await candidate.resolve();
-                    const sizeHint = String(source.Container || '').toLowerCase() !== 'strm' && Number.isSafeInteger(source.Size) && source.Size > 0 ? source.Size : undefined;
+                    const sizeHint = !strmResolver.isStrm(context) && Number.isSafeInteger(source.Size) && source.Size > 0 ? source.Size : undefined;
                     const result = await check({...candidate, container: String(source.Container || '').toLowerCase(), sizeHint}, {signal: combined});
                     alive(combined);
                     const representation = JSON.stringify([identity.serverId, identity.accountId, identity.itemId,
@@ -115,8 +120,9 @@ function createSession(input, dependencies = {}) {
             throw failure(probe.reasonOf(lastError));
         } catch (error) {
             if (closed || signal?.aborted) throw failure('cancelled');
-            if (timeout.aborted) throw failure('timeout');
-            throw failure(probe.reasonOf(error));
+            const result = failure(timeout.aborted ? 'timeout' : probe.reasonOf(error));
+            result.downloadStage = stage;
+            throw result;
         } finally {
             try {if (service) await service.close();}
             catch (_) {throw failure('source-close-failed');}

@@ -1064,7 +1064,7 @@
     try {
         unregisterDownloadIpc = require('./enhanced/advance-download/ipc').register({
             ipcMain: ipcMain, getWebContents: getWebContents,
-            profileRoot: app.getPath('userData'), dialog: electron.dialog,
+            profileRoot: app.getPath('userData'), dialog: electron.dialog, shell: electron.shell,
             getBrowserWindow: function () { return mainWindow; },
             sourceDependencies: {
                 getConfig: function () { return {resolver: strmConfigStore.getPublicConfig(), runtime: strmConfigStore.getRuntimeConfig()}; },

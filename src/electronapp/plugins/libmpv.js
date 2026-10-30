@@ -358,7 +358,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             routes.push({path: 'mpvplayer/downloads.html', transition: 'slide',
                 controller: pluginManager.mapPath(self, 'mpvplayer/downloads.js'), type: 'settings',
-                title: '下载', category: 'General', order: 8, thumbImage: '', icon: 'download',
+                title: '下载管理', category: 'General', order: 8, thumbImage: '', icon: 'download',
                 settingsTheme: true, adjustHeaderForEmbeddedScroll: true});
 
             routes.push({

@@ -125,3 +125,16 @@ ETE_ADVANCE_DOWNLOAD_FFMPEG=/absolute/path/to/ffmpeg ETE_ADVANCE_DOWNLOAD_FFPROB
 微软[文件系统比较](https://learn.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison)列明FAT32／exFAT不支持硬链接；FAT32单文件限制与exFAT大文件能力必须分开。Win32[FILE_RENAME_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info)明确`ReplaceIfExists=false`在目标存在时返回错误；本实现用[SetFileInformationByHandle](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)修改已核验源句柄，保持同目录、锁住祖先、不跟随reparse。新代码为本仓库维护实现，没有复制外部项目实现。微软[文件身份说明](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information)明确FAT重命名为更长名称可能改变ID；新任务的独占临时文件名预留133个UTF-16单元，长于所有生成最终名及编号后缀，以减少目录项扩容导致的ID变化。仍从提交源句柄取得移动后的ID用于正常完成；旧短临时名记录继续可读。如果移动已成功但应答丢失且ID也变化，只保留文件并拒绝自动接管，不靠摘要猜测身份。
 
 新增`advance-download-publication.test.cjs`进入现有自动Windows公开集，不改工作流／权限：便携测试验证意图顺序、不覆盖模型、助手未知结果清理和索引恢复；Windows专属项真正调用API，覆盖Unicode路径、同名文件／目录、错误物理身份／大小，以及强制模拟“硬链接不支持”的完整HTTP到磁盘链。模拟能力失败发生于Windows普通临时目录，不能冒充实际FAT／exFAT测试；Linux跳过Windows项不计为通过。
+
+
+## 下载管理与来源核验失败
+
+设置入口统一显示“下载管理”。保存位置卡片显示可选择复制的完整目录，任务显示自己的原目录；完成任务显示完整文件路径。默认目录及各任务提供“打开文件夹”，main只接受当前账户的任务ID或已保存默认目录，拒绝renderer指定路径，不打开视频或外部URL。轮询保留现有任务DOM和操作按钮。
+
+原视频“下载”先选择／读取默认目录，再进行服务端身份、账户权限、条目和版本核验，最后解析／探测影片本体；选择目录不授予来源权限，不会提前写媒体文件。在设置取消首次目录选择不保存值，也不保留选择器busy状态；随后点击下载应重新选择。已有默认目录则自动使用，不重复弹框，覆盖安装不会自动清空已有偏好。
+
+来源预检失败尚无可授权的source receipt，不构造伪造文件任务。当前进程为每个来源保留有界诊断行，记录固定失败原因和阶段，可在管理页重试，退出后这些预检诊断不保留；真正进入传输的任务仍按原合同持久化、重开续传。诊断不保存Token、解析URL或服务器错误正文，失败也不创建影片文件。
+
+资料请求显式发送`Accept: application/json`。STRM身份按既有`Item.Path`／resolver合同判断，不能只用`Container`：即使Container为mkv，Size仍可能是sidecar值，故STRM不使用该Size推断影片长度，继续验证实际HTTP长度、首部、版本和Range。普通视频仍校验可信的Size提示。合成案例已复现这两类兼容问题；它们不证明任何具体真实服务的失败原因。
+
+ETE菜单overlay仅隐藏旧`sync`／`synclocal`设备同步入口，保留原`download`转交完整视频下载；服务器同步接口、已有同步任务与其他客户端不受更改。不编辑冻结vendor。

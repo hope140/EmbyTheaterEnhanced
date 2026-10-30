@@ -193,3 +193,16 @@ test('closing a pending source session aborts its owned HTTP request and retires
     for (let index = 0; index < 50 && f.sockets.size; index++) await new Promise(resolve => setTimeout(resolve, 5));
     assert.equal(f.sockets.size, 0);
 });
+
+test('metadata explicitly negotiates JSON and STRM sidecar size cannot reject verified movie bytes', async t => {
+    const f = await fixture(t);
+    f.state.requireJsonAccept = true;
+    f.state.sizeHint = 53;
+    const result = await f.session().acquire();
+    assert.equal(result.total, media.length);
+    assert.ok(f.calls.filter(call => /System\/Info|Users\//.test(call.url)).every(call => call.headers.accept === 'application/json'));
+    f.state.itemPath = '/server/movie.mkv';
+    f.state.pointer = false;
+    await assert.rejects(f.session({}, {getConfig: () => ({resolver: {version: 1, enabled: false, rules: []}, runtime: {enabled: false}})}).acquire(),
+        error => probe.reasonOf(error) === 'representation-changed' && error.downloadStage === 'probe-source');
+});

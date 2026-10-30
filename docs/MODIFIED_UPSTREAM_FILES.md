@@ -22,3 +22,8 @@ CloudDrive2 PR #2 继续不公开完整 `www` snapshot。`tools/patch-playbackma
 ## 2026-10-30 — 原视频下载按钮 overlay
 
 `tools/patch-advance-download.cjs` 在准备Web overlay时，仅对固定`www/modules/commandprocessor.js`的视频下载锚点应用维护逻辑，转交`enhanced/advance-download/renderer.js`；音频、日志与字幕下载保持。vendor输入不改写，缺失或重复锚点拒绝生成。原输入SHA256为`10ED682D5897E8C065925EF6071E914CB04537067A14C4D869F3EB14F724276F`，输出为`79B0E56E2B4B486D3B59F42AE27FEDDE91FC851B791D08A59AD486D0A3C4F286`，固定于`prepare-web-overlays.cjs`；补丁工具进入构建输入合同。新下载模块为ETE维护代码，未复制GPLv3 Shim实现。
+
+
+## 2026-10-30 — 统一视频下载菜单
+
+同一`patch-advance-download.cjs`新增固定`www/modules/itemcontextmenu.js`维护overlay，在唯一getCommands返回锚点过滤`sync`和`synclocal`。仅隐藏ETE的旧设备同步菜单；`download`、编辑、字幕及其他命令保持，原服务器接口／同步任务不删除。原snapshot保持只读，固定输入／输出SHA及生成器由`prepare-web-overlays.cjs`合同核验，缺失或重复锚点拒绝生成。此维护转换沿项目GPL-2.0-only约定。
