@@ -6,7 +6,7 @@ const filename=require.resolve('../src/electronapp/enhanced/shared-playback-cach
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return{promise,resolve};}
 async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,status=206,etag='"v1"',bodyBytes,bodyFill=65,headerTotal=8,accessGate,readGate,refreshGate,mediaBufferBytes=8*1024*1024,writeError=false,flushError=false,retained=false}={}){
- let handler,owner=true,reads=0,actuals=0,missing=false,accesses=0,authorizations=0,closed=false,retainedOpens=0,retainedInvalidations=0,retainedAlive=true;
+ let handler,owner=true,reads=0,actuals=0,missing=false,accesses=0,authorizations=0,closed=false,retainedOpens=0,retainedInvalidations=0,retainedAlive=true,now=0;
  const retainedToken=Object.freeze({total:8,etagHash:'a'.repeat(64),versionHash:'b'.repeat(64)});
  const timers=new Set(),setOwnedTimer=(fn,ms)=>{const timer={fn,ms};timers.add(timer);return timer;},clearOwnedTimer=timer=>timers.delete(timer);
  const evidenceRows=[],requests=[],heldHeaders=[],heldBodies=[],heldCloses=[],responses=[];
@@ -41,7 +41,7 @@ async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,statu
  const module={exports:{}},originalRequire=createRequire(filename);
  // Functional event ordering uses one controlled clock for now() and timers.
  // Host scheduling stalls must not secretly expire a synthetic origin request.
- new Function('require','module','exports','setTimeout','clearTimeout',fs.readFileSync(filename,'utf8'))(key=>key==='node:http'||key==='node:https'?http:key==='node:perf_hooks'?{performance:{now:()=>0}}:originalRequire(key),module,module.exports,setOwnedTimer,clearOwnedTimer);
+ new Function('require','module','exports','setTimeout','clearTimeout',fs.readFileSync(filename,'utf8'))(key=>key==='node:http'||key==='node:https'?http:key==='node:perf_hooks'?{performance:{now:()=>now}}:originalRequire(key),module,module.exports,setOwnedTimer,clearOwnedTimer);
  const proxy=await module.exports.createProxy({store,authorize,resolveAccess,timeoutMs:1000,mediaBufferBytes,onEvidence:row=>evidenceRows.push(row)});
  const route=await proxy.open({server:'server',account:'account',item:'item',mediaSource:'media',resource:'resource',representation:'original'},'next');await route.ready();
  function get({target=route,holdDrain=false,method='GET'}={}){
@@ -53,7 +53,7 @@ async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,statu
   responses.push(res);handler(req,res);return{res,promise:done.promise};
  }
  t.after(async()=>{owner=false;accessGate?.resolve();readGate?.resolve();refreshGate?.resolve();releaseHeaders();releaseBodies();releaseCloses();await proxy.close();assert.equal(timers.size,0,'all synthetic deadlines are cleared by their owner');});
- return{proxy,route,get,evidenceRows,requests,origin,expireTimers(){for(const timer of [...timers]){timers.delete(timer);timer.fn();}},releaseHeaders,releaseBodies,releaseCloses,stats:()=>({reads,actuals,accesses,closed,retainedOpens,retainedInvalidations}),replaceRetained(){retainedAlive=false;},retireOwner(){owner=false;},miss(){missing=true;}};
+ return{proxy,route,get,evidenceRows,requests,origin,advanceClock(ms){now+=ms;},expireTimers(){for(const timer of [...timers]){timers.delete(timer);timer.fn();}},releaseHeaders,releaseBodies,releaseCloses,stats:()=>({reads,actuals,accesses,closed,retainedOpens,retainedInvalidations}),replaceRetained(){retainedAlive=false;},retireOwner(){owner=false;},miss(){missing=true;}};
 }
 
 test('all responses wait for real Range headers, then ready cache wins without a separate0-0 or waiting for body',async t=>{
@@ -163,4 +163,14 @@ test('a retained pre-read finishing after entry replacement cannot win or mark t
 });
 test('retained ownership loss after a completed hit locks later ranges to source-only and refuses actual promotion',async t=>{
  const f=await fixture(t,{retained:true,holdHeaders:true,holdBody:true}),first=f.get();await turn();f.releaseHeaders();await first.promise;assert.equal(f.route.status().localHitBytes,8);f.replaceRetained();f.releaseBodies();const next=await f.get().promise;assert.equal(next.status,206);assert.equal(f.route.status().localHitBytes,8);assert.equal(await f.route.actual(),false);assert.equal(f.stats().retainedInvalidations,0);
+});
+
+for(const delayedTimer of [false,true])test('retained first-header deadline falls back before bytes, including a late response ahead of its timer: '+delayedTimer,async t=>{
+ const f=await fixture(t,{retained:true,holdHeaders:true}),a=f.get(),b=f.get({method:'HEAD'});await turn();assert.equal(f.requests.length,1);f.advanceClock(50);
+ if(delayedTimer)f.releaseHeaders();else f.expireTimers();
+ const results=await Promise.all([a.promise,b.promise]);assert(results.every(r=>r.status===307&&r.chunks.length===0));assert(f.requests[0].closed);assert.equal(f.route.status().localHitBytes,0);assert.equal(f.stats().retainedInvalidations,0);assert.equal(await f.route.actual(),false);
+ f.releaseHeaders();assert.equal((await f.get().promise).status,307);assert.equal(f.requests.length,1);await f.proxy.drain();assert.equal(f.proxy.status().readReservedBytes,0);
+});
+test('timely retained headers end the short validation window without waiting for a hanging body',async t=>{
+ const f=await fixture(t,{retained:true,holdHeaders:true,holdBody:true}),a=f.get();await turn();f.advanceClock(49);f.releaseHeaders();const result=await a.promise;assert.equal(result.status,206);assert.deepEqual(Buffer.concat(result.chunks),Buffer.alloc(8,65));assert.equal(f.route.status().localHitBytes,8);assert.equal(f.route.status().preparedValidation,'ready');await f.proxy.drain();
 });

@@ -184,12 +184,25 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       const incoming = new Promise((resolve, reject) => {request.once('response', resolve); request.once('error', reject);});
       requestClosed = new Promise(resolve => request.once('close', resolve));
       const abort = () => request.destroy(cancelled()); combined.addEventListener('abort', abort, {once: true});
-      const arm = () => {clearTimeout(timer); timer = setTimeout(() => request.destroy(problem('origin-timeout')), timeoutMs);};
+      // A retained candidate must not turn a hanging first header into the
+      // ordinary long body timeout. This is separate from selection/read IO:
+      // before delivery, give the real Range at most 50 ms to prove its version.
+      const headerDeadline = record.grant.retainedCandidate && !record.retainedValidated && !record.fallbackOriginal
+        ? performance.now() + Math.min(50, timeoutMs) : null;
+      const arm = () => {
+        clearTimeout(timer);
+        const waitingHeaders = !response && headerDeadline !== null;
+        timer = setTimeout(() => {
+          if (waitingHeaders && performance.now() < headerDeadline) {arm(); return;}
+          request.destroy(problem('origin-timeout'));
+        }, waitingHeaders ? Math.max(1, Math.ceil(headerDeadline - performance.now())) : timeoutMs);
+      };
       arm();
       request.end();
       try {
         response = await incoming;
         useRecord(record); if (combined.aborted) throw cancelled();
+        if (headerDeadline !== null && performance.now() >= headerDeadline) throw problem('origin-timeout');
         stats.originReadHighWaterMarkBytes = Math.max(stats.originReadHighWaterMarkBytes, response.readableHighWaterMark);
         arm();
         const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers['content-range'] || '');

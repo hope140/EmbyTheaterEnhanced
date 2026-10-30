@@ -1621,3 +1621,5 @@ The first Windows run [40796893951](https://github.com/hope140/EmbyTheaterEnhanc
 ## Retained entry admission through actual Range validation
 
 Add a same-store opaque retained-entry claim and race local metadata recovery against the existing one-byte source probe. Bind use to fresh playback authorization, budget, full identity and entry ownership. Validate the real Range response against the stored strong ETag hash before cache delivery, preserve the original key, and recheck ownership after asynchronous reads. Known probe denials, deadline expiry, missing validators and changed versions retain safe source fallback. The index format and selection/read deadlines are unchanged. Targeted event-double regressions cover these boundaries; a separate real-store suite covers index close/reopen and stale claims. Exact-source Windows and Native outcomes must be reported independently.
+
+The retained first-Range header wait also has a separate 50 ms cancellation deadline. Concurrent initial requests share its result; late headers cannot restore cache access. Request closure and fallback authorization remain required, so this does not promise a 50 ms total startup.

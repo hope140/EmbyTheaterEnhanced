@@ -1207,3 +1207,5 @@ Local validation of the unsubmitted test correction: focused actual-HTTP/store/s
 ## Retained playback Range handoff candidate
 
 A recovered last-playback entry can compete with the existing source probe without extending the 50 ms selection or 30 ms cache-read policies. Fresh authority and budget remain mandatory. The first actual upstream Range must match the retained total and strong ETag hash before old bytes can be selected; missing proof uses the original source. The opaque claim is tied to the exact store entry and current playback owner. See [the technical contract](PLAYBACK_CACHE_RETAINED_HANDOFF.md). Next-episode preload and settings defaults are unchanged. Windows disk-reopen and Native startup acceptance remain pending; no performance or green-frame resolution is claimed.
+
+The retained first-Range header wait also has a separate 50 ms cancellation deadline. Concurrent initial requests share its result; late headers cannot restore cache access. Request closure and fallback authorization remain required, so this does not promise a 50 ms total startup.
