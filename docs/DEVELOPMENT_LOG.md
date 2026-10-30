@@ -1448,3 +1448,11 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 
 
 最终产品源码`db92cc53d00ba6a76844bc51c384abd3f5594034`重跑：本地公开2263项为2234 pass／0 fail／29平台skip，固定排除原6材料文件；显式6材料文件95/95。JS541、PowerShell53语法、有限凭据模式638文件扫描和diff通过。Windows push CI [41030906273](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030906273)及普通独立包[41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)已启动，完整SHA已核对；后者仅一次workflow_dispatch，release_package=false／build_input_benchmark=false，不创建Release，不占前台。当时两者仍运行，不能称Windows或整包通过。
+
+
+最终产品源码`db92cc53d00ba6a76844bc51c384abd3f5594034`的Windows push CI [41030906273](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030906273)已完成success，确实运行公开测试步骤。主修正`e12b321`的[41030517315](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030517315)与文档HEAD`81d73e8`的[41032108624](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41032108624)也为success，不以它们替代最终产品源码结果。独立包仍在同一次41031006772构建中，尚无产物或独立字节核验。
+
+
+同一源码的[独立验收包41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)已success，manual-windows-test-package耗时22m21s，编译／验证Host、完整构建与上传步骤通过，未重复派发。API确认产物`12965884825`、名称`ete-test-win-x64-db92cc53d00ba6a76844bc51c384abd3f5594034-41031006772-1`、164697370字节、expired=false，workflow_run.head_sha与本次完整源码一致；保留至`2026-10-31T09:28:50Z`。[临时下载链接](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772/artifacts/12965884825)。API给出的ZIP摘要为`sha256:16531e675c4c01f210672afad6ae08022ea235715163662646b11b69e20fb3e8`，不是独立计算的ZIP或安装器摘要。
+
+本次新产物正常`GET actions/artifacts/12965884825/zip`仅尝试一次，返回Forbidden、0字节；固定错误已记录，未重试／换通道，也没有重试先前受拒的旧日志或旧产物。不是自动审批拒绝；构建／上传本身成功。根package.json固定0.4.6，按构建脚本预期文件名为`EmbyTheaterEnhanced-0.4.6-test-db92cc53d00b-41031006772-1-win-x64-setup.exe`，但未回读包内实际文件名、PE版本、安装器SHA或来源模块清单，独立验包仍受阻。未安装／启动客户端，真实服务、原生目录选择器、打开文件夹、用户重开续传及可见本地播放仍由使用者手动验收。

@@ -4,7 +4,7 @@
 
 独立分支将入口统一为下载管理，显示完整保存位置、任务进度／失败阶段和打开文件夹；原设备同步菜单隐藏，服务器任务和已有文件保持。目录选择前移，设置取消后再下载重新选择。资料显式请求JSON，STRM不再将可能的sidecar Size当影片大小；两类兼容问题已有合成复现，不能据此确定真实服务失败原因。真正传输任务持久化保持，未授权来源的预检失败只存当前进程诊断。
 
-最终产品源码`db92cc53d00ba6a76844bc51c384abd3f5594034`本地公开2263项为2234 pass／0 fail／29平台skip，完整6文件材料95/95，自生成视频取源／断流续传／全文件和解码哈希1/1。JS541文件、PowerShell53文件语法、有限凭据模式638文件扫描及diff通过。准确来源的Windows自动CI为[41030906273](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030906273)，独立验收包为[41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)，目前仍运行，不重复派发。真实服务、完整GUI与原生选择器／Explorer未运行；未合main或发布。
+最终产品源码`db92cc53d00ba6a76844bc51c384abd3f5594034`本地公开2263项为2234 pass／0 fail／29平台skip，完整6文件材料95/95，自生成视频取源／断流续传／全文件和解码哈希1/1。JS541文件、PowerShell53文件语法、有限凭据模式638文件扫描及diff通过。准确来源的[Windows自动CI 41030906273](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030906273)已通过；[独立验收包 41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)已构建并上传成功，耗时22m21s，未重复派发。临时[下载产物](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772/artifacts/12965884825)绑定同一完整源码，API显示164697370字节、未过期，保留至2026-10-31T09:28:50Z。正常回读新ZIP返回Forbidden、0字节，已停止，未重试或换通道；安装器独立SHA／实际版本／内部来源清单未回读，不能称已独立验包。真实服务、完整GUI与原生选择器／Explorer未运行；未合main或发布。
 
 ## 2026-10-30 — 提前下载独立验收产物可用
 
