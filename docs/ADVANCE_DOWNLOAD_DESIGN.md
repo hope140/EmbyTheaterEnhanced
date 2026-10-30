@@ -68,7 +68,7 @@
 - 完成后核文件大小、读回容器首部并 sync，再用 link 原子无覆盖提交；同名依次采用 `name (1).ext` 等，已有文件保持。
 - 持久任务取消／失败保留自身临时文件与检查点；不带持久任务的核心调用仍只清理其可证明归属的临时文件。交换过的路径不会被误删。没有删除、接管、搬迁或清理已有完整下载的接口。
 - 跨应用重启先检查文件物理身份和已提交前缀摘要，再重新授权、取源；只有强 ETag、源身份与非零 Range 校验都一致时追加。不满足时明确提示并从头写自身临时文件；不能保证所有 STRM／CD2 可续。
-- 当前发布依赖所选文件系统支持硬链接；不支持时失败，不退化成可能覆盖已有文件的 rename。FAT／exFAT／网络盘的提交兼容需要单独验证或增加严格的无覆盖复制适配器。
+- 支持硬链接时仍走原无覆盖link提交。Windows仅在硬链接能力错误时，先持久记录移动意图，再由独立隐藏助手锁定目录祖先和源文件句柄，核对物理身份／大小／修改时间，以`SetFileInformationByHandle(FileRenameInfo)`且`ReplaceIfExists=false`进行同目录提交；已有文件／目录原样保留并尝试编号名。没有整片复制、覆盖rename或删除目标的后备路径。
 
 HTTP 条件请求与区间语义见 [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.5)。上述属于协议与文件归属实现，不授予额外服务器权限。
 
@@ -86,7 +86,7 @@ Emby SyncJobs 的看完删除、自动追更和取消任务删除，均不适用
 
 `task-store.js` 仅在 profile 的 `advance-downloads/<UUID>.json` 保存白名单字段：服务器／账户／Item／版本身份、任务快照目录、固定临时文件名、文件与根目录物理身份、已提交偏移及 SHA256、clean end、最终文件身份和完整摘要。Token、URL 查询签名、请求头均不落盘；损坏或不符合 schema 的记录保留并拒绝接管，不扫描用户媒体目录认领文件。
 
-`transfer.js` 每写入 8MiB 或有数据到来且超过一秒，先 sync 自身文件，再原子保存检查点。正常关闭保存最新进度；强制结束后仅信任已持久偏移，重新哈希该前缀，截断自身文件未提交尾部，再测 Range。物理文件被替换时停止，自己的字节损坏或来源变化时通知并重下。读完全部字节但消息未 clean end 不算完成。link 成功而完成索引尚未保存的崩溃窗口，通过 `publishing` 名称和同一物理文件恢复提交，不接管同名第三方文件。sync 与进程重启证据不等于全部平台断电耐久保证。
+`transfer.js` 每写入 8MiB 或有数据到来且超过一秒，先 sync 自身文件，再原子保存检查点。正常关闭保存最新进度；强制结束后仅信任已持久偏移，重新哈希该前缀，截断自身文件未提交尾部，再测 Range。物理文件被替换时停止，自己的字节损坏或来源变化时通知并重下。读完全部字节但消息未 clean end 不算完成。link 成功而完成索引尚未保存的崩溃窗口，通过 `publishing` 名称和同一物理文件恢复提交。无硬链接移动另先记录`publishMethod=move`；临时文件消失时，只有同一根目录／文件物理身份、完整长度、clean end及全文件SHA都与记录一致，才恢复索引。身份不稳定／文件被换过即停止，不能凭同名或相同内容接管旧文件。助手失去应答时保留意图和文件，重试先核验；关闭会等待这个有界提交助手退出，不遗留后台传输。sync 与进程重启证据不等于全部平台断电耐久保证。
 
 `manager.js` 单任务顺序传输。当前登录凭据只在内存，重开后的对应账户 attach 才继续；来源版本变化的运行内重启次数有限，失败任务提供手动继续。未完成任务保持创建时目录。完成任务不进入缓存清理，也没有删除入口。
 
@@ -118,4 +118,10 @@ ETE_ADVANCE_DOWNLOAD_FFMPEG=/absolute/path/to/ffmpeg ETE_ADVANCE_DOWNLOAD_FFPROB
 
 自生成两秒64×64 FFV1／Matroska视频，经取源、断流、重授权、续传和真盘保存后，比对完整SHA256、FFprobe识别及20帧解码哈希。它只证明自有测试视频，不证明任意容器或实际片源。
 
-本环境没有附真实 Emby／CD2 地址及凭据，未访问真实服务或用户目录。真实 DTO／下载权限、401 换签、TLS／限流、Windows 原生选择器与文件身份／硬链接语义、外接盘／网络盘和完整客户端仍需现有授权测试通道验收。当前最终提交依赖硬链接，FAT／exFAT等不支持时会明确失败且保留未完成任务，不能宣称任意目录兼容。没有操作 Work 前台、推送、合 main、发布或部署。
+本环境没有附真实 Emby／CD2 地址及凭据，未访问真实服务或用户目录。真实 DTO／下载权限、401 换签、TLS／限流、Windows 原生选择器与文件身份／硬链接语义、外接盘／网络盘和完整客户端仍需现有授权测试通道验收。Windows无硬链接提交已有独立候选；实际Windows结果按开发日志与准确CI记录。尚未在真实FAT／exFAT、网络盘或移动设备验证文件ID在重命名／重挂载后的稳定性；不能宣称任意目录可恢复，无法核验时保留文件并拒绝自动接管。FAT32单文件大小限制仍适用；写入返回EFBIG时明确说明限制并保留任务。没有操作 Work 前台、推送、合 main、发布或部署。
+
+## Windows 无硬链接提交依据与验收范围
+
+微软[文件系统比较](https://learn.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison)列明FAT32／exFAT不支持硬链接；FAT32单文件限制与exFAT大文件能力必须分开。Win32[FILE_RENAME_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info)明确`ReplaceIfExists=false`在目标存在时返回错误；本实现用[SetFileInformationByHandle](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)修改已核验源句柄，保持同目录、锁住祖先、不跟随reparse。新代码为本仓库维护实现，没有复制外部项目实现。
+
+新增`advance-download-publication.test.cjs`进入现有自动Windows公开集，不改工作流／权限：便携测试验证意图顺序、不覆盖模型、助手未知结果清理和索引恢复；Windows专属项真正调用API，覆盖Unicode路径、同名文件／目录、错误物理身份／大小，以及强制模拟“硬链接不支持”的完整HTTP到磁盘链。模拟能力失败发生于Windows普通临时目录，不能冒充实际FAT／exFAT测试；Linux跳过Windows项不计为通过。

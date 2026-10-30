@@ -13,6 +13,9 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         'directory-unavailable': '下载目录不可用，请在下载设置中重新选择。', 'directory-unwritable': '下载目录不可写。',
         'temporary-changed': '未完成文件的归属已变化，已停止操作，未覆盖或删除该文件。',
         'disk-full': '下载空间不足，任务已保留。', 'representation-changed': '来源版本发生变化，请继续任务以重新下载。',
+        'file-too-large': '文件超出此目录文件系统的单文件大小限制，请为新任务选择支持大文件的目录。',
+        'publication-unconfirmed': '文件提交结果尚未确认，任务和文件已保留，请继续任务以核验。',
+        'publication-unavailable': '此目录无法安全提交文件，任务已保留。',
         'task-store-unsafe': '下载任务记录无法安全读取，已保留原文件。'
     };
     function message(reason) {return reasons[reason] || '下载暂未完成，请在下载设置中查看状态或重试。';}

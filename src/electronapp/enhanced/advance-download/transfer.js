@@ -55,7 +55,7 @@ async function openResponse(source, offset, signal) {
     }
 }
 
-async function download({session, source: initial, directory, signal, onProgress, journal, onRestart}) {
+async function download({session, source: initial, directory, signal, onProgress, journal, onRestart, publisher = require('./publication').createPublisher()}) {
     const records = require('./task-store');
     let handle, temporary, own, root, rootId, source = initial, offset = 0, failures = 0;
     let digest = crypto.createHash('sha256'), checkpointable = false, cleanEnd = false, published = false;
@@ -67,13 +67,14 @@ async function download({session, source: initial, directory, signal, onProgress
     }
     function progress() {try {onProgress?.({bytes: offset, total: source.total});} catch (_) {}}
     function restartNotice(reason) {try {onRestart?.(reason);} catch (_) {}}
-    async function checkpoint(publishing = null) {
+    async function checkpoint(publishing = null, publishMethod) {
         if (!journal || !checkpointable) return;
         owned();
         if (handle) await handle.sync();
         journal.update({source: records.sourceRecord(source), partial: {name: path.basename(temporary),
             rootId: records.identity(rootId), fileId: records.identity(own), offset,
-            sha256: digest.copy().digest('hex'), messageComplete: cleanEnd, publishing}});
+            sha256: digest.copy().digest('hex'), messageComplete: cleanEnd, publishing,
+            ...(publishMethod ? {publishMethod} : {})}});
         lastCheckpoint = offset; lastCheckpointAt = Date.now();
     }
     async function reset(reason) {
@@ -98,10 +99,16 @@ async function download({session, source: initial, directory, signal, onProgress
         const task = journal?.get(), previous = task?.partial;
         temporary = path.join(root, previous ? previous.name : '.ete-media-' + (task ? task.id : crypto.randomBytes(16).toString('hex')) + '.part');
         if (previous) {
-            const before = fs.lstatSync(temporary, {bigint: true});
+            let before, moved = false;
+            try {before = fs.lstatSync(temporary, {bigint: true});}
+            catch (error) {
+                if (error.code !== 'ENOENT' || previous.publishMethod !== 'move' || !previous.publishing ||
+                    !previous.messageComplete || previous.offset !== task.source.total) throw error;
+                before = fs.lstatSync(path.join(root, previous.publishing), {bigint: true}); moved = true;
+            }
             if (!records.sameId(rootId, previous.rootId) || !before.isFile() || before.isSymbolicLink() ||
                 !records.sameId(before, previous.fileId) || before.nlink > (previous.publishing ? 2n : 1n)) throw fail('temporary-changed');
-            handle = await fs.promises.open(temporary, 'r+'); own = await handle.stat({bigint: true});
+            handle = await fs.promises.open(moved ? path.join(root, previous.publishing) : temporary, moved ? 'r' : 'r+'); own = await handle.stat({bigint: true});
             if (!same(own, before)) throw fail('temporary-changed');
             const buffer = Buffer.alloc(262144);
             let verified = 0;
@@ -113,6 +120,12 @@ async function download({session, source: initial, directory, signal, onProgress
             }
             const intact = verified === previous.offset && digest.copy().digest('hex') === previous.sha256;
             offset = previous.offset; cleanEnd = previous.messageComplete && offset === task.source.total;
+            if (moved) {
+                // A digest alone must never authorize adopting a same-named file.
+                // Root and file IDs must match the pre-move receipt above too.
+                if (!intact || !cleanEnd || Number(own.size) !== offset || own.nlink !== 1n) throw fail('publication-unowned');
+                return await finishRecord(previous.publishing, task.source);
+            }
             // Recover a crash after no-replace publication, before metadata commit.
             // Never truncate a temporary file that is already linked to a complete user file.
             if (previous.publishing) {
@@ -173,6 +186,7 @@ async function download({session, source: initial, directory, signal, onProgress
                 if (connection) {await connection.close(); connection = null;}
                 cancelled(signal);
                 if (['ENOSPC', 'EDQUOT'].includes(error.code)) throw fail('disk-full');
+                if (error.code === 'EFBIG') throw fail('file-too-large');
                 if (['EACCES', 'EPERM', 'EROFS'].includes(error.code)) throw fail('directory-unwritable');
                 if (++failures > 2) throw fail(probe.reasonOf(error));
                 const next = await session.acquire(signal);
@@ -203,15 +217,21 @@ async function download({session, source: initial, directory, signal, onProgress
             const fileName = name + (index ? ' (' + index + ')' : '') + '.' + initial.extension;
             await checkpoint(fileName);
             try {
-                await fs.promises.link(temporary, path.join(root, fileName));
+                const before = fs.lstatSync(temporary, {bigint: true});
+                await publisher({directory: root, from: path.basename(temporary), to: fileName,
+                    rootId: records.identity(rootId), fileId: records.identity(own), size: offset, mtimeNs: String(before.mtimeNs)}, async () => {
+                    owned(); await checkpoint(fileName, 'move');
+                    checkpointable = false; // A lost reply may mean the move committed.
+                });
                 checkpointable = false; // Keep the publishing receipt if commit fails.
                 return await finishRecord(fileName);
-            } catch (error) {if (error.code !== 'EEXIST') throw error;}
+            } catch (error) {if (error.code !== 'EEXIST') throw error; checkpointable = true;}
         }
         throw fail('file-exists');
     } catch (error) {
         cancelled(signal);
         if (['ENOSPC', 'EDQUOT'].includes(error.code)) throw fail('disk-full');
+        if (error.code === 'EFBIG') throw fail('file-too-large');
         if (['EACCES', 'EPERM', 'EROFS'].includes(error.code)) throw fail('directory-unwritable');
         throw fail(probe.reasonOf(error));
     } finally {

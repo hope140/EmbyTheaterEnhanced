@@ -35,10 +35,11 @@ function validTask(value) {
     try {const url = sourceUrl(value.serverAddress); if (url.search || url.hash) return false;} catch (_) {return false;}
     if (value.partial !== null) {
         const p = value.partial;
-        if (!keys(p, ['name', 'rootId', 'fileId', 'offset', 'sha256', 'messageComplete', 'publishing']) ||
+        if (!keys(p, ['name', 'rootId', 'fileId', 'offset', 'sha256', 'messageComplete', 'publishing', 'publishMethod']) ||
             p.name !== '.ete-media-' + value.id + '.part' || !fileId(p.rootId) || !fileId(p.fileId) || !integer(p.offset) ||
             p.offset > value.source.total || !hash(p.sha256) || typeof p.messageComplete !== 'boolean' ||
-            p.publishing !== null && !plainFile(p.publishing)) return false;
+            p.publishing !== null && !plainFile(p.publishing) ||
+            p.publishMethod !== undefined && (p.publishMethod !== 'move' || !p.publishing || !p.messageComplete || p.offset !== value.source.total)) return false;
     }
     if (value.file !== null) {
         const f = value.file;
