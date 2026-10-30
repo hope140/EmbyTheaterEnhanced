@@ -10,4 +10,9 @@ function patchItemContextMenu(source) {
     if (typeof source !== 'string' || source.split(before).length !== 2) throw Error('Advance download menu source contract mismatch.');
     return source.replace(before, '      commands.filter(function (command) {return command.id !== "sync" && command.id !== "synclocal";})\n    );\n  }\n  function getResolveFn');
 }
-module.exports = {patchCommandProcessor, patchItemContextMenu};
+function patchMultiSelect(source) {
+    const before = '!menuItems.length)';
+    if (typeof source !== 'string' || source.split(before).length !== 2) throw Error('Advance download multi-select source contract mismatch.');
+    return source.replace(before, '!(menuItems = menuItems.filter(function (command) {return command.id !== "sync" && command.id !== "synclocal";})).length)');
+}
+module.exports = {patchCommandProcessor, patchItemContextMenu, patchMultiSelect};

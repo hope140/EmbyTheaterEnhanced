@@ -137,4 +137,4 @@ ETE_ADVANCE_DOWNLOAD_FFMPEG=/absolute/path/to/ffmpeg ETE_ADVANCE_DOWNLOAD_FFPROB
 
 资料请求显式发送`Accept: application/json`。STRM身份按既有`Item.Path`／resolver合同判断，不能只用`Container`：即使Container为mkv，Size仍可能是sidecar值，故STRM不使用该Size推断影片长度，继续验证实际HTTP长度、首部、版本和Range。普通视频仍校验可信的Size提示。合成案例已复现这两类兼容问题；它们不证明任何具体真实服务的失败原因。
 
-ETE菜单overlay仅隐藏旧`sync`／`synclocal`设备同步入口，保留原`download`转交完整视频下载；服务器同步接口、已有同步任务与其他客户端不受更改。不编辑冻结vendor。
+ETE单片和多选菜单overlay仅隐藏旧`sync`／`synclocal`设备同步入口，保留原`download`转交完整视频下载；服务器同步接口、已有同步任务与其他客户端不受更改。不编辑冻结vendor。

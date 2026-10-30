@@ -1440,3 +1440,8 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 下载管理增加完整路径、字节／百分比、键控任务行和原生主题按钮；main只允许打开已保存默认目录／当前账户任务目录，renderer路径被忽略，shell失败仅返回固定原因。新增vendor菜单overlay隐藏旧sync／synclocal，实际固定输入菜单夹具验证保留唯一download及其他命令，不改冻结输入或服务器同步。
 
 定向87项为83 pass／0 fail／4 Windows skip；菜单首轮夹具缺self，补齐浏览器对象后通过。首轮公开回归的生产Web装配因未提交生成器触发“Tracked generator differs from HEAD”而失败，保留门禁，提交后重新核验。语法541文件与有限凭据模式638文件扫描通过；不称完整凭据扫描。完整材料／公开与Windows结果待追加；真实来源、原生目录弹窗、Explorer和完整客户端未运行。
+
+
+主修正提交`e12b3210d2d261892336d110bb90d1b12e988388`已推独立分支；提交后本地公开2262项为2233 pass／0 fail／29平台skip、完整6文件材料95/95、自生成真实视频解码1/1，生产Web定向5/5。提交前公开2261项为2229 pass／3 dirty-generator门禁失败／29 skip，不当作产品通过。Windows push CI [41030517315](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030517315)已启动，未运行新独立包。
+
+末次入口检索发现多选另有设备同步菜单，补充同类固定overlay，先过滤再执行原空菜单提示；不新增批量下载、不修改其他多选操作。实际冻结函数夹具验证正常保留markplayed和过滤后空菜单，renderer定向7/7；因生成器变化，最终公开／完整材料需从提交后重跑。

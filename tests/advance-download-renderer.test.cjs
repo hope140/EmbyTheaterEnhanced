@@ -92,3 +92,30 @@ test('context menu hides legacy device sync but retains unified download and unr
     assert.throws(() => patch.patchItemContextMenu('unrelated'));
     assert.throws(() => patch.patchItemContextMenu(base + base));
 });
+
+test('actual multi-select menu also hides device sync and handles an otherwise empty menu normally', async () => {
+    const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/multiselect/multiselect.js'), 'utf8');
+    async function commands(source, canMarkPlayed) {
+        const start = source.indexOf('function showMenuForSelectedItems(e)'), end = source.indexOf('function getSelectedItemIdentifier(item)');
+        assert.ok(start > 0 && end > start);
+        let shown, alerts = 0;
+        const helper = new Proxy({canSync: () => true, canMarkPlayed: () => canMarkPlayed}, {get(target, key) {return target[key] || (() => false);}});
+        const work = vm.runInNewContext('(' + source.slice(start, end).trim() + ')', {
+            selectedItems: [{Id: 'item', ServerId: 'server', MediaType: 'Video'}],
+            _connectionmanager: {default: {getApiClient: () => ({getCurrentUser: async () => ({})})}},
+            mapApiClientArrayToObject: () => ({server: {Policy: {}}}),
+            _playbackmanager: {default: {canQueue: () => false}}, _itemhelper: {default: helper},
+            _globalize: {default: {translate: value => value}}, _servicelocator: {appHost: {supports: () => true}},
+            alertText: async () => {alerts++;}, require(names, callback) {assert.deepEqual(Array.from(names), ['actionsheet']); callback({show(value) {shown = value.items;}});}
+        });
+        await work({target: {}});
+        return {ids: Array.from(shown || [], value => value.id), alerts};
+    }
+    const original = await commands(base, true), modified = await commands(patch.patchMultiSelect(base), true);
+    assert.ok(original.ids.includes('sync')); assert.ok(original.ids.includes('synclocal'));
+    assert.deepEqual(modified.ids, original.ids.filter(id => id !== 'sync' && id !== 'synclocal'));
+    assert.ok(modified.ids.includes('markplayed'));
+    assert.deepEqual(await commands(patch.patchMultiSelect(base), false), {ids: [], alerts: 1});
+    assert.throws(() => patch.patchMultiSelect('unrelated'));
+    assert.throws(() => patch.patchMultiSelect(base + base));
+});

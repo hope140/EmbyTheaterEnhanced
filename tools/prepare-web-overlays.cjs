@@ -37,6 +37,14 @@ const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
+        id: 'advance-download-multiselect', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/modules/multiselect/multiselect.js', inputPath: null,
+        runtimePath: 'electronapp/www/modules/multiselect/multiselect.js',
+        expectedBaseSha256: '75B83638E8DB293D3327719783EDDCA81F6D88E2AC077678B10A41BE30D7F656', expectedInputSha256: null,
+        expectedOutputSha256: 'C0FBEFC90A5138D2DB6A8754982A554AA1736F36D5DD67A0DDB5B7E883504829',
+        generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-advance-download.cjs'])
+    }),
+    Object.freeze({
         id: 'advance-download-menu', mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/modules/itemcontextmenu.js', inputPath: null,
         runtimePath: 'electronapp/www/modules/itemcontextmenu.js',
@@ -365,6 +373,7 @@ function retireCustomCssJs(text) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.id === 'advance-download-multiselect') return {base, input: Buffer.from(advanceDownload.patchMultiSelect(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-menu') return {base, input: Buffer.from(advanceDownload.patchItemContextMenu(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};
     if (contract.id === 'connectionmanager-transport') return {base, input: Buffer.from(connectionManagerTransport.patchConnectionManager(base.toString('utf8')), 'utf8')};

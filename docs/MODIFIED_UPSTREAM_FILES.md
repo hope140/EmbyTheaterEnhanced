@@ -27,3 +27,5 @@ CloudDrive2 PR #2 继续不公开完整 `www` snapshot。`tools/patch-playbackma
 ## 2026-10-30 — 统一视频下载菜单
 
 同一`patch-advance-download.cjs`新增固定`www/modules/itemcontextmenu.js`维护overlay，在唯一getCommands返回锚点过滤`sync`和`synclocal`。仅隐藏ETE的旧设备同步菜单；`download`、编辑、字幕及其他命令保持，原服务器接口／同步任务不删除。原snapshot保持只读，固定输入／输出SHA及生成器由`prepare-web-overlays.cjs`合同核验，缺失或重复锚点拒绝生成。此维护转换沿项目GPL-2.0-only约定。
+
+`www/modules/multiselect/multiselect.js`也存在独立设备同步菜单，故同工具增加唯一menuItems长度判断锚点转换，先过滤旧sync／synclocal再沿原空菜单提示；保留其他操作和服务器接口。固定输入／输出SHA进入同一生成合同，真实函数夹具覆盖剩余操作和过滤后空菜单。
