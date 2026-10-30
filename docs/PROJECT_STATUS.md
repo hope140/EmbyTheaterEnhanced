@@ -4,7 +4,7 @@
 
 独立分支将入口统一为下载管理，显示完整保存位置、任务进度／失败阶段和打开文件夹；原设备同步菜单隐藏，服务器任务和已有文件保持。目录选择前移，设置取消后再下载重新选择。资料显式请求JSON，STRM不再将可能的sidecar Size当影片大小；两类兼容问题已有合成复现，不能据此确定真实服务失败原因。真正传输任务持久化保持，未授权来源的预检失败只存当前进程诊断。
 
-定向87项为83 pass／0 fail／4 Windows skip；本轮Windows、真实服务与完整GUI仍待验证。主修正`e12b321`本地公开2262项为2233 pass／0 fail／29平台skip，完整材料95/95，真实自生成视频解码1/1；Windows自动CI为[41030517315](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030517315)，当时仍运行。随后补齐多选菜单的同类隐藏，相关真实函数夹具7/7；最终源码回归需重验。未合main或发布。
+最终产品源码`db92cc53d00ba6a76844bc51c384abd3f5594034`本地公开2263项为2234 pass／0 fail／29平台skip，完整6文件材料95/95，自生成视频取源／断流续传／全文件和解码哈希1/1。JS541文件、PowerShell53文件语法、有限凭据模式638文件扫描及diff通过。准确来源的Windows自动CI为[41030906273](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030906273)，独立验收包为[41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)，目前仍运行，不重复派发。真实服务、完整GUI与原生选择器／Explorer未运行；未合main或发布。
 
 ## 2026-10-30 — 提前下载独立验收产物可用
 

@@ -1445,3 +1445,6 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 主修正提交`e12b3210d2d261892336d110bb90d1b12e988388`已推独立分支；提交后本地公开2262项为2233 pass／0 fail／29平台skip、完整6文件材料95/95、自生成真实视频解码1/1，生产Web定向5/5。提交前公开2261项为2229 pass／3 dirty-generator门禁失败／29 skip，不当作产品通过。Windows push CI [41030517315](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030517315)已启动，未运行新独立包。
 
 末次入口检索发现多选另有设备同步菜单，补充同类固定overlay，先过滤再执行原空菜单提示；不新增批量下载、不修改其他多选操作。实际冻结函数夹具验证正常保留markplayed和过滤后空菜单，renderer定向7/7；因生成器变化，最终公开／完整材料需从提交后重跑。
+
+
+最终产品源码`db92cc53d00ba6a76844bc51c384abd3f5594034`重跑：本地公开2263项为2234 pass／0 fail／29平台skip，固定排除原6材料文件；显式6材料文件95/95。JS541、PowerShell53语法、有限凭据模式638文件扫描和diff通过。Windows push CI [41030906273](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41030906273)及普通独立包[41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)已启动，完整SHA已核对；后者仅一次workflow_dispatch，release_package=false／build_input_benchmark=false，不创建Release，不占前台。当时两者仍运行，不能称Windows或整包通过。
