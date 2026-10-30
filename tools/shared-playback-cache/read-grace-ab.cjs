@@ -53,6 +53,7 @@ function livePolicyBinding(current) {
   const text=current.toString('utf8'),canonical=Buffer.from(text.replace(/\r\n/g,'\n'));
   const lf=canonical.equals(current),crlf=Buffer.from(canonical.toString('utf8').replace(/\n/g,'\r\n')).equals(current);
   need(Buffer.from(text,'utf8').equals(current)&&(lf||crlf),'probe-current-source');
+  if(sha(canonical)==='8fbbd6ac6fc819969efb715f106e3d82da85f25f97160ed8e1b5d0a5fe2182be')return {relation:'retained-range-handoff-v1-not-benchmarked',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
   if(sha(canonical)==='03b3e08cfc1a2ba21a90e3966b8ef4dad9cbd12cbfdae9e0820d02ebc7fe43ed')return {relation:'prepared-range-evidence-v1-not-benchmarked',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
   if(sha(canonical)==='b42338358d7e01ca4a72bcb362482c4b0fc182766e78d9a604631769d4eef847')return {relation:'prepared-range-race-v2-not-benchmarked',checkoutSha256:sha(current),canonicalSha256:sha(canonical),byteIdentical:false};
   // This product changes prepared-route control flow. It is identified, never executed as a historical arm.

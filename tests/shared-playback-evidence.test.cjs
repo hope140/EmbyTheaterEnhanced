@@ -19,6 +19,13 @@ test('version evidence names validator strength and hashes metadata without leak
  assert.equal(a.validator,'strong-etag');assert.notEqual(a.versionHash,b.versionHash);assert(!JSON.stringify(a).includes('private'));
  assert.equal(evidence.version({total:64,etag:'W/"tag"'}).validator,'weak-etag');assert.equal(evidence.version({total:64,lastModified:'date'}).validator,'last-modified-only');assert.equal(evidence.version({total:64}).validator,'none');
 });
+test('retained admission logs only a hashed candidate and separates it from successful Range validation', () => {
+ const rows=[],emit=evidence.create(row=>rows.push(row),identity),hash='a'.repeat(64);
+ emit('route-open',{retainedHandoff:true,validator:'stored-hash-candidate',etagHash:hash,rawETag:'"private"',retainedCandidate:{secret:'private'}});
+ emit('retained-validated',{etagHash:hash,versionHash:'b'.repeat(64),totalBytes:64});
+ assert.equal(rows[0].details.retainedHandoff,true);assert.equal(rows[0].details.validator,'stored-hash-candidate');assert.equal(rows[0].details.etagHash,hash);assert.equal(rows[1].event,'retained-validated');assert.equal(rows[1].details.totalBytes,64);assert(!JSON.stringify(rows).includes('private'));
+ emit('retained-validated',{etagHash:'"private"'});assert.equal(rows[2].details.etagHash,undefined);
+});
 test('unknown fields, private errors, invalid counters and decoder strings cannot escape the finite schema', () => {
  const rows=[],emit=evidence.create(row=>rows.push(row),identity);
  emit('source-headers',{url:'https://private.invalid/api?token=private',authorization:'Bearer private',error:'private',versionHash:'private',rangeStart:-1,rangeEnd:Infinity,totalBytes:NaN,codec:'private',hardware:'private',phase:'private',reason:'private',queuedLocalBytes:8});

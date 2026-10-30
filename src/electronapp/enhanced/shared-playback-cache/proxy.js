@@ -37,7 +37,7 @@ function grantOf(value) {
   if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || u.hash || u.origin !== value.origin) throw problem('source-invalid');
   const ua = value.userAgent;
   if (ua !== undefined && (typeof ua !== 'string' || !/^[\x20-\x7e]{1,1024}$/.test(ua) || /[,\\]/.test(ua))) throw problem('source-options');
-  return {url: u.href, origin: u.origin, userAgent: ua, metadata: {...value.metadata}, accessChecked: value.accessChecked === true, preparedHandoff: value.preparedHandoff === true,
+  return {url: u.href, origin: u.origin, userAgent: ua, metadata: {...value.metadata}, accessChecked: value.accessChecked === true, preparedHandoff: value.preparedHandoff === true, retainedCandidate: value.retainedCandidate,
     expiresAt: Math.min(Date.now() + 300000, Number.isFinite(value.expiresAt) ? value.expiresAt : Infinity)};
 }
 async function waitDone(promise, signal) {
@@ -59,20 +59,34 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
   const active = new Set();
   const track = (set, promise) => {set.add(promise); promise.finally(() => set.delete(promise)).catch(() => {}); return promise;};
   function useRecord(record) {if (closed || record.retired) throw cancelled();}
+  function retainedMatches(record) {
+    if (!record.grant.retainedCandidate) return true;
+    if (record.fallbackOriginal) return false;
+    if (record.retainedValidated && store.matchRetained(record.grant.retainedCandidate, record.metadata)) return true;
+    record.diskUnavailable = true; record.fallbackOriginal = true; record.preparedValidation = 'fallback';
+    return false;
+  }
+  function invalidateRecord(record, keyPromise = record.keyPromise) {
+    return record.grant.retainedCandidate
+      ? store.invalidateRetained(record.grant.retainedCandidate)
+      : keyPromise.then(key => store.invalidate(key));
+  }
   function retire(record, purge = false) {
     record.retired = true; record.accessChecked = false; record.finishFirstAccess?.(false); record.controller.abort();
     if (!record.evidenceEnding) {
       record.evidenceEnding = true;
       track(controls, Promise.allSettled([...record.bodyJobs]).then(() => record.observe('route-end', {selectedLocalBytes: record.localHitBytes, queuedLocalBytes: record.queuedLocalBytes, queuedSourceBytes: record.queuedSourceBytes, flushedLocalBytes: record.flushedLocalBytes, flushedSourceBytes: record.flushedSourceBytes, rangeCount: record.rangeCount, omittedRanges: Math.max(0, record.rangeCount - 8)})));
     }
-    if (purge) track(controls, record.keyPromise.then(key => store.invalidate(key)).catch(() => {}));
+    if (purge) track(controls, invalidateRecord(record).catch(() => {}));
   }
   function prepareKey(record, metadata) {
     const epoch = ++record.metadataEpoch; record.metadata = {...metadata}; record.ready = false;
     record.pendingKeys = (record.pendingKeys || 0) + 1; pendingKeyRecords.add(record);
     const current = () => !closed && !record.retired && epoch === record.metadataEpoch;
-    record.keyPromise = track(controls, store.open(record.identity, metadata, record.role,
-      {isCurrent: current, retainActualFrom: record.key ?? null}).then(async key => {
+    const opening = record.grant.retainedCandidate
+      ? store.openRetained(record.identity, record.grant.retainedCandidate, {isCurrent: current})
+      : store.open(record.identity, metadata, record.role, {isCurrent: current, retainActualFrom: record.key ?? null});
+    record.keyPromise = track(controls, opening.then(async key => {
       if (!current()) throw cancelled();
       if (record.coldAtOpen === undefined) {
         const first = await store.span(key, 0), later = first ? null : await store.nextOffset(key, 0);
@@ -186,7 +200,20 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             response.headers['content-encoding'] && response.headers['content-encoding'] !== 'identity') throw problem('origin-range');
         const tag = response.headers.etag, modified = response.headers['last-modified'];
         if (record.rangeCount <= 8) record.observe('source-headers', {rangeStart: start, rangeEnd: start + length - 1, totalBytes: record.metadata.total, ...evidence.version({total: record.metadata.total, etag: tag, lastModified: modified})});
-        const changed = strong(record.metadata.etag) && tag !== record.metadata.etag ||
+        let retainedMismatch = false;
+        if (record.grant.retainedCandidate && !record.retainedValidated && !record.fallbackOriginal) {
+          if (store.matchRetained(record.grant.retainedCandidate, {total: Number(m[3]), etag: tag})) {
+            // Match against the stored hashed validator, never put that hash in
+            // a raw ETag field or rebuild the retained key from new date fields.
+            record.retainedValidated = true; record.metadata = {total: Number(m[3]), etag: tag};
+            record.observe('retained-validated', {totalBytes: record.metadata.total,
+              etagHash: record.grant.retainedCandidate.etagHash, versionHash: record.grant.retainedCandidate.versionHash});
+          } else {
+            if (!strong(tag)) throw problem('validator-unavailable');
+            retainedMismatch = true;
+          }
+        }
+        const changed = retainedMismatch || strong(record.metadata.etag) && tag !== record.metadata.etag ||
           record.metadata.lastModified !== undefined && modified !== record.metadata.lastModified;
         if (changed && !(onValidated && record.grant.preparedHandoff && !record.deliveredBytes && strong(tag))) throw problem('representation-changed');
         const nextMetadata = {...record.metadata};
@@ -201,7 +228,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
           record.metadata = nextMetadata; record.grant.metadata = {...nextMetadata}; record.metadataEpoch++;
           save = false;
           if (preparedRead) {preparedRead.then(value => value?.release(), () => {}); preparedRead = undefined;}
-          track(controls, recordKeyPromise.then(key => store.invalidate(key)).catch(() => {}));
+          track(controls, invalidateRecord(record, recordKeyPromise).catch(() => {}));
         } else if (JSON.stringify(nextMetadata) !== JSON.stringify(record.metadata)) {
           if (record.fallbackOriginal) {record.metadata = nextMetadata; record.grant.metadata = {...nextMetadata}; record.metadataEpoch++;}
           else prepareKey(record, nextMetadata);
@@ -261,7 +288,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
           let done = false, ended = false, blocked = false, sourceStarted = false;
           const chooseCache = value => {
             if (!value || value === preparedChosen) return;
-            if (done || sourceStarted || !value.data || value.key !== record.key || value.epoch !== record.metadataEpoch || combined.aborted || closed || record.retired) {value.release(); return;}
+            if (done || sourceStarted || !value.data || value.key !== record.key || value.epoch !== record.metadataEpoch || !retainedMatches(record) || combined.aborted || closed || record.retired) {value.release(); return;}
             cacheWinner = preparedChosen = value; done = true; clearTimeout(timer); stats.preparedCacheWins++; resolve();
           };
           if (preparedRead) preparedRead.then(chooseCache, () => {});
@@ -338,7 +365,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
       if (record.rangeCount <= 8) record.observe('source-refused', {reason: error.reason || 'origin-unavailable', rangeStart: start, rangeEnd: start + length - 1});
       if (error.reason === 'representation-changed') {
         retire(record);
-        track(controls, recordKeyPromise.then(key => store.invalidate(key)).catch(() => {}));
+        track(controls, invalidateRecord(record, recordKeyPromise).catch(() => {}));
       }
       throw problem(combined.aborted ? 'cancelled' : error.reason || 'origin-unavailable');
     } finally {
@@ -513,8 +540,9 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         // splice newly captured probe bytes back into this load: that can make
         // the demuxer block at an artificial HTTP gap before a queued seek.
         // Pre-existing/restored data and explicitly finished preloads stay live.
-        const readCache = cacheEnabled && !record.fallbackOriginal && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
+        let readCache = cacheEnabled && !record.fallbackOriginal && retainedMatches(record) && (record.coldAtOpen === false || record.actualStarted || record.preloadReady);
         let offset = range.start;
+        if (firstCached && !retainedMatches(record)) {firstCached.release(); firstCached = null; readCache = false;}
         if (firstCached) {
           try {
             useRecord(record); if (signal.aborted || firstCached.key !== record.key || firstCached.epoch !== record.metadataEpoch) throw cancelled();
@@ -528,6 +556,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
         while (offset <= range.end) {
           useRecord(record); if (signal.aborted) throw cancelled();
           await refresh(record);
+          if (readCache && !retainedMatches(record)) readCache = false;
           let span = readCache && record.ready && !record.diskUnavailable && await store.span(record.key, offset);
           if (span && !record.accessChecked) {
             await fetchRange(record, offset, 1, {kind: 'foreground', signal, save: false, probe: true});
@@ -571,6 +600,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             }
             useRecord(record); if (signal.aborted) throw cancelled();
             if (epoch !== record.metadataEpoch || key !== record.key) throw problem('stale-read');
+            if (data && !retainedMatches(record)) {data = null; readCache = false;}
             if (data) {stats.hitBytes += data.length; record.localHitBytes += data.length; selectedLocalBytes += data.length; await write(data, undefined, true); offset += data.length; continue;}
             // Invalid/missing local data falls through to ordinary origin IO.
           }
@@ -608,21 +638,24 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
     try {
     const grant = grantOf(await authorize(identity, {reason: 'open', signal: controller.signal}));
     if (closed || controller.signal.aborted) throw cancelled();
-    if (grant.preparedHandoff && (requestPolicy !== 'sparse' || !strong(grant.metadata.etag))) throw problem('configuration');
+    if (grant.preparedHandoff && (requestPolicy !== 'sparse' ||
+        !strong(grant.metadata.etag) && (!grant.retainedCandidate || grant.retainedCandidate.total !== grant.metadata.total ||
+          typeof store.openRetained !== 'function' || typeof store.matchRetained !== 'function'))) throw problem('configuration');
     const record = {identity, role, grant, metadata: {...grant.metadata}, controller, retired: false, metadataEpoch: 0,
       ready: false, accessChecked: grant.accessChecked, fallbackOriginal: false, deliveredBytes: 0, stopped: false, fallbackController: new AbortController(), preparedValidation: grant.preparedHandoff ? 'pending' : undefined, diskUnavailable: false, bodyControllers: new Set(), bodyJobs: new Set(), writeJobs: new Set(), actualStarted: false, preloadReady: false, localHitBytes: 0, queuedLocalBytes: 0, queuedSourceBytes: 0, flushedLocalBytes: 0, flushedSourceBytes: 0, rangeCount: 0, observe: evidence.create(onEvidence, identity)};
     record.firstAccess = grant.preparedHandoff ? new Promise(resolve => {let done = false; record.finishFirstAccess = value => {if (!done) {done = true; resolve(value);}};}) : Promise.resolve(true);
-    record.observe('route-open', {role, preparedHandoff: grant.preparedHandoff, totalBytes: grant.metadata.total, ...evidence.version(grant.metadata)});
+    record.observe('route-open', {role, preparedHandoff: grant.preparedHandoff, totalBytes: grant.metadata.total, retainedHandoff: !!grant.retainedCandidate, ...(grant.retainedCandidate ? {validator: 'stored-hash-candidate', versionHash: grant.retainedCandidate.versionHash, etagHash: grant.retainedCandidate.etagHash} : evidence.version(grant.metadata))});
     prepareKey(record, grant.metadata);
     const route = '/' + crypto.randomBytes(24).toString('hex'); record.routeToken = route; routes.set(route, record);
     return {url: 'http://127.0.0.1:' + server.address().port + route,
-      status: () => ({localHitBytes: record.localHitBytes, ...(record.preparedValidation ? {preparedValidation: record.preparedValidation} : {}), ...(record.fallbackOriginal ? {fallbackOriginal: true} : {})}),
+      status: () => ({localHitBytes: record.localHitBytes, ...(record.preparedValidation ? {preparedValidation: record.preparedValidation} : {}), ...(record.grant.retainedCandidate ? {retainedHandoff: true} : {}), ...(record.fallbackOriginal ? {fallbackOriginal: true} : {})}),
       preparedMetadata: () => record.ready && !record.retired && !record.diskUnavailable ? {...record.metadata} : null,
       ready: () => record.keyPromise, actual: () => {
         if (record.fallbackOriginal) return Promise.resolve(false);
         useRecord(record); const revision = ++actualRevision;
         return track(controls, (async () => {
           if (!await record.firstAccess) return false;
+          if (!retainedMatches(record)) return false;
           while (true) {
             const epoch = record.metadataEpoch;
             let key;
@@ -635,6 +668,7 @@ async function createProxy({store, authorize, resolveAccess, timeoutMs = 5000, m
             }
             useRecord(record); if (revision !== actualRevision) throw cancelled();
             if (epoch !== record.metadataEpoch) continue;
+            if (!retainedMatches(record)) return false;
             if (store.status().currentKey === key) {record.role = 'current'; record.actualStarted = true; return true;}
             const changed = await store.actual(key, {isCurrent: () => !closed && !record.retired && revision === actualRevision && epoch === record.metadataEpoch,
               preferredOffset: record.grant.preparedHandoff ? record.firstMediaOffset ?? 0 : null});

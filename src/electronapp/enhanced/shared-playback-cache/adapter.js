@@ -44,11 +44,12 @@ function validAccess(access, expectedSize, ordinary) {
     return access;
 }
 function probe(access, signal, timeoutMs, ordinary) {
-    return new Promise((resolve, reject) => {
+    let failure;
+    const pending = new Promise((resolve, reject) => {
         if (signal.aborted) {reject(error('request-cancelled')); return;}
         const headers = {Range: 'bytes=0-0', 'Accept-Encoding': 'identity', Connection: 'close'};
         if (access.userAgent !== undefined) headers['User-Agent'] = access.userAgent;
-        let response, metadata, failure, timer;
+        let response, metadata, timer;
         const request = (access.source.startsWith('https:') ? https : http).request(access.source,
             {method: 'GET', headers, agent: false});
         const fail = reason => {failure ||= error(reason); response?.destroy(); request.destroy();};
@@ -95,6 +96,8 @@ function probe(access, signal, timeoutMs, ordinary) {
         if (signal.aborted) abort();
         request.end();
     });
+    Object.defineProperty(pending, 'failure', {get: () => failure});
+    return pending;
 }
 
 async function createCache(config, dependencies = {}) {
@@ -189,7 +192,7 @@ async function createCache(config, dependencies = {}) {
                 // transport. The new Play has already bound its own authority.
                 const candidate = config.preparedHandoff === true && options.role === 'current' ? prepared.get(signature) : null;
                 const phase = value => {try {options.onPreparationPhase?.(value);} catch (_) {}};
-                let metadata, owned, adopted = false;
+                let metadata, owned, retained, adopted = false;
                 if (candidate && candidate.origin === initial.origin && candidate.userAgent === initial.userAgent &&
                     (initial.expectedSize === undefined || initial.expectedSize === candidate.metadata.total)) {
                     prepared.delete(signature);
@@ -209,20 +212,47 @@ async function createCache(config, dependencies = {}) {
                         return ensure(bytes);
                     });
                     phase('source-probe');
-                    pendingProbe = probe(initial, record.signal, timeoutMs, record.ordinary).then(value => {
-                        probeReady = true; phase(budgetReady ? 'backend' : 'budget'); return value;
+                    const probeController = new AbortController();
+                    pendingProbe = probe(initial, AbortSignal.any([record.signal, probeController.signal]), timeoutMs, record.ordinary);
+                    const probing = pendingProbe.then(value => {
+                        probeReady = true; phase(budgetReady ? 'backend' : 'budget'); return {metadata: value};
                     });
-                    [metadata, owned] = await Promise.all([pendingProbe, preparing]);
+                    if (config.preparedHandoff === true && config.retainPlayback !== false && options.role === 'current') {
+                        // Race the existing one-byte request with local recovery;
+                        // do not serialize an empty/slow store before that probe.
+                        const looking = preparing.then(async manager => {
+                            const value = await manager.store.retainedCandidate(identity, {isCurrent: () => {
+                                try {guard(record); return true;} catch (_) {return false;}
+                            }});
+                            guard(record);
+                            return value && (initial.expectedSize === undefined || value.total === initial.expectedSize)
+                                ? {retained: value, owned: manager} : null;
+                        }).catch(() => null);
+                        record.jobs.add(looking); looking.finally(() => record.jobs.delete(looking)).catch(() => {});
+                        const selected = await Promise.race([probing, looking.then(value => value || probing)]);
+                        if (selected.retained) {
+                            // A known denial/refusal cannot be relabeled as a
+                            // cancelled losing probe. Join its actual close.
+                            if (pendingProbe.failure) throw pendingProbe.failure;
+                            probeController.abort();
+                            await pendingProbe.catch(failure => {
+                                if (failure.preloadReason !== 'request-cancelled') throw failure;
+                            });
+                            guard(record); phase('backend');
+                            retained = selected.retained; owned = selected.owned;
+                            metadata = {total: retained.total}; adopted = true;
+                        } else {metadata = selected.metadata; owned = await preparing;}
+                    } else [metadata, owned] = await Promise.all([probing.then(value => value.metadata), preparing]);
                 }
                 guard(record);
                 record.total = metadata.total;
                 record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
-                    metadata, accessChecked: !adopted, ...(adopted ? {preparedHandoff: true} : {})};
+                    metadata, accessChecked: !adopted, ...(adopted ? {preparedHandoff: true} : {}), ...(retained ? {retainedCandidate: retained} : {})};
                 guard(record);
                 phase('metadata');
                 const route = await owned.proxy.open(identity, 'next');
                 record.route = route;
-                observe('adapter-open', {sourceClass: record.ordinary ? 'emby-http' : 'resolved-http', role: options.role === 'current' ? 'current' : 'next', totalBytes: metadata.total, preparedHandoff: adopted, ...evidence.version(metadata)});
+                observe('adapter-open', {sourceClass: record.ordinary ? 'emby-http' : 'resolved-http', role: options.role === 'current' ? 'current' : 'next', totalBytes: metadata.total, preparedHandoff: adopted, retainedHandoff: !!retained, ...(retained ? {validator: 'stored-hash-candidate', versionHash: retained.versionHash, etagHash: retained.etagHash} : evidence.version(metadata))});
                 // A recovered backend can establish a prepared first hit before
                 // the engine asks for it. Pending recovery remains off this path.
                 if (owned.store.status().available === true) {
@@ -262,7 +292,7 @@ async function createCache(config, dependencies = {}) {
                     })()),
                     status: () => {
                         const stats = typeof route.status === 'function' ? route.status() : null;
-                        return {bytes: record.bytes, total: record.total, ...(stats?.fallbackOriginal ? {fallbackOriginal: true} : {}), ...(stats?.preparedValidation ? {preparedValidation: stats.preparedValidation} : {}), ...(record.grant.preparedHandoff ? {preparedHandoff: true} : {}), ...(stats && Number.isSafeInteger(stats.localHitBytes) && stats.localHitBytes >= 0 ? {localHitBytes: stats.localHitBytes} : {})};
+                        return {bytes: record.bytes, total: record.total, ...(stats?.fallbackOriginal ? {fallbackOriginal: true} : {}), ...(stats?.preparedValidation ? {preparedValidation: stats.preparedValidation} : {}), ...(record.grant.preparedHandoff ? {preparedHandoff: true} : {}), ...(retained ? {retainedHandoff: true} : {}), ...(stats && Number.isSafeInteger(stats.localHitBytes) && stats.localHitBytes >= 0 ? {localHitBytes: stats.localHitBytes} : {})};
                     },
                     markPlaying: () => track((async () => {
                         guard(record);
@@ -305,6 +335,7 @@ async function createCache(config, dependencies = {}) {
                 if (!transferred) {
                     record.stopped = true; controller.abort();
                     if (pendingProbe) await Promise.allSettled([pendingProbe]);
+                    await Promise.allSettled([...record.jobs]);
                     if (record.route) await record.route.stop();
                     records.delete(record);
                 }

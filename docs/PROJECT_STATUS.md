@@ -1202,3 +1202,8 @@ Local validation of the unsubmitted test correction: focused actual-HTTP/store/s
 ## 2026-10-28 — 普通播放维护的本地收尾候选
 
 当 legacy B 已实际开始且真实预算完成 commit 后，取得共享存储期间退休可能跳过清除旧 A，尽管物理关闭已经完成。本地最小候选让已获准的固定目录维护完成删旧块并关闭，仍由维护屏障阻止更新 actual 越过旧任务；不新增源请求、媒体缓存写入或播放重启。预算 commit 前的取消、无效预算或磁盘失败仍可能保留旧 actual，不能称为全部时点的最后媒体保留闭合。保留原失败与历史 Windows 结果，新候选未构建、未运行 Windows Native，不作验收结论。详见 SHARED_PLAYBACK_CACHE_APP_TRIAL.md。
+
+
+## Retained playback Range handoff candidate
+
+A recovered last-playback entry can compete with the existing source probe without extending the 50 ms selection or 30 ms cache-read policies. Fresh authority and budget remain mandatory. The first actual upstream Range must match the retained total and strong ETag hash before old bytes can be selected; missing proof uses the original source. The opaque claim is tied to the exact store entry and current playback owner. See [the technical contract](PLAYBACK_CACHE_RETAINED_HANDOFF.md). Next-episode preload and settings defaults are unchanged. Windows disk-reopen and Native startup acceptance remain pending; no performance or green-frame resolution is claimed.

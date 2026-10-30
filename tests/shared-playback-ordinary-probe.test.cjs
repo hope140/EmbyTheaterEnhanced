@@ -6,8 +6,9 @@ const {EventEmitter}=require('node:events'),{createRequire}=require('node:module
 const authorityModule=require('../src/electronapp/enhanced/preload-source-authority');
 const filename=require.resolve('../src/electronapp/enhanced/shared-playback-cache/adapter');
 const source=fs.readFileSync(filename,'utf8');
-async function fixture(t,{response={},hold=false,holdClose=false,preparedHandoff=false}={}){
- const authority=authorityModule.createAuthority(),web=new EventEmitter();web.isDestroyed=()=>false;const principal=authority.principalFor(web),requests=[],grants=[];let proxyOptions,closed=false,proxyClosed=0,storeCreates=0,release,releaseClose;
+async function fixture(t,{response={},hold=false,holdClose=false,preparedHandoff=false,retained=false,lookupGate,retainPlayback=true}={}){
+ const authority=authorityModule.createAuthority(),web=new EventEmitter();web.isDestroyed=()=>false;const principal=authority.principalFor(web),requests=[],grants=[];let proxyOptions,closed=false,proxyClosed=0,storeCreates=0,lookups=0,release,releaseClose;
+ const candidate=Object.freeze({total:64,etagHash:'a'.repeat(64),versionHash:'b'.repeat(64)});
  const barrier=new Promise(resolve=>{release=resolve;}),closeBarrier=new Promise(resolve=>{releaseClose=resolve;});
  const http={request(url,options){const request=new EventEmitter();request.destroyed=false;const row={url,options,closed:false};requests.push(row);
   request.destroy=()=>{if(request.destroyed)return;request.destroyed=true;row.closing=true;queueMicrotask(()=>{(async()=>{if(holdClose)await closeBarrier;row.closed=true;request.emit('close');})().catch(error=>request.emit('error',error));});};
@@ -16,13 +17,13 @@ async function fixture(t,{response={},hold=false,holdClose=false,preparedHandoff
  const originalRequire=createRequire(filename),module={exports:{}};
  const requireFor=key=>key==='node:http'||key==='node:https'?http:key==='./proxy'?{async createProxy(options){proxyOptions=options;return{async open(identity){const grant=await options.authorize(identity,{signal:new AbortController().signal});grants.push({identity,grant});return{url:'http://127.0.0.1:19001/event-double-route',preparedMetadata:()=>({...grant.metadata}),async ready(){},async actual(){return true;},async stop(){},async preload(){},async coverage(){return{bytes:grant.metadata.total};}};},status:()=>({hitBytes:0}),async close(){proxyClosed++;await options.store.close();}};}}:originalRequire(key);
  new Function('require','module','exports',source)(requireFor,module,module.exports);
- const cache=await module.exports.createCache({kind:'shared-byte-trial',preparedHandoff,root:path.resolve('/workspace/ordinary-probe-unit-unused'),progressPercent:70,preloadMB:100,timeoutMs:30000},{createStore:async()=>{storeCreates++;return {status:()=>({closed,committed:0,current:0,next:0}),async close(){closed=true;},async forgetActualUnlessMedia(){}};}});
+ const cache=await module.exports.createCache({kind:'shared-byte-trial',preparedHandoff,retainPlayback,root:path.resolve('/workspace/ordinary-probe-unit-unused'),progressPercent:70,preloadMB:100,timeoutMs:30000},{createStore:async()=>{storeCreates++;return {status:()=>({closed,committed:0,current:0,next:0}),async retainedCandidate(_identity,options){lookups++;if(lookupGate)await lookupGate.promise;return retained&&options.isCurrent()?candidate:null;},async close(){closed=true;},async forgetActualUnlessMedia(){}};}});
  t.after(async()=>{release();releaseClose();await cache.close();authority.close();});
  function context({kind='emby-http',size,token='synthetic'}={}){const url='https://emby.invalid/Videos/A/stream.avi?Static=true&api_key='+token;
   const proof=authority.issue({principal,source:url,requestId:'play',sourceKind:kind,resourceKey:'opaque-main-identity',...(size===undefined?{}:{expectedSize:size})});
   const owner=new AbortController(),transport=authority.bind({principal,source:url,sourceProof:proof,requestId:'play',signal:owner.signal});return{source:url,identity:{serverOrigin:'https://emby.invalid',serverId:'server',accountId:'account',itemId:'A',mediaSourceId:'A-avi',representation:transport.representation},transport,owner};}
  async function open(ctx){return cache.open({...ctx,currentBytes:300*1048576,isCurrent:()=>!ctx.owner.signal.aborted,signal:ctx.owner.signal});}
- return{cache,requests,grants,context,open,release,releaseClose,get proxyOptions(){return proxyOptions;},stats:()=>({closed,proxyClosed,storeCreates})};
+ return{cache,requests,grants,context,open,release,releaseClose,get proxyOptions(){return proxyOptions;},stats:()=>({closed,proxyClosed,storeCreates,lookups})};
 }
 test('ordinary size comes from exactly one closed 0-0 probe and is pinned for all later access',async t=>{
  const f=await fixture(t),ctx=f.context(),phases=[];ctx.onPreparationPhase=value=>{phases.push(value);throw Error('synthetic-observer-failure');};
@@ -117,4 +118,48 @@ test('a weak validator cannot produce a prepared handoff even for an otherwise s
  const next=await f.open(ctx);await next.prefetch({maxBytes:64,signal:new AbortController().signal});await next.stop();
  const fresh=f.context({kind:'direct-url',size:64});fresh.role='current';const handle=await f.open(fresh);
  assert.equal(f.requests.length,2);assert.equal(f.grants.at(-1).grant.preparedHandoff,undefined);await handle.stop();
+});
+
+
+test('retained metadata wins a held redundant probe, joins its close and still requires fresh Range validation',async t=>{
+ const f=await fixture(t,{preparedHandoff:true,retained:true,hold:true}),ctx=f.context();ctx.role='current';
+ const h=await f.open(ctx);await h.ready();assert.equal(f.requests.length,1);assert.equal(f.requests[0].closed,true);assert.equal(f.stats().lookups,1);
+ assert.equal(f.grants[0].grant.preparedHandoff,true);assert.equal(f.grants[0].grant.accessChecked,false);assert.equal(h.status().retainedHandoff,true);assert.deepEqual(Object.keys(f.grants[0].grant.metadata),['total']);await h.stop();
+});
+test('a fast fresh probe does not wait for a pending retained lookup and the late lookup cannot change its grant',async t=>{
+ const gate=deferred();t.after(()=>gate.resolve());const f=await fixture(t,{preparedHandoff:true,retained:true,lookupGate:gate}),ctx=f.context();ctx.role='current';
+ const h=await f.open(ctx);assert.equal(f.requests[0].closed,true);assert.equal(f.grants[0].grant.preparedHandoff,undefined);assert.equal(f.grants[0].grant.metadata.etag,'"ordinary-v1"');
+ gate.resolve();await new Promise(resolve=>setImmediate(resolve));assert.equal(f.grants[0].grant.preparedHandoff,undefined);await h.stop();
+});
+test('a known source denial with close pending cannot be masked as the cancelled losing probe',async t=>{
+ const gate=deferred();t.after(()=>gate.resolve());const f=await fixture(t,{preparedHandoff:true,retained:true,lookupGate:gate,response:{status:403},holdClose:true}),ctx=f.context();ctx.role='current';
+ const opening=f.open(ctx);opening.catch(()=>{});for(let n=0;n<30&&!f.requests[0]?.closing;n++)await new Promise(resolve=>setImmediate(resolve));assert.equal(f.requests[0].closing,true);
+ gate.resolve();await new Promise(resolve=>setImmediate(resolve));assert.equal(f.grants.length,0);f.releaseClose();await assert.rejects(opening,/auth-required/);assert.equal(f.grants.length,0);
+});
+test('disabled retention does not claim last-play candidates or change ordinary fresh-source admission',async t=>{
+ const f=await fixture(t,{preparedHandoff:true,retained:true,retainPlayback:false}),ctx=f.context();ctx.role='current';const h=await f.open(ctx);
+ assert.equal(f.stats().lookups,0);assert.equal(f.grants[0].grant.preparedHandoff,undefined);assert.equal(f.requests[0].closed,true);await h.stop();
+});
+
+function controlledCurrent(t,f,ctx,{budgetBytes=300*1048576}={}){
+ const file=require.resolve('../src/electronapp/enhanced/playback-range-session'),loaded={exports:{}},timers=new Set();let clock=0;
+ const timer=(fn,ms)=>{const item={fn,due:clock+ms};timers.add(item);return item;};
+ new Function('require','module','exports','setTimeout','clearTimeout',fs.readFileSync(file,'utf8'))(createRequire(file),loaded,loaded.exports,timer,item=>timers.delete(item));
+ const helper={currentGenerationId:1,exited:false,transportTerminated:false},session=loaded.exports.createSession({config:{kind:'shared-byte-trial',root:path.resolve('/synthetic-unused'),preloadMB:100,progressPercent:70,preparedHandoff:true},create:async()=>f.cache,authorizeOrdinary:()=>ctx.transport,now:()=>clock,readCurrentBytes:async()=>({bytes:budgetBytes,isCurrent:()=>true,commit(){}})});
+ const {representation,...identity}=ctx.identity,value={...identity,source:ctx.source,playSessionId:'synthetic',mode:'DirectStream',mediaType:'Video',container:'avi'};
+ t.after(async()=>{f.release();f.releaseClose();await session.close();assert.equal(timers.size,0);});
+ return{session,async select(){await session.setContext(value,helper,1);return session.select(value.source,helper,1,['loadfile',value.source]);},expire(){clock=50;for(const item of [...timers])if(item.due<=clock){timers.delete(item);item.fn();}}};
+}
+test('retained lookup arriving after the Play deadline cannot publish a route or restart selection',async t=>{
+ const gate=deferred();t.after(()=>gate.resolve());const f=await fixture(t,{preparedHandoff:true,retained:true,lookupGate:gate,hold:true}),ctx=f.context(),current=controlledCurrent(t,f,ctx),selecting=current.select();
+ for(let n=0;n<30&&!f.stats().lookups;n++)await new Promise(resolve=>setImmediate(resolve));assert.equal(f.stats().lookups,1);current.expire();assert.equal(await selecting,null);assert.equal(current.session.status().current.route,'original');
+ gate.resolve();f.release();await new Promise(resolve=>setImmediate(resolve));await current.session.close();assert.equal(f.grants.length,0);assert.equal(f.requests.length,1);assert.equal(f.requests[0].closed,true);
+});
+test('winning retained lookup cannot publish while probe close exceeds the unchanged Play deadline',async t=>{
+ const f=await fixture(t,{preparedHandoff:true,retained:true,hold:true,holdClose:true}),ctx=f.context(),current=controlledCurrent(t,f,ctx),selecting=current.select();
+ for(let n=0;n<30&&!f.requests[0]?.closing;n++)await new Promise(resolve=>setImmediate(resolve));assert.equal(f.requests[0].closing,true);assert.equal(f.grants.length,0);current.expire();assert.equal(await selecting,null);
+ f.releaseClose();await new Promise(resolve=>setImmediate(resolve));await current.session.close();assert.equal(f.grants.length,0);assert.equal(f.requests[0].closed,true);
+});
+test('retained metadata cannot bypass an invalid new generation Native budget',async t=>{
+ const f=await fixture(t,{preparedHandoff:true,retained:true}),ctx=f.context(),current=controlledCurrent(t,f,ctx,{budgetBytes:-1});assert.equal(await current.select(),null);assert.equal(f.stats().lookups,0);assert.equal(f.stats().storeCreates,0);assert.equal(f.grants.length,0);
 });

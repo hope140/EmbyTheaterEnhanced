@@ -5,7 +5,7 @@
 const crypto = require('node:crypto');
 const digest = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const numeric = new Set(['totalBytes','rangeStart','rangeEnd','rangeOrdinal','selectedLocalBytes','queuedLocalBytes','queuedSourceBytes','flushedLocalBytes','flushedSourceBytes','rangeCount','omittedRanges','retainedBytes','preloadedBytes','elapsedMs','positionSeconds','width','height','droppedFrames','omittedEvents','refusedBlocks']);
-const booleans = new Set(['preloadEnabled','retainPlayback','coldIndex','complete','preparedHandoff','fallbackOriginal','decoderObserved']);
+const booleans = new Set(['preloadEnabled','retainPlayback','coldIndex','complete','preparedHandoff','fallbackOriginal','decoderObserved','retainedHandoff']);
 const enums = {
     sourceClass: ['emby-http','resolved-http','legacy'],
     property: ['video-codec','hwdec-current','video-out-params','decoder-frame-drop-count'],
@@ -14,10 +14,10 @@ const enums = {
     pixelFormat: ['p010','p010le','nv12','yuv420p','yuv420p10le','yuv444p','yuv444p10le','yuv422p','yuv422p10le','bgra','bgr0','rgba','rgb0','d3d11'],
     role: ['current','next'], route: ['proxy','original','idle'], method: ['GET','HEAD'],
     phase: ['budget','adapter','source-probe','backend','metadata'],
-    validator: ['strong-etag','weak-etag','last-modified-only','none'],
-    reason: ['timeout','cancelled','request-cancelled','generation-retired','representation-changed','access-refused','source-unavailable','source-proof-invalid','origin-range','origin-short-body','origin-long-body','origin-timeout','origin-unavailable','cache-unavailable','cache-io','queue-full','stale-read','invalid-span','invalid-hole','unexpected','version-changed','actual-advanced','next-cancelled','actual-media-changed','retention-disabled','unplayed-next','metadata-limit','policy','integrity-mismatch','block-unavailable']
+    validator: ['strong-etag','weak-etag','last-modified-only','none','stored-hash-candidate'],
+    reason: ['timeout','cancelled','request-cancelled','generation-retired','representation-changed','access-refused','source-unavailable','source-proof-invalid','origin-range','origin-short-body','origin-long-body','origin-timeout','origin-unavailable','cache-unavailable','cache-io','queue-full','stale-read','invalid-span','invalid-hole','unexpected','version-changed','actual-advanced','next-cancelled','actual-media-changed','retention-disabled','unplayed-next','metadata-limit','policy','integrity-mismatch','block-unavailable','validator-unavailable']
 };
-const events = new Set(['play-open','selection','play-end','adapter-open','adapter-failed','route-open','index-ready','source-headers','source-refused','range-end','route-end','preload-complete','entry-retired','actual-promoted','actual-preserved','store-close','block-refused','file-loaded','core-playing','playback-restart','end-file','decode-state','seek-requested']);
+const events = new Set(['play-open','selection','play-end','adapter-open','adapter-failed','route-open','retained-validated','index-ready','source-headers','source-refused','range-end','route-end','preload-complete','entry-retired','actual-promoted','actual-preserved','store-close','block-refused','file-loaded','core-playing','playback-restart','end-file','decode-state','seek-requested']);
 function version(metadata) {
     const value = metadata || {}, strong = typeof value.etag === 'string' && /^"[\x21\x23-\x7e]{1,255}"$/.test(value.etag);
     const meta = {total: value.total};
@@ -55,7 +55,7 @@ function create(sink, identity) {
             if (numeric.has(key) && Number.isFinite(item) && item >= 0 && item <= Number.MAX_SAFE_INTEGER) safe[key] = item;
             else if (booleans.has(key) && typeof item === 'boolean') safe[key] = item;
             else if (enums[key]?.includes(item)) safe[key] = item;
-            else if (['versionHash','generationHash'].includes(key) && typeof item === 'string' && /^[a-f0-9]{64}$/.test(item)) safe[key] = item;
+            else if (['versionHash','generationHash','etagHash'].includes(key) && typeof item === 'string' && /^[a-f0-9]{64}$/.test(item)) safe[key] = item;
         }
         emitted++;
         try {const pending = sink({event, details: safe}); if (pending && typeof pending.catch === 'function') pending.catch(() => {});} catch (_) { /* Evidence cannot fail playback. */ }

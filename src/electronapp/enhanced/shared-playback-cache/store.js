@@ -231,7 +231,7 @@ async function createStore({
     }
   }
 
-  const entries = new Map();
+  const entries = new Map(), retainedCandidates = new WeakMap();
   const retired = new Map();
   const orphans = new Map();
   const indexOrphans = new Set();
@@ -693,6 +693,61 @@ async function createStore({
     });
   }
 
+  function retainedProof(candidate) {
+    const proof = candidate && retainedCandidates.get(candidate);
+    if (closing || closed || faulted || !proof || !isLive(proof.isCurrent) ||
+        actualKey !== proof.entry.key || entries.get(proof.entry.key) !== proof.entry ||
+        proof.entry.baseKey !== proof.baseKey || !sameMetadata(proof.entry.meta, proof.meta)) {
+      if (proof) retainedCandidates.delete(candidate);
+      return null;
+    }
+    return proof;
+  }
+
+  function retainedCandidate(identity, {isCurrent = () => true} = {}) {
+    const baseKey = identityKey(identity);
+    return enqueue(async () => {
+      if (closing || closed || faulted || !isLive(isCurrent)) return null;
+      const entry = entries.get(actualKey);
+      if (!entry || entry.baseKey !== baseKey || !entry.blocks.length ||
+          typeof entry.meta.etag !== 'string' || !/^[a-f0-9]{64}$/.test(entry.meta.etag)) return null;
+      const candidate = Object.freeze({total: entry.meta.total, etagHash: entry.meta.etag,
+        versionHash: evidence.storedVersion(entry.meta)});
+      retainedCandidates.set(candidate, {entry, baseKey, meta: {...entry.meta}, isCurrent});
+      return candidate;
+    });
+  }
+
+  function openRetained(identity, candidate, {isCurrent = () => true} = {}) {
+    const baseKey = identityKey(identity);
+    return enqueue(async () => {
+      let proof = retainedProof(candidate);
+      if (!proof || proof.baseKey !== baseKey || !isLive(isCurrent)) throw new Error('retained candidate unavailable');
+      await assertOwnedPaths();
+      proof = retainedProof(candidate);
+      if (!proof || proof.baseKey !== baseKey || !isLive(isCurrent)) throw new Error('retained candidate unavailable');
+      return proof.entry.key; // No role, actual or metadata mutation.
+    });
+  }
+
+  // Synchronous read-only validation is atomic within the current JS turn. It
+  // must not queue behind disk writes before an ordinary source body can flow.
+  function matchRetained(candidate, metadata) {
+    const proof = retainedProof(candidate);
+    return !!proof && metadata?.total === proof.meta.total &&
+      typeof metadata.etag === 'string' && /^"[\x21\x23-\x7e]{1,255}"$/.test(metadata.etag) &&
+      sha256(metadata.etag) === proof.meta.etag;
+  }
+
+  function invalidateRetained(candidate) {
+    return enqueue(async () => {
+      const proof = retainedProof(candidate);
+      if (!proof) return false;
+      await retireEntry(proof.entry, 'version-changed'); await persist(); await drainRetired();
+      return true;
+    });
+  }
+
   function validOffset(offset) {
     return nonnegativeSafeInteger(offset);
   }
@@ -970,7 +1025,7 @@ async function createStore({
     return closePromise;
   }
 
-  return {open, actual, span, nextOffset, read, put, invalidate, discardNext, forgetActualUnlessMedia, coverage, status, close};
+  return {open, actual, retainedCandidate, openRetained, matchRetained, invalidateRetained, span, nextOffset, read, put, invalidate, discardNext, forgetActualUnlessMedia, coverage, status, close};
   } catch (error) {
     await guard.close().catch(() => {});
     throw error;

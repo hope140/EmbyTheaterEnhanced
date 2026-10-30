@@ -35,6 +35,11 @@ function createDeferredStore(options, {create = value => require('./store').crea
                 return store.actual(key, options);
             });
         },
+        retainedCandidate: (identity, options = {}) => enqueue(store =>
+            typeof store.retainedCandidate === 'function' ? store.retainedCandidate(identity, options) : null),
+        openRetained: (identity, candidate, options = {}) => enqueue(store => store.openRetained(identity, candidate, options)),
+        matchRetained: (candidate, metadata) => !!usable() && typeof backend.matchRetained === 'function' && backend.matchRetained(candidate, metadata),
+        invalidateRetained: candidate => enqueue(store => typeof store.invalidateRetained === 'function' ? store.invalidateRetained(candidate) : false),
         put: (...args) => usable() ? backend.put(...args) : Promise.resolve(false),
         read: (...args) => usable() ? backend.read(...args) : Promise.resolve(null),
         span: (...args) => usable() ? backend.span(...args) : Promise.resolve(null),

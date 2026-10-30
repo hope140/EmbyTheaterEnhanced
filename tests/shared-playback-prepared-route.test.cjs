@@ -5,8 +5,9 @@ const {EventEmitter}=require('node:events'),{createRequire}=require('node:module
 const filename=require.resolve('../src/electronapp/enhanced/shared-playback-cache/proxy');
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
 function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return{promise,resolve};}
-async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,status=206,etag='"v1"',bodyBytes,bodyFill=65,headerTotal=8,accessGate,readGate,refreshGate,mediaBufferBytes=8*1024*1024,writeError=false,flushError=false}={}){
- let handler,owner=true,reads=0,actuals=0,missing=false,accesses=0,authorizations=0,closed=false;
+async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,status=206,etag='"v1"',bodyBytes,bodyFill=65,headerTotal=8,accessGate,readGate,refreshGate,mediaBufferBytes=8*1024*1024,writeError=false,flushError=false,retained=false}={}){
+ let handler,owner=true,reads=0,actuals=0,missing=false,accesses=0,authorizations=0,closed=false,retainedOpens=0,retainedInvalidations=0,retainedAlive=true;
+ const retainedToken=Object.freeze({total:8,etagHash:'a'.repeat(64),versionHash:'b'.repeat(64)});
  const timers=new Set(),setOwnedTimer=(fn,ms)=>{const timer={fn,ms};timers.add(timer);return timer;},clearOwnedTimer=timer=>timers.delete(timer);
  const evidenceRows=[],requests=[],heldHeaders=[],heldBodies=[],heldCloses=[],responses=[];
  const origin={status,etag,bodyBytes,bodyFill,headerTotal};
@@ -29,10 +30,13 @@ async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,statu
     if(holdHeaders)heldHeaders.push(emitHeaders);else emitHeaders();
    });return request;
   }};
- const store={open:async()=> 'key',span:async()=>missing?null:{start:0,end:8},nextOffset:async(_key,offset)=>offset<8?8:null,
+ const store={open:async()=>{assert.equal(retained,false,'retained admission must not rebuild its metadata key');return 'key';},
+  openRetained:async(_identity,candidate)=>{assert.equal(candidate,retainedToken);assert(retainedAlive);retainedOpens++;return 'key';},
+  matchRetained:(candidate,metadata)=>candidate===retainedToken&&retainedAlive&&metadata.total===8&&metadata.etag==='\"v1\"',
+  invalidateRetained:async candidate=>{assert.equal(candidate,retainedToken);if(!retainedAlive)return false;retainedInvalidations++;retainedAlive=false;missing=true;return true;},span:async()=>missing?null:{start:0,end:8},nextOffset:async(_key,offset)=>offset<8?8:null,
   read:async(_key,_offset,length)=>{reads++;if(readGate)await readGate.promise;return Buffer.alloc(length,65);},actual:async()=>{actuals++;return true;},
-  put:async()=>false,invalidate:async()=>{missing=true;},status:()=>({currentKey:null}),close:async()=>{closed=true;}};
- const authorize=async()=>{authorizations++;if(authorizations>1&&refreshGate){await refreshGate.promise;throw Error('refresh-refused');}return {url:'http://origin.invalid/source',origin:'http://origin.invalid',metadata:{total:8,etag:'"v1"'},accessChecked:false,preparedHandoff:true,...(refreshGate?{expiresAt:0}:{})};};
+  put:async()=>false,invalidate:async()=>{missing=true;},status:()=>({currentKey:retained?'key':null}),close:async()=>{closed=true;}};
+ const authorize=async()=>{authorizations++;if(authorizations>1&&refreshGate){await refreshGate.promise;throw Error('refresh-refused');}return {url:'http://origin.invalid/source',origin:'http://origin.invalid',metadata:retained?{total:8}:{total:8,etag:'"v1"'},accessChecked:false,preparedHandoff:true,...(retained?{retainedCandidate:retainedToken}:{}),...(refreshGate?{expiresAt:0}:{})};};
  const resolveAccess=async()=>{accesses++;if(accesses>1&&accessGate)await accessGate.promise;if(!owner)throw Error('retired-owner');return{url:'http://origin.invalid/source',origin:'http://origin.invalid',expectedSize:8};};
  const module={exports:{}},originalRequire=createRequire(filename);
  // Functional event ordering uses one controlled clock for now() and timers.
@@ -40,8 +44,8 @@ async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,statu
  new Function('require','module','exports','setTimeout','clearTimeout',fs.readFileSync(filename,'utf8'))(key=>key==='node:http'||key==='node:https'?http:key==='node:perf_hooks'?{performance:{now:()=>0}}:originalRequire(key),module,module.exports,setOwnedTimer,clearOwnedTimer);
  const proxy=await module.exports.createProxy({store,authorize,resolveAccess,timeoutMs:1000,mediaBufferBytes,onEvidence:row=>evidenceRows.push(row)});
  const route=await proxy.open({server:'server',account:'account',item:'item',mediaSource:'media',resource:'resource',representation:'original'},'next');await route.ready();
- function get({target=route,holdDrain=false}={}){
-  const req=new EventEmitter();req.url=new URL(target.url).pathname;req.method='GET';req.headers={host:'127.0.0.1:19001',range:'bytes=0-7'};
+ function get({target=route,holdDrain=false,method='GET'}={}){
+  const req=new EventEmitter();req.url=new URL(target.url).pathname;req.method=method;req.headers={host:'127.0.0.1:19001',range:'bytes=0-7'};
   const res=new EventEmitter(),done=deferred();res.chunks=[];res.headersSent=false;res.writableHighWaterMark=262144;res.finished=false;
   res.writeHead=(code,headers)=>{res.status=code;res.headers=headers;res.headersSent=true;};
   res.write=(data,callback)=>{if(writeError)throw Error('synthetic-private-error');res.chunks.push(Buffer.from(data));callback?.(flushError?Error('synthetic-private-error'):undefined);return !holdDrain;};
@@ -49,7 +53,7 @@ async function fixture(t,{holdHeaders=false,holdBody=false,holdClose=false,statu
   responses.push(res);handler(req,res);return{res,promise:done.promise};
  }
  t.after(async()=>{owner=false;accessGate?.resolve();readGate?.resolve();refreshGate?.resolve();releaseHeaders();releaseBodies();releaseCloses();await proxy.close();assert.equal(timers.size,0,'all synthetic deadlines are cleared by their owner');});
- return{proxy,route,get,evidenceRows,requests,origin,expireTimers(){for(const timer of [...timers]){timers.delete(timer);timer.fn();}},releaseHeaders,releaseBodies,releaseCloses,stats:()=>({reads,actuals,accesses,closed}),retireOwner(){owner=false;},miss(){missing=true;}};
+ return{proxy,route,get,evidenceRows,requests,origin,expireTimers(){for(const timer of [...timers]){timers.delete(timer);timer.fn();}},releaseHeaders,releaseBodies,releaseCloses,stats:()=>({reads,actuals,accesses,closed,retainedOpens,retainedInvalidations}),replaceRetained(){retainedAlive=false;},retireOwner(){owner=false;},miss(){missing=true;}};
 }
 
 test('all responses wait for real Range headers, then ready cache wins without a separate0-0 or waiting for body',async t=>{
@@ -129,4 +133,34 @@ test('range evidence is capped but route totals retain repeated reads and their 
 test('an explicitly expired origin deadline still refuses cache and records fallback without waiting for host time',async t=>{
  const f=await fixture(t,{holdHeaders:true,holdBody:true}),a=f.get();await turn();f.expireTimers();const result=await a.promise;
  assert.equal(result.status,307);assert.equal(f.route.status().localHitBytes,0);assert(f.evidenceRows.some(x=>x.event==='source-refused'&&x.details.reason==='origin-timeout'));
+});
+
+
+test('retained hash admission pins the original key and gates HEAD/GET together on fresh actual Range headers',async t=>{
+ const f=await fixture(t,{retained:true,holdHeaders:true,holdBody:true}),head=f.get({method:'HEAD'}),body=f.get();await turn();assert.equal(f.requests.length,1);assert.equal(body.res.chunks.length,0);assert.equal(f.route.status().localHitBytes,0);
+ f.releaseHeaders();const results=await Promise.all([head.promise,body.promise]);assert.equal(results[0].status,206);assert.equal(results[0].chunks.length,0);assert.deepEqual(Buffer.concat(results[1].chunks),Buffer.alloc(8,65));
+ assert.equal(f.stats().retainedOpens,1);assert.equal(f.route.status().retainedHandoff,true);assert.equal(f.route.status().localHitBytes,8);assert.equal(await f.route.actual(),true);assert.equal(f.stats().actuals,0,'lookup/claim do not alter the already retained actual slot');await f.proxy.drain();assert.equal(f.proxy.status().readReservedBytes,0);
+});
+test('a retained route can let source body win first and use the validated cache on a later Range without rekeying',async t=>{
+ const gate=deferred(),f=await fixture(t,{retained:true,readGate:gate});const first=await f.get().promise;assert.equal(first.status,206);assert.equal(f.route.status().localHitBytes,0);
+ gate.resolve();await f.proxy.drain();const second=await f.get().promise;assert.equal(second.status,206);assert.equal(f.route.status().localHitBytes,8);assert.equal(f.requests.length,1);assert.equal(f.stats().retainedOpens,1);
+});
+test('changed retained version uses the same response, binds later source-only ranges and invalidates only its old proof',async t=>{
+ const f=await fixture(t,{retained:true,etag:'"v2"',bodyFill:66}),first=await f.get().promise;assert.equal(first.status,206);assert.deepEqual(Buffer.concat(first.chunks),Buffer.alloc(8,66));assert.equal(f.route.status().localHitBytes,0);assert.equal(f.stats().retainedInvalidations,1);
+ const second=await f.get().promise;assert.equal(second.status,206);assert.deepEqual(Buffer.concat(second.chunks),Buffer.alloc(8,66));assert.equal(f.requests.length,2);assert.equal(f.route.status().localHitBytes,0);
+});
+for(const tag of [undefined,'W/"v1"'])test('retained missing or weak fresh validator falls back before bytes, preserves the old slot and never revives: '+tag,async t=>{
+ const f=await fixture(t,{retained:true});f.origin.etag=tag;const first=await f.get().promise;assert.equal(first.status,307);assert.equal(first.chunks.length,0);assert.equal(f.stats().retainedInvalidations,0);assert.equal(f.route.status().localHitBytes,0);
+ f.origin.etag='"v1"';assert.equal((await f.get().promise).status,307);assert.equal(f.requests.length,1);
+});
+test('a late retained entry replacement cannot deliver a pre-read old block or invalidate the new actual',async t=>{
+ const f=await fixture(t,{retained:true,holdHeaders:true}),request=f.get();await turn();f.replaceRetained();f.releaseHeaders();const result=await request.promise;
+ assert.equal(result.status,206);assert.equal(f.route.status().localHitBytes,0);assert.equal(f.stats().retainedInvalidations,0);await f.proxy.drain();assert.equal(f.proxy.status().readReservedBytes,0);
+});
+
+test('a retained pre-read finishing after entry replacement cannot win or mark the replacement actual',async t=>{
+ const gate=deferred(),f=await fixture(t,{retained:true,readGate:gate,holdBody:true}),request=f.get();await turn();assert(f.stats().reads>0);f.replaceRetained();gate.resolve();await turn();assert.equal(f.proxy.status().preparedCacheWins,0);f.releaseBodies();assert.equal((await request.promise).status,206);assert.equal(f.route.status().localHitBytes,0);assert.equal(await f.route.actual(),false);assert.equal(f.stats().retainedInvalidations,0);await f.proxy.drain();assert.equal(f.proxy.status().readReservedBytes,0);
+});
+test('retained ownership loss after a completed hit locks later ranges to source-only and refuses actual promotion',async t=>{
+ const f=await fixture(t,{retained:true,holdHeaders:true,holdBody:true}),first=f.get();await turn();f.releaseHeaders();await first.promise;assert.equal(f.route.status().localHitBytes,8);f.replaceRetained();f.releaseBodies();const next=await f.get().promise;assert.equal(next.status,206);assert.equal(f.route.status().localHitBytes,8);assert.equal(await f.route.actual(),false);assert.equal(f.stats().retainedInvalidations,0);
 });
