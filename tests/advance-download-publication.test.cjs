@@ -69,6 +69,26 @@ test('Windows adapter sends Unicode paths as data, uses a fixed hidden shell and
     await assert.rejects(operation, error => probe.reasonOf(error) === 'publication-unconfirmed');
 });
 
+test('Windows adapter accepts attested post-move IDs and reports only finite native diagnostics', async () => {
+    for (const [output, code, expected] of [
+        ['ETE_MEDIA_MOVE 0 123 456\r\n', 0, 'moved'],
+        ['ETE_MEDIA_MOVE 87\r\n', 0, 'rename'],
+        ['ETE_MEDIA_MOVE rejected source-time\r\n', 1, 'source-time'],
+        ['private path or arbitrary output\n', 1, 'protocol']
+    ]) {
+        const child = new EventEmitter(); child.stdin = new PassThrough(); child.stdout = new PassThrough(); child.kill = () => {};
+        const pending = moveWindows({fileId: {dev: '123', ino: '111'}}, {environment: {SystemRoot: 'C:\\Windows'}, spawn: () => child});
+        child.stdout.emit('data', Buffer.from(output)); child.emit('close', code);
+        if (expected === 'moved') assert.deepEqual(await pending, {fileId: {dev: '123', ino: '456'}});
+        else await assert.rejects(pending, error => {
+            assert.equal(error.publicationStage, expected);
+            assert.ok(!error.message.includes('private'));
+            if (expected === 'rename') assert.equal(error.publicationNativeCode, 87);
+            return true;
+        });
+    }
+});
+
 async function movedCrash(t, mutate) {
     const f = await fixture(t), root = directory(t), profile = path.join(root, 'profile'), videos = path.join(root, 'videos');
     fs.mkdirSync(profile); fs.mkdirSync(videos);
@@ -160,8 +180,8 @@ test('actual Windows handle move preserves existing files and directories at the
 
 test('actual Windows handle move rejects stale source and directory identity before mutation', {skip: windowsOnly, timeout: 60000}, async t => {
     const root = directory(t), value = record(root);
-    for (const patch of [{fileId: {...value.fileId, ino: '0'}}, {rootId: {...value.rootId, ino: '0'}}, {size: media.length + 1}]) {
-        await assert.rejects(moveWindows({...value, ...patch}));
+    for (const [patch, stage] of [[{fileId: {...value.fileId, ino: '0'}}, 'source-identity'], [{rootId: {...value.rootId, ino: '0'}}, 'directory-identity'], [{size: media.length + 1}, 'source-identity'], [{mtimeNs: '0'}, 'source-time']]) {
+        await assert.rejects(moveWindows({...value, ...patch}), error => error.publicationStage === stage);
         assert.deepEqual(fs.readFileSync(path.join(root, value.from)), media);
         assert.ok(!fs.existsSync(path.join(root, value.to)));
     }

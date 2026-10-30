@@ -8,6 +8,7 @@ using Microsoft.Win32.SafeHandles;
 // A fixed, same-directory commit. No copy, overwrite, deletion, network or shell
 // command is accepted. Handles pin the actual source and its directory ancestry.
 public static class EteMediaPublish {
+    public static string Stage = "input";
     [StructLayout(LayoutKind.Sequential)] struct Info {
         public uint Attributes, CreationLow, CreationHigh, AccessLow, AccessHigh, WriteLow, WriteHigh;
         public uint Volume, SizeHigh, SizeLow, Links, IndexHigh, IndexLow;
@@ -30,6 +31,7 @@ public static class EteMediaPublish {
             value.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && !value.EndsWith(".") && !value.EndsWith(" "));
     }
     public static string Move(string directory, string from, string to, string rootDev, string rootIno, string fileDev, string fileIno, long size, string mtimeNs) {
+        Stage = "input";
         Require(Path.IsPathRooted(directory) && !directory.StartsWith(@"\\?\") && !directory.StartsWith(@"\\.\") &&
             String.Equals(Path.GetFullPath(directory), directory, StringComparison.OrdinalIgnoreCase));
         Name(from); Name(to); Require(from.StartsWith(".ete-media-") && from.EndsWith(".part") && !String.Equals(from, to, StringComparison.OrdinalIgnoreCase));
@@ -42,28 +44,35 @@ public static class EteMediaPublish {
                 current = Path.Combine(current, component); paths.Add(current);
             }
             foreach (string path in paths) {
+                Stage = "ancestor";
                 // Share read/write, deny rename/deletion; OPEN_REPARSE_POINT
                 // ensures a junction is inspected rather than traversed.
                 var handle = CreateFileW(Extended(path), 0, 3, IntPtr.Zero, 3, 0x2200000, IntPtr.Zero); held.Add(handle);
                 var info = Information(handle); Require((info.Attributes & 0x10) != 0);
             }
+            Stage = "directory-identity";
             var root = held[held.Count - 1]; Require(Matches(Information(root), rootDev, rootIno));
+            Stage = "source-open";
             file = CreateFileW(Extended(Path.Combine(directory, from)), 0x80010000, 1, IntPtr.Zero, 3, 0x200000, IntPtr.Zero);
             var before = Information(file);
+            Stage = "source-identity";
             Require((before.Attributes & 0x10) == 0 && before.Links == 1 && fileIno != "0" && Matches(before, fileDev, fileIno) && rootDev == fileDev &&
                 (((ulong)before.SizeHigh << 32) | before.SizeLow) == (ulong)size && size > 0);
             ulong write = ((ulong)before.WriteHigh << 32) | before.WriteLow;
+            Stage = "source-time";
             Require(write >= 116444736000000000UL && ((write - 116444736000000000UL) * 100).ToString() == mtimeNs);
-            byte[] name = Encoding.Unicode.GetBytes(to);
+            byte[] name = Encoding.Unicode.GetBytes(Path.Combine(directory, to));
             int rootOffset = IntPtr.Size == 8 ? 8 : 4, lengthOffset = rootOffset + IntPtr.Size, nameOffset = lengthOffset + 4;
             int length = nameOffset + name.Length + 2;
             buffer = Marshal.AllocHGlobal(length);
             Marshal.Copy(new byte[length], 0, buffer, length);
             // ReplaceIfExists/Flags remains zero. An existing file or directory
             // wins atomically, including a name created after the caller's check.
-            Marshal.WriteIntPtr(buffer, rootOffset, root.DangerousGetHandle());
+            // Use the common Win32 form: absolute destination, NULL root. The
+            // ancestor handles still pin this exact directory during rename.
             Marshal.WriteInt32(buffer, lengthOffset, name.Length);
             Marshal.Copy(name, 0, IntPtr.Add(buffer, nameOffset), name.Length);
+            Stage = "rename";
             if (!SetFileInformationByHandle(file, 3, buffer, (uint)length)) {
                 int error = Marshal.GetLastWin32Error();
                 if (error == 5 && (File.Exists(Path.Combine(directory, to)) || Directory.Exists(Path.Combine(directory, to)))) return "183";
@@ -71,6 +80,7 @@ public static class EteMediaPublish {
             }
             // FAT-family IDs may change on rename. Only this still-held source
             // handle can attest the new identity; never infer it from the path.
+            Stage = "after";
             var after = Information(file);
             string index = (((ulong)after.IndexHigh << 32) | after.IndexLow).ToString();
             Require(after.Volume.ToString() == fileDev && after.Links == 1 && index != "0");

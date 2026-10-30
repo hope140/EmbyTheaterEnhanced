@@ -9,10 +9,10 @@ function moveWindows(record, options = {}) {
     if (!/^[A-Za-z]:\\[^\r\n]+$/.test(systemRoot || '')) return Promise.reject(failure('publication-unavailable'));
     const executable = path.win32.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     const code = fs.readFileSync(path.join(__dirname, 'windows-publish.cs')).toString('base64');
-    const command = "$ErrorActionPreference='Stop'; try { Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop; " +
+    const command = "$ErrorActionPreference='Stop'; $eteStage='compile'; try { Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop; " +
         "Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + code + "'))); " +
-        "$p=ConvertFrom-Json ([Console]::In.ReadLine()); $r=[EteMediaPublish]::Move($p.directory,$p.from,$p.to,$p.rootId.dev,$p.rootId.ino,$p.fileId.dev,$p.fileId.ino,[long]$p.size,$p.mtimeNs); " +
-        "[Console]::Out.WriteLine('ETE_MEDIA_MOVE '+$r) } catch { [Console]::Out.WriteLine('ETE_MEDIA_MOVE rejected'); exit 1 }";
+        "$eteStage='input'; $p=ConvertFrom-Json ([Console]::In.ReadLine()); $eteStage='invoke'; $r=[EteMediaPublish]::Move($p.directory,$p.from,$p.to,$p.rootId.dev,$p.rootId.ino,$p.fileId.dev,$p.fileId.ino,[long]$p.size,$p.mtimeNs); " +
+        "[Console]::Out.WriteLine('ETE_MEDIA_MOVE '+$r) } catch { if($eteStage -eq 'invoke'){$eteStage=[EteMediaPublish]::Stage}; [Console]::Out.WriteLine('ETE_MEDIA_MOVE rejected '+$eteStage); exit 1 }";
     return new Promise((resolve, reject) => {
         let child, output = '', invalid = false, timer;
         try {
@@ -31,7 +31,12 @@ function moveWindows(record, options = {}) {
                 const moved = /^ETE_MEDIA_MOVE 0 ([0-9]{1,10}) ([0-9]{1,20})\r?\n$/.exec(output);
                 if (!invalid && code === 0 && moved && moved[1] === record.fileId.dev && moved[2] !== '0') return resolve({fileId: {dev: moved[1], ino: moved[2]}});
                 if (!invalid && code === 0 && /^ETE_MEDIA_MOVE (80|183)\r?\n$/.test(output)) return reject(Object.assign(Error('exists'), {code: 'EEXIST'}));
-                reject(failure('publication-unconfirmed'));
+                const error = failure('publication-unconfirmed');
+                const stage = /^ETE_MEDIA_MOVE rejected (compile|input|ancestor|directory-identity|source-open|source-identity|source-time|rename|after)\r?\n$/.exec(output);
+                const native = /^ETE_MEDIA_MOVE ([1-9][0-9]{0,4})\r?\n$/.exec(output);
+                error.publicationStage = invalid ? 'transport' : stage ? stage[1] : native ? 'rename' : 'protocol';
+                if (native) error.publicationNativeCode = Number(native[1]);
+                reject(error);
             });
             child.stdin.end(ascii(record) + '\n');
         } catch (_) {clearTimeout(timer); if (child) child.kill(); reject(failure('publication-unavailable'));}
