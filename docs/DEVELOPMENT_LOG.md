@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-30 — 在线提前下载核心继续开发
+
+继续独立分支的在线提前下载，已明确原按钮、首次目录记忆及STRM／CD2优先。新增source-session／source-probe、directory-preferences与transfer，均无生产调用者。真实源码resolver／CD2 service与匿名回环HTTP贯通权限检查、字节探测、换签、同源回退、真盘传输、仅强校验续传和原子无覆盖提交；目录偏好只改自身profile文件，完成媒体没有删除接口。未修改main、原按钮、播放器或预载代码。
+
+首轮取源24/25暴露同源回退缺sourcePath，补齐规范化上下文后25/25；扩大回归93/94的旧grpc连接拒绝用例因独立工作树缺依赖失败，按原lockfile npm ci --ignore-scripts后94/94，0 fail／skip／cancel。新增异步CD2关闭归属回归后，最终95/95，0 fail／skip／cancel；合同／来源／目录／传输测试共39项。另显式调用现有FFmpeg／FFprobe 7.1.5，生成两秒64×64 FFV1／Matroska，自测1/1：完整文件SHA、20帧解码哈希一致，且确实从1024偏移续传。命令及全部边界见[设计合同](ADVANCE_DOWNLOAD_DESIGN.md)。
+
+真实服务地址和凭据未附，未向用户服务器取源；Linux自有媒体／合成gRPC不能代替真实Emby／CD2或Windows。原按钮、IPC、完成索引／ETE本地播放、目录选择器实测、全量构建及用户验收未执行；应用退出的任务体验与更换目录入口留作后续具体讨论。未推送、合main、发布或部署。
+
 ## 2026-10-30 — 提前下载独立基础接口候选
 
 从 main `2d0acf314cd58d7dcb8b61e0e95ac5d1647b3d96` 建立独立分支，重新核对维护API和普通下载入口，并只读研究共享缓存候选的授权／存储接口。未移动预载分支或改动其源码。在线提前下载为推荐待讨论方案，离线范围、旧文件接管、保留／删除及播放优先级未定；合同见[设计候选](ADVANCE_DOWNLOAD_DESIGN.md)。
