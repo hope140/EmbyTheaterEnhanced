@@ -41,6 +41,20 @@ test('a cut response resumes only after reauthorization, a fresh URL and matchin
     assert.equal(f.state.closedServices, 2);
 });
 
+for (const phase of ['full', 'resume']) test('a signed URL returning 401 during ' + phase + ' transfer is refreshed without writing the error body', async t => {
+    const f = await setup(t);
+    if (phase === 'full') f.state.expireFull = true;
+    else {f.state.cutTransfer = 1; f.state.expireResume = true;}
+    const result = await download({session: f.session, source: f.source, directory: f.root});
+    assertFile(f, result);
+    const transfers = f.calls.filter(call => call.url.startsWith('/direct') && (phase === 'full' ? !call.headers.range : call.headers.range === 'bytes=1024-'));
+    assert.equal(transfers.length, 2);
+    assert.match(transfers[0].url, /signature=first/);
+    assert.match(transfers[1].url, /signature=renewed/);
+    assert.ok(transfers.every(call => !call.headers['x-emby-token']));
+    assert.equal(f.state.closedServices, phase === 'full' ? 2 : 3);
+});
+
 test('an interrupted download without a strong validator restarts its own temporary file instead of appending', async t => {
     const f = await fixture(t);
     f.state.etag = null;

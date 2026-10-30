@@ -1,6 +1,8 @@
 # 构建与打包
 
-本文说明当前源码候选的构建合同。已发布安装包保持原 tag、附件和 provenance；本轮已验收的本地候选与当前公开交接提交并非同一提交，准确边界见[收尾清单](SOURCE_CLEANUP_CLOSEOUT.md)。正式发布、版本号和 main 合并尚未执行。
+本文说明构建输入、来源和校验合同。新开发者从[贡献指南的 Windows 构建入口](CONTRIBUTING.md#windows-构建与打包)开始；当前下载渠道见[README](../README.md#下载安装)。已发布安装包保持原 Tag、附件和 provenance，后续文档 HEAD 不改变产品来源。
+
+文中的本地候选、独立分支及早期 runner 待验收描述保留当时证据，不表示整个项目尚未发布。材料独立化当时的源码差异见[收尾清单](SOURCE_CLEANUP_CLOSEOUT.md)；各次构建是否成功，以准确源码提交对应的 Actions 与发行记录为准。
 
 ## 输入与输出
 
@@ -14,7 +16,7 @@
 
 **已审核产物的本地测试路径**：使用真实验证锁 `native/windows-host/verified-runtime.json`，锁必须在当前 HEAD中；EXE/PDB放入忽略的 `vendor/source-built-host/snapshot-v1/`，固定 JSON依赖位于 `vendor/host-json/snapshot-v1/`。锁绑定来源、Model、框架／平台、产物大小与哈希及回执身份。仅本地测试 fixture提交与公开候选提交分开记录，不把外部回执移植成 runner验收。
 
-**runner从源码生成路径**：`tools/ci-source-built-host.ps1` 恢复固定官方55份源码／资源／声明和两个固定 NuGet输入，使用仓库构建工具编译，在本次 runner验证实际产物，再生成 `.work/source-built-host/verified-runtime.json`及完整回执／provenance。该锁不需要成为Git源码，但必须绑定当前HEAD和Actions运行。两套锁同时存在、缺验证器、回执或产物不符均失败；禁止原Host回退。可移植验证器已通过正常Git交接并接入32文件精确身份合同，当前没有干净GitHub构建成功的结论。
+**runner从源码生成路径**：`tools/ci-source-built-host.ps1` 恢复固定官方55份源码／资源／声明和两个固定 NuGet输入，使用仓库构建工具编译，在本次 runner验证实际产物，再生成 `.work/source-built-host/verified-runtime.json`及完整回执／provenance。该锁不需要成为Git源码，但必须绑定当前HEAD和Actions运行。两套锁同时存在、缺验证器、回执或产物不符均失败；禁止原Host回退。可移植验证器已通过正常Git交接并接入32文件精确身份合同，该阶段尚无干净GitHub构建成功的结论。后续构建记录须按准确源码核对，不能沿用这一早期状态判断当前可用性。
 
 builder使用Windows PowerShell5.1、既有MSBuild17、net462参考包和x86目标；验证入口需要PowerShell7，不能因此把builder改成Core运行时。参考包只解压作编译输入，不安装运行时。Host声明net462不等于已验证纯net462运行环境；安装器当前没有显式最低.NET检查。
 

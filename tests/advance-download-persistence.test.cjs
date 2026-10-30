@@ -104,6 +104,28 @@ test('another account cannot resume or discover this task through the manager', 
     assert.equal(await next.localSource({...f.context, accountId: 'other'}), null);
 });
 
+test('a completed local copy still requires current permission, and denied lookup leaves the user file intact', async t => {
+    const f = await paused(t), next = f.reopen(); next.attach(f.context); await next.idle();
+    const task = f.store.get(f.task.id), file = path.join(f.directory, task.file.name);
+    f.state.downloadAllowed = false;
+    const count = f.calls.filter(call => call.url.startsWith('/direct')).length;
+    assert.equal(await next.localSource(f.context), null);
+    assert.deepEqual(fs.readFileSync(file), media);
+    assert.equal(f.calls.filter(call => call.url.startsWith('/direct')).length, count, 'denied permission is checked before remote video probes');
+});
+
+test('replacing or removing a completed file causes immediate local miss without adopting or modifying the replacement', async t => {
+    const f = await paused(t), next = f.reopen(); next.attach(f.context); await next.idle();
+    const task = f.store.get(f.task.id), file = path.join(f.directory, task.file.name), retained = file + '.retained';
+    fs.renameSync(file, retained);
+    const count = f.calls.length;
+    assert.equal(await next.localSource(f.context), null);
+    fs.writeFileSync(file, media);
+    assert.equal(await next.localSource(f.context), null);
+    assert.equal(f.calls.length, count, 'an invalid local index does not delay the normal playback path with network probes');
+    assert.deepEqual(fs.readFileSync(retained), media); assert.deepEqual(fs.readFileSync(file), media);
+});
+
 test('a crash window after file publication can finish the receipt without duplicating or replacing the video', async t => {
     const f = await paused(t);
     const originalSave = f.store.save;

@@ -1,31 +1,23 @@
-# v0.4.5 测试版
+# v0.4.6 测试版
 
 Windows x64 **Pre-release 测试版**。可手动下载，或在“关于 Enhanced”选择测试通道后主动检查更新。当前正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)。
 
 ## 本次更新
 
-- 修复在首页再次点击侧栏“主页”后正文空白的问题。
-- 修复客户端单条删除请求的条目参数和服务端版本适配，保留原确认与错误处理。
-- 标记已播放或删除后，首页重新获取内容时保留可复用布局和滚动位置；等待期间主动滚动后不拉回旧位置。
-- 修复默认透明字幕背景的 libmpv 色值格式，并恢复首页图片内文字的旧隐藏样式。
-- 合入此前的手动更新流程优化：复用已校验安装包，正常退出后打开安装向导；不增加后台自动检查或静默安装。
+- 修复 STRM 配置或 Token 保存失败后遗留本次临时文件的问题；发生普通写入或重命名错误时清理仍属于本次操作的文件。
+- 修复规则禁用、恢复和自动发现接口在写盘失败后提前改变内存状态的问题，失败后保留旧状态并允许重试。
+- 整理安装、更新、开发和构建文档，明确旧客户端与 v0.4.5 起的软件更新安装交接差异。
 
-## 已知问题
+## 已知问题与验证范围
 
-删除整行或内容变短时，滚动位置会限制在新的有效范围内；刷新失败仍走原错误或回退页面。用户已验收独立候选，新版本仍从最终发布源码重新构建；不将有限验收扩大为全部服务器、字幕样式或硬件组合通过。完整来源与构建结果见[本版核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V045_RELEASE_VERIFICATION.md)。
+本版只包含配置持久化审核修复和文档维护，不包含预载、共享播放缓存、缓冲暂存或提前下载实验。后台回归使用合成数据和隔离目录；未追加真实 Emby／CD2、Windows 前台、完整客户端或系统安装验收。
 
-本版不包含尚未验收的共享播放缓存、下一集预加载或飞牛认证实验。现有页面缓存不能代替服务器授权、最新进度或播放数据。
+清理权限不足、文件被替换或进程突然终止时，临时文件仍可能无法清理；本次不会扫描删除历史临时文件，也不改变 Token 存储格式。测试与发行证据见[本版核验记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.4.6/docs/V046_RELEASE_VERIFICATION.md)。
 
 ## 下载安装
 
-- [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.5/EmbyTheaterEnhanced-0.4.5-win-x64-setup.exe)
-- [SHA-256 校验文件](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.5/EmbyTheaterEnhanced-0.4.5-win-x64-setup.exe.sha256)
-- [来源记录](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.5/EmbyTheaterEnhanced-0.4.5-win-x64-setup.exe.provenance.json)
-
-安装器未签名。手动安装前请核对同版本 SHA-256 并正常退出客户端；具体步骤见[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/USER_GUIDE.md)。应用不会自动检查更新。
+从本 Release 的实际附件区下载 Windows x64 安装包与对应 `.sha256` 文件，勿将源码压缩包当作安装包。安装器未签名；手动安装前核对同版本 SHA-256 并正常退出客户端。应用内更新的流程取决于当前正在运行的客户端版本，见[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.4.6/docs/USER_GUIDE.md)。
 
 ## 项目说明
 
-非官方社区维护项目，与 Emby 官方无隶属或认可关系。许可与第三方材料情况见[许可与来源说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/LICENSING.md)。
-
-[版本变更记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/CHANGELOG.md)
+非官方社区维护项目，与 Emby 官方无隶属或认可关系。许可及第三方来源情况见[许可说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/v0.4.6/docs/LICENSING.md)。哈希核对不等于数字签名或许可认证。

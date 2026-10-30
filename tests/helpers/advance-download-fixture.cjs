@@ -18,6 +18,10 @@ async function fixture(t) {
         if (state.directDenied && req.url.startsWith('/direct')) {res.writeHead(403); res.end(); return;}
         const body = state.body;
         const match = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || '');
+        if (req.url.startsWith('/direct') && (!match && state.expireFull || match && Number(match[1]) > 0 && !match[2] && state.expireResume)) {
+            state.expireFull = state.expireResume = false; state.signature = 'renewed';
+            res.writeHead(401); res.end('expired-link-text-not-video'); return;
+        }
         const headers = {'content-type': 'application/octet-stream', 'last-modified': 'Wed, 01 Oct 2025 00:00:00 GMT'};
         if (state.etag !== null) headers.etag = state.etag;
         if (!match && state.transferStall) {res.writeHead(200, {...headers, 'content-length': body.length}); res.flushHeaders(); return;}

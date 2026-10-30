@@ -186,10 +186,32 @@ function parseJsonFile(filePath, fileSystem) {
 
 function writeJsonAtomic(filePath, value, fileSystem) {
     const directory = path.dirname(filePath);
-    const temporary = filePath + '.tmp-' + process.pid + '-' + Date.now();
+    const temporary = filePath + '.tmp-' + crypto.randomBytes(16).toString('hex');
     fileSystem.mkdirSync(directory, {recursive: true});
-    fileSystem.writeFileSync(temporary, JSON.stringify(value, null, 2) + '\n', {encoding: 'utf8', mode: 0o600});
-    fileSystem.renameSync(temporary, filePath);
+    let handle;
+    let identity;
+    try {
+        handle = fileSystem.openSync(temporary, 'wx', 0o600);
+        identity = fileSystem.fstatSync(handle, {bigint: true});
+        fileSystem.writeFileSync(handle, JSON.stringify(value, null, 2) + '\n', 'utf8');
+        fileSystem.closeSync(handle);
+        handle = undefined;
+        fileSystem.renameSync(temporary, filePath);
+    } finally {
+        if (handle !== undefined) {
+            try { fileSystem.closeSync(handle); } catch (_) {}
+        }
+        // A partial write or failed rename can otherwise leave a plaintext Token.
+        // Never remove a colliding/replaced file or mask the original save error.
+        if (identity) {
+            try {
+                const current = fileSystem.lstatSync(temporary, {bigint: true});
+                if (current.dev === identity.dev && current.ino === identity.ino) {
+                    fileSystem.unlinkSync(temporary);
+                }
+            } catch (_) {}
+        }
+    }
 }
 
 function legacyValue(environment, name) {
@@ -373,25 +395,30 @@ function createStore(options) {
     }
 
     function disableRule(id) {
-        const rule = config.rules.find(value => value.id === id);
+        const next = clone(config);
+        const rule = next.rules.find(value => value.id === id);
         if (!rule) throw new Error('rule_not_found');
         rule.originState = 'DISABLED';
         rule.enabled = false;
-        writeJsonAtomic(configPath, persistedConfig(config), fileSystem);
+        writeJsonAtomic(configPath, persistedConfig(next), fileSystem);
+        config = next;
         return publicConfig();
     }
 
     function restoreAutoRule(id) {
-        const rule = config.rules.find(value => value.id === id);
+        const next = clone(config);
+        const rule = next.rules.find(value => value.id === id);
         if (!rule) throw new Error('rule_not_found');
         rule.originState = 'AUTO';
         rule.enabled = true;
-        writeJsonAtomic(configPath, persistedConfig(config), fileSystem);
+        writeJsonAtomic(configPath, persistedConfig(next), fileSystem);
+        config = next;
         return publicConfig();
     }
 
     function applyDiscovery(suggestions) {
         if (!Array.isArray(suggestions)) throw new Error('invalid_discovery');
+        const next = clone(config);
         let changed = false;
         suggestions.forEach(suggestion => {
             let candidate;
@@ -401,7 +428,7 @@ function createStore(options) {
                 return;
             }
 
-            const existing = config.rules.find(rule => rule.id === candidate.id ||
+            const existing = next.rules.find(rule => rule.id === candidate.id ||
                 rule.sourcePrefix === candidate.sourcePrefix);
             if (existing) {
                 if (existing.originState !== 'AUTO') return;
@@ -413,14 +440,17 @@ function createStore(options) {
                 return;
             }
 
-            if (config.rules.some(rule => rule.originState === 'DISABLED' && mappingKey(rule) === mappingKey(candidate))) {
+            if (next.rules.some(rule => rule.originState === 'DISABLED' && mappingKey(rule) === mappingKey(candidate))) {
                 return;
             }
-            config.rules.push(candidate);
+            next.rules.push(candidate);
             changed = true;
         });
 
-        if (changed) writeJsonAtomic(configPath, persistedConfig(config), fileSystem);
+        if (changed) {
+            writeJsonAtomic(configPath, persistedConfig(next), fileSystem);
+            config = next;
+        }
         return publicConfig();
     }
 

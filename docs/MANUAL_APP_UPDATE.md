@@ -1,6 +1,8 @@
 # ETE 手动软件更新
 
-检查、通道、说明链接和校验下载已随 v0.4.2／v0.4.3 整合。本次下载／安装流程优化独立位于 `feature/managed-app-update-install`，最初基于 main `8745493d92fb4348d5af2d86d13797f0a8760e81`，现正常同步最终 main／tag v0.4.4 `b6fe06b984d74f60bdf82527d0666e920449dedb`，产品版本继承为0.4.4；没有重新合入旧更新分支，没有修改已发布版本或 Release。以下新交接合同尚需 Windows 实机验收；已发布包的旧流程见用户指南。
+检查、通道、说明链接和校验下载自 v0.4.2 起已发布；专用缓存、已校验安装包复用和正常退出后的安装向导交接已随 [v0.4.5](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.5) 发布。按当前客户端版本区分操作流程，见[用户指南](USER_GUIDE.md#手动检查更新与通道)；发布元数据及验证边界见[本版记录](V045_RELEASE_VERIFICATION.md)。
+
+以下分支、候选与待验收文字保留开发阶段的合同和证据范围：安装流程最初在 `feature/managed-app-update-install` 上基于 `8745493d92fb4348d5af2d86d13797f0a8760e81` 实现，随后同步 v0.4.4 `b6fe06b984d74f60bdf82527d0666e920449dedb`。发布不表示所有 Windows 安装／取消／失败恢复组合已经验收；早期“独立分支”也不再表示它尚未合入主线。
 
 ## 现有入口与最小行为
 
