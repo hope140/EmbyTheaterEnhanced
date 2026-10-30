@@ -89,7 +89,9 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
     function settings(name, payload) {
         var value = context(current());
         if (!value) return Promise.resolve({status: 'error', reason: 'auth-required'});
-        return invoke(name, Object.assign({context: value}, payload || {}));
+        return invoke(name, Object.assign({context: value}, payload || {})).then(function (result) {
+            return JSON.stringify(context(current())) === JSON.stringify(value) ? result : {status: 'cancelled'};
+        });
     }
     return {start: start, begin: begin, localSource: localSource, message: message,
         status: function () {return settings('status');}, directory: function () {return settings('directory');},

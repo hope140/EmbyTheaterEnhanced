@@ -24,7 +24,11 @@ define(['baseView', '../../enhanced/advance-download/renderer.js', 'emby-button'
         var result = await downloads.status();
         if (!this.active || this.epoch !== epoch || this.refreshId !== refreshId) return;
         var view = this.view, status = view.querySelector('.downloadStatus');
-        if (result.status !== 'ok') {status.textContent = downloads.message(result.reason); return;}
+        if (result.status !== 'ok') {
+            view.querySelector('.downloadTasks').textContent = '';
+            view.querySelector('.downloadDirectory').textContent = '';
+            status.textContent = downloads.message(result.reason); return;
+        }
         view.querySelector('.downloadDirectory').textContent = result.directory || '首次下载时选择';
         var container = view.querySelector('.downloadTasks');
         container.textContent = '';

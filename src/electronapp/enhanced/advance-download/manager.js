@@ -85,6 +85,7 @@ function createManager(options) {
         if (!value.serverId || !value.accountId || !value.token) return;
         const signature = createHash('sha256').update(JSON.stringify(value)).digest('hex');
         if (signature === credentialHash) return;
+        for (const operation of preparations) operation.controller.abort();
         if (active) {active.pauseReason = credentials && owner(value) === owner(credentials) ? 'credentials-changed' : 'account-changed'; active.controller.abort();}
         credentials = value; credentialHash = signature;
         for (const task of allTasks()) if (visible(task) && task.state === 'paused' && ['app-closed', 'account-changed', 'credentials-changed'].includes(task.reason)) update(task.id, {state: 'queued', reason: null});
@@ -92,6 +93,7 @@ function createManager(options) {
     }
     async function enqueue(context) {
         if (closing) return {status: 'cancelled'};
+        attach(context);
         const operation = {controller: new AbortController()};
         let releaseNetwork;
         operation.networkDone = new Promise(resolve => {releaseNetwork = resolve;});
@@ -101,7 +103,6 @@ function createManager(options) {
             try {session = makeSession(context); source = await session.acquire(operation.controller.signal);}
             finally {session?.close(); releaseNetwork();}
             if (closing || operation.controller.signal.aborted) return {status: 'cancelled'};
-            attach(context);
             const media = {...context, mediaSourceId: source.mediaSourceId};
             const previous = allTasks().find(task => sameMedia(task, media) && (task.state !== 'complete' || completedFile(task) &&
                 task.source.identity === source.identity && task.source.etag === source.etag && task.source.prefixSha256 === source.prefixSha256));
@@ -117,7 +118,7 @@ function createManager(options) {
                 itemId: context.itemId, mediaSourceId: source.mediaSourceId, serverAddress: context.serverAddress,
                 directory: selected.directory, state: 'queued', reason: null, source: records.sourceRecord(source), partial: null, file: null});
             tasks.set(task.id, task); emit(task); kick(); return {status: 'queued', task: summary(task)};
-        } catch (error) {return {status: 'error', reason: probe.reasonOf(error)};}
+        } catch (error) {return operation.controller.signal.aborted ? {status: 'cancelled'} : {status: 'error', reason: probe.reasonOf(error)};}
         finally {releaseNetwork(); preparations.delete(operation);}
     }
     function retry(context, id) {

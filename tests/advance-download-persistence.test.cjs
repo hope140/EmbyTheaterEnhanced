@@ -134,3 +134,32 @@ test('persisted tasks reject secret-bearing fields and preserve malformed receip
     assert.throws(() => f.store.save(f.task));
     assert.equal(fs.readFileSync(receipt, 'utf8'), 'malformed-user-data');
 });
+
+test('switching accounts during source acquisition or an open folder dialog retires the old preparation', async t => {
+    for (const stage of ['source', 'directory']) {
+        const f = await fixture(t);
+        const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-account-download-')));
+        t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+        const directory = path.join(root, 'videos'); fs.mkdirSync(directory);
+        const context = {serverId: 'server', accountId: 'account', itemId: 'item', mediaSourceId: 'source', serverAddress: f.emby + '/base', token};
+        let release, entered;
+        const blocked = new Promise(resolve => {entered = resolve;}), held = new Promise(resolve => {release = resolve;});
+        const manager = createManager({profileRoot: root, createSession(ctx) {
+            const session = f.session(ctx);
+            return {async acquire(signal) {
+                if (stage === 'source') {entered(); await held;}
+                return session.acquire(signal);
+            }, close: () => session.close()};
+        }, async selectDirectory() {
+            if (stage === 'directory') {entered(); await held;}
+            return {status: 'selected', directory};
+        }});
+        t.after(() => manager.close());
+        const pending = manager.enqueue(context); await blocked;
+        manager.attach({...context, accountId: 'other'}); release();
+        const result = await pending; await manager.idle();
+        assert.equal(result.status, 'cancelled', stage);
+        assert.deepEqual(manager.list(context), []);
+        assert.deepEqual(fs.readdirSync(directory), []);
+    }
+});

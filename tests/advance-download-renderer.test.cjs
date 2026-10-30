@@ -46,6 +46,13 @@ test('a cancelled or changed-account local lookup cannot publish a late local so
     f.changeAccount(); resolve({status: 'hit', source: 'C:\\synthetic\\video.mkv'});
     assert.equal(await second, null);
 });
+test('settings discard a previous account response after switching accounts', async () => {
+    let resolve;
+    const f = fixture(() => new Promise(done => {resolve = done;}));
+    const pending = f.result.status();
+    f.changeAccount(); resolve({status: 'ok', tasks: [{title: 'previous account'}]});
+    assert.equal((await pending).status, 'cancelled');
+});
 test('the pinned command overlay routes video only and preserves original audio, logs and subtitle download branches', async () => {
     const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/commandprocessor.js'), 'utf8');
     const output = patch.patchCommandProcessor(base), exports = {}, downloads = [], browser = [];
