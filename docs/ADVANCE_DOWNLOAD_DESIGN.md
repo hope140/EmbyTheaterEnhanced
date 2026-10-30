@@ -144,7 +144,7 @@ ETE单片和多选菜单overlay仅隐藏旧`sync`／`synclocal`设备同步入�
 
 任务行常驻一个随状态变化的暂停／继续按钮、打开文件夹和删除；顶部提供全部暂停／全部继续，以及全选、删除所选。删除没有无选择的全删捷径，勾选全部后沿同一确认流程处理。批量操作限当前服务器账户的明确任务ID，暂停／删除先阻止目标重新调度，再等待正在进行的来源查询／文件传输收尾。重复来源预检会退休旧操作，避免删除后旧预检重新建任务。用户手动暂停以user-paused持久化，重开或更新凭据不自动继续；应用正常退出的任务仍按既有app-closed规则恢复。
 
-删除必须由main原生确认窗口批准，默认只清记录并保留完整视频和未完成.part文件。Windows另有默认不勾选的“同时永久删除本任务文件（无法恢复）”，明确不会进入回收站；renderer不能传路径或自行批准删文件。只有这个显式选项才调用独立隐藏助手，锁定目录祖先／源句柄，核对root/file身份、长度、mtime、链接数和完整SHA；然后对同一仍持有的句柄设置删除标记。未确认的发布意图、目录不可用、文件已变化、占用／校验失败或应答不明均保留记录，不猜测删除。用户更改账户、凭据、退出登录和关闭会取消并等待自有助手结束。非Windows只提供清记录，不使用弱化的path unlink兜底；本轮测试只删除自建临时夹具，不操作用户文件。
+删除必须由main原生确认窗口批准，默认只清记录并保留完整视频和未完成.part文件。Windows另有默认不勾选的“同时永久删除本任务文件（无法恢复）”，明确不会进入回收站；renderer不能传路径或自行批准删文件。只有这个显式选项才调用独立隐藏助手，锁定目录祖先／源句柄，核对root/file身份、长度、mtime、链接数和完整SHA；然后对同一仍持有的句柄设置删除标记。未确认的发布意图、目录不可用、文件已变化、占用／校验失败或应答不明均保留记录，不猜测删除。用户更改账户、凭据、退出登录和关闭会取消并等待自有助手结束。系统删除一旦提交不可撤销，取消或应答丢失时保留记录并报告未确认，不承诺恢复已删除内容。非Windows只提供清记录，不使用弱化的path unlink兜底；本轮测试只删除自建临时夹具，不操作用户文件。
 
 API依据为微软[FILE_DISPOSITION_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_disposition_info)、[SetFileInformationByHandle](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)及[文件信息类别](https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ne-minwinbase-file_info_by_handle_class)。DeleteFile字段是一个BOOLEAN字节，所用句柄须取得DELETE权限。此助手为本仓库维护实现，没有复制外部删除项目。Linux上C#编译只能证明当前.NET语法，不代替Windows 5.1／Win32调用验收。
 

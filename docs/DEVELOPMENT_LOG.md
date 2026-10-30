@@ -1465,3 +1465,14 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 新控制对当前账户明确任务ID串行执行，暂停／删除先阻止重新调度，取消并收尾传输／预检；手动暂停跨重启保持，重复预检被退休，删除后旧查询不重建任务。默认原生确认仅清记录，保留完整和未完成文件；Windows显式不默认勾选的永久删除，经固定助手锁定祖先／源句柄并校验身份、时间、长度、链接数、全文件SHA后执行。只有自建临时文件参与测试，不操作用户目录；非Windows不提供path删除兜底。后台文件检查有界异步合并，磁盘不可用不等同永久缺失、不自动清记录，恢复后重查。
 
 首轮旧DOM夹具缺setAttribute导致3项失败，补充实际控件所需属性后通过。新增删除回归发现完成receipt仍保留发布阶段partial信息，最初误拒已完成任务；改为只在没有完整file记录时阻止未确认发布后通过，未放松文件身份／全SHA守卫。最终下载定向107项为101 pass／0 fail／6 Windows skip；当前Linux .NET下C#编译通过，未调用Win32。完整公开、材料、Windows及新验收包将在固定提交后执行并记录。
+
+
+产品源码`b4f858a06bb6da712d6bf73f9e40c5ee4cefbabb`已推独立分支，本地公开2284项为2253 pass／0 fail／31 skip；原6材料文件继续固定排除，显式完整材料95/95，自生成真实视频自测1/1。JS546文件、PowerShell53文件语法、有限凭据模式643文件扫描和diff通过。当前.NET对最终Windows删除源码编译通过，未调用Win32。Windows push CI [41041272845](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041272845)与独立普通包[41041631953](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953)均为同一完整源码；新包仅一次workflow_dispatch，release_package=false／build_input_benchmark=false，不合main、创建Release或操作前台。当时均仍运行，不能先称Windows或整包通过。
+
+
+同一完整源码`b4f858a06bb6da712d6bf73f9e40c5ee4cefbabb`的[Windows公开CI 41041272845](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041272845)已完成success；新Windows专属删除用例进入公开自动发现集，真实调用Windows PowerShell 5.1／Win32，删除自建Unicode临时夹具并保留邻居文件，拒绝错误完整SHA和物理身份。没有删除用户文件、操作用户前台或验证实际外接文件系统。独立包仍为同一次41041631953，尚未上传。
+
+
+同一源码的新普通验收包[41041631953](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953)已完成success，manual-windows-test-package耗时22m37s，Host编译／验证、整包构建与上传全部通过，无重复派发。API确认产物`12970779372`、名称`ete-test-win-x64-b4f858a06bb6da712d6bf73f9e40c5ee4cefbabb-41041631953-1`、164696855字节、expired=false，所属workflow源码与完整b4f858a一致；[临时下载页](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953/artifacts/12970779372)保留至`2026-10-31T10:56:11Z`。API给出ZIP摘要`sha256:89eca833a9c6228cd05ed80261a556a411be951bf2444c30dcbe6115120258d2`，不是独立计算的安装器SHA。
+
+新产物正常GET `actions/artifacts/12970779372/zip`仅一次，返回Forbidden、0字节，已停止；没有重试该目标、先前受拒的旧目标或换通道。不是自动审批拒绝，构建／上传本身成功。源码根package.json仍为0.4.6，按构建规则预期文件名为`EmbyTheaterEnhanced-0.4.6-test-b4f858a06bb6-41041631953-1-win-x64-setup.exe`；由于包内字节未回读，实际安装器名／PE版本／SHA和内部模块清单未独立核验。真实来源HTTP错误根因、原生确认／文件夹打开／界面布局及真实应用重开仍待使用者验收。未操作Work前台、删除用户文件、合main或发布。

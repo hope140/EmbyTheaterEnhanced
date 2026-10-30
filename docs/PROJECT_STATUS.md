@@ -4,7 +4,7 @@
 
 独立分支增加逐项暂停／继续、删除，顶部全部暂停／继续和勾选批量删除；删除由main确认、默认只清记录保留视频／.part，Windows可另行明确选择永久删除经身份和全文件哈希核验的自有任务文件。手动暂停跨重启保持；账户／凭据退休、登出和关闭会取消并收尾。已完成文件只读后台检查，分别显示未找到文件、文件变化、目录不可用／身份变化；不自动清理离线盘记录，恢复后重查。图四误导性的固定选目录提示已改；失败补HTTP状态和来源类别，新任务记录实际取源，旧任务不倒推。
 
-合成来源／实际临时磁盘／DOM和IPC定向107项为101 pass／0 fail／6 Windows skip；新增Windows精确句柄删除仍待实际CI。当前.NET C#编译通过，不代表Win32通过。未删除用户文件、操作Work前台、合main或发布；完整回归和新包待核验。原下载接口HTTP错误的真实服务根因仍未知，不能声称已修好服务器下载。
+产品源码`b4f858a06bb6da712d6bf73f9e40c5ee4cefbabb`的合成来源／实际临时磁盘／DOM和IPC定向107项为101 pass／0 fail／6 Windows skip；本地完整公开2284项为2253 pass／0 fail／31平台skip，固定6文件材料95/95，自生成真实视频取源／断流续传／解码1/1。JS546、PowerShell53语法、有限凭据模式643文件扫描及diff通过。准确源码的[Windows CI 41041272845](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041272845)已通过，新增Windows精确句柄删除、错误哈希／身份拒绝的实际临时夹具测试已运行；不能替代用户目录、GUI或实际FAT／exFAT验收。[新验收包41041631953](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953)已构建／上传success，耗时22m37s，未重复派发。[临时下载产物](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953/artifacts/12970779372)绑定同一源码，API确认164696855字节、未过期，保留至2026-10-31T10:56:11Z。新ZIP正常回读返回Forbidden、0字节，已停止且未重试／换通道；安装器内部字节／实际版本／独立SHA未回读核验。未删除用户文件、操作Work前台、合main或发布。原下载接口HTTP错误的真实服务根因仍未知，不能声称已修好服务器下载。
 
 ## 2026-10-30 — 下载管理及预检诊断修正候选
 
