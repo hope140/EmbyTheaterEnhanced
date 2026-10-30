@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-30 — 提前下载独立验收产物可用
+
+候选源码`933eed8871e1acc21b1521b7f25e142243e5d20d`已同步main `a958d52`／0.4.6，不包含独立预载暂存分支。[Windows公开CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023709274)为2250 pass／0 fail／5既有skip；修复材料夹具后的[独立包构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023736236)及上传成功，未发布或合main。临时[下载产物](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023736236/artifacts/12964046005)保留至`2026-10-31T08:24:12Z`；构建版本沿用0.4.6但文件名带test，不能用普通0.4.6发行包代替。
+
+产物回读被Forbidden阻断、0字节，未重试／换通道；独立安装器SHA／实际版本／来源模块回读尚未完成，ZIP摘要目前仅有API元数据，不称已独立验包。具体身份、摘要与边界见[维护记录](DEVELOPMENT_LOG.md)；真实来源、正常重开续传、目录切换和本地命中按[手动清单](ADVANCE_DOWNLOAD_ACCEPTANCE.md)由使用者验收。
+
 ## 2026-10-30 — 提前下载独立验收包准备
 
 提前下载分支同步最新main `a958d52ea1dc866c0852d3158c0063a9bf75a4c5`，继承0.4.6版本及STRM配置事务修复；只解决状态／维护记录冲突并保留两侧历史，不引入预载暂存分支。新增初次完整传输和续传时401换签的字节一致回归，以及本地文件删除／替换、权限撤销的拒绝回归。当前本地下载／配置持久化／播放器定向93项为89 pass／0 fail／4 Windows skip。整合源码32fdb4a的Windows公开2250 pass／0 fail／5 skip；首次独立包的材料夹具缺少新生成器，按门禁停止且没有安装包。修正夹具后本地完整材料95/95，必须从新源码重新构建；旧93ffb1a或32fdb4a结果不冒充新候选整包验收。

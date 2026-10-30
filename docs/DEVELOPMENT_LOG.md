@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-10-30 — 提前下载独立候选包已生成，待手动验收
+
+源码`933eed8871e1acc21b1521b7f25e142243e5d20d`（含main `a958d52`的0.4.6配置修复，不含独立预载暂存分支）已通过[Windows公开run 41023709274](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023709274)：2255项，2250 pass／0 fail／5既有skip，原6材料文件继续排除。修复材料夹具后的[独立包run 41023736236](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023736236)以workflow_dispatch、release_package=false成功，固定输入／Host／全回归／安装器编译与解包比对门禁及上传步骤均完成；没有安装或启动完整客户端、创建Tag／Release或合main。
+
+[Actions产物 12964046005](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41023736236/artifacts/12964046005)名为`ete-test-win-x64-933eed8871e1acc21b1521b7f25e142243e5d20d-41023736236-1`，API记录164701480 bytes，保留至`2026-10-31T08:24:12Z`。API给出的ZIP摘要为`sha256:ce4add85f02ce4158f98ba85d5486f4cdc77cef3359db34b8bef3f6033b01bb5`；它是远端元数据值，尚未独立下载重算。当前环境的产物回读被Forbidden阻断，0字节；未重试或改用其它通道。因此安装器单独SHA256、实际FileVersion／ProductVersion、包内provenance及模块逐字节回读均保持未验证，不能把构建成功写成回读成功。构建配置版本为0.4.6，包名带test、源码及run，区别于已发布普通0.4.6。
+
+使用者从该产物正常下载后，先核对ZIP摘要及包内安装器`.sha256`／`.provenance.json`，再按[手动清单](ADVANCE_DOWNLOAD_ACCEPTANCE.md)验真实STRM／CD2、正常退出重开、默认目录及播放统计的“已下载文件”。真实来源、GUI、实际FAT／exFAT和断电恢复尚未验收。首次32fdb4a包失败及95项材料修复回归保留于下节，不以新成功覆盖旧失败。
+
 ## 2026-10-30 — 独立包材料回归夹具修复
 
 整合源码`32fdb4af239114d03b712a67a77c254b75ba5687`的Windows公开run`41021593800`已成功：2255项，2250 pass／0 fail／5既有skip，仍排除原6材料文件。独立包run`41021629290`完成固定输入准备及本次Host源码编译验证后，在全回归阶段2350项得到2342 pass／6 fail／2 skip，因此按原门禁停止，未生成或上传安装包。
