@@ -29,7 +29,7 @@ public static class EteMediaPublish {
         Require(!String.IsNullOrEmpty(value) && Path.GetFileName(value) == value && value != "." && value != ".." &&
             value.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && !value.EndsWith(".") && !value.EndsWith(" "));
     }
-    public static int Move(string directory, string from, string to, string rootDev, string rootIno, string fileDev, string fileIno, long size, string mtimeNs) {
+    public static string Move(string directory, string from, string to, string rootDev, string rootIno, string fileDev, string fileIno, long size, string mtimeNs) {
         Require(Path.IsPathRooted(directory) && !directory.StartsWith(@"\\?\") && !directory.StartsWith(@"\\.\") &&
             String.Equals(Path.GetFullPath(directory), directory, StringComparison.OrdinalIgnoreCase));
         Name(from); Name(to); Require(from.StartsWith(".ete-media-") && from.EndsWith(".part") && !String.Equals(from, to, StringComparison.OrdinalIgnoreCase));
@@ -50,7 +50,7 @@ public static class EteMediaPublish {
             var root = held[held.Count - 1]; Require(Matches(Information(root), rootDev, rootIno));
             file = CreateFileW(Extended(Path.Combine(directory, from)), 0x80010000, 1, IntPtr.Zero, 3, 0x200000, IntPtr.Zero);
             var before = Information(file);
-            Require((before.Attributes & 0x10) == 0 && before.Links == 1 && Matches(before, fileDev, fileIno) && rootDev == fileDev &&
+            Require((before.Attributes & 0x10) == 0 && before.Links == 1 && fileIno != "0" && Matches(before, fileDev, fileIno) && rootDev == fileDev &&
                 (((ulong)before.SizeHigh << 32) | before.SizeLow) == (ulong)size && size > 0);
             ulong write = ((ulong)before.WriteHigh << 32) | before.WriteLow;
             Require(write >= 116444736000000000UL && ((write - 116444736000000000UL) * 100).ToString() == mtimeNs);
@@ -66,10 +66,15 @@ public static class EteMediaPublish {
             Marshal.Copy(name, 0, IntPtr.Add(buffer, nameOffset), name.Length);
             if (!SetFileInformationByHandle(file, 3, buffer, (uint)length)) {
                 int error = Marshal.GetLastWin32Error();
-                if (error == 5 && (File.Exists(Path.Combine(directory, to)) || Directory.Exists(Path.Combine(directory, to)))) return 183;
-                return error;
+                if (error == 5 && (File.Exists(Path.Combine(directory, to)) || Directory.Exists(Path.Combine(directory, to)))) return "183";
+                return error.ToString();
             }
-            return 0;
+            // FAT-family IDs may change on rename. Only this still-held source
+            // handle can attest the new identity; never infer it from the path.
+            var after = Information(file);
+            string index = (((ulong)after.IndexHigh << 32) | after.IndexLow).ToString();
+            Require(after.Volume.ToString() == fileDev && after.Links == 1 && index != "0");
+            return "0 " + after.Volume.ToString() + " " + index;
         } finally {
             if (buffer != IntPtr.Zero) Marshal.FreeHGlobal(buffer);
             if (file != null) file.Dispose();

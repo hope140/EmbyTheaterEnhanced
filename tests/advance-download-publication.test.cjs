@@ -3,7 +3,7 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
 const {EventEmitter} = require('node:events'), {PassThrough} = require('node:stream');
 const {createPublisher, moveWindows} = require('../src/electronapp/enhanced/advance-download/publication');
-const {identity, createStore} = require('../src/electronapp/enhanced/advance-download/task-store');
+const {identity, createStore, partialName} = require('../src/electronapp/enhanced/advance-download/task-store');
 const {createManager} = require('../src/electronapp/enhanced/advance-download/manager');
 const {download} = require('../src/electronapp/enhanced/advance-download/transfer');
 const probe = require('../src/electronapp/enhanced/advance-download/source-probe');
@@ -106,12 +106,45 @@ test('move recovery refuses an exchanged file even when its bytes and name match
     assert.deepEqual(fs.readFileSync(f.final + '.keep'), media);
 });
 
+test('a changed post-rename ID is accepted only from the committing adapter acknowledgement', async t => {
+    const f = await fixture(t), root = directory(t), session = f.session(), source = await session.acquire();
+    t.after(() => session.close());
+    // Models a filesystem assigning a new ID on rename. This copy is test code,
+    // never a production publication fallback or a proof of FAT compatibility.
+    let oldId, finalId;
+    const publisher = async (value, beforeMove) => {
+        await beforeMove(); oldId = value.fileId;
+        const target = path.join(root, value.to);
+        await fs.promises.copyFile(path.join(root, value.from), target, fs.constants.COPYFILE_EXCL);
+        await fs.promises.unlink(path.join(root, value.from));
+        finalId = identity(fs.statSync(target, {bigint: true}));
+        return {fileId: finalId};
+    };
+    const result = await download({session, source, directory: root, publisher});
+    assert.notEqual(finalId.ino, oldId.ino);
+    assert.deepEqual(fs.readFileSync(path.join(root, result.fileName)), media);
+    assert.equal(fs.readdirSync(root).length, 1);
+});
+
+test('new partial names reserve more FAT directory slots than the longest generated final name', async t => {
+    const f = await fixture(t), root = directory(t), session = f.session(), source = await session.acquire();
+    t.after(() => session.close());
+    const longestTitle = 'CON.' + 'x'.repeat(96);
+    const result = await download({session, source: {...source, title: longestTitle}, directory: root, publisher: async value => {
+        assert.ok(value.from.length > value.to.length + 6, 'includes space for the largest collision suffix');
+        assert.ok(value.from.length <= 255);
+        await fs.promises.link(path.join(root, value.from), path.join(root, value.to));
+    }});
+    assert.deepEqual(fs.readFileSync(path.join(root, result.fileName)), media);
+    assert.equal(partialName('12345678-1234-4123-8123-123456789abc').length, 133);
+});
+
 test('actual Windows handle move commits Unicode names without relying on hard links', {skip: windowsOnly, timeout: 60000}, async t => {
     const root = directory(t), value = record(root);
-    await moveWindows(value);
+    const committed = await moveWindows(value);
     assert.ok(!fs.existsSync(path.join(root, value.from)));
     assert.deepEqual(fs.readFileSync(path.join(root, value.to)), media);
-    assert.deepEqual(identity(fs.statSync(path.join(root, value.to), {bigint: true})), value.fileId);
+    assert.deepEqual(identity(fs.statSync(path.join(root, value.to), {bigint: true})), committed.fileId);
 });
 
 test('actual Windows handle move preserves existing files and directories at the target', {skip: windowsOnly, timeout: 60000}, async t => {

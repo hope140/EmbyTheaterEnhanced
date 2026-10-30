@@ -13,6 +13,9 @@ const fileId = value => keys(value, ['dev', 'ino']) && /^\d+$/.test(value.dev) &
 const plainFile = value => text(value) && path.basename(value) === value && !/[\\/:]/.test(value) && value !== '.' && value !== '..';
 const strong = value => value === null || typeof value === 'string' && value.length <= 1024 && /^"[\x21\x23-\x7e\x80-\xff]*"$/.test(value);
 const states = ['queued', 'downloading', 'paused', 'failed', 'complete'];
+// Longer than every generated final name. FAT can change the ID when rename
+// needs more directory-entry slots; reserve those slots from the first write.
+const partialName = id => '.ete-media-' + id + '-' + '_'.repeat(80) + '.part';
 
 function sourceRecord(source) {
     const result = {identity: source.identity, total: source.total, etag: source.etag,
@@ -36,7 +39,7 @@ function validTask(value) {
     if (value.partial !== null) {
         const p = value.partial;
         if (!keys(p, ['name', 'rootId', 'fileId', 'offset', 'sha256', 'messageComplete', 'publishing', 'publishMethod']) ||
-            p.name !== '.ete-media-' + value.id + '.part' || !fileId(p.rootId) || !fileId(p.fileId) || !integer(p.offset) ||
+            ![partialName(value.id), '.ete-media-' + value.id + '.part'].includes(p.name) || !fileId(p.rootId) || !fileId(p.fileId) || !integer(p.offset) ||
             p.offset > value.source.total || !hash(p.sha256) || typeof p.messageComplete !== 'boolean' ||
             p.publishing !== null && !plainFile(p.publishing) ||
             p.publishMethod !== undefined && (p.publishMethod !== 'move' || !p.publishing || !p.messageComplete || p.offset !== value.source.total)) return false;
@@ -111,4 +114,4 @@ function createStore(profileRoot) {
     return Object.freeze({get, save, list});
 }
 
-module.exports = {createStore, sourceRecord, identity, sameId, validTask, physical};
+module.exports = {createStore, sourceRecord, identity, sameId, validTask, physical, partialName};

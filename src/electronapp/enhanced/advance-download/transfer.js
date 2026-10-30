@@ -82,9 +82,9 @@ async function download({session, source: initial, directory, signal, onProgress
         offset = 0; cleanEnd = false; digest = crypto.createHash('sha256'); checkpointable = true;
         restartNotice(reason); await checkpoint(); progress();
     }
-    async function finishRecord(fileName, recordSource = source) {
+    async function finishRecord(fileName, recordSource = source, expectedFileId = records.identity(own)) {
         const stat = fs.lstatSync(path.join(root, fileName), {bigint: true});
-        if (!stat.isFile() || stat.isSymbolicLink() || !same(stat, own) || Number(stat.size) !== offset) throw fail('temporary-changed');
+        if (!stat.isFile() || stat.isSymbolicLink() || !records.sameId(stat, expectedFileId) || Number(stat.size) !== offset) throw fail('temporary-changed');
         if (journal) journal.update({source: records.sourceRecord(recordSource), state: 'complete', reason: null,
             file: {name: fileName, rootId: records.identity(rootId), fileId: records.identity(stat),
                 size: offset, mtimeNs: String(stat.mtimeNs), sha256: digest.copy().digest('hex')}});
@@ -97,7 +97,7 @@ async function download({session, source: initial, directory, signal, onProgress
             !Number.isSafeInteger(initial.total) || initial.total < 1 || !/^(?:mkv|mp4|mov|webm|avi|mpg|ts|m2ts|flv|wmv)$/.test(initial.extension)) throw fail('invalid-source');
         root = physicalRoot(directory); rootId = fs.lstatSync(root, {bigint: true});
         const task = journal?.get(), previous = task?.partial;
-        temporary = path.join(root, previous ? previous.name : '.ete-media-' + (task ? task.id : crypto.randomBytes(16).toString('hex')) + '.part');
+        temporary = path.join(root, previous ? previous.name : records.partialName(task ? task.id : crypto.randomBytes(16).toString('hex')));
         if (previous) {
             let before, moved = false;
             try {before = fs.lstatSync(temporary, {bigint: true});}
@@ -218,13 +218,13 @@ async function download({session, source: initial, directory, signal, onProgress
             await checkpoint(fileName);
             try {
                 const before = fs.lstatSync(temporary, {bigint: true});
-                await publisher({directory: root, from: path.basename(temporary), to: fileName,
+                const publication = await publisher({directory: root, from: path.basename(temporary), to: fileName,
                     rootId: records.identity(rootId), fileId: records.identity(own), size: offset, mtimeNs: String(before.mtimeNs)}, async () => {
                     owned(); await checkpoint(fileName, 'move');
                     checkpointable = false; // A lost reply may mean the move committed.
                 });
                 checkpointable = false; // Keep the publishing receipt if commit fails.
-                return await finishRecord(fileName);
+                return await finishRecord(fileName, source, publication?.fileId || records.identity(own));
             } catch (error) {if (error.code !== 'EEXIST') throw error; checkpointable = true;}
         }
         throw fail('file-exists');

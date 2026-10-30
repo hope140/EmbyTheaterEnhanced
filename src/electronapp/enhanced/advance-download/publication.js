@@ -28,7 +28,8 @@ function moveWindows(record, options = {}) {
             child.stdout.on('data', chunk => {output += chunk.toString('ascii'); if (output.length > 128) {invalid = true; child.kill();}});
             child.on('close', code => {
                 clearTimeout(timer);
-                if (!invalid && code === 0 && /^ETE_MEDIA_MOVE 0\r?\n$/.test(output)) return resolve();
+                const moved = /^ETE_MEDIA_MOVE 0 ([0-9]{1,10}) ([0-9]{1,20})\r?\n$/.exec(output);
+                if (!invalid && code === 0 && moved && moved[1] === record.fileId.dev && moved[2] !== '0') return resolve({fileId: {dev: moved[1], ino: moved[2]}});
                 if (!invalid && code === 0 && /^ETE_MEDIA_MOVE (80|183)\r?\n$/.test(output)) return reject(Object.assign(Error('exists'), {code: 'EEXIST'}));
                 reject(failure('publication-unconfirmed'));
             });
@@ -43,7 +44,7 @@ function createPublisher(options = {}) {
         catch (error) {
             if ((options.platform || process.platform) !== 'win32' || !unsupported.has(error.code)) throw error;
             await beforeMove();
-            await (options.move || moveWindows)(record);
+            return await (options.move || moveWindows)(record);
         }
     };
 }

@@ -122,6 +122,6 @@ ETE_ADVANCE_DOWNLOAD_FFMPEG=/absolute/path/to/ffmpeg ETE_ADVANCE_DOWNLOAD_FFPROB
 
 ## Windows 无硬链接提交依据与验收范围
 
-微软[文件系统比较](https://learn.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison)列明FAT32／exFAT不支持硬链接；FAT32单文件限制与exFAT大文件能力必须分开。Win32[FILE_RENAME_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info)明确`ReplaceIfExists=false`在目标存在时返回错误；本实现用[SetFileInformationByHandle](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)修改已核验源句柄，保持同目录、锁住祖先、不跟随reparse。新代码为本仓库维护实现，没有复制外部项目实现。
+微软[文件系统比较](https://learn.microsoft.com/en-us/windows/win32/fileio/filesystem-functionality-comparison)列明FAT32／exFAT不支持硬链接；FAT32单文件限制与exFAT大文件能力必须分开。Win32[FILE_RENAME_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info)明确`ReplaceIfExists=false`在目标存在时返回错误；本实现用[SetFileInformationByHandle](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle)修改已核验源句柄，保持同目录、锁住祖先、不跟随reparse。新代码为本仓库维护实现，没有复制外部项目实现。微软[文件身份说明](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information)明确FAT重命名为更长名称可能改变ID；新任务的独占临时文件名预留133个UTF-16单元，长于所有生成最终名及编号后缀，以减少目录项扩容导致的ID变化。仍从提交源句柄取得移动后的ID用于正常完成；旧短临时名记录继续可读。如果移动已成功但应答丢失且ID也变化，只保留文件并拒绝自动接管，不靠摘要猜测身份。
 
 新增`advance-download-publication.test.cjs`进入现有自动Windows公开集，不改工作流／权限：便携测试验证意图顺序、不覆盖模型、助手未知结果清理和索引恢复；Windows专属项真正调用API，覆盖Unicode路径、同名文件／目录、错误物理身份／大小，以及强制模拟“硬链接不支持”的完整HTTP到磁盘链。模拟能力失败发生于Windows普通临时目录，不能冒充实际FAT／exFAT测试；Linux跳过Windows项不计为通过。
