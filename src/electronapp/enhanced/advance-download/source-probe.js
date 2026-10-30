@@ -2,6 +2,7 @@
 
 const http = require('node:http');
 const https = require('node:https');
+const {createHash} = require('node:crypto');
 const {inspectResponse, finishResponse} = require('./response-contract');
 const PREFIX_LIMIT = 65536;
 const failures = new WeakSet();
@@ -153,6 +154,8 @@ async function probeSource(candidate, {signal, timeoutMs = 8000} = {}) {
         }
     }
     return Object.freeze({url: url.href, headers: Object.freeze(headers), total, extension,
+        prefixSha256: createHash('sha256').update(response.body).digest('hex'),
+        prefixBytes: response.body.length,
         etag: plan.etag, lastModified: response.headers['last-modified'] || null,
         rangeSupported: response.statusCode === 206, resumeVerified,
         electronResumeEligible: resumeVerified && !!response.headers['last-modified']});

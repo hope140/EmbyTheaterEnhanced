@@ -21,6 +21,7 @@ async function fixture(t) {
         const headers = {'content-type': 'application/octet-stream', 'last-modified': 'Wed, 01 Oct 2025 00:00:00 GMT'};
         if (state.etag !== null) headers.etag = state.etag;
         if (!match && state.transferStall) {res.writeHead(200, {...headers, 'content-length': body.length}); res.flushHeaders(); return;}
+        if (!match && state.pauseTransfer) {res.writeHead(200, {...headers, 'content-length': body.length}); res.write(body.subarray(0, state.pauseBytes || 1024)); return;}
         if (!match && state.cutTransfer) {
             state.cutTransfer--;
             res.writeHead(200, state.cutAfterBody ? headers : {...headers, 'content-length': body.length});

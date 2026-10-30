@@ -1,6 +1,6 @@
-# 完整提前下载：在线方案与独立核心候选
+# 完整提前下载：在线方案与接线候选
 
-状态：在线提前下载的方向已明确，独立分支已实现取源、目录偏好与 HTTP 传输核心；尚未接入原下载按钮、生产 IPC 或 ETE 播放来源索引，不是客户端可用性验收包。
+状态：独立分支已接入原视频下载按钮、mainFrame IPC、目录设置、持久任务及同版本本地播放来源。关闭时保留任务，重新打开并登录对应账户后恢复。当前为未合入／未发布候选；合成集成与实际子进程证据不能代替 Windows 完整客户端及真实 Emby／CD2 验收。
 
 ## 明确的产品范围
 
@@ -8,6 +8,8 @@
 - 离线需要由使用者去下载目录找到视频文件，因此最终交付普通媒体文件，不做 ETE 专属封装。
 - 沿用原下载按钮；第一次选择目录后记住，后续默认使用。
 - 重点支持现有 STRM／CD2。可播放来源应尽可能下载，但必须测量影片本体、鉴权、换签和 Range；播放能力不自动证明完整下载能力。
+- 关闭 ETE 停止传输并保留未完成任务，下次打开并登录原账户后继续；不做后台常驻。
+- 设置中可改默认目录，仅新任务使用新目录，已有任务及文件不自动搬迁。
 - 不接管旧下载、不删除已下载文件，不修改预载／最后播放暂存的 M+P、归属和清理规则。
 
 在线完整下载、真正离线客户端与 Emby Downloads & Sync 仍是不同层次。官方网页直接下载不属于 Downloads & Sync；Folder Sync 是服务端插件复制到服务端可访问目录。当前无需先将 ETE 广告为同步设备，也不创建服务端同步任务。来源：[Download Options](https://emby.media/support/articles/Sync.html)、[Offline Access](https://emby.media/support/articles/Offline-Access.html)、[Folder Sync](https://emby.media/support/articles/Folder-Sync.html)。
@@ -16,11 +18,11 @@
 
 基线为 main `2d0acf314cd58d7dcb8b61e0e95ac5d1647b3d96`；首轮无副作用合同提交为 `80a30acdd56f599b0a7631f2c4e13c24388b5e54`。当前维护 API 由 `src/web-api/src/apiclient.js` 继承固定 MIT 输入；`src/web-api/src/mit-apiclient.js#getItemDownloadUrl` 仍生成指定版本的原下载地址。原下载按钮与权限入口可复用，不能把 URL 生成成功当成影片下载成功。
 
-共享缓存另外只读核对 `a668fcd030792a4f0e5f02797ea058198183f8ec` 的授权／适配器与合同；它不是本分支依赖，也不代表预载最终验收状态。本分支没有移动、合入或修改缓存分支，没有改 PlaybackManager、libmpv、resolver、CD2 service、main 或用户设置入口。
+共享缓存另外只读核对 `a668fcd030792a4f0e5f02797ea058198183f8ec` 的授权／适配器与合同；它不是本分支依赖，也不代表预载最终验收状态。本分支没有移动、合入或修改缓存分支；未改 PlaybackManager、resolver 或 CD2 service 的共享源码。main 与 libmpv 仅增加独立下载服务和最终来源选择接线。
 
 ## 收敛的实现路径
 
-目标数据流为原按钮 → mainFrame 校验 → 当前账户的下载取源会话 → 记忆目录选择 → 独占临时文件 → 完整校验与无覆盖提交 → 完成索引 → 原播放链按同版本选本地文件。当前完成中间的核心，首尾接线仍待完成。
+数据流为原视频下载按钮 → mainFrame 校验 → 当前账户的下载取源会话 → 记忆目录选择 → 独占临时文件与持久检查点 → 完整校验与无覆盖提交 → 完成索引 → 原播放链按同版本选本地文件。生产接线已在独立分支完成，尚未经过完整客户端验收。
 
 ### 取源会话
 
@@ -33,7 +35,7 @@
 5. 候选依次来自解析结果、主进程获取的 HTTP MediaSource、直链失败后的 CD2 同源重取，以及原 Emby 下载接口。源提供者支持的额外请求头限 User-Agent；不将 Emby Token 转发到媒体 CDN。
 6. 每次 acquire 都重新授权、取源和探测；签名 URL 变化可以接受，但已知强 ETag、长度或表示身份变化不能沿用原任务字节。close 退休任务并取消所属请求。
 
-该模块尚未成为生产 IPC；未来必须由可信 mainFrame 的入口创建会话，不能把其输入直接开放给任意页面。请求总期限为 30 秒，单个 HTTP 探测期限 8 秒；不改变播放解析的原预算。
+`ipc.js` 只允许当前打包文档的 mainFrame 入口创建会话；忽略 renderer 指定的下载目录，目录只经主进程原生选择器取得。导航／崩溃／退出退休文档代次、停止传输并加入清理；不同账户互不接管。请求总期限为 30 秒，单个 HTTP 探测期限 8 秒；不改变播放解析的原预算。
 
 ### 影片响应探测
 
@@ -64,8 +66,8 @@
 - 断流最多重试两次，每次重新取得会话来源；强校验器和非零 Range 已验证时才继续追加，否则截断自身临时文件后重新取完整响应。
 - 即使全部字节已写入，消息未完整结束也不能当作成功，必须重新取得清洁响应。416 不能声明本地部分文件已完成。
 - 完成后核文件大小、读回容器首部并 sync，再用 link 原子无覆盖提交；同名依次采用 `name (1).ext` 等，已有文件保持。
-- 取消／失败只清理当前操作能证明归属的临时文件；交换过的路径不会被误删。没有删除、接管、搬迁或清理已有完整下载的接口。
-- 当前没有跨应用重启的任务恢复；运行期间断流续传不能冒充持久任务续传。关闭应用的产品交互尚未接线。
+- 持久任务取消／失败保留自身临时文件与检查点；不带持久任务的核心调用仍只清理其可证明归属的临时文件。交换过的路径不会被误删。没有删除、接管、搬迁或清理已有完整下载的接口。
+- 跨应用重启先检查文件物理身份和已提交前缀摘要，再重新授权、取源；只有强 ETag、源身份与非零 Range 校验都一致时追加。不满足时明确提示并从头写自身临时文件；不能保证所有 STRM／CD2 可续。
 - 当前发布依赖所选文件系统支持硬链接；不支持时失败，不退化成可能覆盖已有文件的 rename。FAT／exFAT／网络盘的提交兼容需要单独验证或增加严格的无覆盖复制适配器。
 
 HTTP 条件请求与区间语义见 [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.5)。上述属于协议与文件归属实现，不授予额外服务器权限。
@@ -80,35 +82,40 @@ Emby SyncJobs 的看完删除、自动追更和取消任务删除，均不适用
 
 参考了 [Electron 44.4.2 下载接口](https://raw.githubusercontent.com/electron/electron/v44.4.2/docs/api/download-item.md)、[Session 接口](https://raw.githubusercontent.com/electron/electron/v44.4.2/docs/api/session.md)、[electron-dl](https://github.com/sindresorhus/electron-dl) 和 [Jellyfin MPV Shim 设计目标](https://github.com/jellyfin/jellyfin-mpv-shim/blob/3b2fcd8a7de923b1d9ce053a972010498884a51e/docs/offline-sync-goals.md)。electron-dl 为 MIT，明确不提供跨应用重启恢复；Shim 整体 GPLv3，当前 ETE 维护层 GPL-2.0-only，未复制其实现。目录偏好模式只复用本仓库已有维护代码。
 
-## 验证与历史失败
+## 持久化、界面与播放
 
-公开定向命令：
+`task-store.js` 仅在 profile 的 `advance-downloads/<UUID>.json` 保存白名单字段：服务器／账户／Item／版本身份、任务快照目录、固定临时文件名、文件与根目录物理身份、已提交偏移及 SHA256、clean end、最终文件身份和完整摘要。Token、URL 查询签名、请求头均不落盘；损坏或不符合 schema 的记录保留并拒绝接管，不扫描用户媒体目录认领文件。
+
+`transfer.js` 每写入 8MiB 或有数据到来且超过一秒，先 sync 自身文件，再原子保存检查点。正常关闭保存最新进度；强制结束后仅信任已持久偏移，重新哈希该前缀，截断自身文件未提交尾部，再测 Range。物理文件被替换时停止，自己的字节损坏或来源变化时通知并重下。读完全部字节但消息未 clean end 不算完成。link 成功而完成索引尚未保存的崩溃窗口，通过 `publishing` 名称和同一物理文件恢复提交，不接管同名第三方文件。sync 与进程重启证据不等于全部平台断电耐久保证。
+
+`manager.js` 单任务顺序传输。当前登录凭据只在内存，重开后的对应账户 attach 才继续；来源版本变化的运行内重启次数有限，失败任务提供手动继续。未完成任务保持创建时目录。完成任务不进入缓存清理，也没有删除入口。
+
+固定 Web commandprocessor 的窄 overlay 只接管视频按钮，音频／日志／字幕继续原实现；冻结输入保持只读，缺失／重复锚点拒绝生成。apphost 启动账户绑定；“下载”设置页可查看进度、实际保存目录、失败及继续、更改默认目录。任务标题和路径按文本渲染，旧刷新／页面退休后的回调不能回写。
+
+播放优先级：非 Transcode 的已选版本，若有本账户完成记录，则重新授权和探测来源（查找最多五秒），核对记录、实际文件身份／大小／修改时间及首部摘要后使用本地文件；无记录时立即走原解析，不扫描媒体目录。失配／超时回原来源。下载查找取消或旧播放代次退休不能迟到启动播放器；PlaybackManager、Item、MediaSource、Session、远控及 Together 的所有权保持原链。Transcode 保持服务端转码。
+
+无强 ETag 的完整文件可下载并用于同版本本地播放，但远端中段在长度／版本／首部都未变化时不能可靠发现变化；这不是全文件远端摘要证明。中断后的追加仍严格要求强 ETag。外部字幕、服务器离线登录／浏览和离线进度同步不属于本轮。
+
+## 验证与边界
+
+公开定向入口：
 
 ```sh
-node --test tests/advance-download-response-contract.test.cjs tests/advance-download-source-session.test.cjs tests/advance-download-directory-preferences.test.cjs tests/advance-download-transfer.test.cjs tests/strm-resolver.test.cjs tests/cd2-service.test.cjs tests/cd2-budget.test.cjs
+node --test tests/advance-download-*.test.cjs tests/native-helper-diagnostics-playback.test.cjs
 ```
 
-当前 95/95 通过，零失败／跳过／取消，其中新增合同、取源、目录和传输测试共 39 项。采用回环 HTTP、真实 resolver／CD2 service、合成 gRPC transport 及独占临时目录；不是用户服务器或真实 CD2 gRPC 鉴权验证。
+测试使用回环 HTTP、实际 resolver／独立 CD2 service、合成 gRPC transport、实际文件系统和独占临时 profile。原按钮 → renderer → main IPC → 真实下载会话 → 本地文件／播放查找的集成覆盖目录记忆、换目录、源变更、旧文件保留；播放器测试使用实际 libmpv 模块与模拟 Native helper，覆盖命中、回退、转码和过时代次。
 
-首轮取源 24/25，直链失败后的同源回退缺少规范化 sourcePath；补齐上下文后同组 25/25。扩大回归首次 93/94，原因是新工作树缺锁定 gRPC 依赖；使用原 lockfile 执行 npm ci --ignore-scripts 后，同组 94/94。未修改旧断言或降低门禁。随后增加异步 CD2 close 未结算时仍持有来源归属的回归，最终同组 95/95。
+跨进程测试启动两个独立 Node 子进程：正常关闭后重开；以及下载超过 8MiB 检查点后强制结束，重开验证前缀、截去未提交尾部并从已提交偏移续传，最终字节完全一致。它验证实际进程重启和真盘协议，不是完整 Electron／Windows 或真实服务器验收。
 
-另外显式运行真实媒体自测，需要调用者指定已安装工具，缺参数直接失败，不计为平台 skip：
+首轮取源24/25，原因是直链失败后的同源回退缺少规范化 sourcePath；补齐后25/25。早期扩大回归93/94，原因是新工作树缺锁定gRPC依赖；按lock执行npm ci后通过。没有弱化权限／哈希断言。该核心阶段最终95/95，独立真实媒体自测1/1；后续接线的准确回归结果记录于[开发日志](DEVELOPMENT_LOG.md)，不把历史结果当作最终源码验收。
+
+真实媒体自测显式选取已安装工具，不计为平台 skip：
 
 ```sh
 ETE_ADVANCE_DOWNLOAD_FFMPEG=/absolute/path/to/ffmpeg ETE_ADVANCE_DOWNLOAD_FFPROBE=/absolute/path/to/ffprobe node --test tests/advance-download-media-selftest.cjs
 ```
 
-本轮 Linux 该自测 1/1 通过：生成两秒、64×64、10fps 的 FFV1／Matroska 视频，经取源、断流、重新授权、续传和真盘保存后，文件 SHA256 相同，FFprobe 识别成功，完整解码 20 帧的逐帧哈希一致。它证明这段自有测试视频的链路，不证明所有容器或实际片源。
+自生成两秒64×64 FFV1／Matroska视频，经取源、断流、重授权、续传和真盘保存后，比对完整SHA256、FFprobe识别及20帧解码哈希。它只证明自有测试视频，不证明任意容器或实际片源。
 
-没有访问真实 Emby／CD2 地址或真实用户目录；本环境没有附这些服务的可用连接信息。尚未验证 TLS／真实换签／第三方限流、Windows、外接盘或网络盘、原生文件选择器、完整客户端、原按钮、播放索引、预载组合、构建或用户验收。未操作前台、合 main、推送、发布或部署。
-
-## 剩余实施与需要讨论的具体体验
-
-已明确的在线范围、原按钮、目录记忆和 STRM／CD2 重点不再作为待确认问题重复提问。后续必要步骤是：
-
-1. 通过已有授权的实测通道验证选定服务器版本的 DTO、CanDownload、STRM 真实响应、CD2 参数与换签；不为了通过而猜测／弱化权限。
-2. 给原媒体下载按钮增加窄 overlay 和 mainFrame IPC；日志／字幕／非视频下载保持原入口。接入原生目录选择器、进度、失败提示和取消，避免静默回到浏览器下载 `.strm`。
-3. 增加完成索引与原播放链的同版本本地来源选择：推荐完整且身份一致的本地副本优先，文件不存在或表示变更时回原来源；不改 Session、远控或 Together。
-4. 实测 Windows 路径／提交语义和真实 ETE 启动／退出；结果与当前单元、回环和 Linux 解码证据分开。
-
-仍值得单独讨论的体验是关闭应用时的任务行为（提示等待、后台继续，还是持久任务下次续传），以及更换默认目录入口放哪里。当前核心没有选择产品级退出策略，也未把 force 选目录接口擅自放进预载设置或打开官方 sync 能力。持续后台服务与跨重启续传会增加任务持久化范围，需要明确后再实现。
+本环境没有附真实 Emby／CD2 地址及凭据，未访问真实服务或用户目录。真实 DTO／下载权限、401 换签、TLS／限流、Windows 原生选择器与文件身份／硬链接语义、外接盘／网络盘和完整客户端仍需现有授权测试通道验收。当前最终提交依赖硬链接，FAT／exFAT等不支持时会明确失败且保留未完成任务，不能宣称任意目录兼容。没有操作 Work 前台、推送、合 main、发布或部署。

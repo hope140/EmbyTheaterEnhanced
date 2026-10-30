@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/advance-download/renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, advanceDownload) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -28,6 +28,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
     }
 
     function routeForResult(result) {
+        if (result && result.sourceKind === 'downloaded-file') return 'download';
         if (strmResolver && typeof strmResolver.routeForResult === 'function') return strmResolver.routeForResult(result);
         if (result && result.sourceKind === 'direct-url') return 'direct-url';
         if (result && result.type === 'url' && result.sourceKind === 'cd2-url') return 'cd2-http';
@@ -354,6 +355,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 settingsTheme: true,
                 adjustHeaderForEmbeddedScroll: true
             });
+
+            routes.push({path: 'mpvplayer/downloads.html', transition: 'slide',
+                controller: pluginManager.mapPath(self, 'mpvplayer/downloads.js'), type: 'settings',
+                title: '下载', category: 'General', order: 8, thumbImage: '', icon: 'download',
+                settingsTheme: true, adjustHeaderForEmbeddedScroll: true});
 
             routes.push({
                 path: 'mpvplayer/cache-management.html',
@@ -958,7 +964,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     resolverConfig = await strmConfigClient.get();
                     assertCurrentPlayRequest(request);
                 }
-                resolverResult = await strmResolver.resolveAsync(resolverContext, {
+                var downloaded = null;
+                if (advanceDownload && typeof advanceDownload.localSource === 'function' && String(options.playMethod || '').toLowerCase() !== 'transcode') {
+                    try { downloaded = await advanceDownload.localSource(connectionManager.getApiClient(item.ServerId), item, mediaSource, request.controller.signal); }
+                    catch (_) { /* Original playback remains available if lookup fails. */ }
+                    assertCurrentPlayRequest(request);
+                }
+                resolverResult = downloaded ? {type: 'local', source: downloaded.source, sourceKind: 'downloaded-file',
+                    reason: 'download_hit', isStrm: isStrmRequest, localExists: true, fallback: false} : await strmResolver.resolveAsync(resolverContext, {
                     fs: typeof window !== 'undefined' ? window.fs : null,
                     requestId: request.requestId,
                     signal: request.controller.signal,

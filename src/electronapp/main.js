@@ -126,6 +126,7 @@
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
     var unregisterCacheManagementIpc = function () { return Promise.resolve(); };
+    var unregisterDownloadIpc = function () { return Promise.resolve(); };
     var detailCacheCloseOwner = null;
     var unregisterRefreshRate = function () { return Promise.resolve(); };
     var unregisterNativeHelperIpc = function () { return Promise.resolve(); };
@@ -1060,6 +1061,17 @@
     unregisterCacheManagementIpc = require('./enhanced/cache-management-ipc').register({
         ipcMain: ipcMain, getWebContents: getWebContents
     });
+    try {
+        unregisterDownloadIpc = require('./enhanced/advance-download/ipc').register({
+            ipcMain: ipcMain, getWebContents: getWebContents,
+            profileRoot: app.getPath('userData'), dialog: electron.dialog,
+            getBrowserWindow: function () { return mainWindow; },
+            sourceDependencies: {
+                getConfig: function () { return {resolver: strmConfigStore.getPublicConfig(), runtime: strmConfigStore.getRuntimeConfig()}; },
+                createCd2Service: function (config) { return cd2ServiceModule.createService({config: config}); }
+            }
+        });
+    } catch (_) { enhancedLog({category: 'app', event: 'download-service-unavailable'}); }
     unregisterMaintenanceIpc = maintenanceIpc.register({
         updateCache: (function () {
             var store = require('./enhanced/update-install-cache').createStore({
@@ -1164,6 +1176,7 @@
             runCleanup('diagnostics', function () { return unregisterDiagnosticsIpc(); }),
             runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
             runCleanup('http-cache', function () { return unregisterCacheManagementIpc(); }),
+            runCleanup('downloads', function () { return typeof unregisterDownloadIpc === 'function' ? unregisterDownloadIpc() : undefined; }),
             runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
             runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
             runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),

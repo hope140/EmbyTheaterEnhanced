@@ -10,6 +10,7 @@
     'use strict';
 
     function routeForObservation(observation) {
+        if (observation && observation.route === 'download') return 'download';
         if (observation && observation.route === 'direct-url') return 'direct-url';
         if (observation && observation.route === 'cd2-http') return 'cd2-http';
         if (observation && observation.route === 'mount') return 'mount';
@@ -31,7 +32,7 @@
         var route = routeForObservation(observation);
         var isStrm = observation && observation.isStrm === true;
         var stats = [
-            {label: '播放源:', value: route === 'direct-url' ? 'CD2 DirectUrl' : route === 'cd2-http' ? 'CD2 HTTP' : route === 'mount' ? '本地挂载' : 'Emby 原生'},
+            {label: '播放源:', value: route === 'download' ? '已下载文件' : route === 'direct-url' ? 'CD2 DirectUrl' : route === 'cd2-http' ? 'CD2 HTTP' : route === 'mount' ? '本地挂载' : 'Emby 原生'},
             {label: 'STRM:', value: isStrm ? '是' : '否'}
         ];
 

@@ -1,0 +1,136 @@
+'use strict';
+const test = require('node:test'), assert = require('node:assert/strict');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+const {createManager} = require('../src/electronapp/enhanced/advance-download/manager');
+const {createStore} = require('../src/electronapp/enhanced/advance-download/task-store');
+const {fixture, media, token} = require('./helpers/advance-download-fixture.cjs');
+
+async function paused(t, overrides = {}) {
+    const f = await fixture(t);
+    Object.assign(f.state, overrides, {pauseTransfer: true});
+    const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-persist-download-')));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const profile = path.join(root, 'profile'), directory = path.join(root, 'videos'), nextDirectory = path.join(root, 'next');
+    for (const folder of [profile, directory, nextDirectory]) fs.mkdirSync(folder);
+    const context = {serverId: 'server', accountId: 'account', itemId: 'item', mediaSourceId: 'source', serverAddress: f.emby + '/base', token};
+    let manager, stop, stopped;
+    const done = new Promise(resolve => {stopped = resolve;});
+    const options = {profileRoot: profile, createSession: ctx => f.session(ctx), selectDirectory: async () => ({status: 'selected', directory})};
+    manager = createManager({...options, onChange(value) {if (value.bytes >= 1024 && !stop) {stop = manager.close(); stop.then(stopped);}}});
+    const queued = await manager.enqueue(context);
+    assert.equal(queued.status, 'queued');
+    await done;
+    const store = createStore(profile), task = store.get(queued.task.id);
+    assert.equal(task.state, 'paused');
+    assert.equal(task.partial.offset, 1024);
+    assert.equal(task.partial.messageComplete, false);
+    assert.equal(fs.statSync(path.join(directory, task.partial.name)).size, 1024);
+    const metadata = fs.readFileSync(path.join(profile, 'advance-downloads', task.id + '.json'), 'utf8');
+    assert.ok(!metadata.includes(token) && !metadata.includes('signature=') && !metadata.includes('X-Emby-Token'));
+    f.state.pauseTransfer = false;
+    function reopen(extra = {}) {
+        const value = createManager({...options, selectDirectory: async () => ({status: 'selected', directory: nextDirectory}), ...extra});
+        t.after(() => value.close());
+        return value;
+    }
+    return {...f, root, profile, directory, nextDirectory, context, task, store, reopen};
+}
+
+test('shutdown checkpoints owned bytes and a new manager reauthorizes then resumes in the original directory', async t => {
+    const f = await paused(t);
+    const next = f.reopen();
+    // Changing the default affects future tasks; it must not move this one.
+    next.attach(f.context);
+    await next.idle();
+    const task = f.store.get(f.task.id);
+    assert.equal(task.state, 'complete');
+    assert.equal(task.directory, f.directory);
+    assert.deepEqual(fs.readFileSync(path.join(f.directory, task.file.name)), media);
+    assert.deepEqual(fs.readdirSync(f.nextDirectory), []);
+    assert.ok(f.calls.some(call => call.headers.range === 'bytes=1024-'));
+    assert.equal((await next.localSource(f.context)).source, path.join(f.directory, task.file.name));
+    f.state.etag = '"another-version"';
+    assert.equal(await next.localSource(f.context), null);
+    assert.ok(fs.existsSync(path.join(f.directory, task.file.name)), 'a server change does not delete the completed user file');
+    const newer = await next.enqueue(f.context); await next.idle();
+    assert.equal(newer.status, 'queued');
+    const newTask = f.store.get(newer.task.id);
+    assert.equal(newTask.directory, f.nextDirectory);
+    assert.equal(newTask.state, 'complete');
+    assert.equal((await next.localSource(f.context)).source, path.join(f.nextDirectory, newTask.file.name));
+    assert.ok(fs.existsSync(path.join(f.directory, task.file.name)), 'changing the default does not move the old complete file');
+});
+
+test('missing validators cause an explicit fresh download after reopening instead of unsafe appending', async t => {
+    const f = await paused(t, {etag: null});
+    const reasons = [], next = f.reopen({onChange: value => {if (value.reason) reasons.push(value.reason);}});
+    next.attach(f.context); await next.idle();
+    assert.equal(f.store.get(f.task.id).state, 'complete');
+    assert.ok(reasons.includes('resume-unavailable-restarting'));
+    assert.ok(!f.calls.some(call => /^bytes=\d+-$/.test(call.headers.range || '')));
+});
+
+test('changed source content and same-inode corrupt partial bytes are restarted explicitly', async t => {
+    for (const change of ['source', 'partial']) {
+        const f = await paused(t);
+        if (change === 'source') {f.state.etag = '"new-version"'; f.state.body = Buffer.from(media); f.state.body[1200] ^= 1;}
+        else fs.writeFileSync(path.join(f.directory, f.task.partial.name), Buffer.alloc(1024));
+        const reasons = [], next = f.reopen({onChange: value => {if (value.reason) reasons.push(value.reason);}});
+        next.attach(f.context); await next.idle();
+        const task = f.store.get(f.task.id);
+        assert.equal(task.state, 'complete');
+        assert.deepEqual(fs.readFileSync(path.join(f.directory, task.file.name)), f.state.body);
+        assert.ok(reasons.includes(change === 'source' ? 'source-changed-restarting' : 'partial-corrupt-restarting'));
+        assert.ok(!f.calls.some(call => call.headers.range === 'bytes=1024-'));
+    }
+});
+
+test('an exchanged partial file is not overwritten, deleted or accepted on restore', async t => {
+    const f = await paused(t), temporary = path.join(f.directory, f.task.partial.name);
+    fs.renameSync(temporary, path.join(f.directory, 'original-app-partial'));
+    fs.writeFileSync(temporary, 'unrelated replacement');
+    const next = f.reopen(); next.attach(f.context); await next.idle();
+    assert.equal(f.store.get(f.task.id).state, 'failed');
+    assert.equal(f.store.get(f.task.id).reason, 'temporary-changed');
+    assert.equal(fs.readFileSync(temporary, 'utf8'), 'unrelated replacement');
+    assert.ok(!fs.readdirSync(f.directory).some(name => name.endsWith('.mkv')));
+});
+
+test('another account cannot resume or discover this task through the manager', async t => {
+    const f = await paused(t), next = f.reopen();
+    next.attach({...f.context, accountId: 'other'}); await next.idle();
+    assert.deepEqual(next.list({...f.context, accountId: 'other'}), []);
+    assert.equal(f.store.get(f.task.id).state, 'paused');
+    assert.equal(await next.localSource({...f.context, accountId: 'other'}), null);
+});
+
+test('a crash window after file publication can finish the receipt without duplicating or replacing the video', async t => {
+    const f = await paused(t);
+    const originalSave = f.store.save;
+    let failed = false;
+    const guarded = {...f.store, save(task) {
+        if (!failed && task.state === 'complete') {failed = true; throw Error('synthetic failure after publication');}
+        return originalSave(task);
+    }};
+    const first = f.reopen({store: guarded}); first.attach(f.context); await first.idle(); await first.close();
+    const partial = f.store.get(f.task.id).partial;
+    assert.ok(partial.publishing);
+    assert.ok(fs.existsSync(path.join(f.directory, partial.publishing)));
+    const next = f.reopen(); next.retry(f.context, f.task.id); await next.idle();
+    const task = f.store.get(f.task.id);
+    assert.equal(task.state, 'complete');
+    assert.equal(task.file.name, partial.publishing);
+    assert.deepEqual(fs.readFileSync(path.join(f.directory, task.file.name)), media);
+    assert.equal(fs.readdirSync(f.directory).filter(name => name.endsWith('.mkv')).length, 1);
+});
+
+test('persisted tasks reject secret-bearing fields and preserve malformed receipts and foreign files', async t => {
+    const f = await paused(t);
+    assert.throws(() => f.store.save({...f.task, token: 'never-persist-this'}));
+    assert.throws(() => f.store.save({...f.task, source: {...f.task.source, url: 'https://invalid/?secret=never'}}));
+    const receipt = path.join(f.profile, 'advance-downloads', f.task.id + '.json');
+    fs.writeFileSync(receipt, 'malformed-user-data');
+    assert.deepEqual(f.store.list(), []);
+    assert.throws(() => f.store.save(f.task));
+    assert.equal(fs.readFileSync(receipt, 'utf8'), 'malformed-user-data');
+});

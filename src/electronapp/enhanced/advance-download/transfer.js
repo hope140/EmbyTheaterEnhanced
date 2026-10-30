@@ -55,21 +55,92 @@ async function openResponse(source, offset, signal) {
     }
 }
 
-async function download({session, source: initial, directory, signal, onProgress}) {
+async function download({session, source: initial, directory, signal, onProgress, journal, onRestart}) {
+    const records = require('./task-store');
     let handle, temporary, own, root, rootId, source = initial, offset = 0, failures = 0;
+    let digest = crypto.createHash('sha256'), checkpointable = false, cleanEnd = false, published = false;
+    let lastCheckpoint = 0, lastCheckpointAt = Date.now();
     function owned() {
         if (physicalRoot(root) !== root || !same(fs.lstatSync(root, {bigint: true}), rootId)) throw fail('directory-changed');
         const stat = fs.lstatSync(temporary, {bigint: true});
         if (!stat.isFile() || stat.isSymbolicLink() || !same(stat, own)) throw fail('temporary-changed');
     }
     function progress() {try {onProgress?.({bytes: offset, total: source.total});} catch (_) {}}
+    function restartNotice(reason) {try {onRestart?.(reason);} catch (_) {}}
+    async function checkpoint(publishing = null) {
+        if (!journal || !checkpointable) return;
+        owned();
+        if (handle) await handle.sync();
+        journal.update({source: records.sourceRecord(source), partial: {name: path.basename(temporary),
+            rootId: records.identity(rootId), fileId: records.identity(own), offset,
+            sha256: digest.copy().digest('hex'), messageComplete: cleanEnd, publishing}});
+        lastCheckpoint = offset; lastCheckpointAt = Date.now();
+    }
+    async function reset(reason) {
+        owned(); await handle.truncate(0);
+        offset = 0; cleanEnd = false; digest = crypto.createHash('sha256'); checkpointable = true;
+        restartNotice(reason); await checkpoint(); progress();
+    }
+    async function finishRecord(fileName, recordSource = source) {
+        const stat = fs.lstatSync(path.join(root, fileName), {bigint: true});
+        if (!stat.isFile() || stat.isSymbolicLink() || !same(stat, own) || Number(stat.size) !== offset) throw fail('temporary-changed');
+        if (journal) journal.update({source: records.sourceRecord(recordSource), state: 'complete', reason: null,
+            file: {name: fileName, rootId: records.identity(rootId), fileId: records.identity(stat),
+                size: offset, mtimeNs: String(stat.mtimeNs), sha256: digest.copy().digest('hex')}});
+        published = true;
+        return {status: 'downloaded', directory: root, fileName, size: offset};
+    }
     try {
         cancelled(signal);
         if (!session || typeof session.acquire !== 'function' || !initial || !/^[a-f0-9]{64}$/.test(initial.identity) ||
             !Number.isSafeInteger(initial.total) || initial.total < 1 || !/^(?:mkv|mp4|mov|webm|avi|mpg|ts|m2ts|flv|wmv)$/.test(initial.extension)) throw fail('invalid-source');
         root = physicalRoot(directory); rootId = fs.lstatSync(root, {bigint: true});
-        temporary = path.join(root, '.ete-media-' + crypto.randomBytes(16).toString('hex') + '.part');
-        handle = await fs.promises.open(temporary, 'wx+', 0o600); own = await handle.stat({bigint: true});
+        const task = journal?.get(), previous = task?.partial;
+        temporary = path.join(root, previous ? previous.name : '.ete-media-' + (task ? task.id : crypto.randomBytes(16).toString('hex')) + '.part');
+        if (previous) {
+            const before = fs.lstatSync(temporary, {bigint: true});
+            if (!records.sameId(rootId, previous.rootId) || !before.isFile() || before.isSymbolicLink() ||
+                !records.sameId(before, previous.fileId) || before.nlink > (previous.publishing ? 2n : 1n)) throw fail('temporary-changed');
+            handle = await fs.promises.open(temporary, 'r+'); own = await handle.stat({bigint: true});
+            if (!same(own, before)) throw fail('temporary-changed');
+            const buffer = Buffer.alloc(262144);
+            let verified = 0;
+            while (verified < previous.offset && verified < Number(own.size)) {
+                cancelled(signal);
+                const part = await handle.read(buffer, 0, Math.min(buffer.length, previous.offset - verified), verified);
+                if (!part.bytesRead) break;
+                digest.update(buffer.subarray(0, part.bytesRead)); verified += part.bytesRead;
+            }
+            const intact = verified === previous.offset && digest.copy().digest('hex') === previous.sha256;
+            offset = previous.offset; cleanEnd = previous.messageComplete && offset === task.source.total;
+            // Recover a crash after no-replace publication, before metadata commit.
+            // Never truncate a temporary file that is already linked to a complete user file.
+            if (previous.publishing) {
+                let final;
+                try {final = fs.lstatSync(path.join(root, previous.publishing), {bigint: true});} catch (error) {if (error.code !== 'ENOENT') throw error;}
+                if (final && same(final, own)) {
+                    if (!intact || !cleanEnd || !final.isFile() || final.isSymbolicLink() || Number(final.size) !== offset) throw fail('publication-unowned');
+                    checkpointable = false;
+                    return await finishRecord(previous.publishing, task.source);
+                }
+                if (own.nlink !== 1n) throw fail('temporary-changed');
+            }
+            checkpointable = true;
+            const sameVersion = task.source.identity === initial.identity && task.source.total === initial.total &&
+                task.source.extension === initial.extension && task.source.etag === initial.etag &&
+                (!task.source.prefixSha256 || task.source.prefixSha256 === initial.prefixSha256);
+            if (!intact) await reset('partial-corrupt');
+            else if (!sameVersion) await reset('source-changed');
+            else if (!cleanEnd && (offset >= initial.total || offset > 0 && (!initial.etag || !initial.resumeVerified))) await reset('resume-unavailable');
+            else {
+                // A crash may leave uncommitted bytes after the durable checkpoint.
+                if (Number(own.size) !== offset) {owned(); await handle.truncate(offset);}
+                await checkpoint();
+            }
+        } else {
+            handle = await fs.promises.open(temporary, 'wx+', 0o600); own = await handle.stat({bigint: true});
+            checkpointable = true; await checkpoint();
+        }
         cancelled(signal); progress();
         while (offset < source.total) {
             cancelled(signal);
@@ -80,6 +151,7 @@ async function download({session, source: initial, directory, signal, onProgress
                 const response = connection.response;
                 plan = inspectResponse({offset, total: source.total, ...(source.etag ? {etag: source.etag} : {})}, response);
                 if (plan.action !== 'receive') throw fail(plan.reason);
+                cleanEnd = false;
                 for await (const chunk of response) {
                     cancelled(signal);
                     if (receivedBytes + chunk.length > plan.expectedBytes) throw fail('body-overlong');
@@ -88,11 +160,15 @@ async function download({session, source: initial, directory, signal, onProgress
                         cancelled(signal);
                         const result = await handle.write(chunk, written, chunk.length - written, offset);
                         if (!Number.isSafeInteger(result.bytesWritten) || result.bytesWritten <= 0) throw fail('write-stalled');
+                        digest.update(chunk.subarray(written, written + result.bytesWritten));
                         written += result.bytesWritten; offset += result.bytesWritten;
                     }
                     receivedBytes += chunk.length; progress();
+                    if (journal && (offset - lastCheckpoint >= 8388608 || Date.now() - lastCheckpointAt >= 1000)) await checkpoint();
                 }
                 if (finishResponse(plan, {receivedBytes, messageComplete: response.complete}).action !== 'body-accepted') throw fail('body-incomplete');
+                cleanEnd = offset === source.total;
+                await checkpoint();
             } catch (error) {
                 if (connection) {await connection.close(); connection = null;}
                 cancelled(signal);
@@ -103,14 +179,12 @@ async function download({session, source: initial, directory, signal, onProgress
                 cancelled(signal);
                 if (next.identity !== initial.identity || next.total !== initial.total || initial.etag && next.etag !== initial.etag) throw fail('representation-changed');
                 source = next;
-                if (offset > 0 && (offset >= initial.total || !initial.etag || !next.resumeVerified || next.etag !== initial.etag || probe.reasonOf(error) === 'range-ignored')) {
-                    await handle.truncate(0); offset = 0; progress();
-                }
+                if (offset > 0 && (offset >= initial.total || !initial.etag || !next.resumeVerified || next.etag !== initial.etag || probe.reasonOf(error) === 'range-ignored')) await reset('resume-unavailable');
             } finally {if (connection) await connection.close();}
         }
         cancelled(signal);
         const stat = await handle.stat();
-        if (stat.size !== initial.total || offset !== initial.total) throw fail('length-mismatch');
+        if (!cleanEnd || stat.size !== initial.total || offset !== initial.total) throw fail('length-mismatch');
         const prefix = Buffer.alloc(Math.min(65536, stat.size));
         let read = 0;
         while (read < prefix.length) {
@@ -118,18 +192,20 @@ async function download({session, source: initial, directory, signal, onProgress
             if (!part.bytesRead) throw fail('body-incomplete');
             read += part.bytesRead;
         }
-        if (probe.mediaExtension(prefix, initial.extension) !== initial.extension) throw fail('representation-changed');
+        if (probe.mediaExtension(prefix, initial.extension) !== initial.extension || initial.prefixSha256 &&
+            crypto.createHash('sha256').update(prefix.subarray(0, initial.prefixBytes || prefix.length)).digest('hex') !== initial.prefixSha256) throw fail('representation-changed');
+        await checkpoint();
         await handle.sync(); await handle.close(); handle = null;
         cancelled(signal); owned();
         const name = filename(initial.title);
-        // Atomic no-replace publication. Existing downloads and unrelated files
-        // survive even if a same-name file appears between selection and commit.
         for (let index = 0; index < 1000; index++) {
             cancelled(signal); owned();
             const fileName = name + (index ? ' (' + index + ')' : '') + '.' + initial.extension;
+            await checkpoint(fileName);
             try {
                 await fs.promises.link(temporary, path.join(root, fileName));
-                return {status: 'downloaded', directory: root, fileName, size: initial.total};
+                checkpointable = false; // Keep the publishing receipt if commit fails.
+                return await finishRecord(fileName);
             } catch (error) {if (error.code !== 'EEXIST') throw error;}
         }
         throw fail('file-exists');
@@ -139,8 +215,14 @@ async function download({session, source: initial, directory, signal, onProgress
         if (['EACCES', 'EPERM', 'EROFS'].includes(error.code)) throw fail('directory-unwritable');
         throw fail(probe.reasonOf(error));
     } finally {
-        try {if (handle) await handle.close();}
-        finally {try {if (own) {owned(); await fs.promises.unlink(temporary);}} catch (_) {}}
+        try {
+            if (journal && !published && checkpointable) {try {await checkpoint();} catch (_) {}}
+            if (handle) await handle.close();
+        } finally {
+            // Persistent tasks keep their own partial file on pause/failure.
+            // Completed files are never removed, moved or replaced here.
+            if (!journal || published) {try {if (own) {owned(); await fs.promises.unlink(temporary);}} catch (_) {}}
+        }
     }
 }
 

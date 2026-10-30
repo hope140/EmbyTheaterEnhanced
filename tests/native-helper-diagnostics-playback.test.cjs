@@ -177,7 +177,7 @@ class FakeIpc extends EventEmitter {
     }
 }
 
-function makeContext(windowTarget, dom, nativeClient, resolver) {
+function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
     let moduleFactory;
     const amdRequire = function (dependencies, callback, errback) {
         if (dependencies && dependencies[0] === 'css!./libmpv') {
@@ -228,7 +228,7 @@ function makeContext(windowTarget, dom, nativeClient, resolver) {
     const embyRouter = {showVideoOsd() { return Promise.resolve(); }, setTransparency() { }};
     const appSettings = {get() { return undefined; }, set() { }};
     const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
-    const connectionManager = {};
+    const connectionManager = {getApiClient() {return {};}};
     const Player = moduleFactory(
         globalize,
         playbackManager,
@@ -244,7 +244,8 @@ function makeContext(windowTarget, dom, nativeClient, resolver) {
         undefined,
         undefined,
         require('../src/electronapp/enhanced/nexttrack-transition'),
-        nativeClient
+        nativeClient,
+        downloads
     );
     const player = {};
     Player.call(player);
@@ -427,3 +428,47 @@ for (const phase of ['loading', 'playing']) {
         assert.equal(diagnostics().filter(row => row.request.event === 'stop').at(-1).request.details.stopSource, 'adapter-stop-destroy');
     });
 }
+
+for (const mode of ['download-hit', 'download-miss', 'transcode']) {
+    test('download source selection preserves native lifecycle for ' + mode, async () => {
+        const ipc = new FakeIpc(), windowTarget = makeEventTarget();
+        Object.assign(windowTarget, {ipc, platform: 'win32', PlayerWindowId: 1});
+        let lookups = 0, resolves = 0;
+        const resolver = {isStrm: () => true, resolveAsync: async info => {resolves++; return {type: 'native', source: info.nativeSource, reason: 'native_fallback'};}};
+        const downloads = {async localSource() {lookups++; return mode === 'download-hit' ? {status: 'hit', source: 'C:\\SyntheticDownloads\\movie.mkv'} : null;}};
+        const {player} = makeContext(windowTarget, makeDom(), nativeHelperClient, resolver, downloads);
+        const options = makePlayOptions('https://synthetic.invalid/original');
+        options.item.Id = 'item'; options.item.ServerId = 'server'; options.mediaSource.Id = 'source';
+        if (mode === 'transcode') options.playMethod = 'Transcode';
+        await player.play(options);
+        assert.equal(ipc.loadCalls.length, 1);
+        assert.equal(ipc.loadCalls[0].data[1], mode === 'download-hit' ? 'C:\\SyntheticDownloads\\movie.mkv' : options.url);
+        assert.equal(lookups, mode === 'transcode' ? 0 : 1);
+        assert.equal(resolves, mode === 'download-hit' ? 0 : 1);
+        assert.equal(ipc.calls.filter(call => call.request.operation === 'begin-generation').length, 1);
+        assert.equal(ipc.corePlayingEvents.length, 1);
+        const route = player.getRoutes().filter(value => value.path === 'mpvplayer/downloads.html');
+        assert.equal(route.length, 1); assert.equal(route[0].category, 'General');
+        await player.stop(true);
+    });
+}
+
+test('a superseded download lookup cannot load an old file into the replacement native generation', async () => {
+    const ipc = new FakeIpc(), windowTarget = makeEventTarget(), gate = makeDeferred();
+    Object.assign(windowTarget, {ipc, platform: 'win32', PlayerWindowId: 1});
+    let entered = false, firstSignal;
+    const resolver = {isStrm: () => true, resolveAsync: async info => ({type: 'native', source: info.nativeSource, reason: 'native_fallback'})};
+    const downloads = {localSource(_api, item, _source, signal) {if (item.Id === 'old') {entered = true; firstSignal = signal; return gate.promise;} return Promise.resolve(null);}};
+    const {player} = makeContext(windowTarget, makeDom(), nativeHelperClient, resolver, downloads);
+    const old = makePlayOptions('https://synthetic.invalid/old'); old.item.Id = 'old';
+    const first = player.play(old); first.catch(() => {});
+    await waitFor(() => entered);
+    const next = makePlayOptions('https://synthetic.invalid/current'); next._etePlayRequestId = 2; next.item.Id = 'current';
+    const second = player.play(next);
+    gate.resolve({status: 'hit', source: 'C:\\SyntheticDownloads\\retired.mkv'});
+    await assert.rejects(first); await second;
+    assert.equal(firstSignal.aborted, true);
+    assert.equal(ipc.loadCalls.length, 1);
+    assert.equal(ipc.loadCalls[0].data[1], next.url);
+    await player.stop(true);
+});

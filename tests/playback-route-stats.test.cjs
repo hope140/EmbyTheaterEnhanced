@@ -11,6 +11,7 @@ function values(category) {
 }
 
 test('route stats map DirectUrl, CD2 HTTP, Mount, native fallback, and ordinary media', () => {
+    assert.equal(values(routeStats.makeStats({isStrm: true, route: 'download'}))['播放源:'], '已下载文件');
     const direct = values(routeStats.makeStats({isStrm: true, route: 'direct-url', sourceKind: 'direct-url'}));
     assert.deepEqual(direct, {'播放源:': 'CD2 DirectUrl', 'STRM:': '是', 'CD2:': '命中', 'Mount:': '未使用', 'Fallback:': '否'});
 

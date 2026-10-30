@@ -18,6 +18,7 @@ const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
 const connectionManagerTransport = require('./patch-connectionmanager-transport.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
+const advanceDownload = require('./patch-advance-download.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
@@ -35,6 +36,17 @@ const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'advance-download-command',
+        mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/modules/commandprocessor.js',
+        inputPath: null,
+        runtimePath: 'electronapp/www/modules/commandprocessor.js',
+        expectedBaseSha256: '10ED682D5897E8C065925EF6071E914CB04537067A14C4D869F3EB14F724276F',
+        expectedInputSha256: null,
+        expectedOutputSha256: '79B0E56E2B4B486D3B59F42AE27FEDDE91FC851B791D08A59AD486D0A3C4F286',
+        generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-advance-download.cjs'])
+    }),
     Object.freeze({
         id: 'connectionmanager-transport',
         mode: 'tracked-canonical-transform',
@@ -345,6 +357,7 @@ function retireCustomCssJs(text) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};
     if (contract.id === 'connectionmanager-transport') return {base, input: Buffer.from(connectionManagerTransport.patchConnectionManager(base.toString('utf8')), 'utf8')};
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: base};

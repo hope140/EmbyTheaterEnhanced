@@ -104,7 +104,9 @@
             sendCommand('exit');
         },
         init: function () {
-
+            try {
+                require(['../enhanced/advance-download/renderer.js']).then(function (modules) { modules[0].start(); }).catch(function () {});
+            } catch (_) { /* Optional download startup never blocks login. */ }
             return Promise.resolve();
         },
         appName: function () {

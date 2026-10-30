@@ -1,0 +1,16 @@
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-mousewheel="true" data-horizontal="false" data-forcescrollbar="true" data-bindheader="true">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page">
+        <section class="ete-settings-card">
+            <h2>默认下载目录</h2>
+            <p class="downloadDirectory">首次下载时选择</p>
+            <button type="button" is="emby-button" class="raised ete-settings-button btnDownloadDirectory">更改默认目录</button>
+            <p>新任务使用新目录；已有任务和文件保持原位置。关闭客户端会停止传输并保留任务，登录对应账户后继续。</p>
+        </section>
+        <section class="ete-settings-card">
+            <h2>下载任务</h2>
+            <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshDownloads">刷新</button>
+            <div class="downloadTasks" aria-live="polite"></div>
+        </section>
+        <div class="downloadStatus ete-settings-status" role="status" aria-live="polite"></div>
+    </div>
+</div>
