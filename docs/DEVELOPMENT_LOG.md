@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-30 — 提前下载独立基础接口候选
+
+从 main `2d0acf314cd58d7dcb8b61e0e95ac5d1647b3d96` 建立独立分支，重新核对维护API和普通下载入口，并只读研究共享缓存候选的授权／存储接口。未移动预载分支或改动其源码。在线提前下载为推荐待讨论方案，离线范围、旧文件接管、保留／删除及播放优先级未定；合同见[设计候选](ADVANCE_DOWNLOAD_DESIGN.md)。
+
+新增 `advance-download/response-contract.js` 与11项合成回归：准确响应区间、保守强校验器、明确重下结果、正文计数及clean end；结果不代表来源授权、文件落盘或完成发布。模块无网络／文件系统导入，且没有生产调用者。Node 24.18.1 定向11/11、0 fail／skip／cancel；JS语法与diff检查通过。未运行真实服务、Electron、Windows、缓存／播放接线、全套构建或用户验收；未推送、合main或发行。
+
 ## 2026-10-29 — ETE 长期手动构建／发布流程候选
 
 独立本地分支从 `246706d` 新增 release.yml 和零依赖控制脚本，分离只读预检／构建与发布写权限。沿原 windows-2022 标准发行包链，不引入其它项目的签名或长期令牌；builder 新增明确 ExpectedSourceCommit 参数，原手动入口的缺省身份检查保持。五附件绑定 source、run/attempt、notes blob、provenance 和 SHA256，远端资产 digest 回读后才公开；已有 Release 不覆盖，测试渠道不动 Latest，正式渠道只替换明确核对的 Latest。旧 Tag 只能显式复用同源码已验证的发行 run，不改 Tag 或覆盖 GitHub 环境身份。
