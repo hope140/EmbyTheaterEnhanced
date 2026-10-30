@@ -114,14 +114,17 @@ function createSession(input, dependencies = {}) {
                 } catch (error) {
                     alive(combined);
                     if (probe.reasonOf(error) === 'representation-changed') throw error;
+                    if (['direct-url', 'cd2-url', 'media-source-http', 'emby-original'].includes(candidate.kind)) error.downloadSourceKind = candidate.kind;
                     lastError = error;
                 }
             }
-            throw failure(probe.reasonOf(lastError));
+            throw lastError || failure('source-unavailable');
         } catch (error) {
             if (closed || signal?.aborted) throw failure('cancelled');
             const result = failure(timeout.aborted ? 'timeout' : probe.reasonOf(error));
             result.downloadStage = stage;
+            if (Number.isInteger(error.httpStatus) && error.httpStatus >= 100 && error.httpStatus <= 599) result.httpStatus = error.httpStatus;
+            if (['direct-url', 'cd2-url', 'media-source-http', 'emby-original'].includes(error.downloadSourceKind)) result.downloadSourceKind = error.downloadSourceKind;
             throw result;
         } finally {
             try {if (service) await service.close();}

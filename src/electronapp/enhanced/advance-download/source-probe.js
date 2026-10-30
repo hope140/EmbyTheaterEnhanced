@@ -7,8 +7,9 @@ const {inspectResponse, finishResponse} = require('./response-contract');
 const PREFIX_LIMIT = 65536;
 const failures = new WeakSet();
 
-function failure(reason) {
+function failure(reason, status) {
     const error = Object.assign(Error('advance-download-' + reason), {downloadReason: reason});
+    if (Number.isInteger(status) && status >= 100 && status <= 599) error.httpStatus = status;
     failures.add(error);
     return error;
 }
@@ -87,7 +88,7 @@ function requestBuffer(urlValue, {headers = {}, signal, limit, prefix = false, t
 
 async function jsonRequest(url, headers, signal, timeoutMs) {
     const response = await requestBuffer(url, {headers: {...headers, Accept: 'application/json'}, signal, timeoutMs, limit: 2097152});
-    if (response.statusCode !== 200) throw failure(response.statusCode >= 300 && response.statusCode < 400 ? 'metadata-redirect' : statusError(response.statusCode));
+    if (response.statusCode !== 200) throw failure(response.statusCode >= 300 && response.statusCode < 400 ? 'metadata-redirect' : statusError(response.statusCode), response.statusCode);
     if (!response.messageComplete) throw failure('response-interrupted');
     try {
         const value = JSON.parse(response.body.toString('utf8'));
@@ -127,7 +128,7 @@ async function probeSource(candidate, {signal, timeoutMs = 8000} = {}) {
         if (next.origin !== url.origin) headers = headers['User-Agent'] ? {'User-Agent': headers['User-Agent']} : {};
         url = next;
     }
-    if (![200, 206].includes(response.statusCode)) throw failure(statusError(response.statusCode));
+    if (![200, 206].includes(response.statusCode)) throw failure(statusError(response.statusCode), response.statusCode);
     const range = /^bytes 0-(0|[1-9]\d*)\/([1-9]\d*)$/i.exec(response.headers['content-range'] || '');
     const total = Number(response.statusCode === 206 ? range?.[2] : response.headers['content-length']);
     if (!Number.isSafeInteger(total) || total <= 0) throw failure('length-unavailable');
@@ -144,7 +145,7 @@ async function probeSource(candidate, {signal, timeoutMs = 8000} = {}) {
         const offset = Math.min(total - 1, PREFIX_LIMIT);
         const tail = await requestBuffer(url.href, {headers: {...headers, Range: 'bytes=' + offset + '-' + offset, 'If-Range': plan.etag},
             signal, timeoutMs, limit: PREFIX_LIMIT, prefix: true});
-        if (tail.statusCode === 401 || tail.statusCode === 403) throw failure('auth-required');
+        if (tail.statusCode === 401 || tail.statusCode === 403) throw failure('auth-required', tail.statusCode);
         if (tail.headers.etag !== undefined && tail.headers.etag !== plan.etag) throw failure('representation-changed');
         if (tail.statusCode === 206) {
             const check = inspectResponse({offset, total, etag: plan.etag}, tail);

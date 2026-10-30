@@ -12,12 +12,14 @@ function fixture(overrides = {}) {
     const sender = new EventEmitter(); sender.send = (name, value) => sent.push({name, value}); eventFor(sender);
     let config;
     const manager = {attach(value) {calls.push(['attach', value]);}, enqueue: async value => {calls.push(['start', value]); return {status: 'queued'};},
-        list: () => [], retry: () => ({status: 'queued'}), pauseAll: async () => {calls.push(['pause']);},
+        list: () => [], status: async () => [], current: () => true, targets: (_ctx, value) => value.taskIds || [],
+        control: async (_ctx, value) => {calls.push(['control', value]); return {status: 'ok'};}, retry: () => ({status: 'queued'}), pauseAll: async () => {calls.push(['pause']);},
         close: async () => {calls.push(['close']);}, localSource: async () => null, ...overrides.manager};
     let chosen = overrides.directory;
     const unregister = api.register({ipcMain, getWebContents: () => sender,
         preferences: {read: () => chosen || null, save: value => {calls.push(['save-directory']); chosen = value; return value;}},
-        dialog: {showOpenDialog: overrides.dialog || (async () => ({canceled: true, filePaths: []}))},
+        dialog: {showOpenDialog: overrides.dialog || (async () => ({canceled: true, filePaths: []})), showMessageBox: overrides.confirm || (async () => ({response: 0, checkboxChecked: false}))},
+        fileDeletionAvailable: true,
         shell: overrides.shell, createManager(value) {config = value; return manager;}});
     return {handlers, calls, sent, sender, ipcMain, manager, unregister, get config() {return config;},
         invoke(name, request = {}) {return handlers.get(api.CHANNELS[name])(eventFor(sender), request);}};
@@ -104,4 +106,26 @@ test('native folder-open errors expose a fixed reason rather than system paths',
     const f = fixture({directory: require('node:fs').realpathSync.native(require('node:os').tmpdir()), shell: {async openPath() {return 'private-system-error';}}});
     assert.deepEqual(await f.invoke('OPEN_FOLDER', {context}), {status: 'error', reason: 'folder-open-failed'});
     await f.unregister();
+});
+
+test('removal always asks main-owned confirmation with file deletion unchecked and ignores renderer file flags', async () => {
+    const id = '12345678-1234-4123-8123-123456789abc'; let options;
+    const f = fixture({confirm: async (_window, value) => {options = value; return {response: 1, checkboxChecked: false};}});
+    assert.equal((await f.invoke('CONTROL', {context, action: 'remove', taskIds: [id], deleteFiles: true, directory: '/untrusted'})).status, 'ok');
+    assert.equal(options.checkboxChecked, false); assert.equal(options.defaultId, 0); assert.equal(options.cancelId, 0);
+    const request = f.calls.find(value => value[0] === 'control')[1];
+    assert.equal(request.deleteFiles, false); assert.equal(request.directory, undefined); assert.deepEqual(request.taskIds, [id]);
+    assert.equal((await f.invoke('CONTROL', {context, action: 'remove', all: true})).reason, 'invalid-request');
+    await f.unregister();
+});
+
+test('only explicit native checkbox approval enables file removal and retired confirmation cannot mutate anything', async () => {
+    const id = '12345678-1234-4123-8123-123456789abc';
+    const f = fixture({confirm: async () => ({response: 1, checkboxChecked: true})});
+    await f.invoke('CONTROL', {context, action: 'remove', taskIds: [id]});
+    assert.equal(f.calls.find(value => value[0] === 'control')[1].deleteFiles, true); await f.unregister();
+    const gate = deferred(), old = fixture({confirm: () => gate.promise});
+    const request = old.invoke('CONTROL', {context, action: 'remove', taskIds: [id]}); await Promise.resolve();
+    await old.unregister(); gate.resolve({response: 1, checkboxChecked: true});
+    assert.equal((await request).status, 'cancelled'); assert.ok(!old.calls.some(value => value[0] === 'control'));
 });

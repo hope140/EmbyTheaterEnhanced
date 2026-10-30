@@ -13,3 +13,9 @@
 .downloadTask .downloadActions { margin-top: .75em; }
 .downloadTaskReason { opacity: .85; }
 .ete-download-management [hidden] { display: none !important; }
+.downloadToolbar { margin: .5em 0; }
+.downloadSelectAll, .downloadTaskSelection { display: inline-flex; align-items: center; gap: .45em; cursor: pointer; }
+.downloadTaskHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 1em; }
+.downloadTaskHeader h3 { flex: 1; }
+.downloadTaskSelection { flex-shrink: 0; }
+.downloadTask input[type="checkbox"], .downloadSelectAll input { width: 1.1em; height: 1.1em; accent-color: var(--theme-accent-color, #52b54b); }

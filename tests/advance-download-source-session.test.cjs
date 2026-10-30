@@ -206,3 +206,13 @@ test('metadata explicitly negotiates JSON and STRM sidecar size cannot reject ve
     await assert.rejects(f.session({}, {getConfig: () => ({resolver: {version: 1, enabled: false, rules: []}, runtime: {enabled: false}})}).acquire(),
         error => probe.reasonOf(error) === 'representation-changed' && error.downloadStage === 'probe-source');
 });
+
+test('disabled resolver original-download HTTP failure reports only bounded status and route kind', async t => {
+    const f = await fixture(t); f.state.downloadStatus = 500;
+    await assert.rejects(f.session({}, {getConfig: () => ({resolver: {version: 1, enabled: false, rules: []}, runtime: {enabled: false}})}).acquire(), error => {
+        assert.equal(probe.reasonOf(error), 'http-status'); assert.equal(error.httpStatus, 500);
+        assert.equal(error.downloadStage, 'probe-source'); assert.equal(error.downloadSourceKind, 'emby-original');
+        assert.ok(!error.message.includes('private-server-error')); return true;
+    });
+    assert.equal(f.services.length, 0, 'disabling the resolver never secretly invokes CD2');
+});

@@ -12,6 +12,11 @@ const keys = (value, allowed) => value && typeof value === 'object' && !Array.is
 const fileId = value => keys(value, ['dev', 'ino']) && /^\d+$/.test(value.dev) && /^\d+$/.test(value.ino);
 const plainFile = value => text(value) && path.basename(value) === value && !/[\\/:]/.test(value) && value !== '.' && value !== '..';
 const strong = value => value === null || typeof value === 'string' && value.length <= 1024 && /^"[\x21\x23-\x7e\x80-\xff]*"$/.test(value);
+const sourceKinds = ['direct-url', 'cd2-url', 'media-source-http', 'emby-original'];
+const stages = ['server-check', 'permission-check', 'item-check', 'version-check', 'resolve-source', 'probe-source', 'prepare', 'transfer'];
+function diagnostic(value) {return value === undefined || value === null || keys(value, ['stage', 'httpStatus', 'sourceKind']) &&
+    (value.stage === undefined || stages.includes(value.stage)) && (value.httpStatus === undefined || Number.isInteger(value.httpStatus) && value.httpStatus >= 100 && value.httpStatus <= 599) &&
+    (value.sourceKind === undefined || sourceKinds.includes(value.sourceKind));}
 const states = ['queued', 'downloading', 'paused', 'failed', 'complete'];
 // Longer than every generated final name. FAT can change the ID when rename
 // needs more directory-entry slots; reserve those slots from the first write.
@@ -20,19 +25,19 @@ const partialName = id => '.ete-media-' + id + '-' + '_'.repeat(80) + '.part';
 function sourceRecord(source) {
     const result = {identity: source.identity, total: source.total, etag: source.etag,
         extension: source.extension, title: source.title || 'Video', prefixSha256: source.prefixSha256 || null,
-        prefixBytes: source.prefixBytes || null};
+        prefixBytes: source.prefixBytes || null, ...(sourceKinds.includes(source.kind) ? {kind: source.kind} : {})};
     if (!validSource(result)) throw failure('task-invalid');
     return result;
 }
 function validSource(value) {
-    return keys(value, ['identity', 'total', 'etag', 'extension', 'title', 'prefixSha256', 'prefixBytes']) && hash(value.identity) &&
+    return (value?.kind === undefined || sourceKinds.includes(value.kind)) && keys(value, ['identity', 'total', 'etag', 'extension', 'title', 'prefixSha256', 'prefixBytes', 'kind']) && hash(value.identity) &&
         integer(value.total) && value.total > 0 && strong(value.etag) && /^(?:mkv|mp4|mov|webm|avi|mpg|ts|m2ts|flv|wmv)$/.test(value.extension) &&
         text(value.title) && (value.prefixSha256 === null ? value.prefixBytes === null : hash(value.prefixSha256) &&
             integer(value.prefixBytes) && value.prefixBytes > 0 && value.prefixBytes <= Math.min(65536, value.total));
 }
 function validTask(value) {
-    if (!keys(value, ['schemaVersion', 'id', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'serverAddress', 'directory', 'state', 'reason', 'source', 'partial', 'file']) ||
-        value.schemaVersion !== 1 || !uuid(value.id) || !['serverId', 'accountId', 'itemId', 'mediaSourceId'].every(key => text(value[key])) ||
+    if (!keys(value, ['schemaVersion', 'id', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'serverAddress', 'directory', 'state', 'reason', 'source', 'partial', 'file', 'diagnostic']) ||
+        !diagnostic(value.diagnostic) || value.schemaVersion !== 1 || !uuid(value.id) || !['serverId', 'accountId', 'itemId', 'mediaSourceId'].every(key => text(value[key])) ||
         !text(value.directory) || !path.isAbsolute(value.directory) || !states.includes(value.state) || !validSource(value.source) ||
         value.reason !== null && (typeof value.reason !== 'string' || !/^[a-z-]{1,64}$/.test(value.reason))) return false;
     try {const url = sourceUrl(value.serverAddress); if (url.search || url.hash) return false;} catch (_) {return false;}
@@ -111,7 +116,17 @@ function createStore(profileRoot) {
         for (const name of names) {try {tasks.push(get(name.slice(0, -5)));} catch (_) { /* Preserve unknown files; never infer ownership from a filename. */ }}
         return tasks;
     }
-    return Object.freeze({get, save, list});
+    function remove(id) {
+        const value = get(id);
+        if (!value) return;
+        const file = path.join(root, id + '.json'), before = inspect(file), rootId = identity(fs.statSync(root, {bigint: true}));
+        get(id); physical(root);
+        const now = inspect(file);
+        if (!now || !sameId(now, identity(before)) || now.size !== before.size || now.mtimeNs !== before.mtimeNs ||
+            !sameId(fs.statSync(root, {bigint: true}), rootId)) throw failure('task-store-changed');
+        fs.unlinkSync(file);
+    }
+    return Object.freeze({get, save, list, remove});
 }
 
 module.exports = {createStore, sourceRecord, identity, sameId, validTask, physical, partialName};

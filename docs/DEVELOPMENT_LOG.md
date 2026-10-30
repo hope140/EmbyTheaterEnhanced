@@ -1456,3 +1456,12 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 同一源码的[独立验收包41031006772](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772)已success，manual-windows-test-package耗时22m21s，编译／验证Host、完整构建与上传步骤通过，未重复派发。API确认产物`12965884825`、名称`ete-test-win-x64-db92cc53d00ba6a76844bc51c384abd3f5594034-41031006772-1`、164697370字节、expired=false，workflow_run.head_sha与本次完整源码一致；保留至`2026-10-31T09:28:50Z`。[临时下载链接](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41031006772/artifacts/12965884825)。API给出的ZIP摘要为`sha256:16531e675c4c01f210672afad6ae08022ea235715163662646b11b69e20fb3e8`，不是独立计算的ZIP或安装器摘要。
 
 本次新产物正常`GET actions/artifacts/12965884825/zip`仅尝试一次，返回Forbidden、0字节；固定错误已记录，未重试／换通道，也没有重试先前受拒的旧日志或旧产物。不是自动审批拒绝；构建／上传本身成功。根package.json固定0.4.6，按构建脚本预期文件名为`EmbyTheaterEnhanced-0.4.6-test-db92cc53d00b-41031006772-1-win-x64-setup.exe`，但未回读包内实际文件名、PE版本、安装器SHA或来源模块清单，独立验包仍受阻。未安装／启动客户端，真实服务、原生目录选择器、打开文件夹、用户重开续传及可见本地播放仍由使用者手动验收。
+
+
+## 2026-10-30 — 下载管理逐项／批量控制和失联文件
+
+修正每次固定要求选目录的提示；新增HTTP状态／来源类别与新任务实际取源记录，关闭解析仍不调用CD2。用户提供的播放统计明确命中已下载文件；这是用户截图证据，不是本环境GUI实测，也不能反推下载来源。原Emby下载API失败的具体HTTP码和服务端原因尚未取得。
+
+新控制对当前账户明确任务ID串行执行，暂停／删除先阻止重新调度，取消并收尾传输／预检；手动暂停跨重启保持，重复预检被退休，删除后旧查询不重建任务。默认原生确认仅清记录，保留完整和未完成文件；Windows显式不默认勾选的永久删除，经固定助手锁定祖先／源句柄并校验身份、时间、长度、链接数、全文件SHA后执行。只有自建临时文件参与测试，不操作用户目录；非Windows不提供path删除兜底。后台文件检查有界异步合并，磁盘不可用不等同永久缺失、不自动清记录，恢复后重查。
+
+首轮旧DOM夹具缺setAttribute导致3项失败，补充实际控件所需属性后通过。新增删除回归发现完成receipt仍保留发布阶段partial信息，最初误拒已完成任务；改为只在没有完整file记录时阻止未确认发布后通过，未放松文件身份／全SHA守卫。最终下载定向107项为101 pass／0 fail／6 Windows skip；当前Linux .NET下C#编译通过，未调用Win32。完整公开、材料、Windows及新验收包将在固定提交后执行并记录。

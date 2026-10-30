@@ -6,7 +6,7 @@ const {createManager} = require('./manager');
 const probe = require('./source-probe');
 const CHANNELS = Object.freeze({START: 'enhanced-download-start', ATTACH: 'enhanced-download-attach',
     DETACH: 'enhanced-download-detach',
-    OPEN_FOLDER: 'enhanced-download-open-folder', STATUS: 'enhanced-download-status', DIRECTORY: 'enhanced-download-directory', RETRY: 'enhanced-download-retry',
+    CONTROL: 'enhanced-download-control', OPEN_FOLDER: 'enhanced-download-open-folder', STATUS: 'enhanced-download-status', DIRECTORY: 'enhanced-download-directory', RETRY: 'enhanced-download-retry',
     LOOKUP: 'enhanced-download-lookup', CANCEL_LOOKUP: 'enhanced-download-lookup-cancel', PROGRESS: 'enhanced-download-progress'});
 function context(value) {
     if (!value || ['serverId', 'accountId'].some(key => typeof value[key] !== 'string' || !/^[A-Za-z0-9_-]{1,256}$/.test(value[key])) ||
@@ -75,9 +75,9 @@ function register(options) {
     handle(CHANNELS.DETACH, async () => {await manager.pauseAll(); return {status: 'ok'};});
     handle(CHANNELS.START, request => manager.enqueue({...context(request.context), ...media(request),
         displayTitle: typeof request.title === 'string' ? request.title.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 256) : undefined}));
-    handle(CHANNELS.STATUS, request => {
+    handle(CHANNELS.STATUS, async request => {
         const current = context(request.context); manager.attach(current);
-        return {status: 'ok', directory: store.read(), tasks: manager.list(current)};
+        return {status: 'ok', directory: store.read(), tasks: await manager.status(current)};
     });
     handle(CHANNELS.DIRECTORY, async request => {
         context(request.context);
@@ -96,6 +96,35 @@ function register(options) {
         try {result = await options.shell.openPath(root);} catch (_) {throw probe.failure('folder-open-failed');}
         if (result) throw probe.failure('folder-open-failed');
         return {status: 'ok'};
+    });
+    let confirmingRemoval = false;
+    handle(CHANNELS.CONTROL, async request => {
+        const current = context(request.context);
+        if (!['pause', 'resume', 'remove'].includes(request.action) || request.all !== undefined && typeof request.all !== 'boolean' ||
+            request.action === 'remove' && request.all || !request.all && (!Array.isArray(request.taskIds) || !request.taskIds.length || request.taskIds.length > 1024 ||
+                request.taskIds.some(id => typeof id !== 'string' || !/^(?:preflight-)?[a-f0-9-]{36}$/.test(id)) || new Set(request.taskIds).size !== request.taskIds.length)) throw probe.failure('invalid-request');
+        manager.attach(current);
+        const ids = manager.targets(current, request);
+        if (!ids.length) return {status: 'ok', results: []};
+        let deleteFiles = false;
+        if (request.action === 'remove') {
+            if (confirmingRemoval) throw probe.failure('request-pending');
+            confirmingRemoval = true;
+            const controller = new AbortController(); dialogs.add(controller);
+            const nativeDelete = options.fileDeletionAvailable ?? process.platform === 'win32';
+            try {
+                const result = await options.dialog.showMessageBox(options.getBrowserWindow?.(), {
+                    type: 'question', title: '删除下载任务', message: '删除选中的 ' + ids.length + ' 项下载任务？',
+                    detail: '默认仅删除任务记录，保留已下载和未完成文件。正在下载的任务会先停止。' +
+                        (nativeDelete ? '\n勾选下方选项会永久删除本任务核验通过的文件，不会进入回收站。文件已变化或目录不可用时会保留记录。' : ''),
+                    buttons: ['取消', '确认删除'], defaultId: 0, cancelId: 0, noLink: true,
+                    ...(nativeDelete ? {checkboxLabel: '同时永久删除本任务文件（无法恢复）', checkboxChecked: false} : {})
+                });
+                if (controller.signal.aborted || !manager.current(current) || result.response !== 1) return {status: 'cancelled'};
+                deleteFiles = nativeDelete && result.checkboxChecked === true;
+            } finally {confirmingRemoval = false; dialogs.delete(controller);}
+        }
+        return manager.control(current, {action: request.action, taskIds: ids, all: request.all === true, deleteFiles});
     });
     handle(CHANNELS.RETRY, request => manager.retry(context(request.context), request.taskId));
     handle(CHANNELS.LOOKUP, request => {

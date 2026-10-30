@@ -65,11 +65,12 @@ async function fixture(t) {
         const json = value => {if (state.requireJsonAccept && req.headers.accept !== 'application/json') {res.end('<xml>metadata</xml>'); return;} res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value));};
         if (url.pathname === '/base/System/Info/Public') return json({Id: state.serverId});
         if (url.pathname === '/base/Users/account') return json({Id: 'account', Policy: {EnableContentDownloading: state.downloadAllowed}});
-        if (url.pathname === '/base/Users/account/Items/item') return json({Id: 'item', ServerId: 'server', Name: 'Synthetic Movie', MediaType: 'Video', CanDownload: state.itemDownloadAllowed !== false,
+        if (/^\/base\/Users\/account\/Items\/item[123]?$/.test(url.pathname)) return json({Id: url.pathname.split('/').at(-1), ServerId: 'server', Name: 'Synthetic Movie', MediaType: 'Video', CanDownload: state.itemDownloadAllowed !== false,
             Path: state.itemPath || '/server/movie.mkv.strm', MediaSources: state.multiple ? [{Id: 'one'}, {Id: 'two'}] : [{Id: state.sourceId,
                 Container: 'mkv', Size: state.sizeHint ?? state.body.length, Path: state.sourcePath || 'X:\\Media\\movie.mkv',
                 RequiredHttpHeaders: state.requiredHeaders}]});
-        if (url.pathname === '/base/Items/item/Download') {
+        if (/^\/base\/Items\/item[123]?\/Download$/.test(url.pathname)) {
+            if (state.downloadStatus) {res.writeHead(state.downloadStatus); res.end('private-server-error'); return;}
             if (!req.headers.range && state.redirectOnTransfer) {state.redirectOnTransfer = false; state.redirect = true;}
             if (state.redirect) {res.writeHead(302, {location: cdn + '/direct?signature=redirected'}); res.end(); return;}
             if (state.pointer) {const pointer = Buffer.from('https://example.invalid/movie.mkv\n'); res.writeHead(200, {'content-length': pointer.length}); res.end(pointer); return;}

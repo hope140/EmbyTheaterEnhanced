@@ -119,3 +119,12 @@ test('actual multi-select menu also hides device sync and handles an otherwise e
     assert.throws(() => patch.patchMultiSelect('unrelated'));
     assert.throws(() => patch.patchMultiSelect(base + base));
 });
+
+test('remembered-directory download uses a neutral progress message and HTTP errors identify only bounded status/source', async () => {
+    const f = fixture(channel => ({status: channel === 'enhanced-download-start' ? 'error' : 'ok', reason: 'http-status', stage: 'probe-source',
+        diagnostic: {httpStatus: 500, sourceKind: 'emby-original'}}));
+    await f.result.begin(f.api, {Id: 'item', Name: 'Fixture', ServerId: 'server'}, 'edition');
+    assert.ok(f.messages.includes('正在准备下载…'));
+    assert.ok(!f.messages.some(value => value.includes('请选择或确认下载目录')));
+    assert.match(f.messages.at(-1), /HTTP 500/); assert.match(f.messages.at(-1), /Emby 下载接口/);
+});

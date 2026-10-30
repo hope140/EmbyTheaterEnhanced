@@ -3,9 +3,17 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
     var started = false, timer = null, lastIdentity = null, sequence = 0;
     var lastStates = Object.create(null), restarts = Object.create(null);
     var channels = {start: 'enhanced-download-start', attach: 'enhanced-download-attach', detach: 'enhanced-download-detach', status: 'enhanced-download-status',
-        openFolder: 'enhanced-download-open-folder', directory: 'enhanced-download-directory', retry: 'enhanced-download-retry', lookup: 'enhanced-download-lookup',
+        control: 'enhanced-download-control', openFolder: 'enhanced-download-open-folder', directory: 'enhanced-download-directory', retry: 'enhanced-download-retry', lookup: 'enhanced-download-lookup',
         cancel: 'enhanced-download-lookup-cancel', progress: 'enhanced-download-progress'};
     var reasons = {
+        'user-paused': '已手动暂停，点击继续可恢复；重开客户端也会保持暂停。',
+        'directory-changed': '下载目录的身份已变化，原记录已保留。',
+        'file-missing': '未找到文件，可能已被移动或删除；可选择仅删除记录。',
+        'file-changed': '文件已变化，未删除或接管此文件；可选择仅删除记录。',
+        'file-unavailable': '暂时无法读取文件，记录已保留，请检查磁盘和权限。',
+        'file-delete-unavailable': '此处暂时无法安全删除文件，记录已保留；可选择仅删除记录。',
+        'file-delete-unconfirmed': '文件正被使用、校验未通过或删除结果未确认，记录已保留；请检查后重试或仅删除记录。',
+        'request-pending': '已有操作正在等待处理，请稍后重试。',
         'invalid-metadata': '服务器返回的资料不是有效 JSON，无法核对下载权限和来源。',
         'metadata-redirect': '服务器资料接口发生跳转，请检查服务器地址或代理配置。',
         'network-failed': '连接下载来源失败，请检查网络、证书和服务器地址。',
@@ -33,6 +41,12 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
     var stages = {'server-check': '服务器核验', 'permission-check': '账户权限', 'item-check': '视频资料',
         'version-check': '媒体版本', 'resolve-source': '解析来源', 'probe-source': '影片本体验证', prepare: '准备下载'};
     function message(reason) {return reasons[reason] || '下载未完成' + (typeof reason === 'string' && /^[a-z-]{1,64}$/.test(reason) ? '（' + reason + '）' : '') + '，请在下载管理中重试。';}
+    var sources = {'direct-url': 'CD2 直链', 'cd2-url': 'CD2 HTTP', 'media-source-http': '媒体源 HTTP', 'emby-original': 'Emby 下载接口'};
+    function detail(value) {
+        var d = value.diagnostic || {}, stage = value.stage || d.stage;
+        return (stages[stage] ? stages[stage] + '：' : '') + message(value.reason) +
+            (d.httpStatus ? '（HTTP ' + d.httpStatus + '）' : '') + (sources[d.sourceKind] ? ' 来源：' + sources[d.sourceKind] : '');
+    }
     function context(api) {
         try {
             if (!api) return null;
@@ -84,11 +98,11 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         start();
         var value = context(api);
         if (!value || !item || item.ServerId && item.ServerId !== value.serverId) {toast('请登录当前视频所在服务器后再下载。'); return;}
-        toast('请选择或确认下载目录，随后核对来源…');
+        toast('正在准备下载…');
         var result = await invoke('start', {context: value, itemId: item.Id, mediaSourceId: mediaSourceId, title: item.Name});
         if (result.status === 'queued') toast('已加入下载任务，可在设置中的“下载管理”查看进度。');
         else if (result.status === 'downloaded') toast('已有完整下载，可在下载管理中查看位置。');
-        else if (result.status === 'error') toast((stages[result.stage] ? stages[result.stage] + '：' : '') + message(result.reason));
+        else if (result.status === 'error') toast(detail(result));
         return result;
     }
     async function localSource(api, item, source, signal) {
@@ -110,8 +124,13 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
             return JSON.stringify(context(current())) === JSON.stringify(value) ? result : {status: 'cancelled'};
         });
     }
-    return {start: start, begin: begin, localSource: localSource, message: message, stage: function (value) {return stages[value] || '准备下载';},
+    return {start: start, begin: begin, localSource: localSource, message: message, detail: detail, sourceKind: function (value) {return sources[value] || '旧记录未保存下载来源';}, stage: function (value) {return stages[value] || '准备下载';},
         status: function () {return settings('status');}, directory: function () {return settings('directory');},
+        pause: function (id) {return settings('control', {action: 'pause', taskIds: [id]});},
+        resume: function (id) {return settings('control', {action: 'resume', taskIds: [id]});},
+        pauseAll: function () {return settings('control', {action: 'pause', all: true});},
+        resumeAll: function () {return settings('control', {action: 'resume', all: true});},
+        remove: function (ids) {return settings('control', {action: 'remove', taskIds: ids});},
         openFolder: function (id) {return settings('openFolder', id ? {taskId: id} : {});},
         retry: function (id) {return settings('retry', {taskId: id});}};
 });
