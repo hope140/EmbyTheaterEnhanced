@@ -12,12 +12,12 @@ const keys = (value, allowed) => value && typeof value === 'object' && !Array.is
 const fileId = value => keys(value, ['dev', 'ino']) && /^\d+$/.test(value.dev) && /^\d+$/.test(value.ino);
 const plainFile = value => text(value) && path.basename(value) === value && !/[\\/:]/.test(value) && value !== '.' && value !== '..';
 const strong = value => value === null || typeof value === 'string' && value.length <= 1024 && /^"[\x21\x23-\x7e\x80-\xff]*"$/.test(value);
-const sourceKinds = ['direct-url', 'cd2-url', 'media-source-http', 'emby-original'];
-const stages = ['server-check', 'permission-check', 'item-check', 'version-check', 'resolve-source', 'probe-source', 'prepare', 'transfer'];
+const sourceKinds = ['direct-url', 'cd2-url', 'media-source-http', 'emby-original', 'emby-static'];
+const stages = ['server-check', 'permission-check', 'item-check', 'version-check', 'resolve-source', 'probe-source', 'prepare', 'transfer', 'collection-list'];
 function diagnostic(value) {return value === undefined || value === null || keys(value, ['stage', 'httpStatus', 'sourceKind']) &&
     (value.stage === undefined || stages.includes(value.stage)) && (value.httpStatus === undefined || Number.isInteger(value.httpStatus) && value.httpStatus >= 100 && value.httpStatus <= 599) &&
     (value.sourceKind === undefined || sourceKinds.includes(value.sourceKind));}
-const states = ['queued', 'downloading', 'paused', 'failed', 'complete'];
+const states = ['queued', 'checking', 'downloading', 'paused', 'failed', 'complete'];
 // Longer than every generated final name. FAT can change the ID when rename
 // needs more directory-entry slots; reserve those slots from the first write.
 const partialName = id => '.ete-media-' + id + '-' + '_'.repeat(80) + '.part';
@@ -36,11 +36,18 @@ function validSource(value) {
             integer(value.prefixBytes) && value.prefixBytes > 0 && value.prefixBytes <= Math.min(65536, value.total));
 }
 function validTask(value) {
-    if (!keys(value, ['schemaVersion', 'id', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'serverAddress', 'directory', 'state', 'reason', 'source', 'partial', 'file', 'diagnostic']) ||
-        !diagnostic(value.diagnostic) || value.schemaVersion !== 1 || !uuid(value.id) || !['serverId', 'accountId', 'itemId', 'mediaSourceId'].every(key => text(value[key])) ||
-        !text(value.directory) || !path.isAbsolute(value.directory) || !states.includes(value.state) || !validSource(value.source) ||
+    if (!keys(value, ['schemaVersion', 'id', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'serverAddress', 'directory', 'state', 'reason', 'source', 'partial', 'file', 'diagnostic', 'requestTitle']) ||
+        !diagnostic(value.diagnostic) || ![1, 2].includes(value.schemaVersion) || !uuid(value.id) || !['serverId', 'accountId', 'itemId'].every(key => text(value[key])) ||
+        !text(value.directory) || !path.isAbsolute(value.directory) || !states.includes(value.state) ||
         value.reason !== null && (typeof value.reason !== 'string' || !/^[a-z-]{1,64}$/.test(value.reason))) return false;
     try {const url = sourceUrl(value.serverAddress); if (url.search || url.hash) return false;} catch (_) {return false;}
+    // Schema 2 is only a persistent request, not a verified media receipt. It
+    // cannot own a partial/completed file or enter the transfer without a fresh
+    // permission/source probe and atomic promotion to schema 1.
+    if (value.schemaVersion === 2) return value.source === null && value.partial === null && value.file === null &&
+        text(value.requestTitle) && (value.mediaSourceId === null || text(value.mediaSourceId)) &&
+        ['queued', 'checking', 'paused', 'failed'].includes(value.state);
+    if (!validSource(value.source) || !text(value.mediaSourceId) || value.requestTitle !== undefined || value.state === 'checking') return false;
     if (value.partial !== null) {
         const p = value.partial;
         if (!keys(p, ['name', 'rootId', 'fileId', 'offset', 'sha256', 'messageComplete', 'publishing', 'publishMethod']) ||

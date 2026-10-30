@@ -9,12 +9,13 @@ const {createSession} = require('./source-session');
 const {download} = require('./transfer');
 const {createInspector} = require('./file-state');
 const {createDeleter} = require('./deletion');
+const {enumerate} = require('./collection');
 const owner = value => value.serverId + ':' + value.accountId;
 const sameMedia = (a, b) => owner(a) === owner(b) && a.itemId === b.itemId && a.mediaSourceId === b.mediaSourceId;
-const summary = task => ({id: task.id, title: task.source.title, directory: task.directory, state: task.state,
-    reason: task.reason, bytes: task.state === 'complete' ? task.source.total : task.partial?.offset || 0,
-    total: task.source.total, fileName: task.file?.name || null,
-    targetPath: task.file ? path.join(task.directory, task.file.name) : null, sourceKind: task.source.kind || null, diagnostic: task.diagnostic || null});
+const summary = task => ({id: task.id, title: task.source?.title || task.requestTitle, directory: task.directory, state: task.state,
+    reason: task.reason, bytes: task.state === 'complete' ? task.source?.total || 0 : task.partial?.offset || 0,
+    total: task.source?.total || null, fileName: task.file?.name || null,
+    targetPath: task.file ? path.join(task.directory, task.file.name) : null, sourceKind: task.source?.kind || null, diagnostic: task.diagnostic || null});
 
 function completedFile(task) {
     if (task.state !== 'complete' || !task.file) return null;
@@ -37,13 +38,13 @@ function createManager(options) {
     const pendingControls = new Set();
     const tasks = new Map(store.list().map(task => [task.id, task]));
     const allTasks = () => [...tasks.values()];
-    const preparations = new Set();
+    const preparations = new Set(), collections = new Map();
     // Preflight failures have no verified source/receipt and never grant playback authority.
     // Keep bounded UI diagnostics for this process, without credentials or source URLs.
     const attempts = new Map();
     const changedRestarts = new Map();
     let credentials, credentialHash, active, closing = false, closingPromise;
-    for (const task of allTasks()) if (['queued', 'downloading'].includes(task.state)) tasks.set(task.id, store.save({...task, state: 'paused', reason: 'app-closed'}));
+    for (const task of allTasks()) if (['queued', 'checking', 'downloading'].includes(task.state)) tasks.set(task.id, store.save({...task, state: 'paused', reason: 'app-closed'}));
     function visible(task) {return !!credentials && owner(task) === owner(credentials);}
     function emit(task, progress) {if (visible(task)) {try {options.onChange?.({...summary(task), ...(progress || {})});} catch (_) {}}}
     function update(id, patch) {
@@ -53,6 +54,12 @@ function createManager(options) {
     }
     function list(context) {return [...allTasks().filter(task => owner(task) === owner(context)).map(task => ({...summary(task), busy: controlActions.get(task.id) || null})),
         ...[...attempts.values()].filter(task => owner(task) === owner(context)).map(({itemId, mediaSourceId, serverId, accountId, ...value}) => ({...value, busy: controlActions.get(value.id) || null}))];}
+    function promote(task, source, state) {
+        const next = {...task, schemaVersion: 1, mediaSourceId: source.mediaSourceId, source: records.sourceRecord(source),
+            state, reason: null, diagnostic: null, partial: null, file: null};
+        delete next.requestTitle;
+        const saved = store.save(next); tasks.set(saved.id, saved); emit(saved); return saved;
+    }
     function kick() {
         if (closing || active || !credentials) return;
         const task = allTasks().find(value => value.state === 'queued' && visible(value) && !blocked.has(value.id));
@@ -62,10 +69,11 @@ function createManager(options) {
         operation.done = (async () => {
             let session;
             try {
-                update(task.id, {state: 'downloading', reason: task.reason});
-                session = makeSession({...operation.credential, itemId: task.itemId, mediaSourceId: task.mediaSourceId});
+                update(task.id, {state: task.source ? 'downloading' : 'checking', reason: task.reason});
+                session = makeSession({...operation.credential, itemId: task.itemId, ...(!task.source ? {expectedItemType: 'Episode'} : {}), ...(task.mediaSourceId ? {mediaSourceId: task.mediaSourceId} : {})});
                 const source = await session.acquire(operation.controller.signal);
                 if (closing || operation.controller.signal.aborted) throw probe.failure('cancelled');
+                if (!task.source) promote(task, source, 'downloading');
                 await transfer({session, source, directory: task.directory, signal: operation.controller.signal,
                     journal: {get: () => store.get(task.id), update: patch => update(task.id, patch)},
                     onProgress: progress => emit(store.get(task.id), progress),
@@ -132,7 +140,21 @@ function createManager(options) {
             finally {await session?.close();}
             if (closing || operation.controller.signal.aborted) return {status: 'cancelled'};
             const media = {...context, mediaSourceId: source.mediaSourceId};
-            const previous = allTasks().find(task => sameMedia(task, media) && (task.state !== 'complete' || completedFile(task) &&
+            let previous = allTasks().find(task => !task.source && owner(task) === owner(context) && task.itemId === context.itemId &&
+                (!task.mediaSourceId || task.mediaSourceId === source.mediaSourceId));
+            if (previous) {
+                blocked.add(previous.id);
+                try {
+                    await stop(previous.id, 'user-paused', operation);
+                    if (closing || operation.controller.signal.aborted) return {status: 'cancelled'};
+                    const currentTask = tasks.get(previous.id);
+                    if (currentTask && !currentTask.source) {
+                        const saved = promote(store.get(previous.id), source, 'queued'); attempts.delete(attempt.id);
+                        return {status: 'queued', task: summary(saved)};
+                    }
+                } finally {blocked.delete(previous.id); kick();}
+            }
+            previous = allTasks().find(task => sameMedia(task, media) && (task.state !== 'complete' || completedFile(task) &&
                 task.source.identity === source.identity && task.source.etag === source.etag && task.source.prefixSha256 === source.prefixSha256));
             if (previous) {
                 changedRestarts.delete(previous.id);
@@ -158,6 +180,52 @@ function createManager(options) {
             }
             releaseNetwork(); preparations.delete(operation);
         }
+    }
+    async function enqueueCollection(context) {
+        if (closing) return {status: 'cancelled'};
+        attach(context);
+        const key = owner(context) + ':' + context.itemId;
+        if (collections.has(key)) return {status: 'error', reason: 'request-pending'};
+        const operation = {controller: new AbortController(), networkDone: Promise.resolve(), owner: owner(context), itemId: context.itemId};
+        collections.set(key, operation); preparations.add(operation);
+        let release = () => {}, added = 0, stage = 'prepare';
+        try {
+            const selected = await options.selectDirectory({signal: operation.controller.signal});
+            if (closing || operation.controller.signal.aborted || selected.status !== 'selected') return {status: 'cancelled'};
+            operation.networkDone = new Promise(resolve => {release = resolve;});
+            let collection; stage = 'collection-list';
+            try {collection = await (options.enumerateCollection || enumerate)(context, operation.controller.signal, options.sourceDependencies);}
+            finally {release();}
+            if (closing || operation.controller.signal.aborted || !current(context)) return {status: 'cancelled'};
+            const exists = episode => allTasks().some(task => owner(task) === owner(context) && task.itemId === episode.id &&
+                (!episode.mediaSourceId || !task.mediaSourceId || task.mediaSourceId === episode.mediaSourceId));
+            const fresh = collection.episodes.filter(episode => !exists(episode));
+            if (tasks.size + fresh.length > 1024) throw probe.failure('task-limit');
+            if (!fresh.length) return {status: 'queued', added: 0, reused: collection.episodes.length, total: collection.episodes.length};
+            if (!await options.confirmCollection({title: collection.title, type: collection.type, count: fresh.length,
+                reused: collection.episodes.length - fresh.length, directory: selected.directory}, operation.controller.signal)) return {status: 'cancelled'};
+            if (closing || operation.controller.signal.aborted || !current(context)) return {status: 'cancelled'};
+            stage = 'prepare';
+            for (const episode of collection.episodes) {
+                if (exists(episode)) continue;
+                if (tasks.size >= 1024) throw probe.failure('task-limit');
+                let task;
+                try {task = store.save({schemaVersion: 2, id: randomUUID(), serverId: context.serverId, accountId: context.accountId,
+                    itemId: episode.id, mediaSourceId: episode.mediaSourceId || null, serverAddress: context.serverAddress,
+                    directory: selected.directory, state: 'queued', reason: null, requestTitle: episode.title,
+                    source: null, partial: null, file: null});}
+                catch (error) {throw probe.failure(probe.reasonOf(error) === 'source-unavailable' ? 'task-store-unavailable' : probe.reasonOf(error));}
+                tasks.set(task.id, task); added++;
+                for (const [id, attempt] of attempts) if (owner(attempt) === owner(context) && attempt.itemId === episode.id &&
+                    (!episode.mediaSourceId || !attempt.mediaSourceId || episode.mediaSourceId === attempt.mediaSourceId)) attempts.delete(id);
+            }
+            kick();
+            return {status: 'queued', added, reused: collection.episodes.length - added, total: collection.episodes.length};
+        } catch (error) {
+            if (operation.controller.signal.aborted) return {status: 'cancelled', added};
+            const reason = /^advance-download-(directory-invalid|directory-unavailable|settings-invalid|settings-save-failed)$/.exec(error?.message || '')?.[1] || probe.reasonOf(error);
+            return {status: 'error', added, reason, diagnostic: diagnostic(error, stage)};
+        } finally {release(); collections.delete(key); preparations.delete(operation); kick();}
     }
     function diagnostic(error, fallback = 'transfer') {
         return {stage: error.downloadStage || fallback,
@@ -227,16 +295,16 @@ function createManager(options) {
             new Set(request.taskIds).size !== request.taskIds.length || request.taskIds.some(id => !available.some(task => task.id === id))) throw probe.failure('task-unavailable');
         return request.taskIds;
     }
-    async function stop(id, reason) {
+    async function stop(id, reason, except) {
         const target = tasks.get(id);
-        for (const operation of preparations) if (operation.attempt?.id === id || target && operation.owner === owner(target) && operation.itemId === target.itemId &&
-            (!operation.mediaSourceId || operation.mediaSourceId === target.mediaSourceId)) {
+        for (const operation of preparations) if (operation !== except && (operation.attempt?.id === id || target && operation.owner === owner(target) && operation.itemId === target.itemId &&
+            (!operation.mediaSourceId || !target.mediaSourceId || operation.mediaSourceId === target.mediaSourceId))) {
             operation.preserveAttempt = operation.attempt?.id === id && reason === 'user-paused';
             operation.controller.abort(); await operation.networkDone;
         }
         if (active?.id === id) {active.pauseReason = reason === 'removing' ? 'user-paused' : reason; active.controller.abort(); await active.done;}
         const task = tasks.get(id);
-        if (task && ['queued', 'downloading'].includes(task.state)) update(id, {state: 'paused', reason: reason === 'removing' ? 'user-paused' : reason, diagnostic: null});
+        if (task && ['queued', 'checking', 'downloading'].includes(task.state)) update(id, {state: 'paused', reason: reason === 'removing' ? 'user-paused' : reason, diagnostic: null});
     }
     async function operate(context, request, signal) {
         if (signal.aborted || !current(context)) return {status: 'cancelled'};
@@ -289,7 +357,7 @@ function createManager(options) {
         if (!closingPromise) {closing = true; lifetime.abort(); inspector.close(); closingPromise = pauseAll().then(() => controlTail);}
         return closingPromise;
     }
-    return Object.freeze({attach, enqueue, list, retry, localSource, pauseAll, close, current, targets, control, status,
+    return Object.freeze({attach, enqueue, enqueueCollection, list, retry, localSource, pauseAll, close, current, targets, control, status,
         directory(context, id) {return list(context).find(task => task.id === id)?.directory || null;},
         idle: async () => {while (active) await active.done;}});
 }

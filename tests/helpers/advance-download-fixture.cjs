@@ -65,9 +65,23 @@ async function fixture(t) {
         const json = value => {if (state.requireJsonAccept && req.headers.accept !== 'application/json') {res.end('<xml>metadata</xml>'); return;} res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value));};
         if (url.pathname === '/base/System/Info/Public') return json({Id: state.serverId});
         if (url.pathname === '/base/Users/account') return json({Id: 'account', Policy: {EnableContentDownloading: state.downloadAllowed}});
+        if (url.pathname === '/base/Users/account/Items' && state.catalogues) {
+            const list = state.catalogues[url.searchParams.get('ParentId')] || [];
+            const start = Number(url.searchParams.get('StartIndex') || 0), limit = Number(url.searchParams.get('Limit') || 100);
+            return json({Items: list.slice(start, start + limit), TotalRecordCount: list.length});
+        }
+        if (state.library && url.pathname.startsWith('/base/Users/account/Items/')) {
+            const item = state.library[url.pathname.split('/').at(-1)];
+            if (item) return json(item);
+        }
+        if (state.staticAvailable && /^\/base\/Videos\/[A-Za-z0-9_-]+\/stream(?:\.mkv)?$/.test(url.pathname)) {
+            if (url.searchParams.get('Static') !== 'true' || !url.searchParams.get('mediaSourceId')) {res.writeHead(400); res.end(); return;}
+            if (state.staticRedirect) {res.writeHead(302, {location: cdn + '/direct?signature=static'}); res.end(); return;}
+            return video(req, res);
+        }
         if (/^\/base\/Users\/account\/Items\/item[123]?$/.test(url.pathname)) return json({Id: url.pathname.split('/').at(-1), ServerId: 'server', Name: 'Synthetic Movie', MediaType: 'Video', CanDownload: state.itemDownloadAllowed !== false,
             Path: state.itemPath || '/server/movie.mkv.strm', MediaSources: state.multiple ? [{Id: 'one'}, {Id: 'two'}] : [{Id: state.sourceId,
-                Container: 'mkv', Size: state.sizeHint ?? state.body.length, Path: state.sourcePath || 'X:\\Media\\movie.mkv',
+                Container: state.container ?? 'mkv', Size: state.sizeHint ?? state.body.length, Path: state.sourcePath || 'X:\\Media\\movie.mkv',
                 RequiredHttpHeaders: state.requiredHeaders}]});
         if (/^\/base\/Items\/item[123]?\/Download$/.test(url.pathname)) {
             if (state.downloadStatus) {res.writeHead(state.downloadStatus); res.end('private-server-error'); return;}

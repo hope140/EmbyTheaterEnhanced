@@ -4,6 +4,43 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const probe = require('../src/electronapp/enhanced/advance-download/source-probe');
 const {fixture, media, token} = require('./helpers/advance-download-fixture.cjs');
+const disabledResolver = () => ({resolver: {version: 1, enabled: false, rules: []}, runtime: {enabled: false}});
+
+test('disabled resolver falls back from a refused Download route to fresh static-original video and strips redirect credentials', async t => {
+    for (const redirect of [false, true]) {
+        const f = await fixture(t);
+        Object.assign(f.state, {downloadStatus: 502, staticAvailable: true, staticRedirect: redirect});
+        const session = f.session({}, {getConfig: disabledResolver}), first = await session.acquire();
+        assert.equal(first.kind, 'emby-static'); assert.equal(first.total, media.length); assert.equal(first.resumeVerified, true);
+        assert.equal(f.services.length, 0);
+        const staticCalls = f.calls.filter(call => call.url.startsWith('/base/Videos/'));
+        assert.equal(staticCalls.length, redirect ? 1 : 2);
+        assert.ok(staticCalls.every(call => new URL(call.url, f.emby).searchParams.get('Static') === 'true' &&
+            new URL(call.url, f.emby).searchParams.get('mediaSourceId') === 'source' && call.headers['x-emby-token'] === token && call.headers['user-agent'] === 'EmbyTheaterEnhanced'));
+        if (redirect) assert.ok(f.calls.filter(call => call.url.startsWith('/direct')).every(call => !call.headers['x-emby-token'] && call.headers['user-agent'] === 'EmbyTheaterEnhanced'));
+        assert.ok(f.calls.every(call => !/PlaybackInfo|PlaySession|Sessions|[Tt]ranscod/.test(call.url)));
+        f.state.etag = '"changed-static"';
+        await assert.rejects(session.acquire(), error => probe.reasonOf(error) === 'representation-changed');
+    }
+});
+
+test('static fallback still rejects playlists and permission denial while full-response-only media cannot claim resume', async t => {
+    const f = await fixture(t);
+    Object.assign(f.state, {downloadStatus: 502, staticAvailable: true, body: Buffer.from('#EXTM3U\n#EXTINF:6\nsegment.ts\n')});
+    await assert.rejects(f.session({}, {getConfig: disabledResolver}).acquire(), error => probe.reasonOf(error) === 'segmented-source');
+    f.state.body = media; f.state.ranges = false;
+    assert.equal((await f.session({}, {getConfig: disabledResolver}).acquire()).resumeVerified, false);
+    f.state.downloadAllowed = false; const before = f.calls.length;
+    await assert.rejects(f.session({}, {getConfig: disabledResolver}).acquire(), error => probe.reasonOf(error) === 'download-not-permitted');
+    assert.equal(f.calls.length - before, 2);
+});
+
+test('sidecar container metadata uses the extensionless static route and still requires a recognized video body', async t => {
+    const f = await fixture(t); Object.assign(f.state, {downloadStatus: 502, staticAvailable: true, container: 'strm'});
+    const result = await f.session({}, {getConfig: disabledResolver}).acquire();
+    assert.equal(result.kind, 'emby-static'); assert.equal(result.extension, 'mkv');
+    assert.ok(f.calls.some(call => call.url.startsWith('/base/Videos/item/stream?')));
+});
 
 test('main-fetched permissions, real resolver and production CD2 service lead to verified HTTP original bytes', async t => {
     const f = await fixture(t);

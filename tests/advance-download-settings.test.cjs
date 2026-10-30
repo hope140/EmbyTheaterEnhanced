@@ -35,6 +35,8 @@ test('download settings render text, change default without rewriting task direc
     await f.controller.onResume();
     assert.equal(f.controller.rows.get('task').name.textContent, '<img src=x onerror=alert(1)>');
     assert.equal(f.controller.rows.get('task').name.children.length, 0);
+    assert.equal(f.controller.rows.get('task').control.textContent, '重试');
+    assert.equal(f.elements['.btnRefreshDownloads'], undefined, 'status refresh is automatic');
     await f.elements['.btnDownloadDirectory'].click(); await tick();
     assert.equal(f.elements['.downloadDirectory'].textContent, '/new');
     assert.equal(f.controller.rows.get('task').location.textContent, '/original');

@@ -6,12 +6,13 @@ const mountResolver = require('../../resolvers/mount-resolver');
 const {validateUserAgent} = require('../cd2-service');
 const probe = require('./source-probe');
 const {failure} = probe;
+const {episodeTitle} = require('./collection');
 const identifier = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,256}$/.test(value);
 const text = value => typeof value === 'string' && value.length <= 8192 && !/[\u0000-\u001f\u007f]/.test(value);
 
 function createSession(input, dependencies = {}) {
     if (!input || !['serverId', 'accountId', 'itemId'].every(key => identifier(input[key])) ||
-        input.mediaSourceId !== undefined && !identifier(input.mediaSourceId) || !text(input.token) || !input.token) throw failure('invalid-request');
+        input.mediaSourceId !== undefined && !identifier(input.mediaSourceId) || input.expectedItemType !== undefined && input.expectedItemType !== 'Episode' || !text(input.token) || !input.token) throw failure('invalid-request');
     const server = probe.sourceUrl(input.serverAddress);
     if (server.search || server.hash) throw failure('invalid-server');
     server.pathname = server.pathname.replace(/\/+$/, '') + '/';
@@ -39,7 +40,7 @@ function createSession(input, dependencies = {}) {
         }
         try {
             alive(combined);
-            const headers = {'X-Emby-Token': token};
+            const headers = {'X-Emby-Token': token, 'User-Agent': 'EmbyTheaterEnhanced'};
             // A renderer DTO or a prior playback grant is not permission to download.
             const info = await json(apiUrl('System/Info/Public'), headers, combined);
             alive(combined);
@@ -52,6 +53,7 @@ function createSession(input, dependencies = {}) {
             const item = await json(apiUrl('Users/' + identity.accountId + '/Items/' + identity.itemId), headers, combined);
             alive(combined);
             if (item.Id !== identity.itemId || item.ServerId && item.ServerId !== identity.serverId || item.MediaType !== 'Video' || item.CanDownload !== true) throw failure('download-not-permitted');
+            if (input.expectedItemType && item.Type !== input.expectedItemType) throw failure('source-unavailable');
             stage = 'version-check';
             const sources = Array.isArray(item.MediaSources) ? item.MediaSources : [];
             const source = selectedId ? sources.find(value => value.Id === selectedId) : sources.length === 1 ? sources[0] : null;
@@ -95,6 +97,15 @@ function createSession(input, dependencies = {}) {
                 }});
             }
             candidates.push({url: original.href, headers, kind: 'emby-original'});
+            // Some reverse proxies recognize the static video route but refuse
+            // Items/Download. Static=true requests original bytes, never a transcode.
+            // Build it from the freshly permission-checked item/source; do not
+            // borrow PlaybackManager URLs, session IDs, or renderer-supplied URLs.
+            const container = String(source.Container || '').toLowerCase().replace(/^m4v$/, 'mp4');
+            const suffix = /^(?:mkv|mp4|mov|webm|avi|mpg|ts|m2ts|flv|wmv)$/.test(container) ? '.' + container : '';
+            const staticFile = new URL(apiUrl('Videos/' + identity.itemId + '/stream' + suffix));
+            staticFile.searchParams.set('Static', 'true'); staticFile.searchParams.set('mediaSourceId', source.Id);
+            candidates.push({url: staticFile.href, headers, kind: 'emby-static'});
             stage = 'probe-source';
             let lastError;
             for (let candidate of candidates) {
@@ -109,12 +120,13 @@ function createSession(input, dependencies = {}) {
                     if (baseline && (baseline.representation !== representation || baseline.etag && baseline.etag !== result.etag)) throw failure('representation-changed');
                     baseline ||= {representation, etag: result.etag};
                     return Object.freeze({...result, kind: candidate.kind, mediaSourceId: source.Id,
-                        title: typeof item.Name === 'string' ? item.Name.slice(0, 256) : 'Video',
+                        title: episodeTitle(item),
                         identity: createHash('sha256').update(representation).digest('hex')});
                 } catch (error) {
                     alive(combined);
                     if (probe.reasonOf(error) === 'representation-changed') throw error;
-                    if (['direct-url', 'cd2-url', 'media-source-http', 'emby-original'].includes(candidate.kind)) error.downloadSourceKind = candidate.kind;
+                    if (candidate.kind === 'emby-static' && [404, 405].includes(error.httpStatus) && lastError) continue;
+                    if (['direct-url', 'cd2-url', 'media-source-http', 'emby-original', 'emby-static'].includes(candidate.kind)) error.downloadSourceKind = candidate.kind;
                     lastError = error;
                 }
             }
@@ -124,7 +136,7 @@ function createSession(input, dependencies = {}) {
             const result = failure(timeout.aborted ? 'timeout' : probe.reasonOf(error));
             result.downloadStage = stage;
             if (Number.isInteger(error.httpStatus) && error.httpStatus >= 100 && error.httpStatus <= 599) result.httpStatus = error.httpStatus;
-            if (['direct-url', 'cd2-url', 'media-source-http', 'emby-original'].includes(error.downloadSourceKind)) result.downloadSourceKind = error.downloadSourceKind;
+            if (['direct-url', 'cd2-url', 'media-source-http', 'emby-original', 'emby-static'].includes(error.downloadSourceKind)) result.downloadSourceKind = error.downloadSourceKind;
             throw result;
         } finally {
             try {if (service) await service.close();}

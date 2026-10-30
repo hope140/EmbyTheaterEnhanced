@@ -49,7 +49,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/modules/itemcontextmenu.js', inputPath: null,
         runtimePath: 'electronapp/www/modules/itemcontextmenu.js',
         expectedBaseSha256: '23946853EB776414F36372529DBB64FA1607FCD991281D18AB806599FF50CACB', expectedInputSha256: null,
-        expectedOutputSha256: '3CC0B77841D8E50D0618A8E4E3BE3C642100BA369AC8E843C166586B2B056EB7',
+        expectedOutputSha256: '07231C1A5198DC85512424BDC3CB5A5B110DBD04797547D5F419F0F616309F52',
         generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-advance-download.cjs'])
     }),
     Object.freeze({
@@ -60,7 +60,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/commandprocessor.js',
         expectedBaseSha256: '10ED682D5897E8C065925EF6071E914CB04537067A14C4D869F3EB14F724276F',
         expectedInputSha256: null,
-        expectedOutputSha256: '79B0E56E2B4B486D3B59F42AE27FEDDE91FC851B791D08A59AD486D0A3C4F286',
+        expectedOutputSha256: '37F22DA051E53912519438F2CDA470C28CE8DE1D997F963FD31F6701C20D56B3',
         generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-advance-download.cjs'])
     }),
     Object.freeze({

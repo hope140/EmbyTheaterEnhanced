@@ -1,6 +1,6 @@
 define(['baseView', '../../enhanced/advance-download/renderer.js', 'emby-button', 'emby-scroller', 'css!./enhanced-settings', 'css!./downloads'], function (BaseView, downloads) {
     'use strict';
-    var states = {checking: '正在核对来源', queued: '等待下载', downloading: '正在下载', paused: '已暂停', failed: '未完成', complete: '已完成'};
+    var states = {checking: '正在核对来源', queued: '等待下载', downloading: '正在下载', paused: '已暂停', failed: '下载失败', complete: '已完成'};
     var fileStates = {'file-missing': '未找到本地文件', 'directory-unavailable': '目录暂不可用', 'directory-changed': '目录已变化',
         'file-changed': '文件已变化', 'file-unavailable': '文件暂不可用', checking: '正在检查文件位置'};
     var fileNotes = {'file-missing': '未找到文件，可能已被移动或删除。记录保留，可删除记录或重新下载。',
@@ -19,7 +19,6 @@ define(['baseView', '../../enhanced/advance-download/renderer.js', 'emby-button'
         this.view = view; this.epoch = 0; this.refreshId = 0; this.timer = null; this.active = false;
         this.rows = new Map(); this.selected = new Set(); this.tasks = [];
         var self = this;
-        view.querySelector('.btnRefreshDownloads').addEventListener('click', function () {self.refresh();});
         view.querySelector('.btnDownloadDirectory').addEventListener('click', function () {return self.action(this, function () {return downloads.directory();});});
         view.querySelector('.btnOpenDownloadDirectory').addEventListener('click', function () {return self.action(this, function () {return downloads.openFolder();});});
         view.querySelector('.btnPauseAllDownloads').addEventListener('click', function () {return self.action(this, function () {return downloads.pauseAll();});});
@@ -96,7 +95,7 @@ define(['baseView', '../../enhanced/advance-download/renderer.js', 'emby-button'
         row.note.hidden = !task.reason;
         var canPause = ['checking', 'queued', 'downloading'].indexOf(task.state) >= 0;
         var canRedownload = task.state === 'complete' && ['file-missing', 'file-changed'].indexOf(task.fileState) >= 0;
-        row.control.textContent = canPause ? '暂停' : canRedownload ? '重新下载' : '继续';
+        row.control.textContent = canPause ? '暂停' : canRedownload ? '重新下载' : task.state === 'failed' ? '重试' : '继续';
         row.control.hidden = !canPause && !canRedownload && task.state !== 'paused' && task.state !== 'failed';
         row.control.disabled = row.remove.disabled = !!task.busy;
         row.open.hidden = !task.directory;

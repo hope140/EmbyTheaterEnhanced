@@ -3,9 +3,16 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
     var started = false, timer = null, lastIdentity = null, sequence = 0;
     var lastStates = Object.create(null), restarts = Object.create(null);
     var channels = {start: 'enhanced-download-start', attach: 'enhanced-download-attach', detach: 'enhanced-download-detach', status: 'enhanced-download-status',
-        control: 'enhanced-download-control', openFolder: 'enhanced-download-open-folder', directory: 'enhanced-download-directory', retry: 'enhanced-download-retry', lookup: 'enhanced-download-lookup',
+        collection: 'enhanced-download-collection', control: 'enhanced-download-control', openFolder: 'enhanced-download-open-folder', directory: 'enhanced-download-directory', retry: 'enhanced-download-retry', lookup: 'enhanced-download-lookup',
         cancel: 'enhanced-download-lookup-cancel', progress: 'enhanced-download-progress'};
     var reasons = {
+        'collection-unavailable': '只能从剧集或季详情添加整部剧／整季下载。',
+        'collection-empty': '此项目当前没有可加入的剧集。',
+        'collection-invalid': '服务器返回的剧集列表不完整或归属不明确，未继续添加，请重试。',
+        'collection-changed': '读取期间剧集列表发生变化，请重新添加。',
+        'collection-too-large': '一次最多添加 512 集，请改为逐季添加。',
+        'task-limit': '下载任务记录已达上限，请先移除不需要的记录。',
+        'task-store-unavailable': '无法保存下载任务，请检查客户端配置目录的空间或权限。',
         'user-paused': '已手动暂停，点击继续可恢复；重开客户端也会保持暂停。',
         'directory-changed': '下载目录的身份已变化，原记录已保留。',
         'file-missing': '未找到文件，可能已被移动或删除；可选择仅删除记录。',
@@ -38,10 +45,10 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         'publication-unavailable': '此目录无法安全提交文件，任务已保留。',
         'task-store-unsafe': '下载任务记录无法安全读取，已保留原文件。'
     };
-    var stages = {'server-check': '服务器核验', 'permission-check': '账户权限', 'item-check': '视频资料',
+    var stages = {'collection-list': '读取剧集列表', 'server-check': '服务器核验', 'permission-check': '账户权限', 'item-check': '视频资料',
         'version-check': '媒体版本', 'resolve-source': '解析来源', 'probe-source': '影片本体验证', prepare: '准备下载'};
     function message(reason) {return reasons[reason] || '下载未完成' + (typeof reason === 'string' && /^[a-z-]{1,64}$/.test(reason) ? '（' + reason + '）' : '') + '，请在下载管理中重试。';}
-    var sources = {'direct-url': 'CD2 直链', 'cd2-url': 'CD2 HTTP', 'media-source-http': '媒体源 HTTP', 'emby-original': 'Emby 下载接口'};
+    var sources = {'direct-url': 'CD2 直链', 'cd2-url': 'CD2 HTTP', 'media-source-http': '媒体源 HTTP', 'emby-original': 'Emby 下载接口', 'emby-static': 'Emby 原始视频接口'};
     function detail(value) {
         var d = value.diagnostic || {}, stage = value.stage || d.stage;
         return (stages[stage] ? stages[stage] + '：' : '') + message(value.reason) +
@@ -100,9 +107,21 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         if (!value || !item || item.ServerId && item.ServerId !== value.serverId) {toast('请登录当前视频所在服务器后再下载。'); return;}
         toast('正在准备下载…');
         var result = await invoke('start', {context: value, itemId: item.Id, mediaSourceId: mediaSourceId, title: item.Name});
+        if (JSON.stringify(context(current())) !== JSON.stringify(value) || JSON.stringify(context(api)) !== JSON.stringify(value)) return {status: 'cancelled'};
         if (result.status === 'queued') toast('已加入下载任务，可在设置中的“下载管理”查看进度。');
         else if (result.status === 'downloaded') toast('已有完整下载，可在下载管理中查看位置。');
         else if (result.status === 'error') toast(detail(result));
+        return result;
+    }
+    async function beginCollection(api, item) {
+        start();
+        var value = context(api);
+        if (!value || !item || item.ServerId && item.ServerId !== value.serverId) {toast('请登录当前项目所在服务器后再下载。'); return;}
+        toast('正在读取剧集列表…');
+        var result = await invoke('collection', {context: value, itemId: item.Id});
+        if (JSON.stringify(context(current())) !== JSON.stringify(value) || JSON.stringify(context(api)) !== JSON.stringify(value)) return {status: 'cancelled'};
+        if (result.status === 'queued') toast(result.added ? '已加入 ' + result.added + ' 集；' + result.reused + ' 项已有任务未重复添加，可在下载管理查看。' : '这些剧集已有任务，未重复添加。');
+        else if (result.status === 'error') toast((result.added ? '已加入 ' + result.added + ' 集，其余未加入：' : '') + detail(result));
         return result;
     }
     async function localSource(api, item, source, signal) {
@@ -124,7 +143,7 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
             return JSON.stringify(context(current())) === JSON.stringify(value) ? result : {status: 'cancelled'};
         });
     }
-    return {start: start, begin: begin, localSource: localSource, message: message, detail: detail, sourceKind: function (value) {return sources[value] || '旧记录未保存下载来源';}, stage: function (value) {return stages[value] || '准备下载';},
+    return {start: start, begin: begin, beginCollection: beginCollection, localSource: localSource, message: message, detail: detail, sourceKind: function (value) {return sources[value] || '旧记录未保存下载来源';}, stage: function (value) {return stages[value] || '准备下载';},
         status: function () {return settings('status');}, directory: function () {return settings('directory');},
         pause: function (id) {return settings('control', {action: 'pause', taskIds: [id]});},
         resume: function (id) {return settings('control', {action: 'resume', taskIds: [id]});},

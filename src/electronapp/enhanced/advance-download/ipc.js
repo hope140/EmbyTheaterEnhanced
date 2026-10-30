@@ -6,7 +6,7 @@ const {createManager} = require('./manager');
 const probe = require('./source-probe');
 const CHANNELS = Object.freeze({START: 'enhanced-download-start', ATTACH: 'enhanced-download-attach',
     DETACH: 'enhanced-download-detach',
-    CONTROL: 'enhanced-download-control', OPEN_FOLDER: 'enhanced-download-open-folder', STATUS: 'enhanced-download-status', DIRECTORY: 'enhanced-download-directory', RETRY: 'enhanced-download-retry',
+    COLLECTION: 'enhanced-download-collection', CONTROL: 'enhanced-download-control', OPEN_FOLDER: 'enhanced-download-open-folder', STATUS: 'enhanced-download-status', DIRECTORY: 'enhanced-download-directory', RETRY: 'enhanced-download-retry',
     LOOKUP: 'enhanced-download-lookup', CANCEL_LOOKUP: 'enhanced-download-lookup-cancel', PROGRESS: 'enhanced-download-progress'});
 function context(value) {
     if (!value || ['serverId', 'accountId'].some(key => typeof value[key] !== 'string' || !/^[A-Za-z0-9_-]{1,256}$/.test(value[key])) ||
@@ -32,6 +32,16 @@ function register(options) {
     let closing = false, epoch = 0, ui, observed, unregistration, lastProgress = 0, previousEvent;
     const manager = (options.createManager || createManager)({profileRoot: options.profileRoot,
         sourceDependencies: options.sourceDependencies, selectDirectory: value => selector.select(value),
+        async confirmCollection(value, signal) {
+            if (signal.aborted) return false;
+            const result = await options.dialog.showMessageBox(options.getBrowserWindow?.(), {
+                type: 'question', title: value.type === 'Season' ? '下载整季' : '下载整部剧',
+                message: '将“' + value.title + '”中的 ' + value.count + ' 集加入下载？',
+                detail: '保存目录：' + value.directory + '\n已有 ' + value.reused + ' 项任务不重复添加。已有失败或暂停任务保持原状态，可在下载管理重试或继续。',
+                buttons: ['取消', '加入下载'], defaultId: 0, cancelId: 0, noLink: true
+            });
+            return !signal.aborted && result.response === 1;
+        },
         onChange(value) {
             if (closing || !ui || ui.epoch !== epoch || !boundary.isTrusted({sender: ui.sender, senderFrame: ui.frame}, getWebContents())) return;
             const changed = !previousEvent || previousEvent.id !== value.id || previousEvent.state !== value.state || previousEvent.reason !== value.reason;
@@ -75,6 +85,7 @@ function register(options) {
     handle(CHANNELS.DETACH, async () => {await manager.pauseAll(); return {status: 'ok'};});
     handle(CHANNELS.START, request => manager.enqueue({...context(request.context), ...media(request),
         displayTitle: typeof request.title === 'string' ? request.title.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 256) : undefined}));
+    handle(CHANNELS.COLLECTION, request => manager.enqueueCollection({...context(request.context), itemId: media(request).itemId}));
     handle(CHANNELS.STATUS, async request => {
         const current = context(request.context); manager.attach(current);
         return {status: 'ok', directory: store.read(), tasks: await manager.status(current)};

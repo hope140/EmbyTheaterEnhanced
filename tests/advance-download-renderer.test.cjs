@@ -55,17 +55,20 @@ test('settings discard a previous account response after switching accounts', as
 });
 test('the pinned command overlay routes video only and preserves original audio, logs and subtitle download branches', async () => {
     const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/commandprocessor.js'), 'utf8');
-    const output = patch.patchCommandProcessor(base), exports = {}, downloads = [], browser = [];
+    const output = patch.patchCommandProcessor(base), exports = {}, downloads = [], collections = [], browser = [];
     const api = {getItemDownloadUrl: (id, source) => 'original:' + id + ':' + source,
         getLogDownloadUrl: () => 'log-url', getUrl: url => url, isMinServerVersion: () => true};
     vm.runInNewContext(output, {Object, Promise,
-        require: names => Promise.resolve([names[0] === '../enhanced/advance-download/renderer.js' ? {begin: async (...args) => downloads.push(args)} : urls => browser.push(urls)]),
+        require: names => Promise.resolve([names[0] === '../enhanced/advance-download/renderer.js' ? {begin: async (...args) => downloads.push(args), beginCollection: async (...args) => collections.push(args)} : urls => browser.push(urls)]),
         define(names, factory) {factory(...names.map(name => name === 'exports' ? exports : name.includes('connectionmanager') ? {default: {getApiClient: () => api}} : {default: {}}));}});
     await exports.default.executeCommand('download', {Id: 'movie', MediaType: 'Video'}, {mediaSourceId: 'edition'});
+    await exports.default.executeCommand('download', {Id: 'season', Type: 'Season'}, {});
+    await exports.default.executeCommand('download', {Id: 'series', Type: 'Series'}, {});
     await exports.default.executeCommand('download', {Id: 'audio', MediaType: 'Audio'}, {mediaSourceId: 'song'});
     await exports.default.executeCommand('download', {Type: 'Log', Name: 'log'}, {});
     await exports.default.executeCommand('download', {Type: 'MediaStream', StreamType: 'Subtitle', ItemId: 'i', MediaSourceId: 's', Index: 2, Codec: 'srt'}, {});
     assert.equal(downloads.length, 1); assert.equal(downloads[0][2], 'edition');
+    assert.equal(collections.length, 2); assert.equal(collections[0][1].Id, 'season'); assert.equal(collections[1][1].Id, 'series');
     assert.equal(browser.length, 3);
     assert.equal(browser[0][0], 'original:audio:song');
     assert.throws(() => patch.patchCommandProcessor('unrelated'));
@@ -74,7 +77,7 @@ test('the pinned command overlay routes video only and preserves original audio,
 
 test('context menu hides legacy device sync but retains unified download and unrelated actions', () => {
     const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/itemcontextmenu.js'), 'utf8');
-    function load(source) {
+    function load(source, item = {Id: 'item', Type: 'Movie', MediaType: 'Video', CanDownload: true}, policy = {}) {
         const exports = {};
         const helper = new Proxy({canSync: () => true, canEdit: () => true}, {get(target, key) {return target[key] || (() => false);}});
         vm.runInNewContext(source, {self: {}, define(names, factory) {factory(...names.map(name =>
@@ -82,12 +85,19 @@ test('context menu hides legacy device sync but retains unified download and unr
             name.includes('globalize') ? {default: {translate: value => value}} :
             name.includes('connectionmanager') ? {default: {getApiClient: () => ({serverId: () => 'server'})}} :
             name.includes('itemhelper') ? {default: helper} : name.includes('playbackmanager') ? {default: {canPlay: () => false}} : {default: {}}));}});
-        return exports.default.getCommands({item: {Id: 'item', Type: 'Movie', MediaType: 'Video', CanDownload: true}, user: {Policy: {}}});
+        return exports.default.getCommands({item, user: {Policy: policy}});
     }
     const original = load(base).map(command => command.id), modified = load(patch.patchItemContextMenu(base)).map(command => command.id);
     assert.ok(original.includes('sync')); assert.ok(original.includes('synclocal'));
     assert.equal(modified.filter(id => id === 'download').length, 1);
     assert.ok(modified.includes('edit'));
+    for (const type of ['Season', 'Series']) {
+        const item = {Id: 'parent', Type: type};
+        const commands = load(patch.patchItemContextMenu(base), item, {EnableContentDownloading: true});
+        assert.equal(commands.filter(command => command.id === 'download').length, 1);
+        assert.equal(commands.find(command => command.id === 'download').name, type === 'Season' ? '下载整季' : '下载整部剧');
+        assert.ok(!load(patch.patchItemContextMenu(base), item, {EnableContentDownloading: false}).some(command => command.id === 'download'));
+    }
     assert.deepEqual(Array.from(modified), Array.from(original.filter(id => id !== 'sync' && id !== 'synclocal')));
     assert.throws(() => patch.patchItemContextMenu('unrelated'));
     assert.throws(() => patch.patchItemContextMenu(base + base));
@@ -127,4 +137,17 @@ test('remembered-directory download uses a neutral progress message and HTTP err
     assert.ok(f.messages.includes('正在准备下载…'));
     assert.ok(!f.messages.some(value => value.includes('请选择或确认下载目录')));
     assert.match(f.messages.at(-1), /HTTP 500/); assert.match(f.messages.at(-1), /Emby 下载接口/);
+});
+
+test('parent download sends only its identity, reports added and skipped episodes, and rejects a late-account result', async () => {
+    const f = fixture(channel => channel === 'enhanced-download-collection' ? {status: 'queued', added: 3, reused: 2} : {status: 'ok'});
+    await f.result.beginCollection(f.api, {Id: 'season', Type: 'Season', ServerId: 'server'});
+    const request = f.calls.find(call => call.channel === 'enhanced-download-collection');
+    assert.equal(request.body.itemId, 'season'); assert.equal(request.body.directory, undefined); assert.equal(request.body.episodes, undefined);
+    assert.match(f.messages.at(-1), /3/); assert.match(f.messages.at(-1), /2/);
+    let release;
+    const late = fixture(channel => channel === 'enhanced-download-collection' ? new Promise(resolve => {release = resolve;}) : {status: 'ok'});
+    const pending = late.result.beginCollection(late.api, {Id: 'series', Type: 'Series', ServerId: 'server'});
+    await Promise.resolve(); late.changeAccount(); release({status: 'queued', added: 4, reused: 0}); await pending;
+    assert.ok(!late.messages.some(message => message.includes('已加入')));
 });

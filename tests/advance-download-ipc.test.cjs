@@ -12,6 +12,7 @@ function fixture(overrides = {}) {
     const sender = new EventEmitter(); sender.send = (name, value) => sent.push({name, value}); eventFor(sender);
     let config;
     const manager = {attach(value) {calls.push(['attach', value]);}, enqueue: async value => {calls.push(['start', value]); return {status: 'queued'};},
+        enqueueCollection: async value => {calls.push(['collection', value]); return {status: 'queued', added: 2};},
         list: () => [], status: async () => [], current: () => true, targets: (_ctx, value) => value.taskIds || [],
         control: async (_ctx, value) => {calls.push(['control', value]); return {status: 'ok'};}, retry: () => ({status: 'queued'}), pauseAll: async () => {calls.push(['pause']);},
         close: async () => {calls.push(['close']);}, localSource: async () => null, ...overrides.manager};
@@ -43,6 +44,19 @@ test('a trusted original-button request supplies only credential and media ident
     assert.equal(start.itemId, 'item'); assert.equal(start.mediaSourceId, 'source');
     assert.equal(start.directory, undefined);
     assert.equal((await f.invoke('START', {context, itemId: '../escape'})).reason, 'invalid-request');
+    await f.unregister();
+});
+test('parent download accepts only its identity and native batch confirmation defaults to cancel', async () => {
+    let shown;
+    const f = fixture({confirm: async (_window, value) => {shown = value; return {response: 1};}});
+    assert.equal((await f.invoke('COLLECTION', {context, itemId: 'season', directory: '/untrusted', episodes: ['foreign']})).added, 2);
+    const request = f.calls.find(call => call[0] === 'collection')[1];
+    assert.equal(request.itemId, 'season'); assert.equal(request.directory, undefined); assert.equal(request.episodes, undefined);
+    assert.equal((await f.invoke('COLLECTION', {context, itemId: '../bad'})).reason, 'invalid-request');
+    const controller = new AbortController(), value = {title: 'Fixture', type: 'Season', count: 3, reused: 2, directory: '/main-owned'};
+    assert.equal(await f.config.confirmCollection(value, controller.signal), true);
+    assert.equal(shown.defaultId, 0); assert.equal(shown.cancelId, 0); assert.match(shown.detail, /main-owned/);
+    controller.abort(); assert.equal(await f.config.confirmCollection(value, controller.signal), false);
     await f.unregister();
 });
 test('shutdown does not wait for a native folder picker and its late result cannot change preferences', async () => {

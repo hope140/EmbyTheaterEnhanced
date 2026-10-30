@@ -19,3 +19,10 @@
 .downloadTaskHeader h3 { flex: 1; }
 .downloadTaskSelection { flex-shrink: 0; }
 .downloadTask input[type="checkbox"], .downloadSelectAll input { width: 1.1em; height: 1.1em; accent-color: var(--theme-accent-color, #52b54b); }
+
+.downloadToolbar { justify-content: space-between; }
+.downloadQueueActions, .downloadSelectionActions { display: flex; align-items: center; gap: .7em; flex-wrap: wrap; }
+.downloadSelectionActions { margin-left: auto; }
+.downloadSelectAll, .downloadTaskSelection { min-width: 5em; justify-content: flex-end; }
+.downloadSelectAll input, .downloadTaskSelection input { margin: 0; color-scheme: dark; }
+.downloadAutoUpdate { font-size: .85em; opacity: .65; }

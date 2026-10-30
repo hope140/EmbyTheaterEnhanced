@@ -18,7 +18,7 @@ test('the actual original-button overlay, renderer, main IPC and persistent mana
     eventFor(sender); sender.send = (name, value) => rendererEvents.emit(name, {}, value);
     let folder = first, picks = 0;
     const unregister = downloadIpc.register({ipcMain, getWebContents: () => sender, profileRoot: profile,
-        getBrowserWindow: () => null, dialog: {async showOpenDialog() {picks++; return {canceled: false, filePaths: [folder]};}}});
+        getBrowserWindow: () => null, dialog: {async showOpenDialog() {picks++; return {canceled: false, filePaths: [folder]};}, async showMessageBox() {return {response: 1};}}});
     t.after(() => unregister());
     const rendererIpc = {invoke: (name, body) => handlers.get(name)(eventFor(sender), body),
         send: (name, body) => ipcMain.emit(name, eventFor(sender), body), on: rendererEvents.on.bind(rendererEvents), removeListener: rendererEvents.removeListener.bind(rendererEvents)};
@@ -57,4 +57,37 @@ test('the actual original-button overlay, renderer, main IPC and persistent mana
     assert.equal(status.tasks.filter(value => value.state === 'complete').length, 2);
     assert.equal(status.directory, next);
     assert.equal((await renderer.localSource(api, {Id: 'item', ServerId: 'server', MediaType: 'Video'}, {Id: 'source'})).source, path.join(next, second.fileName));
+    const episodes = [1, 2].map(index => ({Id: 'ep' + index, Type: 'Episode', MediaType: 'Video', CanDownload: true, ServerId: 'server', SeriesId: 'series', SeasonId: 'season',
+        Name: 'Episode', SeriesName: 'Synthetic Series', ParentIndexNumber: 1, IndexNumber: index,
+        MediaSources: [{Id: 'source', Container: 'mkv', Size: media.length, Path: f.cdn + '/direct'}]}));
+    f.state.library = {series: {Id: 'series', Type: 'Series', Name: 'Synthetic Series'}, ...Object.fromEntries(episodes.map(item => [item.Id, item]))};
+    f.state.catalogues = {series: episodes};
+    const batchComplete = new Promise(resolve => {
+        let count = 0;
+        const listener = (_event, task) => {if (task.state === 'complete' && ++count === 2) {rendererEvents.removeListener(downloadIpc.CHANNELS.PROGRESS, listener); resolve();}};
+        rendererEvents.on(downloadIpc.CHANNELS.PROGRESS, listener);
+    });
+    const batch = await exports.default.executeCommand('download', {Id: 'series', Type: 'Series', ServerId: 'server'}, {});
+    assert.equal(batch.added, 2); await batchComplete;
+    assert.equal((await renderer.status()).tasks.filter(value => value.state === 'complete').length, 4);
+    assert.equal((await renderer.beginCollection(api, {Id: 'series', Type: 'Series', ServerId: 'server'})).added, 0);
+    assert.equal(picks, 2);
+});
+
+test('static original fallback downloads exact bytes through interruption and then supports local priority', async t => {
+    const {createManager} = require('../src/electronapp/enhanced/advance-download/manager');
+    const f = await fixture(t), root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'ete-static-download-')));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    Object.assign(f.state, {downloadStatus: 502, staticAvailable: true, staticRedirect: true, cutTransfer: 1});
+    const context = {serverId: 'server', accountId: 'account', itemId: 'item', mediaSourceId: 'source', serverAddress: f.emby + '/base', token};
+    const manager = createManager({profileRoot: root, createSession: ctx => f.session(ctx, {getConfig: () => ({resolver: {version: 1, enabled: false, rules: []}, runtime: {enabled: false}})}),
+        selectDirectory: async () => ({status: 'selected', directory: root})});
+    t.after(() => manager.close());
+    const result = await manager.enqueue(context); await manager.idle();
+    const task = manager.list(context).find(value => value.id === result.task.id);
+    assert.equal(task.state, 'complete'); assert.equal(task.sourceKind, 'emby-static');
+    assert.deepEqual(fs.readFileSync(task.targetPath), media);
+    assert.equal((await manager.localSource(context)).source, task.targetPath);
+    assert.ok(f.calls.some(call => call.url.startsWith('/direct') && call.headers.range === 'bytes=1024-'));
+    assert.ok(f.calls.filter(call => call.url.startsWith('/direct')).every(call => !call.headers['x-emby-token'] && call.headers['user-agent'] === 'EmbyTheaterEnhanced'));
 });

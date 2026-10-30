@@ -11,13 +11,17 @@
         </section>
         <section class="ete-settings-card">
             <div class="downloadListHeader"><h2>下载任务 <span class="downloadCount"></span></h2>
-                <button type="button" is="emby-button" class="raised ete-settings-button btnRefreshDownloads">刷新</button></div>
+                <span class="downloadAutoUpdate">状态自动更新</span></div>
             <div class="downloadActions downloadToolbar">
-                <button type="button" is="emby-button" class="raised ete-settings-button btnPauseAllDownloads">全部暂停</button>
-                <button type="button" is="emby-button" class="raised ete-settings-button btnResumeAllDownloads">全部继续</button>
-                <label class="downloadSelectAll"><input type="checkbox" class="chkSelectAllDownloads"> 全选</label>
-                <button type="button" is="emby-button" class="raised ete-settings-button btnRemoveSelectedDownloads" disabled>删除所选</button>
-                <span class="downloadSelectionCount"></span>
+                <div class="downloadQueueActions">
+                    <button type="button" is="emby-button" class="raised ete-settings-button btnPauseAllDownloads">全部暂停</button>
+                    <button type="button" is="emby-button" class="raised ete-settings-button btnResumeAllDownloads">全部继续</button>
+                </div>
+                <div class="downloadSelectionActions">
+                    <span class="downloadSelectionCount"></span>
+                    <button type="button" is="emby-button" class="raised ete-settings-button btnRemoveSelectedDownloads" disabled>删除所选</button>
+                    <label class="downloadSelectAll"><input type="checkbox" class="chkSelectAllDownloads"><span>全选</span></label>
+                </div>
             </div>
             <p class="downloadHint">删除时默认仅移除记录并保留文件；可在确认窗口选择同时永久删除本任务文件。</p>
             <div class="downloadTasks"></div>
