@@ -2,6 +2,8 @@
 
 ## 2026-10-30 — 静态原视频回退、整季队列和管理布局
 
+最终普通验收包[41077932657](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657)已success，实际打包／核验和上传步骤成功，23分31秒。准确产品源码00b409b与Windows公开通过结果一致；artifact `12990161077`、名称`ete-test-win-x64-00b409b5cd36c9875a2bf046bce718d97464cc68-41077932657-1`，164670908字节、expired=false，2026-10-31T15:31:58Z过期。普通包选项均false，没有Release／Tag／安装／启动／main合并。独立GET该artifact ZIP被GitHub返回Forbidden、零字节，已记录并停止，不绕过；未独立取得或核验安装器本体，只确认API来源、上传及构建内部门禁。测试夹具／文档后续提交e1d7eee与00b409b在src／native／tools／工作流／installer／依赖输入上无差异。
+
 产品源码`00b409b5cd36c9875a2bf046bce718d97464cc68`本地公开2296项为2265 pass／0 fail／31平台skip（保留原6文件材料排除），显式6材料文件95/95，自生成媒体20帧全文件／解码哈希1/1，JS548、PowerShell53语法及有限凭据模式645文件检查通过。补充原生设置排序和详情选择材料检查7/7；初次设置排序材料1项失败是夹具漏列此前已增加的下载管理路由，仅将该路由与名字加入完整顺序预期，未放宽实际排序或其他路线断言。后续只有此夹具和文档变化，产品／生成器字节保持00b409b。准确源码的Windows公开[41077852663](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077852663)终态success，full路线实际运行公开测试、语法、固定输入、有限凭据模式及diff检查，12分10秒。普通独立包[41077932657](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657)仍在构建，release_package=false／build_input_benchmark=false，终态另记。上一文档提交fcea8bb的Windows公开测试失败；日志读取被服务返回Forbidden、零字节，停止该读取，尚不知具体失败用例，不以旧结果替代本轮。
 
 增加独立静态原视频候选，使用新鲜服务器／账户／Item／MediaSource核验结果构造官方原始文件路由，不复用PlaybackManager URL或会话。固定UA随下载请求保持，跨origin剥离Emby认证；无已知容器时使用无扩展名路由，继续按正文识别影片。旧接口HTTP错误不被不支持静态路由的404／405掩盖。合成502、跨域跳转、内容变化、STRM容器元数据、HLS拒绝及无Range能力测试通过；真实代理路由仍待用户验收。

@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-30 — 原视频回退与整季下载验收包已生成
+
+产品源码`00b409b5cd36c9875a2bf046bce718d97464cc68`的Windows完整公开[CI 41077852663](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077852663)和普通验收包[41077932657](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657)均success，后者23分31秒且上传完成。独立[验收附件](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657/artifacts/12990161077)来源／完整SHA、分支、run与API元数据一致，大小164670908字节，过期时间2026-10-31 15:31:58 UTC。未创建Release、Tag或合main；后续仅有测试夹具／文档变化，产品和生成器保持该源码字节。
+
+附件ZIP独立读取被GitHub返回Forbidden、零字节，已停止且没有换通道；仅能确认构建内部门禁、上传成功及API来源，未独立核对安装器字节、SHA或PE版本。按[本轮优先验收](ADVANCE_DOWNLOAD_ACCEPTANCE.md#本轮优先验收)手测真实关闭解析来源、整季队列、重开续传、本地播放及布局；合成服务与CI不替代真实Emby／dian115／CD2和可见客户端验收。
+
 ## 2026-10-30 — 原视频接口回退与整季下载候选
 
 独立提前下载分支在原下载接口失败后，增加经重新授权的`Videos/{Id}/stream[.原容器]?Static=true&mediaSourceId=...`原视频候选。关闭STRM解析不会启用CD2，不借用正在播放的URL、会话或转码流；仍要求影片本体、长度和安全Range校验。服务器代理可能只支持播放路由而拒绝下载路由，静态接口也可能不受支持；真实代理、鉴权和具体媒体需要新包验收，不能把播放成功当成完整下载保证。
