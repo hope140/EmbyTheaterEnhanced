@@ -25,4 +25,3 @@
 .downloadSelectionActions { margin-left: auto; }
 .downloadSelectAll, .downloadTaskSelection { min-width: 5em; justify-content: flex-end; }
 .downloadSelectAll input, .downloadTaskSelection input { margin: 0; color-scheme: dark; }
-.downloadAutoUpdate { font-size: .85em; opacity: .65; }

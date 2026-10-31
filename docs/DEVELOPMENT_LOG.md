@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-31 — 精简下载管理自动更新提示
+
+移除下载任务标题旁的静态“状态自动更新”及不再使用的CSS规则；保留任务状态、异常提示和原有自动刷新生命周期，不修改下载任务或用户文件。`node --test tests/advance-download-settings.test.cjs`为5 pass／0 fail／0 skip；控制器与基线逐字节一致，未启动真实Windows客户端。候选等待其他相关修改一起整合，未构建、合main或发布。
+
 ## 2026-10-31 — v0.4.7合入main并公开测试版
 
 核对main仍为a958d52、源码5190a70及文档b5367fc的CI／标准构建通过后，正常快进main到b5367fc，建立新Tag v0.4.7固定5190a70；不移动旧Tag，不修改产品／生成器或发布门禁。现有[发布工作流41171790099](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41171790099)以testing、expected_latest_tag=v0.4.0、verified_build_run=41169467426执行，预检／构建复用／发布全部success。Release 429738414于2026-10-31T05:15:53Z公开，标题v0.4.7测试版、prerelease=true、draft=false；Latest仍为422090288／v0.4.0。
