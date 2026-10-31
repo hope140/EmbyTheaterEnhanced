@@ -48,18 +48,36 @@ test('a trusted original-button request supplies only credential and media ident
 });
 test('parent download accepts only its identity and native batch confirmation defaults to cancel', async () => {
     let shown;
-    const f = fixture({confirm: async (_window, value) => {shown = value; return {response: 1};}});
+    const f = fixture({confirm: async (_window, value) => {shown = value; return {response: 1, checkboxChecked: true};}});
     assert.equal((await f.invoke('COLLECTION', {context, itemId: 'season', directory: '/untrusted', episodes: ['foreign']})).added, 2);
     const request = f.calls.find(call => call[0] === 'collection')[1];
     assert.equal(request.itemId, 'season'); assert.equal(request.directory, undefined); assert.equal(request.episodes, undefined);
     assert.equal((await f.invoke('COLLECTION', {context, itemId: '../bad'})).reason, 'invalid-request');
-    const controller = new AbortController(), value = {title: 'Fixture', type: 'Season', count: 3, reused: 2, directory: '/main-owned'};
-    assert.equal(await f.config.confirmCollection(value, controller.signal), true);
+    const controller = new AbortController(), value = {title: 'Fixture', type: 'Season', count: 3, watched: 1, unwatched: 2, unknown: 0, reused: 2, directory: '/main-owned'};
+    assert.deepEqual(await f.config.confirmCollection(value, controller.signal), {confirmed: true, skipPlayed: true});
     assert.equal(shown.defaultId, 0); assert.equal(shown.cancelId, 0); assert.match(shown.detail, /main-owned/);
     assert.equal(shown.title, '下载本季');
+    assert.equal(shown.checkboxChecked, true); assert.equal(shown.checkboxLabel, '跳过已看完的集数');
+    assert.match(shown.detail, /跳过已看完：可添加 2 集，跳过 1 集/); assert.match(shown.detail, /下载全部：可添加 3 集/);
     await f.config.confirmCollection({...value, type: 'Series'}, controller.signal); assert.equal(shown.title, '下载全剧');
-    controller.abort(); assert.equal(await f.config.confirmCollection(value, controller.signal), false);
+    controller.abort(); assert.equal((await f.config.confirmCollection(value, controller.signal)).confirmed, false);
     await f.unregister();
+});
+test('batch choice preserves explicit unchecked selection and missing watch state requires explicit download-all', async () => {
+    let shown, response = 1, checked = false;
+    const f = fixture({confirm: async (_window, value) => {shown = value; return {response, checkboxChecked: checked};}});
+    const controller = new AbortController(), value = {title: 'Fixture', type: 'Series', count: 5, watched: 2, unwatched: 3, unknown: 0, reused: 1, directory: '/owned'};
+    assert.deepEqual(await f.config.confirmCollection(value, controller.signal), {confirmed: true, skipPlayed: false});
+    const unknown = {...value, unknown: 1, unwatched: 2}; response = 0;
+    assert.equal((await f.config.confirmCollection(unknown, controller.signal)).confirmed, false);
+    assert.equal(shown.defaultId, 0); assert.equal(shown.cancelId, 0); assert.equal(shown.type, 'warning');
+    assert.match(shown.message, /1 集无法确认/); assert.deepEqual(shown.buttons, ['取消', '仍下载全部']);
+    assert.equal(shown.checkboxLabel, undefined); assert.match(shown.detail, /暂不能确定可添加数量/);
+    response = 1; assert.deepEqual(await f.config.confirmCollection(unknown, controller.signal), {confirmed: true, skipPlayed: false});
+    const gate = deferred(), late = fixture({confirm: () => gate.promise}), signal = new AbortController();
+    const pending = late.config.confirmCollection(value, signal.signal); signal.abort(); gate.resolve({response: 1, checkboxChecked: false});
+    assert.equal((await pending).confirmed, false);
+    await f.unregister(); await late.unregister();
 });
 test('shutdown does not wait for a native folder picker and its late result cannot change preferences', async () => {
     const picker = deferred(), f = fixture({dialog: () => picker.promise});

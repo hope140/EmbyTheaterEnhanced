@@ -33,14 +33,20 @@ function register(options) {
     const manager = (options.createManager || createManager)({profileRoot: options.profileRoot,
         sourceDependencies: options.sourceDependencies, selectDirectory: value => selector.select(value),
         async confirmCollection(value, signal) {
-            if (signal.aborted) return false;
+            if (signal.aborted) return {confirmed: false, skipPlayed: true};
+            const unknown = value.unknown > 0;
             const result = await options.dialog.showMessageBox(options.getBrowserWindow?.(), {
-                type: 'question', title: value.type === 'Season' ? '下载本季' : '下载全剧',
-                message: '将“' + value.title + '”中的 ' + value.count + ' 集加入下载？',
-                detail: '保存目录：' + value.directory + '\n已有 ' + value.reused + ' 项任务不重复添加。已有失败或暂停任务保持原状态，可在下载管理重试或继续。',
-                buttons: ['取消', '加入下载'], defaultId: 0, cancelId: 0, noLink: true
+                type: unknown ? 'warning' : 'question', title: value.type === 'Season' ? '下载本季' : '下载全剧',
+                message: unknown ? '“' + value.title + '”有 ' + value.unknown + ' 集无法确认已看状态，本次默认不开始。' : '将“' + value.title + '”的剧集加入下载？',
+                detail: (unknown ? '跳过已看完：已确认未看完 ' + value.unwatched + ' 集，另有 ' + value.unknown + ' 集状态不明，暂不能确定可添加数量。' :
+                    '跳过已看完：可添加 ' + value.unwatched + ' 集，跳过 ' + value.watched + ' 集。') +
+                    '\n下载全部：可添加 ' + value.count + ' 集。\n保存目录：' + value.directory +
+                    '\n已有 ' + value.reused + ' 项任务不重复添加。已有失败或暂停任务保持原状态，可在下载管理重试或继续。' +
+                    '\n已看状态按当前账户本次读取的结果判断，部分观看仍会下载。',
+                buttons: ['取消', unknown ? '仍下载全部' : '加入下载'], defaultId: 0, cancelId: 0, noLink: true,
+                ...(!unknown ? {checkboxLabel: '跳过已看完的集数', checkboxChecked: true} : {})
             });
-            return !signal.aborted && result.response === 1;
+            return {confirmed: !signal.aborted && result.response === 1, skipPlayed: !unknown && result.checkboxChecked !== false};
         },
         onChange(value) {
             if (closing || !ui || ui.epoch !== epoch || !boundary.isTrusted({sender: ui.sender, senderFrame: ui.frame}, getWebContents())) return;

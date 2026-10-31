@@ -199,14 +199,25 @@ function createManager(options) {
             if (closing || operation.controller.signal.aborted || !current(context)) return {status: 'cancelled'};
             const exists = episode => allTasks().some(task => owner(task) === owner(context) && task.itemId === episode.id &&
                 (!episode.mediaSourceId || !task.mediaSourceId || task.mediaSourceId === episode.mediaSourceId));
-            const fresh = collection.episodes.filter(episode => !exists(episode));
-            if (tasks.size + fresh.length > 1024) throw probe.failure('task-limit');
-            if (!fresh.length) return {status: 'queued', added: 0, reused: collection.episodes.length, total: collection.episodes.length};
-            if (!await options.confirmCollection({title: collection.title, type: collection.type, count: fresh.length,
-                reused: collection.episodes.length - fresh.length, directory: selected.directory}, operation.controller.signal)) return {status: 'cancelled'};
+            let fresh = collection.episodes.filter(episode => !exists(episode));
+            if (!fresh.length) return {status: 'queued', added: 0, reused: collection.episodes.length, skipped: 0, total: collection.episodes.length};
+            const watched = fresh.filter(episode => episode.played === true).length;
+            const unknown = fresh.filter(episode => typeof episode.played !== 'boolean').length;
+            const choice = await options.confirmCollection({title: collection.title, type: collection.type, count: fresh.length,
+                watched, unknown, unwatched: fresh.length - watched - unknown,
+                reused: collection.episodes.length - fresh.length, directory: selected.directory}, operation.controller.signal);
+            if (!choice || choice.confirmed !== true || typeof choice.skipPlayed !== 'boolean') return {status: 'cancelled'};
             if (closing || operation.controller.signal.aborted || !current(context)) return {status: 'cancelled'};
+            if (choice.skipPlayed && unknown) throw probe.failure('collection-user-data-unavailable');
+            // Other admissions may finish while the native dialog is open. Recheck
+            // duplicates and capacity against the actual choice before any write.
+            fresh = collection.episodes.filter(episode => !exists(episode));
+            const reused = collection.episodes.length - fresh.length;
+            const candidates = fresh.filter(episode => !choice.skipPlayed || episode.played !== true);
+            const skipped = fresh.length - candidates.length;
+            if (tasks.size + candidates.length > 1024) throw probe.failure('task-limit');
             stage = 'prepare';
-            for (const episode of collection.episodes) {
+            for (const episode of candidates) {
                 if (exists(episode)) continue;
                 if (tasks.size >= 1024) throw probe.failure('task-limit');
                 let task;
@@ -220,7 +231,7 @@ function createManager(options) {
                     (!episode.mediaSourceId || !attempt.mediaSourceId || episode.mediaSourceId === attempt.mediaSourceId)) attempts.delete(id);
             }
             kick();
-            return {status: 'queued', added, reused: collection.episodes.length - added, total: collection.episodes.length};
+            return {status: 'queued', added, reused, skipped, total: collection.episodes.length};
         } catch (error) {
             if (operation.controller.signal.aborted) return {status: 'cancelled', added};
             const reason = /^advance-download-(directory-invalid|directory-unavailable|settings-invalid|settings-save-failed)$/.exec(error?.message || '')?.[1] || probe.reasonOf(error);

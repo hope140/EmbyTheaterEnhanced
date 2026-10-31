@@ -152,14 +152,20 @@ test('remembered-directory download uses a neutral progress message and HTTP err
 });
 
 test('parent download sends only its identity, reports added and skipped episodes, and rejects a late-account result', async () => {
-    const f = fixture(channel => channel === 'enhanced-download-collection' ? {status: 'queued', added: 3, reused: 2} : {status: 'ok'});
+    const f = fixture(channel => channel === 'enhanced-download-collection' ? {status: 'queued', added: 3, reused: 2, skipped: 4} : {status: 'ok'});
     await f.result.beginCollection(f.api, {Id: 'season', Type: 'Season', ServerId: 'server'});
     const request = f.calls.find(call => call.channel === 'enhanced-download-collection');
     assert.equal(request.body.itemId, 'season'); assert.equal(request.body.directory, undefined); assert.equal(request.body.episodes, undefined);
     assert.match(f.messages.at(-1), /3/); assert.match(f.messages.at(-1), /2/);
+    assert.match(f.messages.at(-1), /已跳过 4 集已看完/);
     let release;
     const late = fixture(channel => channel === 'enhanced-download-collection' ? new Promise(resolve => {release = resolve;}) : {status: 'ok'});
     const pending = late.result.beginCollection(late.api, {Id: 'series', Type: 'Series', ServerId: 'server'});
     await Promise.resolve(); late.changeAccount(); release({status: 'queued', added: 4, reused: 0}); await pending;
     assert.ok(!late.messages.some(message => message.includes('已加入')));
+});
+test('all-watched batch reports watched skips instead of claiming all episodes have existing tasks', async () => {
+    const f = fixture(channel => channel === 'enhanced-download-collection' ? {status: 'queued', added: 0, reused: 0, skipped: 3} : {status: 'ok'});
+    await f.result.beginCollection(f.api, {Id: 'series', Type: 'Series', ServerId: 'server'});
+    assert.match(f.messages.at(-1), /已跳过 3 集已看完/); assert.doesNotMatch(f.messages.at(-1), /已有任务/);
 });
