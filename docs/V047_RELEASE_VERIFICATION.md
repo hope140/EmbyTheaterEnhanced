@@ -12,6 +12,8 @@ package与lock三处版本同步为0.4.7，发行说明包含本次首次纳入�
 
 针对性回归验证真实菜单overlay、确认窗口标题、电影／剧集完成消息、HTML标题转义和重复完成事件；版本／发布合同及固定材料按原门禁执行。准确提交、命令和结果随实际完成追加。
 
+产品修正提交`91bd67de6e417048f527e188e76e1c2756f6cabd`本地针对性49/49、公开2297项为2266 pass／0 fail／31平台skip；JS548、PowerShell53语法和有限凭据模式645文件检查通过。扩展材料230项为227 pass／3 fail／0 skip，三项均因Linux工作区缺少固定vendor/windows-host或vendor/libmpv输入，未视为通过；完整材料门禁由恢复锁定组件的标准Windows构建执行。发行说明另将核验链接改为Release页面可用的完整地址，后续产品／生成器字节与91bd67d相同。
+
 现有[发布流程](ACTIONS_RELEASE.md)要求从main手动触发，目标source已包含于main，并有同版本准确Tag、testing渠道说明及标准五附件。当前候选未满足main包含条件，未触发发布、不改门禁、不以普通测试artifact冒充已公开Release。后续testing发布应保持v0.4.0 Latest，渠道为prerelease，不能执行stable发布。
 
 本轮不操作Work前台或用户目录，不追加真实Emby／CD2、可见播放、系统安装或文件系统兼容验收。既有手动验收反馈与新的自动测试证据分开记录。
