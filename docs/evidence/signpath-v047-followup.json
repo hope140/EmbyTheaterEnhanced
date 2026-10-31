@@ -1,0 +1,281 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "sourceCommit": "5190a7020d0d00ea06776676921469736859bfbd",
+  "scope": "Direct upstream retrieval and repository-input checks; not installer extraction or a copyright clearance",
+  "checks": [
+    {
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/apiclient.js",
+      "path": "src/web-api/licensed/apiclient.js",
+      "bytes": 105635,
+      "sha256": "7621f273fd7986e1d8c8520aa9b0116c4d05ff6f139d0f336ce81fda7f06b34a",
+      "localSha256": "7621f273fd7986e1d8c8520aa9b0116c4d05ff6f139d0f336ce81fda7f06b34a",
+      "equal": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/connectionmanager.js",
+      "path": "src/web-api/licensed/connectionmanager.js",
+      "bytes": 47281,
+      "sha256": "1c9b5e2bb855f3fbb5fb0594e4e74aad5a1d3cb4d65c1640062ae970a2c3432e",
+      "localSha256": "1c9b5e2bb855f3fbb5fb0594e4e74aad5a1d3cb4d65c1640062ae970a2c3432e",
+      "equal": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/events.js",
+      "path": "src/web-api/licensed/events.js",
+      "bytes": 1230,
+      "sha256": "ad3387c1d3c30af20f585b5f6ff3b2ee6534c60f84f154d16295c449ed4ebe42",
+      "localSha256": "ad3387c1d3c30af20f585b5f6ff3b2ee6534c60f84f154d16295c449ed4ebe42",
+      "equal": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby.ApiClient.Javascript/fdd0939ac596406ab92274f30fd83d226a677424/LICENSE.md",
+      "path": "src/web-api/licensed/LICENSE.md",
+      "bytes": 1080,
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db",
+      "localSha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db",
+      "equal": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-windows/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/LICENSE.md",
+      "path": "native/windows-host/LICENSE.md",
+      "bytes": 18014,
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "localSha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "equal": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/material-design-icons/9c7b48a33157fd849c275d05fcf93d0b981f7083/LICENSE",
+      "path": "docs/redistribution-notices/web/Material-Icons-LICENSE.txt",
+      "bytes": 11357,
+      "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+      "localSha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+      "equal": true
+    },
+    {
+      "url": "https://api.nuget.org/v3-flatcontainer/mediabrowser.common/3.3.10/mediabrowser.common.3.3.10.nupkg",
+      "archiveBytes": 177439,
+      "archiveSha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b",
+      "member": "lib/netstandard1.3/MediaBrowser.Model.dll",
+      "bytes": 426496,
+      "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+      "path": "vendor/model-compatibility/snapshot-v1/MediaBrowser.Model.dll",
+      "equal": true,
+      "licenseNamedMembers": [],
+      "nuspecSha256": "4f773b8c1a85e1582e6ab931f20e712ea74e98052f3caf743ebbdd2f6cfd3549"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-windows/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater.RefreshRate/Program.cs",
+      "bytes": 6044,
+      "sha256": "a9514afcd5e54dc938d3270f28ad2c526dae023723171592fc69963b8d49c009",
+      "scope": "Source observation only; not binary-source rebuild proof",
+      "containsADL": false,
+      "imports": [
+        "user32.dll"
+      ]
+    }
+  ],
+  "inputInventory": [
+    {
+      "path": "tools/templates/runtime/preload.js",
+      "bytes": 207,
+      "sha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js",
+      "bytes": 52838,
+      "sha256": "beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/pagejs/page.js",
+      "bytes": 6028,
+      "sha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/common/playback/playbackmanager.js",
+      "bytes": 125181,
+      "sha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/common/appsettings.js",
+      "bytes": 5007,
+      "sha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/webvtt/vtt.js",
+      "bytes": 28470,
+      "sha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/webvtt/vtt.css",
+      "bytes": 428,
+      "sha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317"
+    },
+    {
+      "path": "vendor/web-snapshot/www/css/images/supporter/supporterbadge.png",
+      "bytes": 9438,
+      "sha256": "ca50e13f674482e0a6c09e28aba52f664d9da87a236d39468b1f3cb2d84aa15e"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-128x128.png",
+      "bytes": 2453,
+      "sha256": "f04a9339a04fda78afdc1289921d91a3535a29742ac042e1fac99dcb420a9eba"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-144x144.png",
+      "bytes": 3250,
+      "sha256": "b29fce90e8b3459fcd0c2fe1c44052b469788332a60420f3382c113eba727bcb"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-152x152.png",
+      "bytes": 3572,
+      "sha256": "60d7a476e83eb7276ad48d7e58979efe6951cbe4879e44a4a94f4882691802d8"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-192x192.png",
+      "bytes": 3909,
+      "sha256": "605836ab0dafb71bc6f603f51d28c89a0b922ea95ff28cf15ada621af14105d5"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-384x384.png",
+      "bytes": 7264,
+      "sha256": "d23d38c9837a5753a455837d3d5dff80c92437078fae2cdeb202bb952488b29a"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-512x512.png",
+      "bytes": 11654,
+      "sha256": "d4e7e40eec131dd5401407f95ce3614f07168471f4a4da9a28f561938ed8ef1a"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-72x72.png",
+      "bytes": 1886,
+      "sha256": "cc32d8edc79bcbcbe9f2c5a86806231451316975ba9791b01960fba79d06aebd"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-96x96.png",
+      "bytes": 2158,
+      "sha256": "6c3765a151610dd1a8cdcdafa7de831a9d8e99939cf1674b88e9401ab7f6d18e"
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/splash.png",
+      "bytes": 7990,
+      "sha256": "b2da3b66570acd5b71a95a188b35f5d3e1b63534de38d0bcfd543a913581f337"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/logoscreensaver/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/mediainfo/fresh.png",
+      "bytes": 17006,
+      "sha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/mediainfo/rotten.png",
+      "bytes": 13112,
+      "sha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/darkgradient/blueradiance.jpg",
+      "bytes": 1044963,
+      "sha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/logodark.png",
+      "bytes": 9967,
+      "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5"
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113"
+    },
+    {
+      "path": "vendor/web-snapshot/www/videoosd/ani_equalizer_white.gif",
+      "bytes": 2621,
+      "sha256": "b0b304f4dce451d8fcffd24ae9ec3c92f0322c9a72d73aa46d80582f4e3268a5"
+    }
+  ],
+  "selectedApiOutputs": [
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
+      "size": 27636,
+      "sha256": "1581f870f8c93988afe067d1b36193f8cd1aa4ed08e690f410df0f663f9ef938",
+      "equal": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/mit-apiclient.js",
+      "size": 105167,
+      "sha256": "a0c63654081723be24a9baed406c4d0ea1f6bc4ef409cd1aabfe758948899526",
+      "equal": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/transport.js",
+      "size": 5958,
+      "sha256": "78b9f7ee229b78a27ca1c8175c8a47105b2867dc72ee94d201f6442043b638d9",
+      "equal": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/events.js",
+      "size": 1598,
+      "sha256": "48c702010cbfd0f7aba927b589a15c0e50725ddc35d59a4158fc7a4c24618119",
+      "equal": true
+    }
+  ],
+  "nativePackageChecks": [
+    {
+      "url": "https://registry.npmjs.org/koffi/-/koffi-3.3.3.tgz",
+      "package": "koffi",
+      "version": "3.3.3",
+      "archiveSha256": "c53f8da8e3c916ae8d666256650916768c7c4e8a579f188d794e8371b5773308",
+      "archiveHashMatches": true,
+      "integrityMatches": true,
+      "fileCount": 87,
+      "allLockedMembersMatch": true,
+      "noticeFiles": [
+        {
+          "path": "vendor/node-api-headers/LICENSE",
+          "bytes": 1064,
+          "sha256": "a553508f516031c91f3af1148d44970cb81bbae6c4f091be6835d39cc252238c"
+        },
+        {
+          "path": "vendor/node-addon-api/LICENSE.md",
+          "bytes": 1150,
+          "sha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c"
+        },
+        {
+          "path": "LICENSE.txt",
+          "bytes": 1117,
+          "sha256": "22bcbbbacd739b026a8dc484f62a31484ce4c4e31f3408b60b29b4e41d62b290"
+        }
+      ],
+      "declaredLicense": "MIT"
+    },
+    {
+      "url": "https://registry.npmjs.org/@koromix/koffi-win32-x64/-/koffi-win32-x64-3.3.3.tgz",
+      "package": "@koromix/koffi-win32-x64",
+      "version": "3.3.3",
+      "archiveSha256": "6f3601e24e865ede500dad7fefdc545bf305862185430ecd078ffca4c2962da4",
+      "archiveHashMatches": true,
+      "integrityMatches": true,
+      "fileCount": 5,
+      "allLockedMembersMatch": true,
+      "noticeFiles": [],
+      "declaredLicense": "MIT"
+    }
+  ],
+  "hostTreeObservation": {
+    "url": "https://api.github.com/repos/MediaBrowser/emby-theater-windows/git/trees/708fadc068cbf66ced6aece4a32f3e12bb2c4e13?recursive=1",
+    "responseSha256": "14bab37b8bba2d5985c5caf9bb6953240dabc5b6f69422dd13239a68fa064cee",
+    "truncated": false,
+    "entryCount": 268,
+    "pathsContainingADL": [],
+    "scope": "Path-name observation only; not a source content or binary linkage audit"
+  },
+  "nugetLicenseMetadataObservation": {
+    "fieldsPresent": [],
+    "requireLicenseAcceptance": "false",
+    "scope": "Absence of package metadata is not proof of absence of upstream GPL source licensing"
+  }
+}
