@@ -30,6 +30,10 @@
     var bundledVersions = require('./enhanced/bundled-versions');
 
     // Explicit trial CLI is validated and isolated before bootstrap/identity/log writes.
+    var sharedCacheTrial = require('./enhanced/shared-playback-cache/trial').prepare({
+        app: app, argv: process.argv, execPath: process.execPath, platform: process.platform,
+        environment: process.env, runtimeRoot: path.resolve(__dirname, '..')
+    });
     var pageCacheTest = require('./enhanced/page-cache/test-session').prepare({
         app: app, argv: process.argv, execPath: process.execPath, platform: process.platform,
         environment: process.env, runtimeRoot: path.resolve(__dirname, '..')
@@ -123,6 +127,7 @@
     var strmConfigStore;
     var unregisterCd2Ipc = function () {};
     var unregisterStrmConfigIpc = function () {};
+    var unregisterRangeSettingsIpc = function () {};
     var unregisterDiagnosticsIpc = function () {};
     var unregisterMaintenanceIpc = function () {};
     var unregisterCacheManagementIpc = function () { return Promise.resolve(); };
@@ -1011,13 +1016,15 @@
 
     var commandLineOptions = parseCommandLine();
 
-    var userDataPath = pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
+    var userDataPath = sharedCacheTrial ? sharedCacheTrial.userDataPath : pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
     if (userDataPath) {
         app.setPath('userData', userDataPath);
     }
 
     var strmConfigStoreModule = require('./enhanced/strm-config-store');
     var cd2ServiceModule = require('./enhanced/cd2-service');
+    var preloadSourceAuthority = require('./enhanced/preload-source-authority').createAuthority();
+    app.once('will-quit', function () {preloadSourceAuthority.close();});
     var nativeHelperServiceModule = require('./native-helper/service');
     var nativeHelperMode = nativeHelperServiceModule.resolveMode(process.env.ETE_MPV_BRIDGE_MODE);
     var mpvKernelStoreModule = require('./enhanced/mpv-kernel-store');
@@ -1027,10 +1034,27 @@
         rootDir: require('path').join(app.getPath('userData'), 'config'),
         environment: Object.assign({}, process.env)
     });
-    cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog});
+    var rangeSettingsModule = require('./enhanced/playback-range-user-settings');
+    var rangeSettingsStore = null;
+    try {rangeSettingsStore = rangeSettingsModule.createStore({profileRoot: app.getPath('userData')});}
+    catch (_) {enhancedLog({category: 'range-cache', event: 'settings-unavailable', details: {}});}
+    function getRangeCacheRuntimeConfig() {
+        if (!rangeSettingsStore) return null;
+        if (sharedCacheTrial) {
+            var selected = rangeSettingsStore.get();
+            return selected.enabled ? {kind: 'shared-byte-trial', root: path.join(app.getPath('userData'), 'shared-playback-byte-cache-v2'),
+                progressPercent: selected.progressPercent, preloadMB: selected.preloadMB, timeoutMs: 30000} : null;
+        }
+        return rangeSettingsStore.runtimeConfig();
+    }
+    unregisterRangeSettingsIpc = rangeSettingsModule.register({ipcMain: ipcMain, store: rangeSettingsStore, getWebContents: getWebContents,
+        applyRuntimeSettings: function () {return nativeHelperService ? nativeHelperService.applyRangeSettings() : {applyMode: 'immediate'};},
+        getRuntimeStatus: function () {return nativeHelperService ? nativeHelperService.rangeStatus() : {enabled: !!getRangeCacheRuntimeConfig()};}});
+    cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog, sourceAuthority: preloadSourceAuthority});
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,
         service: cd2Service,
+        sourceAuthority: preloadSourceAuthority,
         getWebContents: getWebContents
     });
     unregisterStrmConfigIpc = require('./enhanced/strm-config-ipc').register({
@@ -1121,7 +1145,9 @@
             runtimeRoot: path.resolve(__dirname, '..'),
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,
-            startupKernelSelection: startupSelection
+            startupKernelSelection: startupSelection,
+            getRangeCacheConfig: getRangeCacheRuntimeConfig,
+            sourceAuthority: preloadSourceAuthority
         });
         unregisterNativeHelperIpc = nativeHelperServiceModule.register({
             ipcMain: ipcMain,
@@ -1165,6 +1191,7 @@
             runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
             runCleanup('http-cache', function () { return unregisterCacheManagementIpc(); }),
             runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
+            runCleanup('range-settings', function () { return unregisterRangeSettingsIpc(); }),
             runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
             runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),
             runCleanup('native-helper', function () { return unregisterNativeHelperIpc(); }),

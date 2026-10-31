@@ -56,6 +56,27 @@
 
             <h1>${Advanced}</h1>
 
+            <div class="checkboxContainer checkboxContainer-withDescription">
+                <label><input type="checkbox" is="emby-checkbox" disabled class="chkRetainPlayback" /><span>保留播放暂存</span></label>
+                <div class="fieldDescription checkboxFieldDescription">保留最近实际播放的视频暂存，重播时校验后复用。</div>
+            </div>
+            <div class="checkboxContainer checkboxContainer-withDescription">
+                <label><input type="checkbox" is="emby-checkbox" disabled class="chkRangeEnabled" /><span>启用下一集预载</span></label>
+                <div class="fieldDescription checkboxFieldDescription">达到指定进度后，提前读取下一集。</div>
+            </div>
+            <div class="selectContainer">
+                <select is="emby-select" disabled class="selectRangeProgress" label="开始预载的播放进度">
+                    <option value="50">50%</option><option value="60">60%</option><option value="70" selected>70%</option><option value="80">80%</option><option value="90">90%</option>
+                </select>
+            </div>
+            <div class="selectContainer">
+                <select is="emby-select" disabled class="selectRangePreload" label="预载量">
+                    <option value="100">100 MiB</option><option value="300" selected>300 MiB</option><option value="500">500 MiB</option>
+                </select>
+                <div class="fieldDescription">只限制下一集预载量；未播放的预载在退出时清除。</div>
+            </div>
+            <div class="rangeSettingsState secondaryText" role="status" aria-live="polite"></div>
+
             <div class="selectContainer">
                 <select is="emby-select" class="selectNetworkCache" label="${LabelNetworkCache}">
                     <option value="">${Auto}</option>

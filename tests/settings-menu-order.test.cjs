@@ -13,10 +13,11 @@ const expected = [
     ['mpvplayer/about.html', 8, '关于 Enhanced', 'General', 'info']
 ];
 
-test('Enhanced settings retain native sort ranks and include the independent cache route', () => {
+test('Enhanced settings retain native sort ranks and keep the independent cache management route', () => {
     const routes = pluginRoutes(root);
     assert.equal(routes.length, expected.length);
     assert.equal(routes.some(route=>route.path.startsWith('cec/')),false);
+    assert.equal(routes.some(route => route.path === 'mpvplayer/cache.html'), false);
     for (const [routePath, order] of expected) assert.equal(routes.find(route => route.path === routePath).order, order, routePath);
 });
 

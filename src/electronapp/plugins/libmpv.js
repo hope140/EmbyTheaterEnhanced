@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/playback-range-renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, playbackRangeRenderer) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -865,6 +865,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 assertCurrentPlayRequest(request);
                 await corePlaying;
                 assertCurrentPlayRequest(request);
+                if (request.rangeCache) request.rangeCache.started();
                 if (libmpv && options.mediaType === 'Video') {
                     libmpv.style.opacity = 1;
                 }
@@ -876,6 +877,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 nextTransition.playbackReady(request.playbackRequestId);
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
+                if (request.rangeCache) await request.rangeCache.close();
                 cleanupCorePlaying(request);
                 nextTransition.playbackFailed(request.playbackRequestId);
                 if (!error || !error.playbackSuperseded) {
@@ -1137,6 +1139,30 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
+            if (libmpv && libmpv.rangeCache && libmpv.rangeCache.enabled) {
+                var rangeEndpoint = libmpv, nextResolutionSequence = 0;
+                request.rangeCache = await playbackRangeRenderer.bind({endpoint: rangeEndpoint, connectionManager: connectionManager,
+                    playbackManager: playbackManager, player: self, item: item, mediaSource: mediaSource, options: options, source: url, sourceProof: resolverResult && resolverResult.sourceProof,
+                    signal: request.controller.signal,
+                    nextRequestId: function () {return rangeEndpoint.rangeResolutionScope ? rangeEndpoint.rangeResolutionScope + '-next-' + (++nextResolutionSequence) : ('next-' + request.requestId).slice(0, 54) + '-' + (++nextResolutionSequence);},
+                    recoverIdentity: function (input) {return strmIdentityRecovery.recover(input);},
+                    resolveSource: async function (context, pending) {
+                        assertCurrentPlayRequest(request);
+                        var config = null;
+                        if (strmResolver.isStrm(context)) config = await strmConfigClient.get();
+                        assertCurrentPlayRequest(request);
+                        if (pending.signal.aborted) throw Error('range-cancelled');
+                        var result = await strmResolver.resolveAsync(context, {fs: window.fs, config: config,
+                            signal: pending.signal, requestId: pending.requestId});
+                        assertCurrentPlayRequest(request);
+                        if (pending.signal.aborted) throw Error('range-cancelled');
+                        return result;
+                    },
+                    isCurrent: function () {return activePlayRequest === request && libmpv === rangeEndpoint;},
+                    position: function () {return {positionTicks: playerState.positionTicks, durationTicks: playerState.durationTicks};},
+                    onDiagnostic: function (value) {if (activePlayRequest === request) emitClientDiagnostic('info', 'preload', 'decision', value);}});
+                assertCurrentPlayRequest(request);
+            }
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
                 route: resolverObservation.route,
                 sourceKind: resolverResult && resolverResult.sourceKind,
@@ -1345,20 +1371,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         };
 
         self.getStats = function () {
-
-            return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(function (responses) {
-
+            var rangeRequest = activePlayRequest;
+            return Promise.all([getMediaStats(), getVideoStats(), getAudioStats()]).then(async function (responses) {
+                var preloadCategory = null;
+                if (activePlayRequest === rangeRequest && rangeRequest && rangeRequest.rangeCache) preloadCategory = await rangeRequest.rangeCache.category();
                 var categories = [];
-
                 for (var i = 0, length = responses.length; i < length; i++) {
-                    categories.push(responses[i]);
+                    if (responses[i]) categories.push(responses[i]);
                 }
+                if (activePlayRequest !== rangeRequest || !rangeRequest) return {categories: categories};
+                if (!preloadCategory) preloadCategory = {stats: [{label: '预载:', value: libmpv && libmpv.rangeCache && libmpv.rangeCache.enabled ? '状态更新中' : '未启用'}]};
                 var enhancedCategory = enhancedRouteState && enhancedRouteState.category();
+                enhancedCategory = playbackRouteStats.mergePreload(enhancedCategory, preloadCategory);
                 if (enhancedCategory) categories.push(enhancedCategory);
-
-                return {
-                    categories: categories
-                };
+                return {categories: categories};
             });
         }
 

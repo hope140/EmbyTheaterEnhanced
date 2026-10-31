@@ -1,0 +1,15 @@
+# Playback cache diagnostics
+
+The playback information label `暂存读取` displays the current route's cumulative selected local bytes. A new route starts at zero; seeking within that route does not reset it, and repeated ranges can count the same bytes again. It is neither remaining capacity nor disk usage, and does not prove successful delivery or decoding. The preload target uses MiB. A partial preload allocates 80% to the beginning and 20% to the end; playback reads only the ranges it needs.
+
+The `playback-cache` log category associates sessions through scoped media and representation fingerprints. Per-owner traces distinguish a new Play, selection, prepared handoff, index readiness, source version validation and shutdown. Fingerprints include the server and account scope. Raw media IDs, paths, URLs, authentication values and validators are not included. Version fingerprints identify observed metadata; a weak or absent validator remains a limitation, not a strong content-version guarantee.
+
+Range summaries distinguish `selectedLocalBytes`, `queuedLocalBytes` and `flushedLocalBytes`. Selection happens before writing. Queued bytes were accepted by the HTTP response writer, including its backpressure buffer. Flushed bytes received a successful socket-write callback; this does not confirm that the player consumed or decoded them. Source-byte counters use the same queued/flushed distinction. `complete` means the response finished with its expected bytes flushed, not that a frame was displayed. Totals retain repeated reads and failed or partial ranges.
+
+Only the first eight ranges have individual summaries; route totals retain the full range count and `omittedRanges`. Each owner permits 32 ordinary events plus one terminal summary. Service logging additionally uses the existing 120-event/minute and 32-pending-write admission gate. Suppression and pending-drop fields indicate missing observations; absent fields are not measured zero. The existing 2 MiB log limit and three rotated files remain unchanged, so older sessions can still be unavailable.
+
+Storage retirement records distinguish version changes, actual-media changes, cancelled or unplayed next media, disabled retention and capacity policy. Close summaries report retained bytes. At most two block-integrity refusals per store are recorded, with the total refusal count retained at close. No media content is written to diagnostics.
+
+Playback, seek and restart events belong to their active owner. Codec, hardware decoder, pixel format and dropped-frame evidence reuse existing property reads; diagnostics issue no additional Native queries and do not change decoder settings. `decoderObserved=false` means no supported property was observed. This is not a complete decoder-warning capture and cannot establish the cause of a green frame without corresponding evidence.
+
+These observations do not change the 50 ms selection protection, 30 ms local-read window, cache policy or source authorization. Diagnostic-enabled timings are not a playback performance benchmark.

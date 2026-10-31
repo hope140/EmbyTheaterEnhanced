@@ -63,6 +63,7 @@
             }
             if (!Object.keys(value.requestOptions).length) delete value.requestOptions;
         }
+        if (typeof response.sourceProof === 'string') value.sourceProof = response.sourceProof;
         if (response.acquiredAt !== undefined) value.acquiredAt = response.acquiredAt;
         if (response.expiresAt !== undefined) value.expiresAt = response.expiresAt;
         if (typeof response.directReason === 'string') value.directReason = response.directReason;

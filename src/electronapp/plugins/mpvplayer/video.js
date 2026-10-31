@@ -1,4 +1,4 @@
-﻿define(['loading', 'pluginManager', 'appSettings', 'baseView', '../../native-helper/client.js', 'emby-select', 'emby-checkbox', 'emby-input', 'emby-scroller'], function (loading, pluginManager, appSettings, BaseView, nativeHelperClient) {
+﻿define(['loading', 'pluginManager', 'appSettings', 'baseView', '../../native-helper/client.js', './preload-settings.js', 'emby-select', 'emby-checkbox', 'emby-input', 'emby-scroller'], function (loading, pluginManager, appSettings, BaseView, nativeHelperClient, preloadSettings) {
 
     function onSubmit(e) {
         e.preventDefault();
@@ -61,6 +61,10 @@
         this.renderSettingsEditable = false;
         this.renderSettingsRequest = 0;
         setRenderControlsEditable(view, false);
+        this.preloadSettings = preloadSettings.create(view, function (channel, value) {
+            if (!window.ipc || typeof window.ipc.invoke !== 'function') return Promise.reject(Error('unavailable'));
+            return window.ipc.invoke(channel, value);
+        });
 
         view.querySelector('form').addEventListener('submit', onSubmit);
     }
@@ -95,17 +99,24 @@
         if (options.refresh) {
             renderSettings(this.view);
         }
-        return this.loadRenderCapabilities();
+        return Promise.all([this.loadRenderCapabilities(), this.preloadSettings.resume()]);
     };
 
     SettingsView.prototype.onPause = function () {
 
         saveSettings(this.view, this.renderSettingsEditable);
+        this.preloadSettings.pause();
         this.renderSettingsRequest++;
         this.renderSettingsEditable = false;
         setRenderControlsEditable(this.view, false);
 
         BaseView.prototype.onPause.apply(this, arguments);
+    };
+
+    SettingsView.prototype.destroy = function () {
+        this.renderSettingsRequest++;
+        this.preloadSettings.dispose();
+        if (BaseView.prototype.destroy) BaseView.prototype.destroy.apply(this, arguments);
     };
 
     return SettingsView;

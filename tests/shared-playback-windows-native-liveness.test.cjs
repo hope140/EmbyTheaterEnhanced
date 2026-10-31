@@ -1,0 +1,217 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const vm = require('node:vm');
+const {spawnSync} = require('node:child_process');
+const {performance} = require('node:perf_hooks');
+const test = require('node:test');
+
+const root = path.resolve(__dirname, '..');
+const liveness = require('../tools/shared-playback-cache/windows-liveness.cjs');
+const nativeWorker = require('../tools/shared-playback-cache/windows-native-liveness-electron.cjs');
+const fixtureTool = path.join(root, 'tools/make-fixture.cjs');
+
+const nativeCases = ['helper-idle', 'helper-playback', 'helper-preview'];
+const rendererScripts = [['primitive', 11], ['promise', 12], ['echo-one', 1], ['async-void', 14], ['awaited', 7], ['microtask', 16]];
+const hashes = {installer: 'a'.repeat(64), product: 'b'.repeat(40)};
+function args(suite) {
+  return [
+    '--repo=' + path.join(os.tmpdir(), 'owned-repo'),
+    '--runtime=' + path.join(os.tmpdir(), 'owned-runtime'),
+    '--installer=' + path.join(os.tmpdir(), 'owned-installer.exe'),
+    '--installer-sha256=' + hashes.installer,
+    '--product-sha=' + hashes.product,
+    '--out=' + path.join(os.tmpdir(), 'owned-output'),
+    ...(suite === undefined ? [] : ['--suite=' + suite]),
+  ];
+}
+
+function nativeReceipt(name, overrides = {}) {
+  const preview = name === 'helper-preview';
+  const playback = name !== 'helper-idle';
+  return {
+    schema: 1, kind: 'runtime-liveness-case', suite: 'native', case: name, status: 'PASS',
+    pid: 9002, ppid: 9001, processType: 'browser', browserProcess: true, ready: true,
+    windowsCreated: 2, hidden: true, backgroundThrottling: false,
+    scripts: rendererScripts.map(([label, result]) => ({label, result})), ipcCounts: [1, 1, 1, 1],
+    observations: Array.from({length: 8}, () => ['entered', 'returned', 'settled']).flat(), ownedHelpersClosed: true,
+    native: {created: true, closed: true, loaded: playback, playbackAdvanced: playback},
+    beforeHelper: 11, afterHelper: 17,
+    previewCalls: preview ? 1 : 0, preview: preview ? {width: 64, height: 64, colored: true} : undefined,
+    undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'null', rendererResultType: 'undefined', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22},
+    ],
+    helpers: [{pid: 9003, ready: true, exited: true, exitCode: 0, signal: false, streamsClosed: true,
+      pendingRequests: 0, protocolFailure: false, operationErrorCount: 0, fatal: false}],
+    ...overrides,
+  };
+}
+function resultFor(name, receipt = nativeReceipt(name), overrides = {}) {
+  return {case: name, spawnPid: 9002, coordinatorPid: 9001, exitConfirmed: true, exitCode: 0,
+    exitSignal: null, timedOut: false, streamsClosed: true, receipt, ...overrides};
+}
+
+test('suite parser leaves the original runtime-liveness defaults unchanged and accepts only native', () => {
+  assert.deepEqual(liveness.CASES, ['bare', 'contents', 'frame']);
+  assert.deepEqual(liveness.NATIVE_CASES, nativeCases);
+  assert.deepEqual(liveness.LIMITS, {caseMs: 35000, totalMs: 120000});
+  assert.deepEqual(liveness.parseArgs(args()), {
+    repo: path.join(os.tmpdir(), 'owned-repo'), runtime: path.join(os.tmpdir(), 'owned-runtime'),
+    installer: path.join(os.tmpdir(), 'owned-installer.exe'), installerSha256: hashes.installer,
+    productCommit: hashes.product, out: path.join(os.tmpdir(), 'owned-output'),
+  });
+  assert.deepEqual(liveness.parseArgs(args('native')), {...liveness.parseArgs(args()), suite: 'native'});
+  for (const malformed of [args('unknown'), [...args('native'), '--suite=native'], [...args(), '--unexpected=yes']]) {
+    assert.throws(() => liveness.parseArgs(malformed));
+  }
+});
+
+test('native validation requires one known helper with a confirmed clean exit and case-specific results', () => {
+  for (const name of nativeCases) assert.equal(liveness.validateResult(resultFor(name), name), true, name);
+  const badReceipts = [
+    nativeReceipt('helper-playback', {helpers: [null]}),
+    nativeReceipt('helper-playback', {observations: Array.from({length: 6}, () => ['entered', 'returned', 'settled']).flat()}),
+    nativeReceipt('helper-playback', {undefinedScripts: {length: 2}}),
+    nativeReceipt('helper-playback', {undefinedScripts: [null, null]}),
+    nativeReceipt('helper-playback', {helpers: [{...nativeReceipt('helper-playback').helpers[0], pid: null}]}),
+    nativeReceipt('helper-playback', {helpers: [{...nativeReceipt('helper-playback').helpers[0], exitCode: 2}]}),
+    nativeReceipt('helper-playback', {helpers: [{...nativeReceipt('helper-playback').helpers[0], signal: true}]}),
+    nativeReceipt('helper-playback', {helpers: [{...nativeReceipt('helper-playback').helpers[0], pendingRequests: 1}]}),
+    nativeReceipt('helper-playback', {helpers: [{...nativeReceipt('helper-playback').helpers[0], ready: false}]}),
+    nativeReceipt('helper-playback', {helpers: [...nativeReceipt('helper-playback').helpers, {...nativeReceipt('helper-playback').helpers[0]}]}),
+    nativeReceipt('helper-preview', {previewCalls: 0}),
+    nativeReceipt('helper-idle', {native: {...nativeReceipt('helper-idle').native, loaded: true}}),
+    nativeReceipt('helper-playback', {native: {...nativeReceipt('helper-playback').native, playbackAdvanced: false}}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'unknown', rendererResultType: 'undefined', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'unknown', rendererResultType: 'undefined', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'null', rendererResultType: 'number', completionAck: 21},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {undefinedScripts: [
+      {label: 'undefined-promise', dispatched: true, wireResultType: 'null', rendererResultType: 'undefined', completionAck: 22},
+      {label: 'undefined-timer', dispatched: true, wireResultType: 'undefined', rendererResultType: 'undefined', completionAck: 22}]}),
+    nativeReceipt('helper-playback', {afterHelper: undefined}),
+    nativeReceipt('helper-preview', {preview: {width: 0, height: 64, colored: true}}),
+    nativeReceipt('helper-preview', {preview: {width: 64, height: 64, colored: false}}),
+    nativeReceipt('helper-playback', {suite: 'unexpected'}),
+  ];
+  for (const receipt of badReceipts) assert.equal(liveness.validateResult(resultFor(receipt.case, receipt), receipt.case), false, JSON.stringify(receipt));
+  assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {exitConfirmed: false}), 'helper-playback'), false);
+  assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {exitCode: 1}), 'helper-playback'), false);
+  assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {exitSignal: 'SIGTERM'}), 'helper-playback'), false);
+  assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {timedOut: true}), 'helper-playback'), false);
+  assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {streamsClosed: false}), 'helper-playback'), false);
+  assert.equal(liveness.validateResult(resultFor('helper-playback', nativeReceipt('helper-playback'), {receipt: null}), 'helper-playback'), false);
+});
+
+test('void probes call their input once and require ordered renderer evidence before acknowledgement', async () => {
+  assert.equal(typeof nativeWorker.voidExpression, 'function');
+  assert.equal(typeof nativeWorker.voidAckExpression, 'function');
+  const window = {};
+  const context = vm.createContext({window});
+  const immediateCalls = {count: 0};
+  window.immediateCalls = immediateCalls;
+  const immediate = vm.runInContext(nativeWorker.voidExpression('(() => { window.immediateCalls.count++; return Promise.resolve(undefined); })()', 1),
+    vm.createContext({window, immediateCalls}));
+  assert.equal(await immediate, undefined);
+  assert.equal(immediateCalls.count, 1);
+  assert.equal(vm.runInContext(nativeWorker.voidAckExpression(1), context), 21);
+  assert.equal(window.__ownedVoidSequence, 1);
+  assert.equal(window.__ownedVoidResultType, 'undefined');
+
+  const timerCalls = {count: 0};
+  window.timerCalls = timerCalls;
+  const timed = vm.runInContext(nativeWorker.voidExpression('(() => { window.timerCalls.count++; return new Promise(resolve => setTimeout(() => resolve(undefined), 1)); })()', 2),
+    vm.createContext({window, timerCalls, setTimeout}));
+  assert.equal(await timed, undefined);
+  assert.equal(timerCalls.count, 1);
+  assert.equal(vm.runInContext(nativeWorker.voidAckExpression(2), context), 22);
+  assert.equal(window.__ownedVoidSequence, 2);
+  assert.equal(window.__ownedVoidResultType, 'undefined');
+});
+
+test('void probe rejects wrong sequence, non-void values, synchronous throws, and Promise rejection without acknowledgement', async () => {
+  const wrongOrderWindow = {__ownedVoidSequence: 1};
+  assert.throws(() => vm.runInNewContext(nativeWorker.voidExpression('Promise.resolve(undefined)', 1), {window: wrongOrderWindow}), /void-probe-sequence/);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: wrongOrderWindow}), -1);
+
+  const nonVoidWindow = {};
+  const nonVoid = vm.runInNewContext(nativeWorker.voidExpression('Promise.resolve(42)', 1), {window: nonVoidWindow});
+  await assert.rejects(nonVoid);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: nonVoidWindow}), -1);
+
+  const thrownWindow = {};
+  assert.throws(() => vm.runInNewContext(nativeWorker.voidExpression('(() => { throw Error("sync-probe-failure"); })()', 1), {window: thrownWindow}), /sync-probe-failure/);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: thrownWindow}), -1);
+
+  const rejectedWindow = {};
+  const rejected = vm.runInNewContext(nativeWorker.voidExpression('Promise.reject(Error("async-probe-failure"))', 1), {window: rejectedWindow});
+  await assert.rejects(rejected, /async-probe-failure/);
+  assert.equal(vm.runInNewContext(nativeWorker.voidAckExpression(1), {window: rejectedWindow}), -1);
+});
+
+test('worker kill guard permits only a known active child and health distinguishes confirmed closure', () => {
+  const active = {child: {pid: 8123, exitCode: null, signalCode: null}, exited: false, killDenied: false};
+  assert.equal(nativeWorker.allowedKill(active), true);
+  for (const client of [null, {...active, killDenied: true}, {...active, exited: true},
+    {...active, child: {...active.child, pid: null}}, {...active, child: {...active.child, exitCode: 0}},
+    {...active, child: {...active.child, signalCode: 'SIGTERM'}}]) {
+    assert.equal(nativeWorker.allowedKill(client), false, JSON.stringify(client));
+  }
+
+  const healthy = {handshake: true, protocolFailure: false, transportTerminated: false, operationErrors: [],
+    exited: false, child: {exitCode: null, signalCode: null}, closeSeen: false, pending: new Map()};
+  assert.equal(nativeWorker.helperHealthy(healthy), true);
+  assert.equal(nativeWorker.helperHealthy({...healthy, operationErrors: [{fatal: false}]}), true);
+  for (const broken of [
+    {...healthy, handshake: false}, {...healthy, transportTerminated: true},
+    {...healthy, protocolFailure: true}, {...healthy, operationErrors: [{fatal: true}]},
+  ]) assert.equal(nativeWorker.helperHealthy(broken), false);
+  const closed = {...healthy, exited: true, child: {exitCode: 0, signalCode: null}, closeSeen: true};
+  assert.equal(nativeWorker.helperHealthy(closed, true), true);
+  assert.equal(nativeWorker.helperHealthy(healthy, true), false);
+  assert.equal(nativeWorker.helperHealthy({...closed, child: {exitCode: 1, signalCode: null}}, true), false);
+  assert.equal(nativeWorker.helperHealthy({...closed, child: {exitCode: 0, signalCode: 'SIGTERM'}}, true), false);
+  assert.equal(nativeWorker.helperHealthy({...closed, closeSeen: false}, true), false);
+  assert.equal(nativeWorker.helperHealthy({...closed, pending: new Map([['request', true]])}, true), false);
+});
+
+test('preview frame acceptance checks supported dimensions, exact RGBA size, and visible color', () => {
+  const valid = (width, height) => {
+    const pixels = Buffer.alloc(width * height * 4);
+    pixels[0] = 100;
+    return {width, height, pixels};
+  };
+  assert.equal(nativeWorker.coloredFrame(valid(64, 64)), true);
+  assert.equal(nativeWorker.coloredFrame(valid(160, 90)), true);
+  assert.equal(nativeWorker.coloredFrame(valid(65, 64)), false);
+  assert.equal(nativeWorker.coloredFrame({width: 64, height: 64, pixels: Buffer.alloc(64 * 64 * 4 - 1)}), false);
+  const alphaOnly = Buffer.alloc(64 * 64 * 4); alphaOnly[3] = 255;
+  assert.equal(nativeWorker.coloredFrame({width: 64, height: 64, pixels: alphaOnly}), false);
+  assert.equal(nativeWorker.coloredFrame(null), false);
+});
+
+test('owned five-second fixture is small, hashed, and rejected after byte corruption', t => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-native-liveness-fixture-'));
+  t.after(() => fs.rmSync(temp, {recursive: true, force: true}));
+  const file = path.join(temp, 'owned.y4m');
+  const started = performance.now();
+  const generated = spawnSync(process.execPath, [fixtureTool, file, '5'], {encoding: 'utf8', timeout: 10000});
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.ok(performance.now() - started < 5000, 'fixture generation should finish within five seconds');
+  const bytes = fs.readFileSync(file);
+  assert.ok(bytes.length > 0 && bytes.length < 2 * 1024 * 1024);
+  const plan = {out: temp, fixture: {file, size: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex')}};
+  assert.equal(liveness.verifyFixture(plan), file);
+  const changed = Buffer.from(bytes); changed[changed.length - 1] ^= 1; fs.writeFileSync(file, changed);
+  assert.throws(() => liveness.verifyFixture(plan), /fixture-changed/);
+});

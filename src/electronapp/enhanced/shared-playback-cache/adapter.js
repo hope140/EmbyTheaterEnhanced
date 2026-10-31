@@ -1,0 +1,390 @@
+'use strict';
+
+const http = require('node:http');
+const https = require('node:https');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const {selection} = require('../playback-range-policy');
+const authority = require('../preload-source-authority');
+const diagnostics = require('../playback-range-diagnostics');
+const evidence = require('./evidence');
+const {createDeferredStore} = require('./deferred-store');
+
+const error = reason => diagnostics.error(reason, 'shared-byte-' + reason);
+const positive = value => Number.isSafeInteger(value) && value > 0;
+const keyOf = value => JSON.stringify(['server', 'account', 'item', 'mediaSource', 'resource', 'representation'].map(key => value[key]));
+function cacheIdentity(identity) {
+    if (!identity || ['serverOrigin', 'serverId', 'accountId', 'itemId', 'mediaSourceId', 'representation']
+        .some(field => typeof identity[field] !== 'string' || !identity[field] || identity[field].length > 8192)) throw error('identity-missing');
+    return {server: crypto.createHash('sha256').update(JSON.stringify([identity.serverOrigin, identity.serverId])).digest('hex'),
+        account: identity.accountId, item: identity.itemId, mediaSource: identity.mediaSourceId,
+        resource: identity.representation, representation: 'authorized-original-bytes-v1'};
+}
+function uncachedIdentity(context) {
+    try {
+        if (!context || ['serverOrigin', 'serverId', 'accountId', 'itemId', 'mediaSourceId'].some(field =>
+            typeof context[field] !== 'string' || !context[field] || context[field].length > 8192) ||
+            new URL(context.serverOrigin).origin !== context.serverOrigin) return null;
+        return cacheIdentity({...context, representation: 'uncached-media-identity'});
+    } catch (_) {return null;}
+}
+function validAccess(access, expectedSize, ordinary) {
+    let url;
+    try {url = new URL(access.source);} catch (_) {throw error('source-invalid');}
+    if (!['http:', 'https:'].includes(url.protocol) || url.origin !== access.origin || url.username || url.password || url.hash) throw error('source-invalid');
+    if (!positive(access.expectedSize)) {
+        if (access.expectedSize !== undefined || !ordinary) throw error('file-size-unavailable');
+        if (expectedSize !== undefined) {
+            if (!positive(expectedSize)) throw error('representation-changed');
+            return {...access, expectedSize};
+        }
+        return access;
+    }
+    if (expectedSize !== undefined && access.expectedSize !== expectedSize) throw error('representation-changed');
+    return access;
+}
+function probe(access, signal, timeoutMs, ordinary) {
+    let failure;
+    const pending = new Promise((resolve, reject) => {
+        if (signal.aborted) {reject(error('request-cancelled')); return;}
+        const headers = {Range: 'bytes=0-0', 'Accept-Encoding': 'identity', Connection: 'close'};
+        if (access.userAgent !== undefined) headers['User-Agent'] = access.userAgent;
+        let response, metadata, timer;
+        const request = (access.source.startsWith('https:') ? https : http).request(access.source,
+            {method: 'GET', headers, agent: false});
+        const fail = reason => {failure ||= error(reason); response?.destroy(); request.destroy();};
+        const abort = () => fail('request-cancelled');
+        signal.addEventListener('abort', abort, {once: true});
+        request.once('response', incoming => {
+            response = incoming;
+            const match = /^bytes 0-0\/([1-9]\d*)$/.exec(incoming.headers['content-range'] || '');
+            if (incoming.statusCode >= 300 && incoming.statusCode < 400) return fail('redirect');
+            if ([401, 403].includes(incoming.statusCode)) return fail('auth-required');
+            if (incoming.statusCode !== 206) return fail('status-not-206');
+            const total = match && Number(match[1]);
+            if (!positive(total) || access.expectedSize !== undefined && total !== access.expectedSize) return fail('representation-changed');
+            if (ordinary) {
+                const tag = incoming.headers.etag;
+                if (tag === undefined || tag === '') return fail('etag-missing');
+                if (typeof tag === 'string' && tag.startsWith('W/')) return fail('etag-weak');
+                if (!require('../playback-range-identity').strongTag(tag)) return fail('etag-invalid');
+            }
+            if (Number(incoming.headers['content-length']) !== 1) return fail('length-mismatch');
+            if (incoming.headers['content-encoding'] && incoming.headers['content-encoding'] !== 'identity') return fail('encoding-unsupported');
+            let bytes = 0;
+            incoming.on('data', chunk => {bytes += chunk.length; if (bytes > 1) fail('body-invalid');});
+            incoming.once('aborted', () => fail('response-interrupted'));
+            incoming.once('error', () => fail('response-interrupted'));
+            incoming.once('end', () => {
+                if (bytes !== 1) return fail('body-invalid');
+                metadata = {total};
+                for (const [field, header] of [['etag', 'etag'], ['lastModified', 'last-modified']]) {
+                    const value = incoming.headers[header];
+                    if (typeof value === 'string' && value.length && value.length <= 1024) metadata[field] = value;
+                }
+                request.destroy();
+            });
+        });
+        request.once('error', () => {failure ||= error('network-failed');});
+        request.once('close', () => {
+            clearTimeout(timer); signal.removeEventListener('abort', abort);
+            if (failure) reject(failure);
+            else if (metadata) resolve(metadata);
+            else reject(error('response-interrupted'));
+        });
+        timer = setTimeout(() => fail('timeout'), timeoutMs);
+        if (signal.aborted) abort();
+        request.end();
+    });
+    Object.defineProperty(pending, 'failure', {get: () => failure});
+    return pending;
+}
+
+async function createCache(config, dependencies = {}) {
+    if (!config || config.kind !== 'shared-byte-trial' || typeof config.root !== 'string' || !path.isAbsolute(config.root)) throw error('cache-unavailable');
+    const policy = selection(config), timeoutMs = config.timeoutMs ?? 30000;
+    if (!positive(timeoutMs) || timeoutMs > 30000) throw error('cache-unavailable');
+    const records = new Set(), openings = new Set(), prepared = new Map();
+    let manager, managerPromise, managerBytes, resetting, closed = false, closing, backendClosed = false, backendFailed = false;
+    let pendingUncachedIntent;
+    let unavailable = false;
+    const factory = dependencies.createStore || (value => require('./store').createStore(value));
+    function guard(record, signal) {
+        let live = false;
+        try {live = record.isCurrent() === true;} catch (_) {}
+        if (closed || record.stopped || !live || record.signal.aborted || signal?.aborted) throw error('request-cancelled');
+    }
+    function lookup(identity) {
+        const signature = keyOf(identity);
+        const record = [...records].find(value => value.signature === signature && !value.stopped);
+        if (!record) throw error('generation-retired');
+        return record;
+    }
+    async function access(record, signal) {
+        guard(record, signal);
+        const combined = AbortSignal.any([record.signal, ...(signal ? [signal] : [])]);
+        const value = validAccess(await record.transport.access(combined), record.total, record.ordinary);
+        guard(record, signal);
+        if (record.grant && (value.origin !== record.grant.origin || value.userAgent !== record.grant.userAgent)) throw error('source-options-changed');
+        return value;
+    }
+    async function ensure(currentBytes) {
+        if (resetting) throw error('cache-unavailable');
+        if (managerBytes !== undefined && managerBytes !== currentBytes) {
+            prepared.clear();
+            if (records.size > 1) throw error('cache-unavailable');
+            resetting = Promise.resolve(managerPromise).then(value => value.proxy.close()).finally(() => {
+                manager = managerPromise = managerBytes = undefined; resetting = undefined; backendFailed = false;
+            });
+            resetting.catch(() => {unavailable = true;});
+            throw error('cache-unavailable');
+        }
+        if (managerPromise) return managerPromise;
+        managerBytes = currentBytes;
+        const store = createDeferredStore({root: config.root, currentBytes, nextBytes: policy.prefetchBytes,
+            maxPendingBytes: 2 * 1024 * 1024, retainPlayback: config.retainPlayback !== false, recoveryMode: 'on-demand', onEvidence: dependencies.onEvidence}, {create: factory});
+        if (pendingUncachedIntent !== undefined) {
+            store.forgetActualUnlessMedia(pendingUncachedIntent.identity,
+                {isCurrent: pendingUncachedIntent.isCurrent}).catch(() => {unavailable = true;});
+            pendingUncachedIntent = undefined;
+        }
+        managerPromise = require('./proxy').createProxy({store, timeoutMs, requestPolicy: 'sparse', cacheForeground: config.retainPlayback !== false, onEvidence: dependencies.onEvidence,
+            async authorize(identity, {signal}) {
+                const record = lookup(identity), value = await access(record, signal);
+                return {...record.grant, url: value.source};
+            },
+            async resolveAccess(identity, _grant, {signal}) {
+                const record = lookup(identity), value = await access(record, signal);
+                return {url: value.source, origin: value.origin, userAgent: value.userAgent, expectedSize: value.expectedSize};
+            }
+        }).then(proxy => (manager = {store, proxy})).catch(async () => {
+            backendFailed = true; unavailable = true; await store.close(); throw error('cache-unavailable');
+        });
+        managerPromise.catch(() => {});
+        return managerPromise;
+    }
+    function open(options) {
+        if (options) options = {...options, identity: options.identity && {...options.identity}};
+        const job = (async () => {
+            if (closed || records.size >= 4 || !options || !authority.isTransport(options.transport) ||
+                typeof options.isCurrent !== 'function' ||
+                (options.currentBytesReady === undefined ? !positive(options.currentBytes) || !Number.isSafeInteger(options.currentBytes + policy.prefetchBytes) :
+                    options.currentBytes !== undefined || !(options.currentBytesReady instanceof Promise)) ||
+                options.signal !== undefined && !(options.signal instanceof AbortSignal)) throw error('source-proof-invalid');
+            if (options.identity?.representation !== options.transport.representation) throw error('source-proof-invalid');
+            const identity = cacheIdentity(options.identity), signature = keyOf(identity);
+            const observe = evidence.create(dependencies.onEvidence, identity);
+            if ([...records].some(record => record.signature === signature && !record.stopped)) throw error('cache-unavailable');
+            const controller = new AbortController();
+            const record = {identity, signature, transport: options.transport, ordinary: authority.isOrdinaryTransport(options.transport), isCurrent: options.isCurrent,
+                signal: AbortSignal.any([controller.signal, options.transport.signal, ...(options.signal ? [options.signal] : [])]),
+                controller, stopped: false, role: 'next', bytes: 0, jobs: new Set()};
+            records.add(record);
+            let transferred = false, pendingProbe;
+            try {
+                guard(record);
+                const initial = await access(record);
+                const load = initial.userAgent === undefined ? ['loadfile', options.source]
+                    : ['loadfile', options.source, 'replace', '-1', 'user-agent=' + initial.userAgent];
+                if (!record.transport.matchesLoadOptions(load)) throw error('source-proof-invalid');
+                record.total = initial.expectedSize;
+                // The candidate is metadata/coverage only, never an old
+                // transport. The new Play has already bound its own authority.
+                const candidate = config.preparedHandoff === true && options.role === 'current' ? prepared.get(signature) : null;
+                const phase = value => {try {options.onPreparationPhase?.(value);} catch (_) {}};
+                let metadata, owned, retained, adopted = false;
+                if (candidate && candidate.origin === initial.origin && candidate.userAgent === initial.userAgent &&
+                    (initial.expectedSize === undefined || initial.expectedSize === candidate.metadata.total)) {
+                    prepared.delete(signature);
+                    phase('budget');
+                    const bytes = await (options.currentBytesReady ?? options.currentBytes);
+                    guard(record);
+                    if (!positive(bytes) || !Number.isSafeInteger(bytes + policy.prefetchBytes)) throw error('source-proof-invalid');
+                    phase('backend'); owned = await ensure(bytes); guard(record);
+                    // Consume once; a failed/retired adoption cannot resurrect it.
+                    metadata = {...candidate.metadata}; adopted = true;
+                } else {
+                    let budgetReady = options.currentBytesReady === undefined, probeReady = false;
+                    const preparing = Promise.resolve(options.currentBytesReady ?? options.currentBytes).then(bytes => {
+                        guard(record);
+                        if (!positive(bytes) || !Number.isSafeInteger(bytes + policy.prefetchBytes)) throw error('source-proof-invalid');
+                        budgetReady = true; if (probeReady) phase('backend');
+                        return ensure(bytes);
+                    });
+                    phase('source-probe');
+                    const probeController = new AbortController();
+                    pendingProbe = probe(initial, AbortSignal.any([record.signal, probeController.signal]), timeoutMs, record.ordinary);
+                    const probing = pendingProbe.then(value => {
+                        probeReady = true; phase(budgetReady ? 'backend' : 'budget'); return {metadata: value};
+                    });
+                    if (config.preparedHandoff === true && config.retainPlayback !== false && options.role === 'current') {
+                        // Race the existing one-byte request with local recovery;
+                        // do not serialize an empty/slow store before that probe.
+                        const looking = preparing.then(async manager => {
+                            const value = await manager.store.retainedCandidate(identity, {isCurrent: () => {
+                                try {guard(record); return true;} catch (_) {return false;}
+                            }});
+                            guard(record);
+                            return value && (initial.expectedSize === undefined || value.total === initial.expectedSize)
+                                ? {retained: value, owned: manager} : null;
+                        }).catch(() => null);
+                        record.jobs.add(looking); looking.finally(() => record.jobs.delete(looking)).catch(() => {});
+                        const selected = await Promise.race([probing, looking.then(value => value || probing)]);
+                        if (selected.retained) {
+                            // A known denial/refusal cannot be relabeled as a
+                            // cancelled losing probe. Join its actual close.
+                            if (pendingProbe.failure) throw pendingProbe.failure;
+                            probeController.abort();
+                            await pendingProbe.catch(failure => {
+                                if (failure.preloadReason !== 'request-cancelled') throw failure;
+                            });
+                            guard(record); phase('backend');
+                            retained = selected.retained; owned = selected.owned;
+                            metadata = {total: retained.total}; adopted = true;
+                        } else {metadata = selected.metadata; owned = await preparing;}
+                    } else [metadata, owned] = await Promise.all([probing.then(value => value.metadata), preparing]);
+                }
+                guard(record);
+                record.total = metadata.total;
+                record.grant = {url: initial.source, origin: initial.origin, userAgent: initial.userAgent,
+                    metadata, accessChecked: !adopted, ...(adopted ? {preparedHandoff: true} : {}), ...(retained ? {retainedCandidate: retained} : {})};
+                guard(record);
+                phase('metadata');
+                const route = await owned.proxy.open(identity, 'next');
+                record.route = route;
+                observe('adapter-open', {sourceClass: record.ordinary ? 'emby-http' : 'resolved-http', role: options.role === 'current' ? 'current' : 'next', totalBytes: metadata.total, preparedHandoff: adopted, retainedHandoff: !!retained, ...(retained ? {validator: 'stored-hash-candidate', versionHash: retained.versionHash, etagHash: retained.etagHash} : evidence.version(metadata))});
+                // A recovered backend can establish a prepared first hit before
+                // the engine asks for it. Pending recovery remains off this path.
+                if (owned.store.status().available === true) {
+                    try {await route.ready();} catch (_) {unavailable = true;}
+                }
+                guard(record);
+                let stopping;
+                const stop = () => {
+                    if (stopping) return stopping;
+                    record.stopped = true;
+                    stopping = Promise.resolve().then(async () => {
+                        await route.stop();
+                        await Promise.allSettled([...record.jobs]);
+                        record.signal.removeEventListener('abort', aborted);
+                        records.delete(record);
+                    });
+                    controller.abort();
+                    stopping.catch(() => {});
+                    return stopping;
+                };
+                const aborted = () => {stop().catch(() => {});};
+                record.signal.addEventListener('abort', aborted, {once: true});
+                if (record.signal.aborted) {await stop(); throw error('request-cancelled');}
+                const track = promise => {record.jobs.add(promise); promise.finally(() => record.jobs.delete(promise)).catch(() => {}); return promise;};
+                const handle = {source: route.url,
+                    ready: () => track((async () => {
+                        guard(record);
+                        await new Promise((resolve, reject) => {
+                            const abort = () => {record.signal.removeEventListener('abort', abort); reject(error('request-cancelled'));};
+                            record.signal.addEventListener('abort', abort, {once: true});
+                            Promise.resolve(route.ready()).then(value => {
+                                record.signal.removeEventListener('abort', abort); resolve(value);
+                            }, failure => {record.signal.removeEventListener('abort', abort); reject(failure);});
+                            if (record.signal.aborted) abort();
+                        });
+                        guard(record);
+                    })()),
+                    status: () => {
+                        const stats = typeof route.status === 'function' ? route.status() : null;
+                        return {bytes: record.bytes, total: record.total, ...(stats?.fallbackOriginal ? {fallbackOriginal: true} : {}), ...(stats?.preparedValidation ? {preparedValidation: stats.preparedValidation} : {}), ...(record.grant.preparedHandoff ? {preparedHandoff: true} : {}), ...(retained ? {retainedHandoff: true} : {}), ...(stats && Number.isSafeInteger(stats.localHitBytes) && stats.localHitBytes >= 0 ? {localHitBytes: stats.localHitBytes} : {})};
+                    },
+                    markPlaying: () => track((async () => {
+                        guard(record);
+                        const changed = await route.actual();
+                        guard(record);
+                        if (changed) record.role = 'current';
+                        return changed;
+                    })()),
+                    prefetch: args => track((async () => {
+                        guard(record, args?.signal);
+                        if (!args || !positive(args.maxBytes) || !(args.signal instanceof AbortSignal) ||
+                            args.bytesPerSecond !== undefined) throw error('cache-unavailable');
+                        const combined = AbortSignal.any([record.signal, args.signal]);
+                        await route.preload({maxBytes: Math.min(args.maxBytes, policy.prefetchBytes), signal: combined});
+                        guard(record, combined);
+                        const coverage = await route.coverage();
+                        guard(record, combined);
+                        if (!coverage || !Number.isSafeInteger(coverage.bytes) || coverage.bytes < 0 || coverage.bytes > record.total) throw error('cache-unavailable');
+                        record.bytes = Math.min(coverage.bytes, args.maxBytes, policy.prefetchBytes, record.total);
+                        const preparedMetadata = typeof route.preparedMetadata === 'function' ? route.preparedMetadata() : null;
+                        observe('preload-complete', {preloadedBytes: record.bytes, totalBytes: record.total, ...(preparedMetadata ? evidence.version(preparedMetadata) : {})});
+                        if (config.preparedHandoff === true && record.role === 'next' && record.bytes > 0 &&
+                            preparedMetadata?.total === record.total && require('../playback-range-identity').strongTag(preparedMetadata.etag)) {
+                            prepared.clear(); prepared.set(record.signature, {origin: record.grant.origin,
+                                userAgent: record.grant.userAgent, metadata: {...preparedMetadata}});
+                        }
+                        if (typeof args.onProgress === 'function') {
+                            try {args.onProgress({bytes: record.bytes, targetBytes: Math.min(args.maxBytes, policy.prefetchBytes, record.total)});} catch (_) {}
+                        }
+                        return {bytes: record.bytes};
+                    })()), stop};
+                record.handle = handle;
+                guard(record);
+                transferred = true;
+                return handle;
+            } catch (failure) {
+                observe('adapter-failed', {role: options.role === 'current' ? 'current' : 'next', reason: diagnostics.fromError(failure, 'current-probe', 'cache-unavailable').reason});
+                throw failure;
+            } finally {
+                if (!transferred) {
+                    record.stopped = true; controller.abort();
+                    if (pendingProbe) await Promise.allSettled([pendingProbe]);
+                    await Promise.allSettled([...record.jobs]);
+                    if (record.route) await record.route.stop();
+                    records.delete(record);
+                }
+            }
+        })();
+        openings.add(job); job.finally(() => openings.delete(job)).catch(() => {});
+        return job;
+    }
+    return {open,
+        async markUncachedPlaying(context, isCurrent = () => true) {
+            if (closed) throw error('generation-retired');
+            const current = () => {try {return typeof isCurrent === 'function' && isCurrent() === true;} catch (_) {return false;}};
+            if (!current()) return false;
+            const identity = uncachedIdentity(context);
+            if (!managerPromise || resetting) {pendingUncachedIntent = {identity, isCurrent}; return;}
+            const owned = await managerPromise;
+            if (!current()) return false;
+            return owned.store.forgetActualUnlessMedia(identity, {isCurrent});
+        },
+        async discardNext() {
+            prepared.clear();
+            const next = [...records].filter(record => record.role !== 'current');
+            await Promise.all(next.map(record => record.handle ? record.handle.stop() : (record.controller.abort(), Promise.resolve())));
+            if (managerPromise) await (await managerPromise).store.discardNext();
+        },
+        status() {
+            const status = manager?.store.status();
+            // Backend readiness conveys no media authorization or body hit.
+            const backendState = backendClosed ? 'closed' : closed ? 'closing' : backendFailed || status?.faulted ? 'failed' :
+                resetting || managerPromise && (!manager || status?.initializing) ? 'initializing' : manager ? 'ready' : 'idle';
+            return {backendState, bytes: status?.committed || 0, currentBytes: status?.current || 0, nextBytes: status?.next || 0,
+                maxBytes: (managerBytes || 0) + policy.prefetchBytes, routes: records.size,
+                initializing: !!status?.initializing, unavailable: unavailable || !!status?.faulted || !!resetting,
+                confidence: 'metadata-assumed-unless-strong-validator'};
+        },
+        close() {
+            if (closing) return closing;
+            closed = true; prepared.clear();
+            for (const record of records) record.controller.abort();
+            closing = (async () => {
+                await Promise.allSettled([...openings]);
+                await Promise.allSettled([...records].map(record => record.handle?.stop()));
+                if (resetting) await resetting;
+                if (managerPromise) await (await managerPromise).proxy.close();
+                backendClosed = true;
+            })();
+            return closing;
+        }
+    };
+}
+
+module.exports = {createCache, uncachedIdentity};
