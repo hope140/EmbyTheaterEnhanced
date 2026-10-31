@@ -313,6 +313,44 @@ function createService(options) {
     const refresher = cd2Refresh.createRefresher({now: now, find: findDirectory, stream: refreshDirectory});
     let transport;
     let transportError;
+    let closed = false;
+
+    // Authority is minted only here, after mapping and regular-file validation.
+    // Neither a renderer URL nor a resolver result supplied over IPC can mint it.
+    function authorizedHit(reason, source, details, principal, request, cloudPath, mode, mint, fileSize) {
+        const response = result('hit', reason, source, details);
+        const parsedSize = typeof fileSize === 'number' || typeof fileSize === 'string' && /^[1-9][0-9]{0,15}$/.test(fileSize) ? Number(fileSize) : null;
+        const size = Number.isSafeInteger(parsedSize) && parsedSize > 0 ? {expectedSize: parsedSize} : {};
+        if (mint === false) return Object.assign(response, size);
+        const authority = settings.sourceAuthority;
+        if (!authority || !principal || mint === false || closed ||
+            !/\.(mp4|m4v|mkv|mov|avi|webm|mpg|mpeg|ts|m2ts|mts|vob|wmv|flv)$/i.test(cloudPath)) return response;
+        try {
+            const resourceKey = crypto.createHash('sha256').update(JSON.stringify([
+                config.origin.url, crypto.createHash('sha256').update(config.token).digest('hex'),
+                request.ruleId || 'legacy', cloudPath
+            ])).digest('hex');
+            const refresh = async function (signal) {
+                if (closed || signal.aborted) throw Error('range-cancelled');
+                const freshRequest = Object.assign({}, request, {requestId: 'range-refresh-' + crypto.randomUUID()});
+                delete freshRequest.deadlineAt; delete freshRequest.refreshDeadlineAt;
+                const abort = function () {cancel(freshRequest.requestId);};
+                signal.addEventListener('abort', abort, {once: true});
+                try {
+                    if (signal.aborted) throw Error('range-cancelled');
+                    const fresh = mode ? await resolveModeInternal(freshRequest, principal, false) :
+                        await resolveLegacyInternal(freshRequest, principal, false);
+                    if (closed || signal.aborted || !fresh || fresh.status !== 'hit') throw Error('range-source-refresh-failed');
+                    return Object.assign({}, fresh, {resourceKey: resourceKey});
+                } finally {signal.removeEventListener('abort', abort);}
+            };
+            response.sourceProof = authority.issue(Object.assign({}, details, size, {
+                principal: principal, requestId: request.requestId, source: source,
+                resourceKey: resourceKey, refresh: refresh
+            }));
+        } catch (_) { /* Ordinary playback remains available if proof issuance fails. */ }
+        return response;
+    }
 
     function emitDiagnostic(level, event, details) {
         try {
@@ -605,7 +643,8 @@ function createService(options) {
         return startedAt + config.totalBudgetMs;
     }
 
-    async function resolveModeInternal(request) {
+    async function resolveModeInternal(request, principal, mint) {
+        function hit(reason, source, details) {return authorizedHit(reason, source, details, principal, request, cloudPath, mode, mint, fileResponse && fileResponse.size);}
         const requestId = request && request.requestId;
         const candidates = request && request.candidates;
         const mode = request && request.mode;
@@ -695,7 +734,7 @@ function createService(options) {
                 source = sameOriginSource(directResponse, config.origin);
                 if (source) {
                     clearModeSession(requestId);
-                    return result('hit', 'cd2_hit', source, {
+                    return hit('cd2_hit', source, {
                         sourceKind: 'cd2-url',
                         directReason: session && session.directReason || 'direct_url_unavailable'
                     });
@@ -740,7 +779,7 @@ function createService(options) {
                 if (source) clearModeSession(requestId);
                 else retainRecoveryForNextMode();
                 return source
-                    ? result('hit', 'cd2_hit', source, {sourceKind: 'cd2-url'})
+                    ? hit('cd2_hit', source, {sourceKind: 'cd2-url'})
                     : result('miss', 'invalid_download_url');
             }
 
@@ -751,7 +790,7 @@ function createService(options) {
                 const details = {sourceKind: 'direct-url', acquiredAt: directResult.acquiredAt};
                 if (directResult.requestOptions) details.requestOptions = directResult.requestOptions;
                 if (directResult.expiresAt !== undefined) details.expiresAt = directResult.expiresAt;
-                return result('hit', 'direct_url_hit', directResult.source, details);
+                return hit('direct_url_hit', directResult.source, details);
             }
 
             directReason = directResult.reason;
@@ -775,7 +814,7 @@ function createService(options) {
                         const details = {sourceKind: 'direct-url', acquiredAt: directResult.acquiredAt};
                         if (directResult.requestOptions) details.requestOptions = directResult.requestOptions;
                         if (directResult.expiresAt !== undefined) details.expiresAt = directResult.expiresAt;
-                        return result('hit', 'direct_url_hit', directResult.source, details);
+                        return hit('direct_url_hit', directResult.source, details);
                     }
                     directReason = directResult.reason;
                 } else {
@@ -799,7 +838,8 @@ function createService(options) {
         }
     }
 
-    async function resolveLegacyInternal(request) {
+    async function resolveLegacyInternal(request, principal, mint) {
+        function hit(reason, source, details) {return authorizedHit(reason, source, details, principal, request, cloudPath, null, mint, verifiedFileSize);}
         const requestId = request && request.requestId;
         const candidates = request && request.candidates;
         let cloudPath;
@@ -809,6 +849,7 @@ function createService(options) {
         let reply;
         let directReason;
         let fallbackResponse;
+        let verifiedFileSize;
 
         if (config.error) return result('miss', config.error);
         if (typeof requestId !== 'string' || !REQUEST_ID_PATTERN.test(requestId)) return result('miss', 'invalid_request');
@@ -839,6 +880,7 @@ function createService(options) {
             directReason = classifyError(reply.error, getTransport().status);
             if (reply.error) return result('miss', directReason);
             if (!isRegularFile(reply.response)) return result('miss', 'invalid_file');
+            verifiedFileSize = reply.response.size;
 
             const getDownload = async function (getDirectUrl) {
                 const acquiredAt = now();
@@ -861,7 +903,7 @@ function createService(options) {
                 let fallback;
                 let fallbackReason;
 
-                if (source) return result('hit', 'cd2_hit', source, {
+                if (source) return hit('cd2_hit', source, {
                     sourceKind: 'cd2-url',
                     directReason: previousReason || 'direct_url_disabled'
                 });
@@ -876,7 +918,7 @@ function createService(options) {
 
                 source = sameOriginSource(fallback.reply.response, config.origin);
                 return source
-                    ? result('hit', 'cd2_hit', source, {
+                    ? hit('cd2_hit', source, {
                         sourceKind: 'cd2-url',
                         directReason: previousReason || 'direct_url_unavailable'
                     })
@@ -896,7 +938,7 @@ function createService(options) {
                 const details = {sourceKind: 'direct-url', acquiredAt: directResult.acquiredAt};
                 if (directResult.requestOptions) details.requestOptions = directResult.requestOptions;
                 if (directResult.expiresAt !== undefined) details.expiresAt = directResult.expiresAt;
-                return result('hit', 'direct_url_hit', directResult.source, details);
+                return hit('direct_url_hit', directResult.source, details);
             }
 
             directReason = directResult.reason;
@@ -914,7 +956,7 @@ function createService(options) {
                         const details = {sourceKind: 'direct-url', acquiredAt: directResult.acquiredAt};
                         if (directResult.requestOptions) details.requestOptions = directResult.requestOptions;
                         if (directResult.expiresAt !== undefined) details.expiresAt = directResult.expiresAt;
-                        return result('hit', 'direct_url_hit', directResult.source, details);
+                        return hit('direct_url_hit', directResult.source, details);
                     }
                     directReason = directResult.reason;
                 }
@@ -928,10 +970,10 @@ function createService(options) {
         }
     }
 
-    async function resolveMode(request) {
+    async function resolveMode(request, principal) {
         const startedAt = startDiagnostic(request, request && request.mode);
         try {
-            const response = await resolveModeInternal(request);
+            const response = await resolveModeInternal(request, principal);
             finishDiagnostic(request, request && request.mode, startedAt, response);
             return response;
         } catch (error) {
@@ -944,11 +986,11 @@ function createService(options) {
         }
     }
 
-    async function resolve(request) {
-        if (request && request.mode) return resolveMode(request);
+    async function resolve(request, principal) {
+        if (request && request.mode) return resolveMode(request, principal);
         const startedAt = startDiagnostic(request, 'legacy');
         try {
-            const response = await resolveLegacyInternal(request);
+            const response = await resolveLegacyInternal(request, principal);
             finishDiagnostic(request, 'legacy', startedAt, response);
             return response;
         } catch (error) {
@@ -1015,6 +1057,7 @@ function createService(options) {
     }
 
     function close() {
+        closed = true;
         for (const requestId of active.keys()) cancel(requestId);
         active.clear();
         Array.from(modeSessions.keys()).forEach(clearModeSession);

@@ -162,8 +162,10 @@ test('actual main startup snippet isolates before bootstrap and late positional 
     context.require = name => { assert.equal(name, './enhanced/page-cache/test-session'); return wrapper; };
     vm.runInNewContext(source.slice(start, end), context);
     assert.ok(context.appBootstrapState.profileRoot.startsWith(context.pageCacheTest.root + path.sep));
-    const parseStart = source.indexOf('    var userDataPath = pageCacheTest ?'), parseEnd = source.indexOf('    var strmConfigStoreModule = ', parseStart);
+    const parseStart = source.indexOf('    var userDataPath = '), parseEnd = source.indexOf('    var strmConfigStoreModule = ', parseStart);
+    assert.ok(parseStart >= 0 && parseEnd > parseStart, 'actual userData selection must be present');
     context.commandLineOptions = {userDataPath: f.formal};
+    context.sharedCacheTrial = null; f.paths.userData = f.formal;
     vm.runInNewContext(source.slice(parseStart, parseEnd), context);
     assert.equal(f.paths.userData, context.pageCacheTest.userDataPath);
     assert.match(source, /if \(pageCacheTest\) windowOptions\.webPreferences\.additionalArguments = \[pageCacheTest\.rendererArgument\]/);

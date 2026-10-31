@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-31 — 预载与提前下载整合
+
+远端 main `b5367fc255561b75986a467f42ae331a3d3d7ffe` 包含 v0.4.7 Tag `5190a7020d0d00ea06776676921469736859bfbd`。基于该主线移植 `30534dea0d65a2ee94e80401f39ab17b050bac73`，合并 libmpv AMD 依赖并保留已下载文件选择、下载状态与预载状态；保留主线文档及工作流。首次 213 项组合运行 186 pass／21 fail／6 skip，21 项均在旧 Alameda 夹具缺少 `toast` 映射时未能加载真实下载 renderer；为夹具补上与生产 alias 对应的 toast stub 和下载未命中回复后，21 场景单独复测通过。新增真实预载 renderer 加模拟 Native 桥的已下载文件播放测试，以及真实 source-aware session 对本地文件不代理／不修改的隔离测试；这两项不代表 Windows 实际解码。Linux 公开集合 3145 项为 3114 pass／0 fail／31 平台 skip，6 个材料文件依原合同排除；运行中发现页面试验测试按旧文本取段得到空字符串，修正为验证实际 userData 选择并设置起始 sentinel，单文件另行复测 48/48；不将单文件复测伪称为重新执行整套。JS 658、PowerShell 55 文件语法和有限凭据模式扫描通过。
+
+Windows 安装器合同要求 Windows Host、MSBuild 17 和 Inno；本环境为 Linux。查询 Actions 仓库权限返回 403 Resource not accessible by integration，且此前手动 workflow dispatch 曾被拒；本轮不重试该操作或改道。待授权并可用的 Windows 构建方式，以及新候选准确源码绑定的安装器／来源检查，均未完成；未将任何已有包冒充本候选。
+
 ## 2026-10-31 — 下载入口文案与完成任务识别
 
 最终发行候选`5190a7020d0d00ea06776676921469736859bfbd`仅在产品修正91bd67d之后修正发行说明的完整核验链接和补充验证记录，产品／生成器字节相同。Windows公开[41169421561](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169421561)实际full路线success，14分5秒；标准[41169467426](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426)以release_package=true执行，完整材料、Host／安装器内部门禁和上传success，22分42秒。旧91bd67d标准任务41169318868因说明链接修正主动取消，确认cancelled后才派发新source一次；不作为失败构建或最终材料。

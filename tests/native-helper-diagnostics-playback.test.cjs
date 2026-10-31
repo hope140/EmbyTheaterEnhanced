@@ -126,7 +126,8 @@ class FakeIpc extends EventEmitter {
                 endpointId: 'diagnostics-regression-endpoint',
                 protocolVersion: 1,
                 helperVersion: 'fixture-helper',
-                libmpvVersion: 'fixture-mpv'
+                libmpvVersion: 'fixture-mpv',
+                ...(this.rangeConfig ? {rangeCache: this.rangeConfig} : {})
             });
         }
         if (operation === 'observe') return Promise.resolve({status: 'ok'});
@@ -177,7 +178,7 @@ class FakeIpc extends EventEmitter {
     }
 }
 
-function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
+function makeContext(windowTarget, dom, nativeClient, resolver, downloads, rangeRenderer, api) {
     let moduleFactory;
     const amdRequire = function (dependencies, callback, errback) {
         if (dependencies && dependencies[0] === 'css!./libmpv') {
@@ -228,7 +229,7 @@ function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
     const embyRouter = {showVideoOsd() { return Promise.resolve(); }, setTransparency() { }};
     const appSettings = {get() { return undefined; }, set() { }};
     const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
-    const connectionManager = {getApiClient() {return {};}};
+    const connectionManager = {getApiClient() {return api || {};}};
     const Player = moduleFactory(
         globalize,
         playbackManager,
@@ -245,7 +246,8 @@ function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
         undefined,
         require('../src/electronapp/enhanced/nexttrack-transition'),
         nativeClient,
-        downloads
+        downloads,
+        rangeRenderer
     );
     const player = {};
     Player.call(player);
@@ -428,6 +430,34 @@ for (const phase of ['loading', 'playing']) {
         assert.equal(diagnostics().filter(row => row.request.event === 'stop').at(-1).request.details.stopSource, 'adapter-stop-destroy');
     });
 }
+
+test('downloaded file stays the native load source when the real preload renderer is enabled', async () => {
+    const ipc = new FakeIpc(), windowTarget = makeEventTarget();
+    ipc.rangeConfig = {enabled: true, progressPercent: 70, timeoutMs: 30000};
+    Object.assign(windowTarget, {ipc, platform: 'win32', PlayerWindowId: 1});
+    const original = ipc.invoke.bind(ipc), contexts = [];
+    ipc.invoke = (channel, request) => {
+        if (request.operation === 'range-context') {
+            contexts.push(request.payload.context);
+            return Promise.resolve({status: 'ok', value: {state: 'ready'}});
+        }
+        return original(channel, request);
+    };
+    const local = 'C:\\SyntheticDownloads\\movie.mkv';
+    const resolver = {isStrm: () => true, resolveAsync: async () => {throw Error('download hit must win');}};
+    const downloads = {async localSource() {return {status: 'hit', source: local};}};
+    const api = {serverAddress: () => 'https://synthetic.invalid', serverId: () => 'server', getCurrentUserId: () => 'account'};
+    const renderer = require('../src/electronapp/enhanced/playback-range-renderer');
+    const {player} = makeContext(windowTarget, makeDom(), nativeHelperClient, resolver, downloads, renderer, api);
+    const options = makePlayOptions('https://synthetic.invalid/original');
+    options.item.Id = 'item'; options.item.ServerId = 'server'; options.mediaSource.Id = 'source';
+    options.mediaSource.Container = 'mkv'; options.playSessionId = 'session';
+    await player.play(options);
+    assert.equal(ipc.loadCalls.length, 1);
+    assert.equal(ipc.loadCalls[0].data[1], local);
+    assert.equal(contexts.length, 1); assert.equal(contexts[0].source, local);
+    await player.stop(true);
+});
 
 for (const mode of ['download-hit', 'download-miss', 'transcode']) {
     test('download source selection preserves native lifecycle for ' + mode, async () => {

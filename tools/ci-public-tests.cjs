@@ -36,8 +36,10 @@ function main() {
     for (const excludedPath of MATERIAL_REQUIRED) process.stdout.write('Excluded material-required: ' + excludedPath + '\n');
     process.stdout.write('Running ' + selected.length + ' discovered public tests.\n');
 
-    const result = childProcess.spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...selected], {
+    const env = require('../tests/helpers/range-fixture-root.cjs').testEnvironment(process.env, process.platform);
+    const result = childProcess.spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-concurrency=1', ...selected], {
         cwd: root,
+        env,
         stdio: ['ignore', 'inherit', 'inherit']
     });
     if (result.error) throw result.error;

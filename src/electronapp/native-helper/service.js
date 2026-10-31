@@ -1,4 +1,5 @@
 'use strict';
+const preloadDiagnostics = require('../enhanced/playback-range-diagnostics');
 
 const previewSnapshot = require('./preview-snapshot');
 
@@ -121,6 +122,57 @@ function normalizeStartupKernelSelection(value) {
 
 function createService(options) {
   const settings = options || {};
+  function readRangeConfig() {
+    try {const config = typeof settings.getRangeCacheConfig === 'function' ? settings.getRangeCacheConfig() : settings.rangeCache; return config && ['next-prefix', 'shared-byte-trial', 'source-aware'].includes(config.kind) ? {...config} : null;} catch (_) {return null;}
+  }
+  function reportPreload(value) {
+    const safe = preloadDiagnostics.snapshot(value);
+    try {if (typeof settings.logger === 'function') settings.logger({category: 'preload', event: 'decision', details: safe});} catch (_) {}
+    return safe;
+  }
+  const rangeEvidence = require('../enhanced/bounded-diagnostics').createRecorder(
+    typeof settings.logger === 'function' ? settings.logger : () => {}, 'playback-cache', 120);
+  function reportRangeEvidence(value) {rangeEvidence(value.event, value.details);}
+  function authorizeRange(value, role, signal, helper, generationId) {
+    const owner = rangeGenerationOwner, authority = settings.sourceAuthority;
+    if (!authority || !owner || owner.helper !== helper || owner.generationId !== generationId ||
+        owner.principal !== authority.principalFor(getWebContents())) throw preloadDiagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+    return authority.bind({sourceProof: value.sourceProof, source: value.source, principal: owner.principal, signal,
+      ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
+  }
+  function authorizeOrdinaryRange(value, role, signal, helper, generationId) {
+    const owner = rangeGenerationOwner, authority = settings.sourceAuthority;
+    if (!authority || !owner || !['current', 'next'].includes(role) || owner.helper !== helper || owner.generationId !== generationId || !helper || helper.exited || helper.transportTerminated || helper.currentGenerationId !== generationId ||
+        owner.principal !== authority.principalFor(getWebContents()) || value && value.sourceProof !== undefined) throw preloadDiagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+    const parsed = require('../enhanced/playback-range-session').parseContext(value);
+    if (!parsed) throw preloadDiagnostics.error('source-proof-invalid', 'range-source-proof-invalid');
+    const requestId = role === 'current' ? owner.label : owner.scope + '-next-emby';
+    const proof = authority.issue({principal: owner.principal, requestId, source: parsed.source, sourceKind: 'emby-http',
+      resourceKey: crypto.createHash('sha256').update(JSON.stringify(parsed.identity)).digest('hex')});
+    return authority.bind({sourceProof: proof, source: parsed.source, principal: owner.principal, signal,
+      ...(role === 'current' ? {requestId: owner.label} : {requestPrefix: owner.scope + '-next-'})});
+  }
+  const sharedBudget = require('./shared-cache-budget').createBudgetReader((helper, generationId) =>
+    !destroyed && helper === client && !helper.exited && !helper.transportTerminated && helper.currentGenerationId === generationId);
+  function readSharedCurrentBytes(helper, generationId) {return sharedBudget.read(helper, generationId);}
+  function primeSharedBudget(helper) {
+    if (rangeSession && (rangeConfigKind === 'shared-byte-trial' || rangeConfigKind === 'source-aware' &&
+        rangeSession.status().kind === 'shared-byte-trial')) sharedBudget.read(helper, helper.currentGenerationId);
+  }
+  function changesSharedBudget(name) {return name === 'demuxer-max-bytes' || name === 'profile';}
+  function createRangeSession(config) {
+    if (config.kind === 'source-aware') return require('../enhanced/playback-range-source-session').createSourceSession({config,
+      onDiagnostic: reportPreload, onEvidence: reportRangeEvidence, readCurrentBytes: readSharedCurrentBytes, authorize: settings.sourceAuthority ? authorizeRange : undefined,
+      authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined});
+    return require('../enhanced/playback-range-session').createSession({config, onDiagnostic: reportPreload, onEvidence: reportRangeEvidence,
+    ...(config.kind === 'shared-byte-trial' ? {create: require('../enhanced/shared-playback-cache/adapter').createCache, readCurrentBytes: readSharedCurrentBytes,
+      authorizeOrdinary: settings.sourceAuthority ? authorizeOrdinaryRange : undefined} : {}),
+    authorize: settings.sourceAuthority ? authorizeRange : undefined});}
+  function rangeKey(config) {return JSON.stringify(config && ['kind', 'root', 'sharedRoot', 'blockBytes', 'timeoutMs', 'progressPercent', 'preloadMB', 'preloadEnabled', 'retainPlayback', 'preparedHandoff', 'bytesPerSecond'].map(key => config[key] == null ? null : config[key]));}
+  const initialRangeConfig = readRangeConfig();
+  let rangeSession = initialRangeConfig ? createRangeSession(initialRangeConfig) : null;
+  let rangeConfigKind = initialRangeConfig && initialRangeConfig.kind;
+  let rangeConfigKey = rangeKey(initialRangeConfig), rangeApplyTail = Promise.resolve(), rangeCloseFailure = null;
   const electron = settings.electron;
   const BrowserWindow = electron && electron.BrowserWindow;
   const ClientClass = settings.NativeHelperClient || NativeHelperClient;
@@ -164,6 +216,8 @@ function createService(options) {
   const pendingClientDestructions = new Set();
   let activeEndpointId = null;
   let generationEpoch = 0;
+  let rangePreloadEpoch = 0;
+  let rangeGenerationOwner = null;
   let rendererEpoch = 0;
   let presentationEpoch = 0;
   let presentationTokenHighWater = 0;
@@ -511,6 +565,10 @@ function createService(options) {
       onDiagnostic: function (record) { diagnostic(Object.assign({}, record, {helperRun})); },
       onEvent: function (message) {
         if (client !== owned) return;
+        if (rangeSession && typeof rangeSession.mediaEvent === 'function' && message.generationId === owned.currentGenerationId) rangeSession.mediaEvent(message.name, message.value);
+        if (rangeSession && message.name === 'core-idle' && message.value === false) {
+          rangeSession.started(owned, message.generationId).catch(function () {log('range-cache-unavailable', {});});
+        }
         if (message.name === 'end-file' && message.value && message.value.reason === 4) {
           if (message.generationId !== owned.currentGenerationId) return;
           clearPresentation(presentation);
@@ -528,6 +586,7 @@ function createService(options) {
       },
       onTerminal: function (terminal) {
         if (client !== owned) return;
+        if (rangeSession) retireRangeSession().catch(function () {log('range-cache-unavailable', {});});
         crashCount += terminal.name === 'process-exit-terminal' || terminal.name === 'stdout-end' ? 1 : 0;
         clearPresentation(presentation);
         lastVisibleMedia = null;
@@ -672,6 +731,39 @@ function createService(options) {
     });
   }
 
+  function retireRangeSession() {
+    ++rangePreloadEpoch; rangeGenerationOwner = null; sharedBudget.retire();
+    const owned = rangeSession; return owned ? owned.retire() : Promise.resolve();
+  }
+
+  function applyRangeConfig(expectedEpoch, idleOnly = false) {
+    const job = rangeApplyTail.then(async function () {
+      if (destroyed || expectedEpoch !== generationEpoch) return;
+      if (rangeCloseFailure) throw rangeCloseFailure;
+      // Never close a live source's proxy merely because its settings were saved.
+      if (idleOnly && client && client.currentGenerationId != null && !client.exited && !client.transportTerminated) return;
+      const desired = readRangeConfig();
+      if (rangeKey(desired) === rangeConfigKey) return;
+      ++rangePreloadEpoch;
+      const old = rangeSession; rangeSession = null; rangeConfigKey = rangeKey(null);
+      if (old) {
+        try {await old.close();} catch (error) {rangeCloseFailure = error; throw error;}
+      }
+      if (destroyed || expectedEpoch !== generationEpoch) return;
+      // Save can finish while the old readers close: publish only the latest config.
+      const latest = readRangeConfig();
+      rangeSession = latest ? createRangeSession(latest) : null;
+      rangeConfigKey = rangeKey(latest); rangeConfigKind = latest && latest.kind;
+    });
+    rangeApplyTail = job.catch(function () {}); return job;
+  }
+
+  async function applyRangeSettings() {
+    const expectedEpoch = generationEpoch;
+    await applyRangeConfig(expectedEpoch, true);
+    return {applyMode: !destroyed && expectedEpoch === generationEpoch && rangeKey(readRangeConfig()) === rangeConfigKey ? 'immediate' : 'next-play'};
+  }
+
   function requireEndpoint(endpointId) {
     if (typeof endpointId !== 'string' || !activeEndpointId || endpointId !== activeEndpointId) throw new Error('stale-endpoint');
   }
@@ -692,21 +784,27 @@ function createService(options) {
       const createdEndpointId = activeEndpointId;
       const active = await ensureClient();
       requireEndpoint(createdEndpointId);
-      return {status: 'ok', mode, endpointId: createdEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion};
+      return {status: 'ok', mode, endpointId: createdEndpointId, protocolVersion: PROTOCOL_VERSION, helperVersion: active.handshake.helperVersion, libmpvVersion: active.handshake.libmpvVersion,
+        rangeCache: rangeSession ? rangeSession.status() : null};
     }
     if (operation === 'status') return status();
     requireEndpoint(endpointId);
     if (operation === 'destroy') {
       // Retire this endpoint before awaiting its process. A new create owns a
       // different ID, and this completion must never revoke the replacement.
+      const retiringRange = rangeSession ? retireRangeSession() : Promise.resolve();
       activeEndpointId = null;
-      await destroyClient('renderer-destroy');
+      const outcomes = await Promise.allSettled([destroyClient('renderer-destroy'), retiringRange]);
+      const failure = outcomes.find(outcome => outcome.status === 'rejected');
+      if (failure) throw failure.reason;
       return {status: 'ok'};
     }
     let beginEpoch;
     if (operation === 'begin-generation') {
       acceptRendererEpoch(payload);
       beginEpoch = ++generationEpoch;
+      if (rangeSession) await retireRangeSession();
+      try {await applyRangeConfig(beginEpoch);} catch (_) {log('range-cache-unavailable', {});}
     }
     const active = operation === 'begin-generation' ? await ensureClient() : client;
     if (!active || active.transportTerminated || active.exited) throw new Error('native-helper-unavailable');
@@ -733,7 +831,45 @@ function createService(options) {
       }
       if (beginEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId ||
           active.currentGenerationId !== generationId) throw new Error('generation-superseded');
-      return {status: 'ok', generationId};
+      rangeGenerationOwner = rangeSession && settings.sourceAuthority ? {helper: active, generationId, label,
+        scope: crypto.randomUUID(), principal: settings.sourceAuthority.principalFor(getWebContents())} : null;
+      return {status: 'ok', generationId, rangeCache: rangeSession ? rangeSession.status() : null,
+        ...(rangeGenerationOwner ? {rangeResolutionScope: rangeGenerationOwner.scope} : {})};
+    }
+    if (operation === 'range-context') {
+      requireGeneration(active, payload);
+      ++rangePreloadEpoch;
+      const value = rangeSession ? await rangeSession.setContext(payload.context, active, active.currentGenerationId) : {state: 'disabled'};
+      if (rangeConfigKind === 'source-aware' && active === client && active.currentGenerationId === payload.generationId &&
+          value && value.state === 'ready' && !value.diagnostic) primeSharedBudget(active);
+      return {status: 'ok', value};
+    }
+    if (operation === 'range-cancel-next') {
+      requireGeneration(active, payload);
+      ++rangePreloadEpoch;
+      if (rangeSession) await rangeSession.cancelNext();
+      return {status: 'ok'};
+    }
+    if (operation === 'range-status') {
+      requireGeneration(active, payload);
+      return {status: 'ok', value: rangeSession ? rangeSession.status() : {enabled: false}};
+    }
+    if (operation === 'range-preload') {
+      requireGeneration(active, payload);
+      if (!rangeSession) return {status: 'ok', value: {state: 'unavailable'}};
+      // Queue cancellation/replacement can retire a candidate without changing generation.
+      const generationId = active.currentGenerationId, candidateEpoch = ++rangePreloadEpoch, ownedRange = rangeSession;
+      let values;
+      try {values = await Promise.all([active.getProperty('time-pos', 2000), active.getProperty('duration', 2000)]);}
+      catch (_) {
+        if (candidateEpoch !== rangePreloadEpoch || ownedRange !== rangeSession || destroyed || endpointId !== activeEndpointId || active !== client || active.currentGenerationId !== generationId) return {status: 'ok', value: {state: 'cancelled'}};
+        return {status: 'ok', value: {state: 'unavailable', diagnostic: reportPreload({stage: 'progress-check', reason: 'proxy-unavailable'})}};
+      }
+      if (candidateEpoch !== rangePreloadEpoch || ownedRange !== rangeSession) return {status: 'ok', value: {state: 'cancelled'}};
+      if (destroyed || endpointId !== activeEndpointId || active !== client || active.currentGenerationId !== generationId) return {status: 'ok', value: {state: 'unavailable'}};
+      if (!Number.isFinite(values[0]) || !Number.isFinite(values[1]) || values[1] <= 0 ||
+          values[0] / values[1] * 100 < ownedRange.status().progressPercent) return {status: 'ok', value: {state: 'progress-pending'}};
+      return {status: 'ok', value: await ownedRange.preload(payload.context, active, generationId)};
     }
     if (operation === 'prepare-presentation') return preparePresentation(active, endpointId, payload.token);
     if (operation === 'cancel-presentation') {
@@ -762,27 +898,41 @@ function createService(options) {
         if (!fixedSettingLogged.has(name)) { fixedSettingLogged.add(name); log('render-setting-fixed', {property: name}); }
         return {status: 'ok', handledBy: 'native-helper-render-path'};
       }
-      active.setProperty(name, validateScalar(payload.value));
+      const value = validateScalar(payload.value);
+      if (changesSharedBudget(name)) sharedBudget.beforeWrite();
+      active.setProperty(name, value);
+      if (changesSharedBudget(name)) primeSharedBudget(active);
       return {status: 'accepted'};
     }
     if (operation === 'set-properties') {
       requireGeneration(active, payload);
       if (!Array.isArray(payload.entries) || payload.entries.length > 64) throw new Error('property-batch-invalid');
-      payload.entries.forEach(function (entry) {
+      // Preflight the whole batch before any native write. A rejected batch may
+      // not partially change a budget already leased to a dispatched source.
+      const entries = payload.entries.map(entry => {
         const name = validatePropertyName(entry && entry.name, SET_PROPERTIES);
+        return {name, value: ['wid', 'fullscreen', 'vo', 'gpu-api'].includes(name) ? entry.value : validateScalar(entry.value)};
+      });
+      if (entries.some(entry => changesSharedBudget(entry.name))) sharedBudget.beforeWrite();
+      entries.forEach(function ({name, value}) {
         if (name === 'wid' || name === 'fullscreen') return;
         if (name === 'vo' || name === 'gpu-api') {
           if (!fixedSettingLogged.has(name)) { fixedSettingLogged.add(name); log('render-setting-fixed', {property: name}); }
           return;
         }
-        active.setProperty(name, validateScalar(entry.value));
+        active.setProperty(name, value);
       });
+      // FIFO tail read is not awaited by this settings IPC. The subsequent
+      // range bind can overlap actual native completion without delaying load.
+      primeSharedBudget(active);
       return {status: 'accepted'};
     }
     if (operation === 'get-property') {
       requireGeneration(active, payload);
       const name = validatePropertyName(payload.name, GET_PROPERTIES);
-      return {status: 'ok', value: await active.getProperty(name, 2000)};
+      const value = await active.getProperty(name, 2000);
+      if (active === client && active.currentGenerationId === payload.generationId && rangeSession && typeof rangeSession.mediaProperty === 'function') rangeSession.mediaProperty(name, value);
+      return {status: 'ok', value};
     }
     if (operation === 'command') {
       const args = validateCommand(payload.data);
@@ -794,7 +944,17 @@ function createService(options) {
       }
       requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
-        const load = active.load(args);
+        const loadEpoch = generationEpoch;
+        const selected = rangeSession ? await rangeSession.select(args[1], active, active.currentGenerationId, args) : null;
+        if (destroyed || loadEpoch !== generationEpoch || active !== client || endpointId !== activeEndpointId || payload.generationId !== active.currentGenerationId) {
+          if (selected) await selected.cancel();
+          throw new Error('stale-generation');
+        }
+        const dispatchShared = selected && selected.canDispatch();
+        if (selected && !dispatchShared) selected.cancel().catch(function () {log('range-cache-unavailable', {});});
+        if (dispatchShared && selected.commit) selected.commit();
+        const loadArgs = dispatchShared ? [args[0], selected.source].concat(args.slice(2)) : args;
+        const load = active.load(loadArgs);
         load.promise.catch(function (error) {
           if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||
               !error || error.state === 'GENERATION_RETIRED') return;
@@ -807,6 +967,7 @@ function createService(options) {
         return {status: 'accepted'};
       }
       if (args[0] === 'stop') {
+        if (rangeSession) await retireRangeSession();
         const retain = ownsPresentation(presentation) && presentation.token === payload.presentationToken &&
           validToken(presentation.holdId) && active.currentGenerationId === null;
         if (!retain) {
@@ -817,6 +978,7 @@ function createService(options) {
         active.stop().catch(function () {});
         return {status: 'accepted'};
       }
+      if (args[0] === 'seek' && rangeSession && typeof rangeSession.mediaEvent === 'function') rangeSession.mediaEvent('seek-requested', args[2] === 'absolute' ? Number(args[1]) : undefined);
       active.submitCommand(args);
       return {status: 'accepted'};
     }
@@ -842,6 +1004,7 @@ function createService(options) {
       ++generationEpoch;
       // A newer endpoint epoch also cancels a begin whose ID has not returned to the renderer yet.
       if (client && (validToken(request.requestEpoch) || request.generationId === null || request.generationId === client.currentGenerationId)) {
+        if (rangeSession) retireRangeSession().catch(function () {log('range-cache-unavailable', {});});
         client.retireGeneration(request.reason || 'retired');
       }
     }
@@ -854,6 +1017,7 @@ function createService(options) {
   }
 
   async function destroyClient(reason) {
+    sharedBudget.retire();
     ++generationEpoch;
     clearPresentation(presentation);
     lastVisibleMedia = null;
@@ -872,6 +1036,7 @@ function createService(options) {
 
   function destroy() {
     if (destroyPromise) return destroyPromise;
+    ++rangePreloadEpoch; ++generationEpoch;
     destroyed = true;
     activeEndpointId = null;
     // Renderer unload or transport death may detach client while its kill is pending.
@@ -887,8 +1052,9 @@ function createService(options) {
         try { await startPromise; } catch (_) { }
       }
       // One failed child must not let before-quit outrun other owned exits.
-      const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions, ...(previewWork ? [previewWork.promise] : [])]);
-      const failure = outcomes.find(outcome => outcome.status === 'rejected');
+      const outcomes = await Promise.allSettled([destroyClient('service-destroy'), ...pendingDestructions, ...(previewWork ? [previewWork.promise] : []),
+        rangeSession ? rangeSession.close() : Promise.resolve(), rangeApplyTail]);
+      const failure = outcomes.find(outcome => outcome.status === 'rejected') || (rangeCloseFailure ? {reason: rangeCloseFailure} : null);
       // Native failure does not transfer ownership of local window resources.
       // Attempt all releases, then preserve the original owned-client error.
       let cleanupFailure = null;
@@ -970,7 +1136,7 @@ function createService(options) {
     }());
     return record.promise;
   }
-  return {call, destroy, mode, notify, prewarm, status, capturePreview, isPreviewOwner, kernelStatus: function () { return status().kernel; },
+  return {call, destroy, mode, notify, prewarm, status, applyRangeSettings, rangeStatus: function () { return rangeSession ? rangeSession.status() : {enabled: false}; }, capturePreview, isPreviewOwner, kernelStatus: function () { return status().kernel; },
     getVideoWindow: function () { return !destroyed && surfaceWindow && !surfaceWindow.isDestroyed() ? surfaceWindow : null; }};
 }
 

@@ -80,11 +80,19 @@ $testLog = Join-Path $root ('test-output/manual-tests-' + $run + '.tap')
 New-Item -ItemType Directory -Path (Split-Path -Parent $testLog) -Force | Out-Null
 $phase = Start-CIPhase 'tests.regression'
 $phaseSucceeded = $false
+$previousPortSnapshot = $env:ETE_TEST_WINDOWS_PORT_SNAPSHOT
 try {
+    # One bounded read before --test isolates each file. Never ignore a failed
+    # query or replace the real fixed guard's bind/collision checks.
+    $portSnapshotLines = @(& node -e "const h=require(process.argv[1]); const env=h.testEnvironment(); process.stdout.write(env.ETE_TEST_WINDOWS_PORT_SNAPSHOT+'\n');" (Join-Path $root 'tests/helpers/range-fixture-root.cjs'))
+    if ($LASTEXITCODE -ne 0 -or $portSnapshotLines.Count -eq 0) { throw 'Windows test port preflight failed before regression.' }
+    if ($portSnapshotLines.Count -gt 1) { $portSnapshotLines[0..($portSnapshotLines.Count - 2)] | Write-Output }
+    $env:ETE_TEST_WINDOWS_PORT_SNAPSHOT = [string]$portSnapshotLines[-1]
     & node --test --test-reporter=tap --test-concurrency=1 @tests | Tee-Object -FilePath $testLog
     if ($LASTEXITCODE -ne 0) { throw 'Full regression failed; no package will be uploaded.' }
     $phaseSucceeded = $true
 } finally {
+    $env:ETE_TEST_WINDOWS_PORT_SNAPSHOT = $previousPortSnapshot
     Complete-CIPhase $phase $phaseSucceeded
     Write-CITestTiming (Join-Path $PSScriptRoot 'ci-test-timing-summary.cjs') $testLog
 }

@@ -41,6 +41,8 @@
         this.mode = metadata.mode;
         this.protocolVersion = metadata.protocolVersion;
         this.helperVersion = metadata.helperVersion;
+        this.rangeCache = metadata.rangeCache || null;
+        this.rangeResolutionScope = null;
         this.libmpvVersion = metadata.libmpvVersion;
         this.style = {};
 
@@ -95,6 +97,8 @@
             return call('begin-generation', request).then(function (result) {
                 if (destroyed || generationEpoch !== requestEpoch) throw new Error('generation-superseded');
                 currentGenerationId = result.generationId;
+                self.rangeResolutionScope = result.rangeResolutionScope || null;
+                if (Object.prototype.hasOwnProperty.call(result, 'rangeCache')) self.rangeCache = result.rangeCache || null;
                 return result;
             });
         };
@@ -103,6 +107,7 @@
             var requestEpoch = ++generationEpoch;
             var generationId = currentGenerationId;
             currentGenerationId = null;
+            self.rangeResolutionScope = null;
             if (!ipc || typeof ipc.send !== 'function') return;
             ipc.send(NOTIFY_CHANNEL, {operation: 'retire-generation', payload: {
                 reason: reason || 'retired', generationId: generationId, requestEpoch: requestEpoch
@@ -125,6 +130,18 @@
         this.setProperties = function (properties) {
             var entries = Object.keys(properties || {}).map(function (name) { return {name: name, value: properties[name]}; });
             return call('set-properties', {entries: entries, generationId: currentGenerationId});
+        };
+        this.createRangeBinding = function () {
+            var generationId = currentGenerationId;
+            function bound(operation, context) {
+                if (destroyed || generationId !== currentGenerationId) return Promise.reject(new Error('stale-generation'));
+                return call(operation, {generationId: generationId, context: context});
+            }
+            return {setContext: function (context) {return bound('range-context', context);},
+                preload: function (context) {return bound('range-preload', context);},
+                cancelNext: function () {return bound('range-cancel-next');},
+                status: function () {return bound('range-status');},
+                retire: function () {return bound('range-context', null);}};
         };
         this.sendCommand = function (data) {
             return call('command', {data: data, generationId: currentGenerationId});
