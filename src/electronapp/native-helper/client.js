@@ -44,9 +44,11 @@
         this.libmpvVersion = metadata.libmpvVersion;
         this.style = {};
 
-        function emit(data) {
+        function emit(data, generationId) {
             listeners.slice().forEach(function (listener) {
-                try { listener({data: data}); } catch (_) { }
+                var event = {data: data};
+                if (Number.isSafeInteger(generationId) && generationId > 0) event.generationId = generationId;
+                try { listener(event); } catch (_) { }
             });
         }
 
@@ -55,7 +57,7 @@
             if (message.type === 'property_change' && message.data && typeof message.data.name === 'string') {
                 if (message.data.name === 'playback-restart' &&
                     (currentGenerationId == null || message.generationId !== currentGenerationId)) return;
-                emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}});
+                emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}}, message.generationId);
             } else if (message.type === 'bridge_error') {
                 emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated',
                     endReason: message.endReason === 4 ? 4 : null,

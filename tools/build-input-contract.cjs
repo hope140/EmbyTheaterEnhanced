@@ -63,6 +63,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/build-toolchains.cjs', 'tools/build-toolchains.lock.json',
     'tools/tracked-file-hash.cjs', 'tools/prepare-preload.cjs',
     'tools/prepare-web-overlays.cjs', 'tools/patch-videoosd-lifecycle.cjs', 'tools/patch-connectionmanager-transport.cjs', 'tools/patch-advance-download.cjs',
+    'tools/patch-playback-input-diagnostics.cjs',
     'tools/patch-externalplayer-residue.cjs', 'tools/patch-item-controls.cjs',
     'tools/patch-content-width.cjs',
     'tools/patch-actionsheet-layout.cjs',

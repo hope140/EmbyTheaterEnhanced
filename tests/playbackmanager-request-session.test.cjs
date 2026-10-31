@@ -2080,7 +2080,8 @@ async function ewtFixture() {
     fixture.apiClient.getCurrentUser = async () => ({Policy: {}});
     await startPublicItem(fixture, 'A');
     let inputFactory;
-    vm.runInNewContext(fs.readFileSync(path.join(repoRoot, 'vendor/web-snapshot/www/modules/common/input/api.js'), 'utf8'), {
+    vm.runInNewContext(require('../tools/patch-playback-input-diagnostics.cjs').patchInputApi(
+        fs.readFileSync(path.join(repoRoot, 'vendor/web-snapshot/www/modules/common/input/api.js'), 'utf8')), {
         define: (_deps, factory) => { inputFactory = factory; }
     });
     inputFactory({}, {default: fixture.events}, {default: {getApiClients: () => [fixture.apiClient]}}, {},
@@ -2216,4 +2217,43 @@ test('EWT accepted Seek without completion neither invents a position nor blocks
     f.native.restart(7.12);
     assert.equal(f.posts.at(-1).PositionTicks, 71200000);
     assert.equal(f.posts.at(-1).EventName, 'seek');
+});
+
+test('remote Seek diagnostics reach the adapter without changing the requested target', async () => {
+    const f = await ewtFixture();
+    const calls = [], currentTime = f.player.currentTime;
+    f.player.currentTime = function (value, context) {
+        if (value != null) calls.push({value, context});
+        return currentTime.apply(this, arguments);
+    };
+    f.send(123456789);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].value, 12345);
+    assert.equal(calls[0].context.origin, 'remote-playstate');
+    assert.deepEqual(Object.keys(calls[0].context), ['origin']);
+    assert.equal(f.native.commands.at(-1).data[1], '12.345');
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.length, 0, 'diagnostic context cannot fabricate a completion report');
+});
+
+test('slider diagnostics preserve existing metadata duration selection and ordinary Seek semantics', async () => {
+    const f = await ewtFixture();
+    f.native.property('duration', 60);
+    const calls = [], currentTime = f.player.currentTime;
+    f.player.currentTime = function (value, context) {
+        if (value != null) calls.push({value, context});
+        return currentTime.apply(this, arguments);
+    };
+    const context = {origin: 'position-slider', percent: 25};
+    f.manager.seekPercent(25, f.player, context);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].value, 30000, 'existing 120-second metadata duration remains authoritative here');
+    assert.equal(calls[0].context, context);
+    assert.equal(f.native.commands.at(-1).data[1], '30');
+    f.native.acknowledge();
+    await settle();
+    assert.equal(f.posts.length, 0);
+    f.native.restart(30);
+    assert.equal(f.posts.at(-1).PositionTicks, 300000000);
 });

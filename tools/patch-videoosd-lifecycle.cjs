@@ -122,6 +122,123 @@ function patchThumbnailPreview(source) {
     return output;
 }
 
+function patchIntroSkip(source) {
+    let output = once(source, '    var lastPointerEvent = 0;', `    var currentIntroOwner = null, currentIntroEndSource = "unavailable", introAutoClickInProgress = false, introGeneration = 0;
+    self.clearIntroInfo = function () {
+      introGeneration++;
+      currentIntroInfo = currentIntroOwner = null;
+      currentIntroEndSource = "unavailable";
+      showHideSkipIntro(false);
+    };
+    function introSkipDecision(info, player, clickOwner, checkClickOwner, clickGeneration) {
+      var context = thumbnailContext();
+      var details = {
+        introStartTicks: info && typeof info.start === "number" && Number.isFinite(info.start) ? info.start : null,
+        introEndTicks: info && typeof info.end === "number" && Number.isFinite(info.end) ? info.end : null,
+        introOwnerMatches: currentIntroOwner && context ? sameThumbnailContext(currentIntroOwner, context) : null,
+        introClickOwnerMatches: clickOwner && context ? sameThumbnailContext(clickOwner, context) &&
+          (!checkClickOwner || clickGeneration === introGeneration) : null,
+        introEndSource: currentIntroEndSource,
+        introDurationTicks: null, introDurationSource: "unavailable", disposition: "unavailable"
+      };
+      if (!info || !player) return details;
+      if (!details.introOwnerMatches || (checkClickOwner && !details.introClickOwnerMatches)) {
+        details.disposition = "rejected-owner";
+        return details;
+      }
+      if (details.introStartTicks == null || details.introEndTicks == null ||
+          details.introStartTicks < 0 || details.introEndTicks <= details.introStartTicks) {
+        details.disposition = "rejected-target";
+        return details;
+      }
+      try {
+        var duration;
+        if (typeof player.getIntroSkipDurationTicks === "function") {
+          duration = player.getIntroSkipDurationTicks();
+          details.introDurationSource = "native-current";
+        } else {
+          var media = _playbackmanager.default.currentMediaSource(player);
+          duration = media && media.RunTimeTicks;
+          if (typeof duration === "number" && Number.isFinite(duration) && duration > 0) {
+            details.introDurationSource = "media-source";
+          } else {
+            duration = _playbackmanager.default.duration(player);
+            details.introDurationSource = "manager-fallback";
+          }
+        }
+        if (typeof duration === "number" && Number.isFinite(duration) && duration > 0) details.introDurationTicks = duration;
+      } catch (_) { /* Unavailable duration never authorizes an intro seek. */ }
+      if (details.introDurationTicks == null) details.disposition = "duration-unavailable";
+      else details.disposition = details.introEndTicks < details.introDurationTicks ? "requested" : "rejected-target";
+      return details;
+    }
+    function reportIntroSkipDecision(player, details) {
+      try {
+        if (player && typeof player.reportIntroSkipDiagnostic === "function") {
+          var pending = player.reportIntroSkipDiagnostic(details);
+          if (pending && typeof pending.catch === "function") pending.catch(function () {});
+        }
+      } catch (_) { /* Diagnostics must not change playback. */ }
+    }
+    function clickSkipIntroAutomatically() {
+      var previous = introAutoClickInProgress;
+      introAutoClickInProgress = true;
+      try { return btnSkipIntro.click(); }
+      finally { introAutoClickInProgress = previous; }
+    }
+    var lastPointerEvent = 0;`);
+    output = once(output, '        var introStart,\n          introEnd,',
+        '        var introStart,\n          introEnd,\n          introEndSource = "unavailable",');
+    output = once(output, 'i < chapters.length - 1 && (introEnd = chapters[i + 1].StartPositionTicks))',
+        'i < chapters.length - 1 && (introEnd = chapters[i + 1].StartPositionTicks, introEndSource = "next-chapter"))');
+    output = once(output, ': "IntroEnd" === chapter.MarkerType && (introEnd = chapter.StartPositionTicks);',
+        ': "IntroEnd" === chapter.MarkerType && (introEnd = chapter.StartPositionTicks, introEndSource = "explicit");');
+    output = once(output, '      currentIntroInfo = null != introStart && introEnd ? {start: introStart, end: introEnd} : null;',
+        '      currentIntroInfo = null != introStart && introEnd ? {start: introStart, end: introEnd} : null;\n' +
+        '      currentIntroOwner = thumbnailContext();\n      currentIntroEndSource = introEndSource;');
+    output = once(output, '    function updateNowPlayingInfo(player, state) {\n',
+        '    function updateNowPlayingInfo(player, state) {\n      if (self.clearIntroInfo) self.clearIntroInfo();\n');
+    for (const name of ['onPlaybackStart', 'onPlaybackStopped']) {
+        output = once(output, '    function ' + name + '(e, state) {\n',
+            '    function ' + name + '(e, state) {\n      if (self.currentPlayer === this && self.clearIntroInfo) self.clearIntroInfo();\n');
+    }
+    output = once(output, '    function releaseCurrentPlayer() {\n',
+        '    function releaseCurrentPlayer() {\n      if (self.clearIntroInfo) self.clearIntroInfo();\n');
+    for (const prefix of [
+        '(VideoOsd.prototype.pause = function () {\n      this.paused = !0;\n      this.releaseRateKeys();\n',
+        '(VideoOsd.prototype.destroy = function () {\n      this._eteRateKeysDestroyed = true;\n      this.releaseRateKeys();\n'
+    ]) {
+        output = once(output, prefix, prefix + '      if (this.clearIntroInfo) this.clearIntroInfo();\n');
+    }
+    output = once(output, '            introInfo &&\n            enableSkipIntro &&',
+        '            introInfo &&\n            introSkipDecision(introInfo, self.currentPlayer, null, false).disposition === "requested" &&\n            enableSkipIntro &&');
+    output = once(output, 'enableAutoSkipIntro && btnSkipIntro.click()',
+        'enableAutoSkipIntro && clickSkipIntroAutomatically()');
+    output = once(output, `    function onSkipIntroClickInternal() {
+      var info = currentIntroInfo,
+        player = self.currentPlayer;
+      info && player && (_playbackmanager.default.seek(info.end, player), self.hideOsd());
+    }`, `    function onSkipIntroClickInternal(origin, clickOwner, clickGeneration) {
+      var info = currentIntroInfo, player = self.currentPlayer;
+      var details = introSkipDecision(info, player, clickOwner, true, clickGeneration);
+      details.origin = origin === "intro-auto" ? "intro-auto" : "intro-button";
+      if (details.disposition !== "requested") return reportIntroSkipDecision(player || (clickOwner && clickOwner.player), details);
+      _playbackmanager.default.seek(info.end, player, details);
+      self.hideOsd();
+    }`);
+    output = once(output, `          if (!skipIntroValidated) return validateSkipIntroFeature().then(onSkipIntroClickInternal);
+          onSkipIntroClickInternal();`, `          var clickOwner = thumbnailContext(), clickGeneration = introGeneration,
+            origin = introAutoClickInProgress ? "intro-auto" : "intro-button";
+          function completeIntroClick() { onSkipIntroClickInternal(origin, clickOwner, clickGeneration); }
+          if (!skipIntroValidated) return validateSkipIntroFeature().then(completeIntroClick);
+          completeIntroClick();`);
+    output = once(output, '_playbackmanager.default.seek(seekAirTimeTicks, player))',
+        '_playbackmanager.default.seek(seekAirTimeTicks, player, {origin: "position-slider", percent: newPercent}))');
+    output = once(output, '_playbackmanager.default.seekPercent(newPercent, player));',
+        '_playbackmanager.default.seekPercent(newPercent, player, {origin: "position-slider", percent: newPercent}));');
+    return output;
+}
+
 function patchVideoOsd(source) {
     const start = '_dom.default.addEventListener(window, "keydown", function (event)';
     const end = '_dom.default.addEventListener(\n        view,\n        "dblclick"';
@@ -190,7 +307,7 @@ function patchVideoOsd(source) {
         '(VideoOsd.prototype.pause = function () {\n      this.paused = !0;\n      this.releaseRateKeys();');
     output = once(output, '(VideoOsd.prototype.destroy = function () {\n',
         '(VideoOsd.prototype.destroy = function () {\n      this._eteRateKeysDestroyed = true;\n      this.releaseRateKeys();\n');
-    return patchThumbnailPreview(output);
+    return patchIntroSkip(patchThumbnailPreview(output));
 }
 
 module.exports = {patchVideoOsd};

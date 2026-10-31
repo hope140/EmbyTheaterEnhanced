@@ -163,6 +163,7 @@ function createFixture(root) {
         'tools/prepare-web-overlays.cjs',
         'tools/patch-advance-download.cjs',
         'tools/patch-videoosd-lifecycle.cjs',
+        'tools/patch-playback-input-diagnostics.cjs',
         'tools/patch-connectionmanager-transport.cjs',
         'tools/patch-externalplayer-residue.cjs',
         'tools/patch-item-controls.cjs',

@@ -23,7 +23,45 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         return {
             requestId: request && request.requestId,
             playRequestId: request && request.playbackRequestId ? request.playbackRequestId : null,
+            nativeGenerationId: request && request.nativeGenerationId || null,
             playbackPhase: request ? request.corePlayingLogged ? 'playing' : 'loading' : 'UNAVAILABLE'
+        };
+    }
+
+    function diagnosticNumber(value) {
+        return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER ? value : null;
+    }
+
+    function diagnosticGeneration(value) {
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
+    }
+
+    function diagnosticField(value, name) {
+        try {
+            var field = value && Object.getOwnPropertyDescriptor(value, name);
+            return field && Object.prototype.hasOwnProperty.call(field, 'value') ? field.value : undefined;
+        } catch (_) { return undefined; }
+    }
+
+    function diagnosticEnum(value, allowed, fallback) {
+        return typeof value === 'string' && allowed.indexOf(value) >= 0 ? value : fallback;
+    }
+
+    function seekDiagnosticContext(context) {
+        var owner = diagnosticField(context, 'introOwnerMatches');
+        var clickOwner = diagnosticField(context, 'introClickOwnerMatches');
+        return {
+            seekOrigin: diagnosticEnum(diagnosticField(context, 'origin'),
+                ['intro-button', 'intro-auto', 'position-slider', 'remote-playstate', 'relative-control'], 'unspecified'),
+            percent: diagnosticNumber(diagnosticField(context, 'percent')),
+            introStartTicks: diagnosticNumber(diagnosticField(context, 'introStartTicks')),
+            introEndTicks: diagnosticNumber(diagnosticField(context, 'introEndTicks')),
+            introOwnerMatches: typeof owner === 'boolean' ? owner : null,
+            introClickOwnerMatches: typeof clickOwner === 'boolean' ? clickOwner : null,
+            introEndSource: diagnosticEnum(diagnosticField(context, 'introEndSource'), ['explicit', 'next-chapter'], 'unavailable'),
+            introDurationTicks: diagnosticNumber(diagnosticField(context, 'introDurationTicks')),
+            introDurationSource: diagnosticEnum(diagnosticField(context, 'introDurationSource'),
+                ['native-current', 'media-source', 'manager-fallback'], 'unavailable')
         };
     }
 
@@ -148,6 +186,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var playGeneration = 0;
         var highestPlaybackRequestId = 0;
         var activePlayRequest;
+        var diagnosticObservationOwners = {position: null, duration: null, cache: null, cacheTime: null};
+        var diagnosticObservationPlays = {position: null, duration: null, cache: null, cacheTime: null};
         var subtitleSelectionSequence = 0;
         var enhancedRouteState = playbackRouteStats && typeof playbackRouteStats.create === 'function'
             ? playbackRouteStats.create()
@@ -219,7 +259,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 corePlayingLogged: false,
                 nativeFallbackToastRequested: false,
                 pauseIntent: null,
-                pauseIntentSequence: 0
+                pauseIntentSequence: 0,
+                nativeGenerationId: null,
+                diagnosticSeekSequence: 0,
+                lastSeekDiagnostic: null,
+                mediaSourceDurationSeconds: diagnosticNumber(options && options.mediaSource && options.mediaSource.RunTimeTicks) === null
+                    ? null : options.mediaSource.RunTimeTicks / 10000000,
+                itemDurationSeconds: diagnosticNumber(options && options.item && options.item.RunTimeTicks) === null
+                    ? null : options.item.RunTimeTicks / 10000000
             };
             activePlayRequest = request;
             if (enhancedRouteState) enhancedRouteState.begin(request);
@@ -237,6 +284,51 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return !!request && activePlayRequest === request && request.generation === playGeneration &&
                 !request.controller.signal.aborted &&
                 (!request.playbackRequestId || request.playbackRequestId === highestPlaybackRequestId);
+        }
+
+        function diagnosticOwnerMatches(request, generationId) {
+            if (!request || !request.nativeGenerationId || !generationId) return null;
+            return isCurrentPlayRequest(request) && request.nativeGenerationId === generationId;
+        }
+
+        function noteDiagnosticObservation(name, generationId) {
+            var owner = diagnosticGeneration(generationId);
+            diagnosticObservationOwners[name] = owner;
+            diagnosticObservationPlays[name] = diagnosticOwnerMatches(activePlayRequest, owner) === true ? activePlayRequest.generation : null;
+        }
+
+        function diagnosticCachedOwnerMatches(request, name) {
+            var matches = diagnosticOwnerMatches(request, diagnosticObservationOwners[name]);
+            if (matches !== true) return matches;
+            return diagnosticObservationPlays[name] === null ? null : diagnosticObservationPlays[name] === request.generation;
+        }
+
+        function cachedPlaybackDiagnostic(request) {
+            var cache = playerState.demuxerCacheState;
+            var eof = diagnosticField(cache, 'eof-cached');
+            return {
+                positionSeconds: diagnosticNumber(playerState.positionTicks) === null ? null : playerState.positionTicks / 10000000,
+                positionGenerationId: diagnosticObservationOwners.position,
+                positionCurrentGeneration: diagnosticCachedOwnerMatches(request, 'position'),
+                durationSeconds: diagnosticNumber(playerState.durationTicks) === null ? null : playerState.durationTicks / 10000000,
+                durationGenerationId: diagnosticObservationOwners.duration,
+                durationCurrentGeneration: diagnosticCachedOwnerMatches(request, 'duration'),
+                cacheGenerationId: diagnosticObservationOwners.cache,
+                cacheCurrentGeneration: diagnosticCachedOwnerMatches(request, 'cache'),
+                cacheReaderSeconds: diagnosticNumber(diagnosticField(cache, 'reader-pts')),
+                cacheEndSeconds: diagnosticNumber(diagnosticField(cache, 'cache-end')),
+                cacheDurationSeconds: diagnosticNumber(diagnosticField(cache, 'cache-duration')),
+                cacheEof: typeof eof === 'boolean' ? eof : null,
+                cacheTimeSeconds: diagnosticNumber(playerState['demuxer-cache-time']),
+                cacheTimeGenerationId: diagnosticObservationOwners.cacheTime,
+                cacheTimeCurrentGeneration: diagnosticCachedOwnerMatches(request, 'cacheTime'),
+                mediaSourceDurationSeconds: request && request.mediaSourceDurationSeconds,
+                itemDurationSeconds: request && request.itemDurationSeconds
+            };
+        }
+
+        function latestSeekDiagnostic(request) {
+            return request && request.lastSeekDiagnostic ? Object.assign({}, request.lastSeekDiagnostic) : null;
         }
 
         function assertCurrentPlayRequest(request) {
@@ -785,20 +877,30 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 switch (recv.data.data.name) {
                     case 'playback-restart':
                         var position = recv.data.data.value;
-                        if (!isCurrentPlayRequest(activePlayRequest) || typeof position !== 'number' ||
+                        var restartRequest = activePlayRequest;
+                        if (!isCurrentPlayRequest(restartRequest) || typeof position !== 'number' ||
                             !Number.isFinite(position) || position < 0) break;
-                        self._onTimeUpdate(toTicks(position));
-                        emitClientDiagnostic('info', 'playback', 'seek', requestDiagnosticDetails(activePlayRequest));
+                        self._onTimeUpdate(toTicks(position), recv.generationId);
+                        emitClientDiagnostic('info', 'playback', 'seek', Object.assign(requestDiagnosticDetails(restartRequest), {
+                            nativeEvent: 'playback-restart',
+                            observation: 'native-position',
+                            observedPositionSeconds: diagnosticNumber(position),
+                            eventGenerationId: diagnosticGeneration(recv.generationId),
+                            eventCurrentGeneration: diagnosticOwnerMatches(restartRequest, diagnosticGeneration(recv.generationId)),
+                            latestSubmittedSeek: latestSeekDiagnostic(restartRequest),
+                            seekAssociation: 'latest-submission-only',
+                            cached: cachedPlaybackDiagnostic(restartRequest)
+                        }));
                         events.trigger(self, 'seek');
                         break
                     case 'time-pos':
-                        self._onTimeUpdate(toTicks(recv.data.data.value))
+                        self._onTimeUpdate(toTicks(recv.data.data.value), recv.generationId)
                         break
                     case 'pause':
                         self._onPlayPause(recv.data.data.value)
                         break
                     case 'duration':
-                        self._onDurationUpdate(toTicks(recv.data.data.value))
+                        self._onDurationUpdate(toTicks(recv.data.data.value), recv.generationId)
                         break
                     case 'volume':
                         self._onVolumeChange(recv.data.data.value)
@@ -807,13 +909,13 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         self._onMute(recv.data.data.value)
                         break
                     case 'eof-reached':
-                        self._onStopped(recv.data.data.value)
+                        self._onStopped(recv.data.data.value, recv.generationId)
                         break
                     case 'demuxer-cache-state':
-                        self._onDemuxerCacheStateChanged(recv.data.data.value)
+                        self._onDemuxerCacheStateChanged(recv.data.data.value, recv.generationId)
                         break
                     case "demuxer-cache-time":
-                        self._onDemuxerCacheTimeChanged(recv.data.data.value)
+                        self._onDemuxerCacheTimeChanged(recv.data.data.value, recv.generationId)
                         break
                     case "estimated-vf-fps":
                         self._onEstimatedVfFpsChanged(recv.data.data.value)
@@ -1141,19 +1243,24 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             if (libmpv && typeof libmpv.beginGeneration === 'function') {
-                await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId), {
+                var nativeGeneration = await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId), {
                     serverId: item && item.ServerId,
                     itemId: item && item.Id,
                     mediaSourceId: mediaSource && mediaSource.Id
                 });
                 assertCurrentPlayRequest(request);
+                request.nativeGenerationId = diagnosticGeneration(nativeGeneration && nativeGeneration.generationId);
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
                 route: resolverObservation.route,
                 sourceKind: resolverResult && resolverResult.sourceKind,
-                directUserAgentApplied: fileLocalLoadOptions.length > 0
+                directUserAgentApplied: fileLocalLoadOptions.length > 0,
+                requestedStartSeconds: diagnosticNumber(startPositionTicks) === null ? null : startPositionTicks / 10000000,
+                plannedStartSeconds: diagnosticNumber(startPositionTicks) === null ? null : Math.floor(startPositionTicks / 10000000),
+                startOptionWriteOrder: 'after-loadfile-submission',
+                cached: cachedPlaybackDiagnostic(request)
             }));
             await sendCommand(fileLocalLoadOptions.length
                 ? ['loadfile', url, 'replace', '-1'].concat(fileLocalLoadOptions)
@@ -1193,29 +1300,65 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         // Save this for when playback stops, because querying the time at that point might return 0
-        self.currentTime = function (val) {
+        self.currentTime = function (val, diagnosticContext) {
 
             if (val != null) {
-                return submitSeek(['seek', String(val / 1000), 'absolute', 'exact']);
+                var seconds = val / 1000;
+                return submitSeek(['seek', String(seconds), 'absolute', 'exact'], 'absolute', seconds, diagnosticContext);
             }
 
             return (playerState.positionTicks || 0) / 10000;
         };
 
-        function submitSeek(command) {
+        self.getIntroSkipDurationTicks = function () {
+            var request = activePlayRequest;
+            var ticks = diagnosticNumber(playerState.durationTicks);
+            return ticks !== null && ticks > 0 && diagnosticCachedOwnerMatches(request, 'duration') === true ? ticks : null;
+        };
+
+        self.reportIntroSkipDiagnostic = function (context) {
+            try {
+                emitClientDiagnostic('info', 'playback', 'intro-skip', Object.assign(requestDiagnosticDetails(activePlayRequest), {
+                    intro: seekDiagnosticContext(context),
+                    disposition: diagnosticEnum(diagnosticField(context, 'disposition'),
+                        ['requested', 'rejected-owner', 'rejected-target', 'duration-unavailable'], 'unavailable'),
+                    cached: cachedPlaybackDiagnostic(activePlayRequest)
+                }));
+            } catch (_) { /* Optional intro diagnostics cannot affect playback. */ }
+        };
+
+        function submitSeek(command, mode, seconds, context) {
             var request = activePlayRequest;
             if (!isCurrentPlayRequest(request)) return;
+            var seek = Object.assign(seekDiagnosticContext(context), {
+                sequence: ++request.diagnosticSeekSequence,
+                mode: mode,
+                requestedSeconds: diagnosticNumber(seconds),
+                submissionStatus: 'submitted'
+            });
+            request.lastSeekDiagnostic = seek;
+            var before = cachedPlaybackDiagnostic(request);
+            emitClientDiagnostic('info', 'playback', 'seek-command-submitted', Object.assign(requestDiagnosticDetails(request), {
+                seek: Object.assign({}, seek), cachedBeforeSeek: before
+            }));
             sendCommand(command).then(function () {
                 if (!isCurrentPlayRequest(request)) return;
-                emitClientDiagnostic('info', 'playback', 'seek-command-accepted', requestDiagnosticDetails(request));
+                seek.submissionStatus = 'accepted';
+                emitClientDiagnostic('info', 'playback', 'seek-command-accepted', Object.assign(requestDiagnosticDetails(request), {
+                    seek: Object.assign({}, seek), acceptance: 'bridge-submission', cachedBeforeSeek: before
+                }));
             }).catch(function () {
                 if (!isCurrentPlayRequest(request)) return;
-                emitClientDiagnostic('warn', 'playback', 'seek-command-failed', requestDiagnosticDetails(request));
+                seek.submissionStatus = 'failed';
+                emitClientDiagnostic('warn', 'playback', 'seek-command-failed', Object.assign(requestDiagnosticDetails(request), {
+                    seek: Object.assign({}, seek), cachedBeforeSeek: before
+                }));
             });
         }
 
         function seekRelative(offsetMs) {
-            return submitSeek(['seek', String(offsetMs / 1000), 'relative']);
+            var seconds = offsetMs / 1000;
+            return submitSeek(['seek', String(seconds), 'relative'], 'relative', seconds, {origin: 'relative-control'});
         }
 
         self.rewind = function (offsetMs) {
@@ -1473,20 +1616,23 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return true;
         };
 
-        self._onTimeUpdate = function (ticks) {
+        self._onTimeUpdate = function (ticks, generationId) {
 
             playerState.positionTicks = ticks;
+            noteDiagnosticObservation('position', generationId);
 
             events.trigger(self, 'timeupdate');
         };
 
-        self._onDurationUpdate = function (ticks) {
+        self._onDurationUpdate = function (ticks, generationId) {
 
             playerState.durationTicks = ticks;
+            noteDiagnosticObservation('duration', generationId);
         };
 
-        self._onDemuxerCacheStateChanged = function (value) {
+        self._onDemuxerCacheStateChanged = function (value, generationId) {
             playerState.demuxerCacheState = value;
+            noteDiagnosticObservation('cache', generationId);
         };
 
         self._onError = function (error) {
@@ -1523,10 +1669,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             events.trigger(self, 'volumechange');
         };
 
-        self._onStopped = function (stopped) {
+        self._onStopped = function (stopped, generationId) {
             if (stopped) {
                 if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'stop', Object.assign(requestDiagnosticDetails(activePlayRequest), {
-                    stopSource: 'native-eof-reached'
+                    stopSource: 'native-eof-reached',
+                    eventGenerationId: diagnosticGeneration(generationId),
+                    eventCurrentGeneration: diagnosticOwnerMatches(activePlayRequest, diagnosticGeneration(generationId)),
+                    latestSubmittedSeek: latestSeekDiagnostic(activePlayRequest),
+                    seekAssociation: 'latest-submission-only',
+                    cached: cachedPlaybackDiagnostic(activePlayRequest)
                 }));
                 events.trigger(self, 'stopped');
             }
@@ -1542,8 +1693,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
         }
 
-        self._onDemuxerCacheTimeChanged = function (value) {
+        self._onDemuxerCacheTimeChanged = function (value, generationId) {
             playerState["demuxer-cache-time"] = value
+            noteDiagnosticObservation('cacheTime', generationId);
         }
 
         self._onEstimatedVfFpsChanged = function (fps) {

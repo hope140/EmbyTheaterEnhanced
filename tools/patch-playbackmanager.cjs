@@ -593,4 +593,25 @@ replaceOnce('seek completion report binding',
     '            _events.default.on(player, "timeupdate", onPlaybackTimeUpdate),\n' +
     '            _events.default.on(player, "seek", onPlaybackSeek),');
 
+// Optional observability context follows the existing seek path; it never
+// selects the target, changes remote player arguments, or starts new work.
+replaceOnce('seek diagnostic context',
+    '      (self.seek = function (ticks, player) {',
+    '      (self.seek = function (ticks, player, diagnosticContext) {');
+replaceOnce('seek diagnostic local dispatch',
+    '            : changeStream(player, ticks)\n',
+    '            : changeStream(player, ticks, null, null, diagnosticContext)\n');
+replaceOnce('changeStream diagnostic context',
+    '    function changeStream(player, ticks, params, progressEventName) {',
+    '    function changeStream(player, ticks, params, progressEventName, diagnosticContext) {');
+replaceOnce('seek diagnostic adapter dispatch',
+    'return player.currentTime(parseInt(ticks / 1e4)), Promise.resolve();',
+    'return player.currentTime(parseInt(ticks / 1e4), diagnosticContext), Promise.resolve();');
+replaceOnce('seek percent diagnostic context',
+    '    (PlaybackManager.prototype.seekPercent = function (percent, player) {',
+    '    (PlaybackManager.prototype.seekPercent = function (percent, player, diagnosticContext) {');
+replaceOnce('seek percent diagnostic dispatch',
+    '      (ticks *= percent /= 100), this.seek(parseInt(ticks), player);',
+    '      (ticks *= percent /= 100), this.seek(parseInt(ticks), player, diagnosticContext);');
+
 fs.writeFileSync(file, source, 'utf8');
