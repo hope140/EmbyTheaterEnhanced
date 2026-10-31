@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-31 — v0.4.7测试版已发布
+
+提前下载候选及收尾已快进合入main，`v0.4.7` Tag固定准确产品／构建来源`5190a7020d0d00ea06776676921469736859bfbd`。正常[发布工作流41171790099](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41171790099)从main手动执行testing，预检、复用同源码标准构建41169467426、五附件上传及公开均success；[v0.4.7测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.7)为prerelease、非draft，正式Latest保持v0.4.0同一对象。公开五附件实际重新下载，大小／SHA-256与API digest、安装器来源／校验、总校验表及准确源码notes一致。没有安装或操作前台；完整回执与范围见[本版核验](V047_RELEASE_VERIFICATION.md)。以下保留发布前准备和材料限制的当时记录。
+
 ## 2026-10-31 — 0.4.7标准发行材料已就绪，未发布
 
 准确来源`5190a7020d0d00ea06776676921469736859bfbd`的Windows公开[41169421561](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169421561)和标准发行构建[41169467426](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426)均success；后者release_package=true／build_input_benchmark=false，完整发行材料门禁和上传成功，22分42秒。构建[附件13030807954](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426/artifacts/13030807954)为164676752字节，API绑定同一源码／分支／run，2026-11-01 05:02:17 UTC过期。主线仍为a958d52，v0.4.7 Tag／Release未建立；这份材料不表示已公开测试版。
