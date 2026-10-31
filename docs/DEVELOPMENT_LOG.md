@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-31 — 0.4.8基线的Electron44.5.0整合
+
+从已发布0.4.8之后的main 51eb449创建独立分支，选择迁移de364b2的Electron固定输入／Vulkan loader、获取与版本守卫及两项混合来源拒绝回归，逐字节核对保留最新main全部src、package／lock和安装器／工作流。本地组合定向75/75、JS548／PowerShell53语法及645份维护文本有限凭据模式扫描通过；缓存官方归档沿原prepare重新验证，提取树／复制后校验通过。旧0.4.7包不再作为推荐交付；完整公开与新准确提交Windows普通验收构建结果待追加，不合main或发布，不操作Work前台或用户文件。
+
 ## 2026-10-31 — v0.4.8合main并完成testing发布
 
 来源e8e9688在Windows公开CI41177694415为2306项：2301 pass／0 fail／5 skip；标准发行构建41177705325完整2401项：2399 pass／0 fail／2 skip，显式材料135/135及普通安装器门禁通过。获本轮具体授权并核对main仍为16a891b后，正常原子推送main快进及新Tag v0.4.8固定e8e9688；不带入独立Electron44.5.0分支。现有发布41179756153以testing复用同源码标准构建，preflight／build／publish全部success，公开Release429781238，正式Latest保持v0.4.0同一对象。

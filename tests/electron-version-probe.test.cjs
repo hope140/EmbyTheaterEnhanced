@@ -10,7 +10,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 test('Electron version probe requires the exact pinned runtime versions', () => {
     const expected = {
-        electron: '44.4.2',
+        electron: '44.5.0',
         chrome: '152.0.7977.130',
         node: '24.21.0',
         v8: '15.2.124.28-electron.0'

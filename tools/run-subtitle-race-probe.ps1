@@ -2,7 +2,7 @@ param([Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9_-]+$')][string]$
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $fixture = Join-Path $root '.work/v029-subtitle-runtime'
-$electron = Join-Path $root 'vendor/electron/44.4.2/win32-x64/electron.exe'
+$electron = Join-Path $root 'vendor/electron/44.5.0/win32-x64/electron.exe'
 $entry = Join-Path $PSScriptRoot 'subtitle-race-native-probe.cjs'
 $output = Join-Path $fixture ($RunLabel + '.json')
 foreach ($file in @($electron,$entry,(Join-Path $fixture 'media-one.mkv'),(Join-Path $fixture 'runtime/electronapp/native-helper/ete-mpv-helper.exe'),(Join-Path $fixture 'runtime/electronapp/libmpv/x64/mpv-1.dll'))) {

@@ -32,4 +32,4 @@ New-Item -ItemType Directory -Path $preparedParent -Force | Out-Null
 Copy-Item -LiteralPath $stagingRuntime -Destination $prepared -Recurse
 & node $tool validate-prepared $root
 if ($LASTEXITCODE -ne 0) { throw 'Prepared Electron runtime post-copy validation failed.' }
-Write-Output 'Pinned Electron 44.4.2 Windows x64 runtime is ready.'
+Write-Output ('Pinned Electron ' + [string]$manifest.version + ' Windows x64 runtime is ready.')

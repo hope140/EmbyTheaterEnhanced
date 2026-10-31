@@ -22,8 +22,8 @@ function fixture(t){
  }
  const lock=Buffer.from(JSON.stringify({lockfileVersion:3,packages})+'\n');write(root,'native/windows-media/package-lock.json',lock);write(root,'native/windows-media/package.json',JSON.stringify({dependencies:{koffi:'3.3.3'}}));
  write(root,'native/windows-media/registry-input.json',JSON.stringify({schemaVersion:1,registry:'https://registry.npmjs.org',platform:'win32',arch:'x64',lockSha256:sha(lock),packages:items}));
- const vulkan=Buffer.from('synthetic loader fixture; never loaded'),loader={schemaVersion:1,component:'Electron',version:'44.4.2',platform:'win32',arch:'x64',archiveSha256:'a'.repeat(64),sourcePath:'x64/electron/vulkan-1.dll',targetPath:'electronapp/libmpv/x64/vulkan-1.dll',sha256:sha(vulkan),relation:'byte-identical-standard-payload-copy'};
- write(root,'native/windows-media/loader-input.json',JSON.stringify(loader));write(root,'vendor/electron-runtime-manifest.json',JSON.stringify({version:'44.4.2',platform:'win32',arch:'x64',archive:{sha256:loader.archiveSha256}}));
+ const vulkan=Buffer.from('synthetic loader fixture; never loaded'),loader={schemaVersion:1,component:'Electron',version:'44.5.0',platform:'win32',arch:'x64',archiveSha256:'a'.repeat(64),sourcePath:'x64/electron/vulkan-1.dll',targetPath:'electronapp/libmpv/x64/vulkan-1.dll',sha256:sha(vulkan),relation:'byte-identical-standard-payload-copy'};
+ write(root,'native/windows-media/loader-input.json',JSON.stringify(loader));write(root,'vendor/electron-runtime-manifest.json',JSON.stringify({version:'44.5.0',platform:'win32',arch:'x64',archive:{sha256:loader.archiveSha256}}));
  write(runtime,loader.sourcePath,vulkan);fs.mkdirSync(path.join(runtime,'electronapp/libmpv/x64'),{recursive:true});
  const git=args=>cp.execFileSync('git',['-C',root,...args],{encoding:'utf8'}).trim();git(['init','-q']);git(['-c','user.name=Fixture','-c','user.email=fixture@example.invalid','add','.']);git(['-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-qm','synthetic native dependency fixture']);
  return {root,runtime,prepared,source:git(['rev-parse','HEAD']),write,loader};
@@ -52,6 +52,14 @@ test('native package rejects extras, loader drift and falsified default/provenan
 test('native package rejects source/lock drift or changed prepared binaries before creating output',t=>{
  const f=fixture(t),sourceFile=tool.SOURCES[0],original=fs.readFileSync(path.join(f.root,sourceFile));fs.appendFileSync(path.join(f.root,sourceFile),'drift');assert.throws(()=>tool.assemble(f.root,f.runtime,f.prepared,f.source),/input differs/);fs.writeFileSync(path.join(f.root,sourceFile),original);
  fs.appendFileSync(path.join(f.prepared,'node_modules/koffi/LICENSE'),'drift');assert.throws(()=>tool.assemble(f.root,f.runtime,f.prepared,f.source),/payload identity/);assert.equal(fs.existsSync(path.join(f.runtime,tool.ROOT)),false);
+});
+for(const field of ['version','archiveSha256'])test('native package rejects mixed Electron loader authority: '+field,t=>{
+ const f=fixture(t),loader={...f.loader,[field]:field==='version'?'44.4.2':'b'.repeat(64)};
+ f.write(f.root,'native/windows-media/loader-input.json',JSON.stringify(loader));
+ const git=args=>cp.execFileSync('git',['-C',f.root,...args],{encoding:'utf8'}).trim();
+ git(['add','native/windows-media/loader-input.json']);git(['-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-qm','synthetic mismatched loader authority']);
+ assert.throws(()=>tool.assemble(f.root,f.runtime,f.prepared,git(['rev-parse','HEAD'])),/loader contract mismatch/);
+ assert.equal(fs.existsSync(path.join(f.runtime,tool.ROOT)),false);
 });
 test('formal Windows wiring uses no trial flag and keeps one-second capture, main shutdown and v042 features',()=>{
  const root=path.resolve(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,n),'utf8'),main=read('src/electronapp/main.js'),preload=read('tools/prepare-preload.cjs'),adapter=read('src/electronapp/enhanced/windows-native-media.js');

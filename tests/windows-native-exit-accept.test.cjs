@@ -13,7 +13,7 @@ if(process.argv[1]===${JSON.stringify(entry)}){
  const mode=process.env.ETE_ACCEPT_FIXTURE_MODE,output=process.argv[4];
  const owner={baseline:1,ownedAttached:1,ownedRemaining:0,totalRemaining:1,externalPreserved:true};
  const cases=['playing-close','playing-destroy','stop-close','pending-startup','pending-frame','rejected-frame'].map(name=>({name,status:'passed',ownedResourcesReleased:true,listenerOwnership:{navigation:{...owner},crash:{...owner}}}));
- const report={reportVersion:3,listenerContract:'owned-listeners-v1',status:'passed',scope:'electron-window-lifecycle-only',electron:'44.4.2',toolSha256:hash(process.argv[1]),adapterSha256:hash(process.argv[2]),visibleDwmAcceptance:'NOT_ASSESSED',cases};
+ const report={reportVersion:3,listenerContract:'owned-listeners-v1',status:'passed',scope:'electron-window-lifecycle-only',electron:'44.5.0',toolSha256:hash(process.argv[1]),adapterSha256:hash(process.argv[2]),visibleDwmAcceptance:'NOT_ASSESSED',cases};
  if(mode==='bad-hash')report.adapterSha256='0'.repeat(64);
  if(mode==='owned-leak')report.cases[0].listenerOwnership.crash.ownedRemaining=1;
  process.stdout.write('early-fixture-output\\n');

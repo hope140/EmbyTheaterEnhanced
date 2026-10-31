@@ -17,7 +17,7 @@ function inputs(root,source){
         if(working.toString('utf8').replace(/\r\n/g,'\n')!==bytes.toString('utf8').replace(/\r\n/g,'\n'))throw Error('Native media input differs from source');
     }
     const registry=deps.contract(root),loader=JSON.parse(blobs.get('native/windows-media/loader-input.json')),electron=JSON.parse(blobs.get('vendor/electron-runtime-manifest.json'));
-    if(loader.schemaVersion!==1||loader.component!=='Electron'||loader.version!=='44.4.2'||loader.platform!=='win32'||loader.arch!=='x64'||
+    if(loader.schemaVersion!==1||loader.component!=='Electron'||loader.version!=='44.5.0'||loader.platform!=='win32'||loader.arch!=='x64'||
         loader.archiveSha256!==electron.archive.sha256||electron.version!==loader.version||electron.platform!==loader.platform||electron.arch!==loader.arch||
         loader.sourcePath!=='x64/electron/vulkan-1.dll'||loader.targetPath!=='electronapp/libmpv/x64/vulkan-1.dll'||
         !/^[a-f0-9]{64}$/.test(loader.sha256)||loader.relation!=='byte-identical-standard-payload-copy')throw Error('Native media loader contract mismatch');
@@ -59,10 +59,13 @@ function verify(root,runtime,source){
     return {status:'passed',sourceCommit:source,defaultEnabled:true,captureIntervalMs:1000,files:record.files.length,registryVersion:'3.3.3',loaderColocated:true};
 }
 function selfcheck(root,runtime,source){
-    if(process.platform!=='win32'||process.arch!=='x64'||process.versions.electron!=='44.4.2')throw Error('Pinned Windows Electron required');
+    if(process.platform!=='win32'||process.arch!=='x64'||process.versions.electron!=='44.5.0')throw Error('Pinned Windows Electron required');
+    const expectedVersions=JSON.parse(readSource(root,source,'vendor/electron-runtime-manifest.json')).runtime.processVersions;
+    const versionCheck=require('./electron-version-probe.cjs').evaluateVersions(process.versions,expectedVersions);
+    if(!versionCheck.ok)throw Error('Pinned Windows Electron process versions mismatch');
     const result=verify(root,runtime,source),nativeRoot=path.join(runtime,ROOT),koffi=require(path.join(nativeRoot,'node_modules/koffi'));
     require(path.join(nativeRoot,'winrt.cjs')).createBindings(koffi);require(path.join(nativeRoot,'dwm.cjs')).createDwm(koffi);
-    return {...result,ffiLoaded:true,visibleAcceptance:'NOT_ASSESSED'};
+    return {...result,ffiLoaded:true,processVersions:expectedVersions,visibleAcceptance:'NOT_ASSESSED'};
 }
 module.exports={ROOT,PREPARED,PROOF,SOURCES,INPUTS,expected,validateFiles,assemble,verify,selfcheck};
 if(require.main===module){const [action,root,runtime,source]=process.argv.slice(2);try{const result=action==='assemble'?assemble(root,runtime,path.join(root,PREPARED),source):({verify,selfcheck}[action]||(()=>{throw Error('Unknown native media action');}))(root,runtime,source);console.log(JSON.stringify(result));}catch(error){console.error(error.message);process.exitCode=1;}}
