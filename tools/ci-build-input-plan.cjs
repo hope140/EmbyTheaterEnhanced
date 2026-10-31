@@ -33,7 +33,7 @@ function item(id, url, file, size, sha256, destination) {
 
 function planFrom(values) {
     const {host, electron, inherited, native, tools, lock, evidence} = values;
-    if (host.version !== '3.0.20' || electron.version !== '44.4.2' ||
+    if (host.version !== '3.0.20' || electron.version !== '44.5.0' ||
         inherited.source.repository !== 'https://github.com/MediaBrowser/emby-theater-electron' ||
         !/^[a-f0-9]{40}$/.test(inherited.source.commit) || evidence.msys2.packages.length !== 17) {
         throw new Error('Unexpected pinned component identity.');

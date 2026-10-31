@@ -47,7 +47,7 @@ Use [`V030_PR31_GPL_RELEASE_REVIEW.md`](V030_PR31_GPL_RELEASE_REVIEW.md) for the
 | Component | Confirmed material | Still required for exact corresponding-source reconstruction |
 |---|---|---|
 | Maintained application / Native Helper | Git sourceCommit recorded in the payload; project LICENSE | External inputs and toolchain materials below remain separate |
-| Electron 44.4.2 | Official release URL and complete tree in source-provenance.json; x64/electron/LICENSE and LICENSES.chromium.html | Rebuilding Electron/Chromium and all dependencies was not performed |
+| Electron 44.5.0 candidate | Official release URL and complete tree in source-provenance.json; x64/electron/LICENSE and LICENSES.chromium.html | Rebuilding Electron/Chromium and all dependencies was not performed |
 | npm production dependencies | Locked package versions/integrities; fresh npm extraction; package source and notices remain in electronapp/node_modules | Source-package license review remains component specific |
 | Carnival inherited Node packages | Seven official registry tarballs now collected and SRI-verified; seven delivered notices match after newline normalization | Carnival metadata, a missing README and a power-off code change prevent a claim of complete original-package byte identity; exact import/modification history remains open |
 | Carnival Windows Host and supporting DLLs | Frozen archive hashes; public reference at https://github.com/MediaBrowser/emby-theater-windows/tree/708fadc068cbf66ced6aece4a32f3e12bb2c4e13 | Provider's exact source tree, modifications, dependency versions, build recipe and notices matching the binary hashes |

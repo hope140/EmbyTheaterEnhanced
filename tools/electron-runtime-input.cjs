@@ -28,7 +28,7 @@ function readManifest(root) {
     const errors = [];
     if (manifest.schemaVersion !== 1) errors.push('unsupported-schema');
     if (manifest.channel !== 'Stable') errors.push('channel-not-stable');
-    if (manifest.version !== '44.4.2') errors.push('version-not-pinned');
+    if (manifest.version !== '44.5.0') errors.push('version-not-pinned');
     if (manifest.platform !== 'win32' || manifest.arch !== 'x64') errors.push('platform-or-arch-mismatch');
     if (archive.name !== expectedName) errors.push('archive-name-mismatch');
     if (archive.sourceUrl !== exactReleasePrefix + expectedName || /latest|nightly|beta|alpha/i.test(archive.sourceUrl || '')) {
@@ -37,7 +37,7 @@ function readManifest(root) {
     if (archive.shasumsUrl !== exactReleasePrefix + 'SHASUMS256.txt') errors.push('shasums-url-not-exact');
     if (!/^[0-9a-f]{64}$/.test(archive.sha256 || '')) errors.push('archive-sha256-invalid');
     if (!Number.isSafeInteger(archive.size) || archive.size <= 0) errors.push('archive-size-invalid');
-    if (runtime.preparedPath !== 'vendor/electron/44.4.2/win32-x64') errors.push('prepared-path-mismatch');
+    if (runtime.preparedPath !== 'vendor/electron/44.5.0/win32-x64') errors.push('prepared-path-mismatch');
     if (runtime.runtimePath !== 'x64/electron') errors.push('runtime-path-mismatch');
     if (runtime.electronPath !== 'electron.exe' || runtime.versionPath !== 'version') errors.push('runtime-sentinel-mismatch');
     if (!/^[0-9a-f]{64}$/.test(runtime.electronExeSha256 || '')) errors.push('electron-exe-sha256-invalid');
