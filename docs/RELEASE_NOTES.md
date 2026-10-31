@@ -1,17 +1,19 @@
-# v0.4.9 测试版
+# v0.4.10 测试版
 
 Windows x64 **Pre-release 测试版**。可手动下载，或在“关于 Enhanced”选择测试通道后主动检查更新。当前正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)。
 
 ## 本次更新
 
-- Electron 从 44.4.2 更新到固定的 44.5.0，修复 Windows 原生确认框关闭后输入和下拉失去响应的焦点问题，包括 EWT 删除房间确认框点击取消后的已报告场景。
-- 保留 v0.4.8 的下载管理与全剧／本季已看集数筛选。本版不包含独立预载／缓冲暂存或 EWT 插件改动。
+- 修复切集后旧片头信息残留，以及等待片头功能验证时切集导致旧点击作用到新播放的问题。
+- 跳过片头前检查当前播放的片长和片头边界，拒绝达到或超过片尾的错误终点；片长尚未确认时等待有效信息。
+- 补充定位与播放结束的脱敏诊断，帮助追查拖动进度后意外跳到下一集的问题。记录定位来源、目标、播放代次与有限的位置／时长／缓存观测，不记录完整播放地址或令牌，不增加持续进度日志。
+- 保留 v0.4.9 的 Electron 44.5.0 焦点修复及下载管理。本版不包含独立预载／缓冲暂存或 EWT 插件改动。
 
 ## 已知问题与验证范围
 
-本版沿用已完成用户验收的焦点修复候选，按新版本重新构建。上游修复与固定输入见[焦点修复说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/ELECTRON_4450_FOCUS.md)；准确源码、Windows CI、包体与公开附件结果见[本版核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V049_RELEASE_VERIFICATION.md)。
+片头缺陷已通过可控复现和回归测试；普通拖动进度后提前结束的现场根因仍未确认，新增诊断不等于该问题已经修复，也不能据此归因某个代理或服务器。普通定位与 EOF 处理保持原行为。诊断字段和调查边界见[定位诊断说明](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/SEEK_EOF_DIAGNOSTICS.md)；准确源码、Windows CI、包体与公开附件结果见[本版核验](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V0410_RELEASE_VERIFICATION.md)。
 
-自动化覆盖新版 Electron 的接口绑定、隐藏窗口退出及构建／安装包核验；隐藏窗口系统媒体和预览场景使用替身，不代表全部可见窗口、硬件或远控组合通过。真实服务器及可见焦点反馈来自用户验收，未冒称独立机器实测；Windows 完整安装矩阵仍未覆盖。下载继续要求服务器在线、当前账户权限及来源的本体／续传校验。
+自动化与构建核验不替代实际片源、可见窗口、硬件和远控组合验收；本次未登录真实服务器或独立完成上述现场复现。Windows 完整安装矩阵仍未覆盖。下载继续要求服务器在线、当前账户权限及来源的本体／续传校验。
 
 ## 下载安装
 
