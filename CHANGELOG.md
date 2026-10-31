@@ -2,11 +2,11 @@
 
 版本与渠道按实际 GitHub Release 记录；各版准备／核验文档保留当时来源和验证范围。当前下载入口见[README](README.md#下载安装)。
 
-## v0.4.10 — 测试版准备，未发布
+## v0.4.10 — 2026-10-31 · 测试版
 
 - 修复切集后的片头信息残留、异步验证后的旧点击跨播放生效，以及片头终点达到／超过片长的问题。
 - 增加脱敏定位来源／目标、播放代次与结束位置／缓存诊断；普通拖进度后提前结束的现场根因仍未确认，未改变普通 Seek／EOF 行为。
-- 保留 v0.4.9 的焦点修复与下载功能，不含预载／缓冲暂存或 EWT 插件改动；标准 Windows 材料与发布状态见[本版核验](docs/V0410_RELEASE_VERIFICATION.md)。
+- 保留 v0.4.9 的焦点修复与下载功能，不含预载／缓冲暂存或 EWT 插件改动。已发布为[Pre-release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.10)，Tag／来源固定`52288ab3f3d6a9fb51f0f205c38df6339e702a01`，公开五附件独立下载核验通过；正式Latest保持v0.4.0，见[本版核验](docs/V0410_RELEASE_VERIFICATION.md)。
 
 ## v0.4.9 — 2026-10-31 · 测试版
 
