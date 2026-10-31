@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-31 — Electron44.5.0原生确认框焦点修复候选
+
+独立分支固定Electron44.5.0 Windows x64，采用官方已合入的JavaScript确认框后输入焦点修复，不增加客户端抢焦点或窗口切换。归档实际读取并与官方校验表／Release摘要一致，73文件整树、EXE和同源Vulkan loader重新固定；项目npm／Koffi、Host、Native Helper和libmpv保持。原prepare流程、定向35/35及JS／PowerShell语法通过；完整公开／Windows构建和真实焦点验收待追加。尚未合main、发布或操作现用客户端；依据、兼容范围和校验身份见[升级合同](ELECTRON_4450_FOCUS.md)。
+
 ## 2026-10-31 — v0.4.7测试版已发布
 
 提前下载候选及收尾已快进合入main，`v0.4.7` Tag固定准确产品／构建来源`5190a7020d0d00ea06776676921469736859bfbd`。正常[发布工作流41171790099](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41171790099)从main手动执行testing，预检、复用同源码标准构建41169467426、五附件上传及公开均success；[v0.4.7测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.7)为prerelease、非draft，正式Latest保持v0.4.0同一对象。公开五附件实际重新下载，大小／SHA-256与API digest、安装器来源／校验、总校验表及准确源码notes一致。没有安装或操作前台；完整回执与范围见[本版核验](V047_RELEASE_VERIFICATION.md)。以下保留发布前准备和材料限制的当时记录。

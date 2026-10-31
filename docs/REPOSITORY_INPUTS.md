@@ -18,7 +18,7 @@ Other inputs have separate fixed acquisition and verification contracts:
 - Source-built Host: fixed official source commit, reviewed maintained replacements and helpers, net462/x86, locked references and MSBuild17. The runner compiles its own EXE/PDB, executes the reviewed verifier and generates a source/run-bound lock; no Work binary or old receipt is needed. See [source contract](../native/windows-host/README.md) and [Actions build](ACTIONS_TEST_PACKAGE.md).
 - Newtonsoft.Json: fixed 13.0.4 net45 NuGet member, complete package and DLL hashes, MIT notice and runtime identity. SharpCompress, ServiceStack and private System.Configuration are retired from the current runtime, while official input identities and necessary notices remain. See [JSON input](WINDOWS_HOST_INPUT.md).
 - Inherited npm: fixed official Electron Git revision, 29 selected files and explicit newline transform; see [inherited npm](INHERITED_NPM_INPUT.md).
-- Electron 44.4.2: fixed official archive and complete runtime tree; see `vendor/electron-runtime-manifest.json`.
+- Electron 44.5.0 candidate: fixed official archive and complete runtime tree; see `vendor/electron-runtime-manifest.json` and the [upgrade contract](ELECTRON_4450_FOCUS.md). Released v0.4.7 remains on 44.4.2.
 - Project npm: `npm ci --ignore-scripts` and exact package-lock; the full source set and selected runtime projection remain separate.
 - Native Helper/installer: maintained source, fixed header, complete compiler tree and locked packager/unpacker identities. No tool installation or automatic compiler substitution occurs during the Actions build.
 

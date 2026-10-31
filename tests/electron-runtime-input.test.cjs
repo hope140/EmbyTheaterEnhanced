@@ -24,7 +24,7 @@ function fixtureManifest(archive, runtimeDirectory) {
     return {
         schemaVersion: 1,
         channel: 'Stable',
-        version: '44.4.2',
+        version: '44.5.0',
         platform: 'win32',
         arch: 'x64',
         archive: {name: 'fixture.zip', sha256: sha256(archive), size: archive.length},
@@ -40,14 +40,14 @@ function fixtureManifest(archive, runtimeDirectory) {
 
 test('tracked Electron runtime manifest pins the official Stable Windows x64 asset', () => {
     const manifest = electronInput.readManifest(repoRoot);
-    assert.equal(manifest.version, '44.4.2');
+    assert.equal(manifest.version, '44.5.0');
     assert.equal(manifest.channel, 'Stable');
-    assert.equal(manifest.archive.name, 'electron-v44.4.2-win32-x64.zip');
+    assert.equal(manifest.archive.name, 'electron-v44.5.0-win32-x64.zip');
     assert.equal(manifest.archive.sourceUrl,
-        'https://github.com/electron/electron/releases/download/v44.4.2/electron-v44.4.2-win32-x64.zip');
+        'https://github.com/electron/electron/releases/download/v44.5.0/electron-v44.5.0-win32-x64.zip');
     assert.match(manifest.archive.sha256, /^[0-9a-f]{64}$/);
     assert.match(manifest.runtime.electronExeSha256, /^[0-9a-f]{64}$/);
-    assert.equal(manifest.runtime.processVersions.electron, '44.4.2');
+    assert.equal(manifest.runtime.processVersions.electron, '44.5.0');
     assert.equal(manifest.runtime.processVersions.node, '24.21.0');
     assert.match(manifest.runtime.processVersions.chrome, /^152\./);
 });
@@ -59,7 +59,7 @@ test('archive and extracted runtime validation fail closed on missing or changed
         const runtime = path.join(root, 'runtime');
         fs.mkdirSync(archiveRoot, {recursive: true});
         write(path.join(runtime, 'electron.exe'), Buffer.from('fixture-electron'));
-        write(path.join(runtime, 'version'), Buffer.from('44.4.2\n'));
+        write(path.join(runtime, 'version'), Buffer.from('44.5.0\n'));
         write(path.join(runtime, 'locales', 'en-US.pak'), Buffer.from('fixture-locale'));
         const archive = Buffer.from('fixture-archive');
         const manifest = fixtureManifest(archive, runtime);

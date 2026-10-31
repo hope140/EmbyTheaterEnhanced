@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "component": "Electron",
-  "version": "44.4.2",
+  "version": "44.5.0",
   "platform": "win32",
   "arch": "x64",
-  "archiveSha256": "6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03",
+  "archiveSha256": "b3405d8847bc5054cd16272f538d22ba5b73032945e85cef26241f7135035278",
   "sourcePath": "x64/electron/vulkan-1.dll",
   "targetPath": "electronapp/libmpv/x64/vulkan-1.dll",
-  "sha256": "7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1",
+  "sha256": "e96d215161a34c5da71177a257b9e6146870438db37d65b609eac828a69f5315",
   "relation": "byte-identical-standard-payload-copy"
 }

@@ -120,28 +120,28 @@ function createFixture(root) {
         files,
         patchFiles
     }));
-    const officialElectron = path.join(root, 'vendor', 'electron', '44.4.2', 'win32-x64');
+    const officialElectron = path.join(root, 'vendor', 'electron', '44.5.0', 'win32-x64');
     writeFile(path.join(officialElectron, 'electron.exe'), 'official-electron-44-fixture\n');
-    writeFile(path.join(officialElectron, 'version'), '44.4.2\n');
+    writeFile(path.join(officialElectron, 'version'), '44.5.0\n');
     writeFile(path.join(officialElectron, 'locales', 'en-US.pak'), 'official-electron-locale-fixture\n');
     const officialIdentity = electronRuntimeInput.treeIdentity(officialElectron);
     writeFile(path.join(root, 'vendor', 'electron-runtime-manifest.json'), JSON.stringify({
         schemaVersion: 1,
         channel: 'Stable',
-        version: '44.4.2',
+        version: '44.5.0',
         platform: 'win32',
         arch: 'x64',
-        releaseUrl: 'https://github.com/electron/electron/releases/tag/v44.4.2',
+        releaseUrl: 'https://github.com/electron/electron/releases/tag/v44.5.0',
         publishedAt: '2026-09-18T01:08:36Z',
         archive: {
-            name: 'electron-v44.4.2-win32-x64.zip',
-            sourceUrl: 'https://github.com/electron/electron/releases/download/v44.4.2/electron-v44.4.2-win32-x64.zip',
-            shasumsUrl: 'https://github.com/electron/electron/releases/download/v44.4.2/SHASUMS256.txt',
+            name: 'electron-v44.5.0-win32-x64.zip',
+            sourceUrl: 'https://github.com/electron/electron/releases/download/v44.5.0/electron-v44.5.0-win32-x64.zip',
+            shasumsUrl: 'https://github.com/electron/electron/releases/download/v44.5.0/SHASUMS256.txt',
             sha256: '1'.repeat(64),
             size: 123
         },
         runtime: {
-            preparedPath: 'vendor/electron/44.4.2/win32-x64',
+            preparedPath: 'vendor/electron/44.5.0/win32-x64',
             runtimePath: 'x64/electron',
             electronPath: 'electron.exe',
             electronExeSha256: hash(fs.readFileSync(path.join(officialElectron, 'electron.exe'))),
@@ -149,7 +149,7 @@ function createFixture(root) {
             fileCount: officialIdentity.fileCount,
             treeSha256: officialIdentity.sha256,
             processVersions: {
-                electron: '44.4.2',
+                electron: '44.5.0',
                 chrome: '152.0.7977.130',
                 node: '24.21.0',
                 v8: '15.2.124.28-electron.0'
@@ -208,7 +208,7 @@ function createRuntime(root, name) {
     writeFile(path.join(runtime, 'electronapp', 'package.json'), '{"name":"runtime"}\n');
     writeFile(path.join(runtime,'Emby.Theater.exe'),fs.readFileSync(path.join(root,windowsHost.INPUT_ROOT,'Emby.Theater.exe')));
     fs.cpSync(path.join(root,inheritedNpm.INPUT_ROOT,'electronapp'),path.join(runtime,'electronapp'),{recursive:true});
-    fs.cpSync(path.join(root, 'vendor', 'electron', '44.4.2', 'win32-x64'),
+    fs.cpSync(path.join(root, 'vendor', 'electron', '44.5.0', 'win32-x64'),
         path.join(runtime, 'x64', 'electron'), {recursive: true});
     writeFile(path.join(runtime, 'electronapp/libmpv/x64/mpv-1.dll'),
         fs.readFileSync(path.join(root,libmpvInput.INPUT_ROOT,'mpv-1.dll')));

@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-31 — Electron44.5.0焦点修复独立候选
+
+根据官方44.5.0说明及已合入44分支的PR54461，更新准确归档、73文件树、electron.exe和同源Vulkan loader身份；固定获取／准备／版本与本地媒体守卫同步，不放宽为任意版本。归档SHA与SHASUMS256／Release digest一致，原PowerShell准备及复制后校验通过；首轮定向33/33，并增加拒绝混合loader来源的回归。Windows打包selfcheck继续加载原Koffi／系统绑定并核对四项实际processVersions，退出探针预期同步；完整公开、Windows构建和实际客户端焦点结果另记。未改播放源码、依赖锁、用户profile或全局focus行为，不合main、不发布、不操作前台。详见[升级合同](ELECTRON_4450_FOCUS.md)。
+
 ## 2026-10-31 — v0.4.7合入main并公开测试版
 
 核对main仍为a958d52、源码5190a70及文档b5367fc的CI／标准构建通过后，正常快进main到b5367fc，建立新Tag v0.4.7固定5190a70；不移动旧Tag，不修改产品／生成器或发布门禁。现有[发布工作流41171790099](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41171790099)以testing、expected_latest_tag=v0.4.0、verified_build_run=41169467426执行，预检／构建复用／发布全部success。Release 429738414于2026-10-31T05:15:53Z公开，标题v0.4.7测试版、prerelease=true、draft=false；Latest仍为422090288／v0.4.0。

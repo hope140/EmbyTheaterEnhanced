@@ -4,7 +4,7 @@
 
 兼容资源39份 Anime4K shader 已全部退役，活动清单零项且无需恢复正文；保留原历史 manifest/hash。活动快照为小组件2项、Web713项，版本由各 manifest 明示。冻结输入与原始归档只读；需要变更活动集合时遵循既有快照迁移流程。完整 npm 来源保持33包／1142文件，发布投影仅精确排除20项，保留必要 LICENSE／NOTICE。
 
-官方 Windows3.0.20 完整来源仍为19项；runtime 精确排除9项，余下10项中的 Host EXE/PDB替换为已验证的 ETE 源码构建产物，另加入固定 Newtonsoft DLL。官方 Model 独立校验，Electron 使用固定44.4.2 Windows x64完整树，libmpv使用仓库记录的固定归档恢复。源码派生 Host、第三方原件和生成器分别记录身份，不能互相冒充。
+官方 Windows3.0.20 完整来源仍为19项；runtime 精确排除9项，余下10项中的 Host EXE/PDB替换为已验证的 ETE 源码构建产物，另加入固定 Newtonsoft DLL。官方 Model 独立校验，本分支候选Electron 使用固定44.5.0 Windows x64完整树（已发布v0.4.7仍为44.4.2），libmpv使用仓库记录的固定归档恢复。源码派生 Host、第三方原件和生成器分别记录身份，不能互相冒充。
 
 维护源码位于 `src/`、`native/`；Web只复制合同明确选择的 overlay。默认配置和中文维护源按各自合同生成，构建不覆盖用户已有配置，不安装字体或预设，不运行旧 BAT／驱动安装器。
 
