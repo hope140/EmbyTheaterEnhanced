@@ -11,7 +11,7 @@
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.4.8（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.8) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.8/EmbyTheaterEnhanced-0.4.8-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.8/EmbyTheaterEnhanced-0.4.8-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.4.9（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.9) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.9/EmbyTheaterEnhanced-0.4.9-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.9/EmbyTheaterEnhanced-0.4.9-win-x64-setup.exe.sha256) |
 
 从同一 Release 下载安装包和校验文件，核对 SHA-256 后，正常退出客户端再安装。`Source code` 压缩包不是安装包。安装程序未签名，Windows 可能提示未知发布者；校验值用于核对下载字节。
 
@@ -43,6 +43,7 @@
 - **v0.4.6 配置保存修正**：保存失败时清理本次临时文件，规则存储仅在写盘成功后切换状态；补充安装、更新与构建文档。
 - **v0.4.7 在线提前下载**：记住下载目录，支持单片、全剧／本季和下载管理；按来源条件续传，服务器在线时优先播放已下载文件。完成提示显示具体片名或季集号，不提供离线媒体库。
 - **v0.4.8 已看集数筛选**：全剧／本季默认跳过当前账户已看完的集数，部分观看保留，也可选择下载全部；精简下载管理提示，任务状态保持自动更新。
+- **v0.4.9 确认框焦点修复**：更新到固定Electron44.5.0，修复Windows原生确认框关闭后输入／下拉失去响应，保留0.4.8下载功能。
 
 各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预加载、缓冲暂存和飞牛认证仍是[独立实验](docs/NEXT_RELEASE_SCOPE.md#未发布实验)，不属于上述已发布功能。
 
