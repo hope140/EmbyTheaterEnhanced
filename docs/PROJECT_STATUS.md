@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-31 — v0.4.9焦点修复测试版准备
+
+基于未发生并发变化的main 51eb449，沿用已验收的d630438 Electron44.5.0输入、loader及守卫；产品源码与该候选保持，不引入预载暂存或EWT插件改动。本轮已获合main及testing发布授权，版本三处同步为0.4.9后重新运行准确来源的Windows CI与标准发行构建，未以旧普通验收包替代。正式Latest应保持v0.4.0；准确结果见[本版核验](V049_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-31 — 保留0.4.8功能的Electron44.5.0验收包已生成
 
 准确来源d630438基于main 51eb449，全部src、package／lock和安装器／工作流保持0.4.8，不回退下载筛选。公开CI41181127475与普通构建41181189855均success；完整Windows2403项为2401 pass／0 fail／2 skip，实际Electron44.5.0接口绑定和隐藏窗口退出门禁通过。新[验收附件13035303016](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41181189855/artifacts/13035303016)有效至2026-11-01T07:53:00Z，文件名带0.4.8-test及来源／run。ZIP本地回读Forbidden、0字节，未重试；不冒称独立文件或真实GUI／播放验收通过。没有合main或发布，详情见[候选合同](ELECTRON_4450_FOCUS.md#当前验收包与准确来源)。
