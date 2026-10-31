@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-10-31 — 0.4.7标准发行材料已就绪，未发布
+
+准确来源`5190a7020d0d00ea06776676921469736859bfbd`的Windows公开[41169421561](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169421561)和标准发行构建[41169467426](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426)均success；后者release_package=true／build_input_benchmark=false，完整发行材料门禁和上传成功，22分42秒。构建[附件13030807954](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426/artifacts/13030807954)为164676752字节，API绑定同一源码／分支／run，2026-11-01 05:02:17 UTC过期。主线仍为a958d52，v0.4.7 Tag／Release未建立；这份材料不表示已公开测试版。
+
+单独读取artifact ZIP被GitHub返回Forbidden、零字节，已停止且未换通道；尚未独立比对安装器字节、SHA或PE版本。仅确认CI内部门禁、上传和API来源；正常发布仍须满足main包含、准确Tag及原发布流程，不修改来源门禁或Latest。本轮不再要求使用者追加手动验收，也未操作前台。
+
 ## 2026-10-31 — 提前下载文案收尾与0.4.7测试发行准备
 
 提前下载基础功能已有使用者验收反馈。本轮只将季／剧菜单及确认标题统一为“下载本季”“下载全剧”，完成toast带具体任务标题；电影显示片名，剧集沿既有剧名／季集号／集名，标题按toast的HTML接口转义，重复完成事件不重复提示。版本准备为0.4.7，未修改已验收下载、文件或播放行为。新CI和标准发行构建结果待追加；当前未包含于main，不满足原发布来源门禁，未发布或改工作流。见[0.4.7准备](V047_RELEASE_VERIFICATION.md)。

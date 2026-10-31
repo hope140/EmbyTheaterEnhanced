@@ -2,6 +2,10 @@
 
 ## 2026-10-31 — 下载入口文案与完成任务识别
 
+最终发行候选`5190a7020d0d00ea06776676921469736859bfbd`仅在产品修正91bd67d之后修正发行说明的完整核验链接和补充验证记录，产品／生成器字节相同。Windows公开[41169421561](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169421561)实际full路线success，14分5秒；标准[41169467426](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426)以release_package=true执行，完整材料、Host／安装器内部门禁和上传success，22分42秒。旧91bd67d标准任务41169318868因说明链接修正主动取消，确认cancelled后才派发新source一次；不作为失败构建或最终材料。
+
+本地49项针对性、公开2266 pass／0 fail／31平台skip、548 JS／53 PowerShell语法及645文件有限凭据模式检查通过。扩展材料227 pass／3 fail／0 skip，三项缺固定Host／libmpv输入的原失败保留，不改写为首次通过；Windows标准构建按原流程恢复输入并通过完整材料门禁。Artifact 13030807954独立GET ZIP返回Forbidden、零字节，停止且不绕过；没有独立安装器SHA／PE回读。当前main a958d52未包含候选，Tag／Release均未创建；仅准备标准材料，未派发不满足条件的发布，不改Latest或前台。后续发布Tag／构建来源仍应固定5190a70，本文档补记不改变产品或材料。
+
 在独立提前下载分支收尾：原生菜单与main确认窗口统一“下载全剧”“下载本季”；完成通知由通用提示改为任务标题，沿既有episodeTitle包含剧名、季集号和集名，缺标题时只回退本任务文件名或视频。固定toast通过innerHTML装配，故动态标题统一转义，保留同一任务完成状态去重。仅更新menu overlay最终哈希，不编辑vendor或改变菜单命令、下载权限和原生布局。
 
 版本与lock三处同步0.4.7，新增发行准备说明与核验记录。发布仍须准确source包含于main、Tag和标准构建；当前仅准备，未触发不满足条件的发布作业，不改门禁或Latest。针对性测试与准确Windows构建结果另记。
