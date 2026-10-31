@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-31 — v0.4.8合main并完成testing发布
+
+来源e8e9688在Windows公开CI41177694415为2306项：2301 pass／0 fail／5 skip；标准发行构建41177705325完整2401项：2399 pass／0 fail／2 skip，显式材料135/135及普通安装器门禁通过。获本轮具体授权并核对main仍为16a891b后，正常原子推送main快进及新Tag v0.4.8固定e8e9688；不带入独立Electron44.5.0分支。现有发布41179756153以testing复用同源码标准构建，preflight／build／publish全部success，公开Release429781238，正式Latest保持v0.4.0同一对象。
+
+本地读取Actions artifact13034571213 ZIP被存储服务返回Forbidden、0字节，已停止且未重试。正常发布后的五个新公开Release附件均实际下载，安装器162036163字节、SHA-256 `e3116e81a27d54780fac50c1cfd69b956900be3690648ade06062e7f495c2203`；API digest／来源JSON／单文件校验／总校验全部匹配，公开notes和网页正文与e8e9688 Git blob逐字节相同。没有安装或操作前台，真实已看数据／可见确认框仍未独立验收。README、指南和本版核验补记不改变Tag、notes附件或已发布包。
+
 ## 2026-10-31 — 优先准备0.4.8下载修复发行材料
 
 已看筛选c5b9dd0完整本地公开2306项：2275 pass／0 fail／31平台skip。按先交付下载改动的范围，将package与lock三处版本同步0.4.8并准备testing说明；Electron44.4.2和所有原生／Web固定输入保持，不混入独立44.5.0分支。最终准确源码的版本／发布回归和Windows标准发行构建待追加。未合main、创建Tag或发布，本次具体确认前仅准备非保护分支材料。
