@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-31 — 提前下载文案收尾与0.4.7测试发行准备
+
+提前下载基础功能已有使用者验收反馈。本轮只将季／剧菜单及确认标题统一为“下载本季”“下载全剧”，完成toast带具体任务标题；电影显示片名，剧集沿既有剧名／季集号／集名，标题按toast的HTML接口转义，重复完成事件不重复提示。版本准备为0.4.7，未修改已验收下载、文件或播放行为。新CI和标准发行构建结果待追加；当前未包含于main，不满足原发布来源门禁，未发布或改工作流。见[0.4.7准备](V047_RELEASE_VERIFICATION.md)。
+
 ## 2026-10-30 — 原视频回退与整季下载验收包已生成
 
 产品源码`00b409b5cd36c9875a2bf046bce718d97464cc68`的Windows完整公开[CI 41077852663](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077852663)和普通验收包[41077932657](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657)均success，后者23分31秒且上传完成。独立[验收附件](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657/artifacts/12990161077)来源／完整SHA、分支、run与API元数据一致，大小164670908字节，过期时间2026-10-31 15:31:58 UTC。未创建Release、Tag或合main；后续仅有测试夹具／文档变化，产品和生成器保持该源码字节。

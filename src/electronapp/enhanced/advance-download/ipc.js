@@ -35,7 +35,7 @@ function register(options) {
         async confirmCollection(value, signal) {
             if (signal.aborted) return false;
             const result = await options.dialog.showMessageBox(options.getBrowserWindow?.(), {
-                type: 'question', title: value.type === 'Season' ? '下载整季' : '下载整部剧',
+                type: 'question', title: value.type === 'Season' ? '下载本季' : '下载全剧',
                 message: '将“' + value.title + '”中的 ' + value.count + ' 集加入下载？',
                 detail: '保存目录：' + value.directory + '\n已有 ' + value.reused + ' 项任务不重复添加。已有失败或暂停任务保持原状态，可在下载管理重试或继续。',
                 buttons: ['取消', '加入下载'], defaultId: 0, cancelId: 0, noLink: true

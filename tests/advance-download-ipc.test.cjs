@@ -56,6 +56,8 @@ test('parent download accepts only its identity and native batch confirmation de
     const controller = new AbortController(), value = {title: 'Fixture', type: 'Season', count: 3, reused: 2, directory: '/main-owned'};
     assert.equal(await f.config.confirmCollection(value, controller.signal), true);
     assert.equal(shown.defaultId, 0); assert.equal(shown.cancelId, 0); assert.match(shown.detail, /main-owned/);
+    assert.equal(shown.title, '下载本季');
+    await f.config.confirmCollection({...value, type: 'Series'}, controller.signal); assert.equal(shown.title, '下载全剧');
     controller.abort(); assert.equal(await f.config.confirmCollection(value, controller.signal), false);
     await f.unregister();
 });

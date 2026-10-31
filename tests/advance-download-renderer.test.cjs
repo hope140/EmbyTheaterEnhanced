@@ -28,6 +28,18 @@ test('bootstrap attaches the current account once, pauses on logout and cleans u
     f.listeners.get('unload')();
     assert.equal(f.listeners.has('enhanced-download-progress'), false);
 });
+test('completion messages identify the movie or episode, preserve literal titles and notify once per completion', () => {
+    const f = fixture(); f.result.start();
+    const progress = f.listeners.get('enhanced-download-progress');
+    progress({}, {id: 'movie', state: 'complete', title: 'Fixture Movie'});
+    progress({}, {id: 'episode', state: 'complete', title: 'Fixture Series - S02E03 - Episode'});
+    progress({}, {id: 'episode', state: 'complete', title: 'Fixture Series - S02E03 - Episode'});
+    assert.deepEqual(f.messages, ['下载完成：Fixture Movie', '下载完成：Fixture Series - S02E03 - Episode']);
+    progress({}, {id: 'literal', state: 'complete', title: '<img src=x onerror=alert(1)> & "Episode"'});
+    assert.equal(f.messages.at(-1), '下载完成：&lt;img src=x onerror=alert(1)&gt; &amp; &quot;Episode&quot;');
+    progress({}, {id: 'old', state: 'complete', fileName: 'Fixture.mkv'});
+    assert.equal(f.messages.at(-1), '下载完成：Fixture.mkv');
+});
 test('the original video action preserves selected version and uses no arbitrary download directory', async () => {
     const f = fixture(channel => ({status: channel === 'enhanced-download-start' ? 'queued' : 'ok'}));
     await f.result.begin(f.api, {Id: 'item', ServerId: 'server'}, 'edition');
@@ -95,7 +107,7 @@ test('context menu hides legacy device sync but retains unified download and unr
         const item = {Id: 'parent', Type: type};
         const commands = load(patch.patchItemContextMenu(base), item, {EnableContentDownloading: true});
         assert.equal(commands.filter(command => command.id === 'download').length, 1);
-        assert.equal(commands.find(command => command.id === 'download').name, type === 'Season' ? '下载整季' : '下载整部剧');
+        assert.equal(commands.find(command => command.id === 'download').name, type === 'Season' ? '下载本季' : '下载全剧');
         assert.ok(!load(patch.patchItemContextMenu(base), item, {EnableContentDownloading: false}).some(command => command.id === 'download'));
     }
     assert.deepEqual(Array.from(modified), Array.from(original.filter(id => id !== 'sync' && id !== 'synclocal')));

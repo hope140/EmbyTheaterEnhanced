@@ -82,7 +82,14 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
                 value.reason === 'partial-corrupt-restarting' ? '已下载部分校验不通过，正在从头下载。' : '无法安全续传本次未完成文件，正在从头下载。');
         }
         if (lastStates[value.id] !== value.state) {
-            if (value.state === 'complete') toast('下载完成，可在下载管理中查看文件位置。');
+            if (value.state === 'complete') {
+                var title = [value.title, value.fileName].find(function (name) {return typeof name === 'string' && name.trim();}) || '视频';
+                // The native toast accepts HTML; media names remain plain text.
+                title = title.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 256);
+                toast('下载完成：' + title.replace(/[&<>"']/g, function (character) {
+                    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character];
+                }));
+            }
             if (value.state === 'failed') toast(message(value.reason));
             lastStates[value.id] = value.state;
         }

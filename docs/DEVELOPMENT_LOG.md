@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-10-31 — 下载入口文案与完成任务识别
+
+在独立提前下载分支收尾：原生菜单与main确认窗口统一“下载全剧”“下载本季”；完成通知由通用提示改为任务标题，沿既有episodeTitle包含剧名、季集号和集名，缺标题时只回退本任务文件名或视频。固定toast通过innerHTML装配，故动态标题统一转义，保留同一任务完成状态去重。仅更新menu overlay最终哈希，不编辑vendor或改变菜单命令、下载权限和原生布局。
+
+版本与lock三处同步0.4.7，新增发行准备说明与核验记录。发布仍须准确source包含于main、Tag和标准构建；当前仅准备，未触发不满足条件的发布作业，不改门禁或Latest。针对性测试与准确Windows构建结果另记。
+
 ## 2026-10-30 — 静态原视频回退、整季队列和管理布局
 
 最终普通验收包[41077932657](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41077932657)已success，实际打包／核验和上传步骤成功，23分31秒。准确产品源码00b409b与Windows公开通过结果一致；artifact `12990161077`、名称`ete-test-win-x64-00b409b5cd36c9875a2bf046bce718d97464cc68-41077932657-1`，164670908字节、expired=false，2026-10-31T15:31:58Z过期。普通包选项均false，没有Release／Tag／安装／启动／main合并。独立GET该artifact ZIP被GitHub返回Forbidden、零字节，已记录并停止，不绕过；未独立取得或核验安装器本体，只确认API来源、上传及构建内部门禁。测试夹具／文档后续提交e1d7eee与00b409b在src／native／tools／工作流／installer／依赖输入上无差异。

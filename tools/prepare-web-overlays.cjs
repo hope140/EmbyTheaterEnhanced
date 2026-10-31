@@ -49,7 +49,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/modules/itemcontextmenu.js', inputPath: null,
         runtimePath: 'electronapp/www/modules/itemcontextmenu.js',
         expectedBaseSha256: '23946853EB776414F36372529DBB64FA1607FCD991281D18AB806599FF50CACB', expectedInputSha256: null,
-        expectedOutputSha256: '07231C1A5198DC85512424BDC3CB5A5B110DBD04797547D5F419F0F616309F52',
+        expectedOutputSha256: '0D91F7DC9424A20650F2F589077D50AECA7175E7C6BF2DC761E3CBBF718AF154',
         generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-advance-download.cjs'])
     }),
     Object.freeze({
