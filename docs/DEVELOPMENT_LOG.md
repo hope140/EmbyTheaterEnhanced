@@ -6,6 +6,14 @@
 
 Windows 安装器合同要求 Windows Host、MSBuild 17 和 Inno；本环境为 Linux。查询 Actions 仓库权限返回 403 Resource not accessible by integration，且此前手动 workflow dispatch 曾被拒；本轮不重试该操作或改道。待授权并可用的 Windows 构建方式，以及新候选准确源码绑定的安装器／来源检查，均未完成；未将任何已有包冒充本候选。
 
+完成源码测试后同步 main `16a891b3de4bcf14283fb6f81133b04b215d99f9`；该增量只更新版本发布记录，未改产品／测试源码。
+
+## 2026-10-31 — v0.4.7合入main并公开测试版
+
+核对main仍为a958d52、源码5190a70及文档b5367fc的CI／标准构建通过后，正常快进main到b5367fc，建立新Tag v0.4.7固定5190a70；不移动旧Tag，不修改产品／生成器或发布门禁。现有[发布工作流41171790099](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41171790099)以testing、expected_latest_tag=v0.4.0、verified_build_run=41169467426执行，预检／构建复用／发布全部success。Release 429738414于2026-10-31T05:15:53Z公开，标题v0.4.7测试版、prerelease=true、draft=false；Latest仍为422090288／v0.4.0。
+
+五个新公开Release附件从其正常browser下载地址逐个独立下载成功，均与API大小／digest一致；安装器162030104字节、SHA-256 `8157ed8b38d075bba080992933dce04d8c813729b11895745455be127b814d42`，来源JSON绑定5190a70／0.4.7，单文件校验及SHA256SUMS完整匹配。公开notes和网页正文均与来源Git blob逐字节相同。没有重取先前受拒的Actions ZIP、安装／启动软件或操作Work前台；未追加用户手动验收。README及变更记录更新为实际已公开附件，Tag与原始notes保持固定。
+
 ## 2026-10-31 — 下载入口文案与完成任务识别
 
 最终发行候选`5190a7020d0d00ea06776676921469736859bfbd`仅在产品修正91bd67d之后修正发行说明的完整核验链接和补充验证记录，产品／生成器字节相同。Windows公开[41169421561](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169421561)实际full路线success，14分5秒；标准[41169467426](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41169467426)以release_package=true执行，完整材料、Host／安装器内部门禁和上传success，22分42秒。旧91bd67d标准任务41169318868因说明链接修正主动取消，确认cancelled后才派发新source一次；不作为失败构建或最终材料。
