@@ -32,7 +32,7 @@ async function enumerate(context, signal, dependencies = {}) {
         for (let start = 0; ; ) {
             const url = new URL('Users/' + context.accountId + '/Items', server);
             for (const [key, value] of Object.entries({ParentId: parent.Id, Recursive: 'true', IncludeItemTypes: 'Episode', Fields: 'ParentId,SortName',
-                SortBy: 'SortName', SortOrder: 'Ascending', EnableImages: 'false', EnableUserData: 'false', EnableTotalRecordCount: 'true', StartIndex: String(start), Limit: '100'})) url.searchParams.set(key, value);
+                SortBy: 'SortName', SortOrder: 'Ascending', EnableImages: 'false', EnableUserData: 'true', EnableTotalRecordCount: 'true', StartIndex: String(start), Limit: '100'})) url.searchParams.set(key, value);
             const page = await json(url.href, headers, combined); alive();
             if (!Array.isArray(page.Items) || page.Items.length > 100 || !Number.isSafeInteger(page.TotalRecordCount) || page.TotalRecordCount < 0) throw probe.failure('collection-invalid');
             if (page.TotalRecordCount > MAX_ITEMS) throw probe.failure('collection-too-large');
@@ -46,7 +46,8 @@ async function enumerate(context, signal, dependencies = {}) {
                 const sources = Array.isArray(item.MediaSources) ? item.MediaSources : [];
                 episodes.push({id: item.Id, title: episodeTitle(item, parent.Type === 'Series' ? parent.Name : parent.SeriesName),
                     mediaSourceId: sources.length === 1 && identifier(sources[0].Id) ? sources[0].Id : null,
-                    season: index(item.ParentIndexNumber) ? item.ParentIndexNumber : 0, episode: index(item.IndexNumber) ? item.IndexNumber : 0});
+                    season: index(item.ParentIndexNumber) ? item.ParentIndexNumber : 0, episode: index(item.IndexNumber) ? item.IndexNumber : 0,
+                    played: typeof item.UserData?.Played === 'boolean' ? item.UserData.Played : null});
             }
             start += page.Items.length;
             if (start === total) break;

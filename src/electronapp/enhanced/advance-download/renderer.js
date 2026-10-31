@@ -11,6 +11,7 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         'collection-invalid': '服务器返回的剧集列表不完整或归属不明确，未继续添加，请重试。',
         'collection-changed': '读取期间剧集列表发生变化，请重新添加。',
         'collection-too-large': '一次最多添加 512 集，请改为逐季添加。',
+        'collection-user-data-unavailable': '已看状态不完整，本次未添加；请重新读取，或在确认窗口明确选择下载全部。',
         'task-limit': '下载任务记录已达上限，请先移除不需要的记录。',
         'task-store-unavailable': '无法保存下载任务，请检查客户端配置目录的空间或权限。',
         'user-paused': '已手动暂停，点击继续可恢复；重开客户端也会保持暂停。',
@@ -127,7 +128,12 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         toast('正在读取剧集列表…');
         var result = await invoke('collection', {context: value, itemId: item.Id});
         if (JSON.stringify(context(current())) !== JSON.stringify(value) || JSON.stringify(context(api)) !== JSON.stringify(value)) return {status: 'cancelled'};
-        if (result.status === 'queued') toast(result.added ? '已加入 ' + result.added + ' 集；' + result.reused + ' 项已有任务未重复添加，可在下载管理查看。' : '这些剧集已有任务，未重复添加。');
+        if (result.status === 'queued') {
+            if (result.added) toast('已加入 ' + result.added + ' 集；' + (result.skipped ? '已跳过 ' + result.skipped + ' 集已看完剧集；' : '') +
+                result.reused + ' 项已有任务未重复添加，可在下载管理查看。');
+            else toast(result.skipped ? '未添加新任务：已跳过 ' + result.skipped + ' 集已看完剧集' +
+                (result.reused ? '，另有 ' + result.reused + ' 项已有任务未重复添加' : '') + '。' : '这些剧集已有任务，未重复添加。');
+        }
         else if (result.status === 'error') toast((result.added ? '已加入 ' + result.added + ' 集，其余未加入：' : '') + detail(result));
         return result;
     }
