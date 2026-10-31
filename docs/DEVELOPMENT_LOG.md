@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-10-31 — preload/Web与二进制发布源追查
+
+补取v0.4.7可达祖先历史，核preload唯一模板提交和pickaxe来源；重新下载两版官方netcore ZIP并对六重点Web基底各做字节/BOM/换行比较。官方NuGet catalog、a304源码树/nuspec、原libmpv归档八成员流式hash、builder归档及原run artifact名录分别写入[机器回执](evidence/signpath-v047-history.json)，方法和局限见SIGNPATH_V047_HISTORY。三分支HEAD六个固定源路径请求均HTTPError且未保存状态码，未得新内容，停止而不推断未公开。无产品、系统、安装器执行、第三方上传或签名申请；旧403发行日志未重试。
+
 ## 2026-10-31 — 逐项来源补件清单
 
 在v0.4.7来源基线上重新取得固定API三份源及MIT全文、Host GPL全文、Material Icons全文，均与仓库字节相同；重新取得Common3.3.10 NuGet，确认官方Model成员与当前DLL精确一致，nuspec无license字段/包内无许可命名文本。Koffi3.3.3两原始归档SHA/SRI及87+5成员通过，主包三份许可命名文本与子包无单独LICENSE的事实分别记录。四个选定API输出与selection哈希一致。具体来源与剩余请求见SIGNPATH_V047_GAPS及JSON回执；只更新文档和公开材料证据，无安装、产品运行、许可变更或对外联系。

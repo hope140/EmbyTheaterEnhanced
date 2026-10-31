@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "sourceCommit": "5190a7020d0d00ea06776676921469736859bfbd",
+  "scope": "Bounded upstream and reachable release-ancestry investigation; no product execution or licence determination",
+  "webOfficialComparisons": [
+    {
+      "version": "4.7.6.0",
+      "url": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.6.0/embyserver-netcore_4.7.6.0.zip",
+      "archiveBytes": 44849375,
+      "archiveSha256": "fcdd8b5d0c177bc8601ebdde33b953c7d728afd3367caba6ae34ec427b6f6074",
+      "licenseNamedMembers": [],
+      "comparisons": [
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js",
+          "upstreamMember": "system/dashboard-ui/modules/emby-apiclient/connectionmanager.js",
+          "bytes": 32181,
+          "sha256": "47e73baccedc5e9db0e8834c20f3e2b61a22b12b9bf4bb26bef727da4b7ec58f",
+          "localSha256": "beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/pagejs/page.js",
+          "upstreamMember": "system/dashboard-ui/modules/pagejs/page.js",
+          "bytes": 4122,
+          "sha256": "c3eaa8c8f4696113c667703871c3664673f8bf642ae945d5368968d85ff242b4",
+          "localSha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/common/playback/playbackmanager.js",
+          "upstreamMember": "system/dashboard-ui/modules/common/playback/playbackmanager.js",
+          "bytes": 84237,
+          "sha256": "a9445c4bf16537a7a1edeede4af8f9cc64a6b1e69387205724e0d1e3210fd62b",
+          "localSha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/common/appsettings.js",
+          "upstreamMember": "system/dashboard-ui/modules/common/appsettings.js",
+          "bytes": 3694,
+          "sha256": "2314a604a6d0d03306fc0da00cd59132b62792d4f6d24edf930b293330e06273",
+          "localSha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/webvtt/vtt.js",
+          "upstreamMember": "system/dashboard-ui/modules/webvtt/vtt.js",
+          "bytes": 18750,
+          "sha256": "110428d66e6b0319f23f428bc52646dd4aca699a4dc3b41f95cf9e4c1113ceaa",
+          "localSha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/webvtt/vtt.css",
+          "upstreamMember": "system/dashboard-ui/modules/webvtt/vtt.css",
+          "bytes": 327,
+          "sha256": "731f83180ca37993818b09269fb82cfa8c845de84e6a3e6dbbe14ed5dc77ec8b",
+          "localSha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        }
+      ]
+    },
+    {
+      "version": "4.7.14.0",
+      "url": "https://github.com/MediaBrowser/Emby.Releases/releases/download/4.7.14.0/embyserver-netcore_4.7.14.0.zip",
+      "archiveBytes": 41299962,
+      "archiveSha256": "ff5c412fb9f4faeb0f0d9da6c70e962205c29ff0483f161b85e9db05eb941804",
+      "licenseNamedMembers": [],
+      "comparisons": [
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js",
+          "upstreamMember": "system/dashboard-ui/modules/emby-apiclient/connectionmanager.js",
+          "bytes": 32463,
+          "sha256": "e5888099e4b1a67866fb89e9a09921ffee3da39d4a438db2de641af6d61d91db",
+          "localSha256": "beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/pagejs/page.js",
+          "upstreamMember": "system/dashboard-ui/modules/pagejs/page.js",
+          "bytes": 4127,
+          "sha256": "6391bad5b3fb7ccd241981509cbd6d717f0301145ac4ce53d388916590678d23",
+          "localSha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/common/playback/playbackmanager.js",
+          "upstreamMember": "system/dashboard-ui/modules/common/playback/playbackmanager.js",
+          "bytes": 87396,
+          "sha256": "550259c0a8c3d1720892dcf65f2acd9f4d445c1a0be597e7004f7a8b90237532",
+          "localSha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/common/appsettings.js",
+          "upstreamMember": "system/dashboard-ui/modules/common/appsettings.js",
+          "bytes": 3840,
+          "sha256": "f5af4df7e361bd241ab3021abe743fca13d86343c9de3d9515ce23c611dc78f7",
+          "localSha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/webvtt/vtt.js",
+          "upstreamMember": "system/dashboard-ui/modules/webvtt/vtt.js",
+          "bytes": 18731,
+          "sha256": "85f0aa2124e0b64d3999d726cd5f3242785d36a77915ebae9983ccfa425ad557",
+          "localSha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        },
+        {
+          "inputPath": "vendor/web-snapshot/www/modules/webvtt/vtt.css",
+          "upstreamMember": "system/dashboard-ui/modules/webvtt/vtt.css",
+          "bytes": 383,
+          "sha256": "d571054debec2de9cb97c1ab3996c68586940ffed2153247bad8564d1d0da641",
+          "localSha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317",
+          "byteEqual": false,
+          "bomCrlfOnlyEqual": false
+        }
+      ]
+    }
+  ],
+  "originalMpvArchiveInspection": {
+    "path": "vendor/archive/libmpv/20260809/mpv-dev-x86_64-20260809-git-dd5d17d328.7z",
+    "sha256": "c6aebf40bb722efe79090bfeb61e68625f0837770347e5a8b610aef78900cf12",
+    "reader": "libarchive.so.13 via streaming archive_read API; no extraction or execution",
+    "members": [
+      {
+        "path": "include/",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/mpv/",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/mpv/client.h",
+        "bytes": 86136,
+        "sha256": "1acf99ee77c8c2a6f1d1993bd81bbc8a91d27fb5924e80171670e6139a4bd353"
+      },
+      {
+        "path": "include/mpv/render.h",
+        "bytes": 34271,
+        "sha256": "192691941602052f00df0587f126246c48785a1cf21de68d22a92ea1908d1c55"
+      },
+      {
+        "path": "include/mpv/render_gl.h",
+        "bytes": 7328,
+        "sha256": "48662c0ed9872a14dd9e1684105c97f69f94a0414709c254c5d372adc41d2e69"
+      },
+      {
+        "path": "include/mpv/stream_cb.h",
+        "bytes": 9589,
+        "sha256": "188e58b6d14383e15a5dffdc4ecebbdfbf2e412b9c099ff21b571f747a8ce32d"
+      },
+      {
+        "path": "libmpv.dll.a",
+        "bytes": 53308,
+        "sha256": "bef1b89f534bc86b33135e1f04fa2d5064b9d48b5de8bc9866665bbf43def793"
+      },
+      {
+        "path": "libmpv-2.dll",
+        "bytes": 119725568,
+        "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c"
+      }
+    ]
+  },
+  "preloadHistory": {
+    "scope": "All commits reachable from fetched v0.4.7 ancestry and audit branch; not all remote branches",
+    "firstTemplateCommit": "d941bcd5d285e509419d175ae4e828e737c0876f",
+    "path": "tools/templates/runtime/preload.js",
+    "commitsTouchingPath": [
+      "d941bcd5d285e509419d175ae4e828e737c0876f"
+    ],
+    "firstBlobSha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38",
+    "windowAppdataPickaxeCommits": [
+      "d941bcd5d285e509419d175ae4e828e737c0876f"
+    ],
+    "upstreamRootPreloadCommitQuery": "https://api.github.com/repos/MediaBrowser/emby-theater-electron/commits?path=preload.js&per_page=5",
+    "upstreamRootPreloadQueryResult": []
+  },
+  "commonOfficialCatalog": {
+    "url": "https://api.nuget.org/v3/registration5-semver1/mediabrowser.common/3.3.10.json",
+    "published": "2017-09-20T19:11:10.21Z",
+    "projectUrl": "https://github.com/MediaBrowser/Emby",
+    "licenseUrl": null,
+    "licenseExpression": null,
+    "repository": null
+  },
+  "mpvRunArtifacts": {
+    "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs/31285220366/artifacts?per_page=100",
+    "totalCount": 8,
+    "items": [
+      {
+        "name": "mpv-aarch64-debug",
+        "expired": false,
+        "size": 52518035
+      },
+      {
+        "name": "mpv-aarch64",
+        "expired": false,
+        "size": 26835244
+      },
+      {
+        "name": "mpv-x86_64-debug",
+        "expired": false,
+        "size": 57297554
+      },
+      {
+        "name": "mpv-x86_64",
+        "expired": false,
+        "size": 33584857
+      },
+      {
+        "name": "mpv-x86_64_v3-debug",
+        "expired": false,
+        "size": 57006573
+      },
+      {
+        "name": "mpv-x86_64_v3",
+        "expired": false,
+        "size": 34824348
+      },
+      {
+        "name": "mpv-i686-debug",
+        "expired": false,
+        "size": 53861349
+      },
+      {
+        "name": "mpv-i686",
+        "expired": false,
+        "size": 31271574
+      }
+    ],
+    "scope": "API metadata only; artifact content not downloaded; no source/config artifact among listed names"
+  },
+  "builderArchive": {
+    "url": "https://codeload.github.com/shinchiro/mpv-winbuild-cmake/zip/cd1edc11dc6887a50f705717619d879f5a93a488",
+    "bytes": 175497,
+    "sha256": "770882870fd2d66411150947777147e8c7ebaa5b8b6e980b7643b79b7bc4a989",
+    "selectedFiles": [
+      {
+        "path": ".github/workflows/mpv_clang.yml",
+        "sha256": "15a8ced32b685a23baeb6be08b8b58d757056d43c7008386e88e2beea89e4e9f",
+        "bytes": 14538
+      },
+      {
+        "path": "packages/ffmpeg.cmake",
+        "sha256": "359c9c7da360f57d3a438e6fe117af6169cbd9aa3672751fd2bfc31e02be8fff",
+        "bytes": 3147
+      },
+      {
+        "path": "packages/mpv.cmake",
+        "sha256": "cfb9b0fbaaf6013069fe3eeda7e9e9644546f09cd772dbd549f8eb7fa21c7122",
+        "bytes": 4648
+      }
+    ]
+  },
+  "officialSourceHeadPathAttempts": [
+    {
+      "branch": "beta",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby/02e9f8b0035945011cf43098e2e158e6a91ded79/MediaBrowser.Model/MediaBrowser.Model.csproj",
+      "error": "HTTPError"
+    },
+    {
+      "branch": "beta",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby/02e9f8b0035945011cf43098e2e158e6a91ded79/Nuget/MediaBrowser.Common.nuspec",
+      "error": "HTTPError"
+    },
+    {
+      "branch": "dev",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby/69f698ab0f009bfda76dcf558d7871bd0eb03001/MediaBrowser.Model/MediaBrowser.Model.csproj",
+      "error": "HTTPError"
+    },
+    {
+      "branch": "dev",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby/69f698ab0f009bfda76dcf558d7871bd0eb03001/Nuget/MediaBrowser.Common.nuspec",
+      "error": "HTTPError"
+    },
+    {
+      "branch": "master",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/MediaBrowser.Model/MediaBrowser.Model.csproj",
+      "error": "HTTPError"
+    },
+    {
+      "branch": "master",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/Emby/1d7c2ab4bfebdae31f89fdaabd3b68782ccf495a/Nuget/MediaBrowser.Common.nuspec",
+      "error": "HTTPError"
+    }
+  ],
+  "officialSourceHeadPathAttemptsScope": "All six requests returned HTTPError; collector did not preserve HTTP status. No content or absence conclusion is drawn, and requests were not repeated.",
+  "a304ProjectPaths": {
+    "url": "https://api.github.com/repos/MediaBrowser/Emby/git/trees/a304b3cd0a330bb34fd3606a6afb9cd3d80176e4?recursive=1",
+    "responseSha256": "6f56b40407bc421551f0542a4bf7885b586603b97767abd3e952522b5e849713",
+    "truncated": false,
+    "selectedPaths": [
+      "MediaBrowser.Common/MediaBrowser.Common.csproj",
+      "MediaBrowser.Model/MediaBrowser.Model.csproj",
+      "Nuget/MediaBrowser.Common.nuspec"
+    ]
+  }
+}

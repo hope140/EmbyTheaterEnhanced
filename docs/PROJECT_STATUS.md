@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-10-31 — 来源历史有界追查
+
+[历史追查](SIGNPATH_V047_HISTORY.md)已记录具体停止点：preload只追到d941bcd首次模板导入；官方4.7.6/4.7.14包六重点Web输入共12项均非字节/BOM换行等同，未推翻既有局部许可映射；Model/Common参考nuspec为3.0.748 portable而非3.3.10 netstandard发布源证明。流式只读核验原libmpv归档八条目和DLL哈希，未发现另附完整源码包；固定builder和run artifact元数据仍不足完整依赖/通知闭合。没有产品更改或许可判定。
+
 ## 2026-10-31 — 签名材料具体补件与官方来源复核
 
 [具体缺口清单](SIGNPATH_V047_GAPS.md)逐项列出可自行核验、可能需要原提供者材料及专业判断的事项。本轮重新获取官方输入并保存[路径/hash回执](evidence/signpath-v047-followup.json)：官方Model与Common3.3.10 NuGet内成员精确相同；当前四个API模块有固定MIT输入与选择输出，旧ApiClient缺口不直接套给它们；Koffi两归档及92成员匹配，但原生子包无单独LICENSE，已更正说明。最终安装器内部回读、部分Web增量、Model/Common发布源关系及libmpv实际依赖/组合问题仍未闭合。未改变产品或申请签名。
