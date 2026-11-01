@@ -24,6 +24,8 @@ READY保持原目录／安装器／Zone／哈希锁；commit／ARMED只代表准
 
 准备限30秒，ARMED及最终放行各限5秒，守卫等launch最多60秒。取消只针对尚未放行的所属guard／relay；观察实际退出最多5秒，到期返回handoff-cancel-unconfirmed并保留owner、禁止再次创建guard，直到观察到实际退出。放行后不声称取消成功。
 
+更新IPC注销先等待active请求返回，再观察所有取消未确认的guard实际退出；active返回错误不等于后台guard已经释放。这个观察继续属于关键drain，整体期限到达只报告阻塞，不借请求错误越过实际退出。多个尝试的恢复提示与摘要按最近有效回执排序，旧的cancelled记录不能盖过新的待确认交接。
+
 原生guard持有按规范化executable哈希派生的本地互斥，覆盖同一安装位置不同尝试；忙或abandoned状态失败关闭。仍记录shell-entered／shell-started的任何旧尝试也阻止另一尝试，不能把未知安装器状态当作取消。
 
 ## 持久回执与恢复

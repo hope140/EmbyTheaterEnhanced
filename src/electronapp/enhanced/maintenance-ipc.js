@@ -247,7 +247,8 @@ function register(options) {
         if (active) active.controller.abort();
         if (typeof ipcMain.removeHandler === 'function') registered.forEach(function (channel) { ipcMain.removeHandler(channel); });
         unregisterPromise = Promise.allSettled([active && active.done, channelChange, channelLoad,
-            settings.updateCache && settings.updateCache.close && settings.updateCache.close()]).then(() => undefined);
+            settings.updateCache && settings.updateCache.close && settings.updateCache.close()]).then(() =>
+            settings.updateCache && settings.updateCache.drain ? settings.updateCache.drain() : undefined);
         return unregisterPromise;
     };
 }

@@ -109,7 +109,9 @@ test('a cancellation deadline reports unconfirmed while retaining the owned chil
     assert.equal(f.child.exitCode, null); assert.equal(f.child.unreferenced, undefined);
     await assert.rejects(f.handoff.prepare(record, new AbortController().signal), {code: 'handoff-cancel-unconfirmed'});
     assert.equal(f.calls.length, 1);
-    f.child.exitCode = 1; f.child.emit('close', 1); await lease.abort();
+    let drained = false; const drain = f.handoff.drainUncertain().then(() => { drained = true; });
+    await Promise.resolve(); assert.equal(drained, false);
+    f.child.exitCode = 1; f.child.emit('close', 1); await lease.abort(); await drain; assert.equal(drained, true);
 });
 
 test('cleanup is local-only and waits for helper exit', async () => {

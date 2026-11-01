@@ -1079,9 +1079,10 @@
     } catch (_) { enhancedLog({category: 'app', event: 'download-service-unavailable'}); }
     unregisterMaintenanceIpc = maintenanceIpc.register({
         updateCache: (function () {
+            var handoff = require('./enhanced/update-install-handoff').createHandoff();
             var store = require('./enhanced/update-install-cache').createStore({
                 profileRoot: appBootstrapState.profileRoot, executable: process.execPath,
-                handoff: require('./enhanced/update-install-handoff').createHandoff()
+                handoff: handoff
             });
             // Local-only reconciliation never checks for releases or starts an installer.
             var reconciled = Promise.resolve().then(function () {
@@ -1093,7 +1094,8 @@
                 download: async function (installer, options) { await reconciled; return store.download(installer, options); },
                 prepare: function (record, signal) { return store.prepare(record, signal); },
                 recovery: async function () { await reconciled; return store.recovery(getAppVersion()); },
-                close: function () { return reconciled; }
+                close: function () { return reconciled; },
+                drain: function () { return handoff.drainUncertain(); }
             };
         })(),
         quitForUpdate: function (lease) { updateShutdownLease = lease; setImmediate(function () { app.quit(); }); },

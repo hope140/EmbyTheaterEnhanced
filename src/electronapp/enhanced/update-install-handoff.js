@@ -9,7 +9,7 @@ const failure = () => Object.assign(Error('installer-launch-failed'), {code: 'in
 
 function createHandoff(options) {
     const settings = options || {};
-    const uncertainOwners = new Set();
+    const uncertainOwners = new Set(), ownedExits = new Map();
     function start(record, mode, signal) {
         if (uncertainOwners.size) return Promise.reject(Object.assign(failure(), {code: 'handoff-cancel-unconfirmed'}));
         if ((settings.platform || process.platform) !== 'win32') return Promise.reject(failure());
@@ -120,10 +120,11 @@ function createHandoff(options) {
                         windowsHide: true, detached: false, stdio: ['pipe', 'ignore', 'ignore'],
                         env: Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
                             .filter(key => environment[key] !== undefined).map(key => [key, environment[key]]))});
+                    ownedExits.set(child, exited);
                     child.stdin.on('error', () => { if (!released) { abort(); finish(failure()); } });
                     child.on('error', () => { abort(); finish(failure()); });
                     child.on('close', code => {
-                        uncertainOwners.delete(child); confirmExit(); if (released) return;
+                        uncertainOwners.delete(child); ownedExits.delete(child); confirmExit(); if (released) return;
                         if (releaseReject) { clearTimeout(releaseTimer); releaseReject(failure()); releaseReject = null; }
                         if (commitReject) { clearTimeout(commitTimer); commitReject(failure()); commitReject = null; }
                         disposeTransport();
@@ -137,6 +138,6 @@ function createHandoff(options) {
             });
         });
     }
-    return {prepare: (record, signal) => start(record, 'install', signal), cleanup: record => start(record, 'cleanup')};
+    return {prepare: (record, signal) => start(record, 'install', signal), cleanup: record => start(record, 'cleanup'), drainUncertain: () => Promise.all([...uncertainOwners].map(child => ownedExits.get(child)))};
 }
 module.exports = {createHandoff};
