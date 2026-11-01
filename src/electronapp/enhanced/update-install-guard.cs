@@ -23,6 +23,7 @@ public sealed class EteUpdateGuard : IDisposable {
     readonly List<SafeFileHandle> directories = new List<SafeFileHandle>();
     readonly string directory, rootDirectory;
     FileStream outcome;
+    SafeFileHandle outcomeForCleanup;
     System.Threading.Mutex installation;
     bool ownsInstallation;
     readonly Stopwatch elapsed = Stopwatch.StartNew();
@@ -128,6 +129,16 @@ public sealed class EteUpdateGuard : IDisposable {
             }
         } catch { WriteOutcome("shell-failed"); throw; }
     }
+    public void PrepareOutcomeCleanup(string name, string ino) {
+        Require(cleanup && name == "handoff-" + Path.GetFileName(directory).Substring(7) + ".json");
+        outcomeForCleanup = CreateFileW(Path.Combine(rootDirectory, name), Read | Delete, 1, IntPtr.Zero, 3, Reparse, IntPtr.Zero);
+        Info info = Information(outcomeForCleanup);
+        Require((info.Attributes & 0x10) == 0 && info.Links == 1 && FileId(info, ino) && info.Volume.ToString() == volume);
+    }
+    public void DeleteOutcome() {
+        Require(cleanup && outcomeForCleanup != null);
+        byte value = 1; Require(SetFileInformationByHandle(outcomeForCleanup, 4, ref value, 1));
+    }
     public void DeleteOwned(string name, string ino, long size, string hash) {
         Require(cleanup && (name == "receipt.json" || Regex.IsMatch(name ?? "", @"^\.ete-download-[0-9a-f]{32}\.part$") ||
             Regex.IsMatch(name ?? "", @"^EmbyTheaterEnhanced-[0-9A-Za-z.+-]+-win-x64-setup\.exe$")));
@@ -148,6 +159,7 @@ public sealed class EteUpdateGuard : IDisposable {
     }
     public void Dispose() {
         if (outcome != null) outcome.Dispose();
+        if (outcomeForCleanup != null) outcomeForCleanup.Dispose();
         if (zoneStream != null) zoneStream.Dispose(); if (installer != null) installer.Dispose();
         for (int index = directories.Count - 1; index >= 0; index--) directories[index].Dispose();
         if (installation != null) { if (ownsInstallation) installation.ReleaseMutex(); installation.Dispose(); }

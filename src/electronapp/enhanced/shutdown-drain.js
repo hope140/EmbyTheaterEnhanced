@@ -9,7 +9,7 @@ function createDrain(options) {
     const now = options.now || Date.now;
     let deadline;
     let started = false, ready = false, busy = false, blocked = false, timer;
-    const log = (event, details) => { try { options.log({category: 'app', event, details}); } catch (_) {} };
+    const log = (event, details) => { try { const result = options.log({category: 'app', event, details}); if (result && typeof result.catch === 'function') result.catch(() => {}); } catch (_) {} };
     const snapshot = () => ({pending: [...pending], failed: [...failed]});
     async function block(reason) {
         blocked = true;

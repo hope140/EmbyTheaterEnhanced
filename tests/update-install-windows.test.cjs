@@ -85,8 +85,10 @@ test('actual Windows cleanup uses verified handles, refuses unknown files, and n
         size: f.record.installer.size, sha256: f.record.installer.sha256}]};
     await assert.rejects(f.handoff.cleanup(payload));
     assert.equal(fs.existsSync(f.file), true); fs.unlinkSync(unknown);
+    await assert.rejects(f.handoff.cleanup({...payload, outcome: {...f.record.outcome, ino: (BigInt(f.record.outcome.ino) + 1n).toString()}}));
+    assert.equal(fs.existsSync(f.file), true, 'bad outcome identity is rejected before any deletion');
     await f.handoff.cleanup(payload);
-    assert.equal(fs.existsSync(f.directory), false); assert.equal(fs.readFileSync(manual, 'utf8'), 'manual user file');
+    assert.equal(fs.existsSync(f.directory), false); assert.equal(fs.existsSync(path.join(f.root, f.record.outcome.name)), false); assert.equal(fs.readFileSync(manual, 'utf8'), 'manual user file');
 });
 
 test('actual Windows managed cache retains cancelled verified bytes, retries, and cleans only after version confirmation', windows, async t => {

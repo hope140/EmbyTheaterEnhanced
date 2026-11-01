@@ -16,10 +16,12 @@ try {
     try {
         $failureStage = 'handoff-failed'
         if ($request.mode -eq 'cleanup') {
+            if ($request.outcome) { $guard.PrepareOutcomeCleanup($request.outcome.name, $request.outcome.ino) }
             $guard.ValidateCleanup([string[]]@($request.files | ForEach-Object { $_.name }))
             foreach ($file in $request.files) {
                 $guard.DeleteOwned($file.name, $file.ino, [long]$file.size, $file.sha256)
             }
+            if ($request.outcome) { $guard.DeleteOutcome() }
             $guard.RemoveEmptyDirectory()
             $eteUpdateOutput.WriteLine('ETE_CLEANUP_DONE')
             $eteUpdateOutput.Flush()

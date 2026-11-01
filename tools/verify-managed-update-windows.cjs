@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
 const TESTS = Object.freeze([
-    'tests/shutdown-drain-owner.test.cjs', 'tests/app-shutdown-drain.test.cjs', 'tests/update-handoff-outcome.test.cjs',
+    'tests/update-handoff-stages.test.cjs', 'tests/shutdown-drain-owner.test.cjs', 'tests/app-shutdown-drain.test.cjs', 'tests/update-handoff-outcome.test.cjs',
     'tests/update-install-cache.test.cjs', 'tests/update-install-handoff.test.cjs',
     'tests/update-install-windows.test.cjs', 'tests/update-install-exit-order.test.cjs',
     'tests/update-install-controlled-wizard.test.cjs', 'tests/manual-app-update.test.cjs',

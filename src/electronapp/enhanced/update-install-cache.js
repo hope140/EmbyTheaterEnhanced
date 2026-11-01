@@ -185,7 +185,6 @@ function createStore(options) {
             }
         };
     }
-    function ownRootOutcome(proof) { openRoot(); outcome.remove(root, proof); }
     async function reconcile(version) {
         const outcome = {removed: 0, retained: 0};
         for (const directory of entries()) {
@@ -198,7 +197,6 @@ function createStore(options) {
                 if (record.fileId) files.push({name: record.installer.name, ino: record.fileId.ino, size: record.installer.size, sha256: record.installer.sha256});
                 files.push({name: 'receipt.json', ...record.receiptProof});
                 await settings.handoff.cleanup({...record, root, directory, files});
-                if (record.outcome) { try { ownRootOutcome(record.outcome); } catch (_) {} }
                 outcome.removed++;
             } catch (_) { outcome.retained++; }
         }

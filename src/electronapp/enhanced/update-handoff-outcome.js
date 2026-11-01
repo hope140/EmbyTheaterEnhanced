@@ -39,9 +39,10 @@ function read(root, proof) {
     const file = checked(root, proof), fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
     try {
         const stat = fs.fstatSync(fd, {bigint: true});
-        if (String(stat.ino) !== proof.ino || String(stat.dev) !== proof.dev || stat.size > 1024n) throw fail();
+        if (String(stat.ino) !== proof.ino || String(stat.dev) !== proof.dev || !stat.isFile() || stat.nlink !== 1n || stat.size > 1024n) throw fail();
         const buffer = Buffer.alloc(1025), size = fs.readSync(fd, buffer, 0, buffer.length, 0);
         checked(root, proof);
+        if (size > 1024) throw fail();
         const value = JSON.parse(buffer.subarray(0, size));
         if (value.schemaVersion !== 1 || !stages.has(value.stage) || !Number.isSafeInteger(value.elapsedMs) || value.elapsedMs < 0) throw fail();
         return {stage: value.stage, elapsedMs: value.elapsedMs,
@@ -56,5 +57,4 @@ function cancelled(root, proof) {
         fs.ftruncateSync(fd, 0); fs.writeSync(fd, '{"schemaVersion":1,"stage":"cancelled","elapsedMs":0}\n'); fs.fsyncSync(fd);
     } finally { fs.closeSync(fd); }
 }
-function remove(root, proof) { fs.unlinkSync(checked(root, proof)); }
-module.exports = {prepare, read, remove, cancelled};
+module.exports = {prepare, read, cancelled};
