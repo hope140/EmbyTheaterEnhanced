@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-01 — 最终安装器通知独立回读
+
+固定v0.4.7安装器SHA保持8157ed8b…4d42，innoextract1.13.0 Linux工具SHA与官方发行API一致，提取返回0；零filetime警告与notimestamp边界单列，2225成员全文件hash验证通过。内外provenance/source身份、16项目通知原始Git字节、33生产包SRI和36许可文件、7继承通知、3原生包通知及Electron官方归档两全文分别核验；结果与工具身份写入[JSON回执](evidence/signpath-v047-payload-notices.json)。此前缺解包器不再是阻塞，未将通知存在升级为授权/源码完整结论。只读提取到独立审计目录，无安装、客户端执行、主分支变更或签名申请。
+
 ## 2026-10-31 — preload/Web与二进制发布源追查
 
 补取v0.4.7可达祖先历史，核preload唯一模板提交和pickaxe来源；重新下载两版官方netcore ZIP并对六重点Web基底各做字节/BOM/换行比较。官方NuGet catalog、a304源码树/nuspec、原libmpv归档八成员流式hash、builder归档及原run artifact名录分别写入[机器回执](evidence/signpath-v047-history.json)，方法和局限见SIGNPATH_V047_HISTORY。三分支HEAD六个固定源路径请求均HTTPError且未保存状态码，未得新内容，停止而不推断未公开。无产品、系统、安装器执行、第三方上传或签名申请；旧403发行日志未重试。

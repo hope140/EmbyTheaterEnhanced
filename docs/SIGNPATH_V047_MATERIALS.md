@@ -4,6 +4,8 @@
 
 后续的逐项缺口、责任方和可接受补件见 [具体补件清单](SIGNPATH_V047_GAPS.md)；新取得的官方成员及输入哈希见 [核对回执](evidence/signpath-v047-followup.json)。
 
+2026-11-01后续：[实际安装包通知核对](SIGNPATH_V047_PAYLOAD_NOTICES.md)已补上本次提取和比对证据；下面“未解包”等内容保留前轮观察时间，不再作为当前技术阻塞。
+
 ## 发行身份与证据边界
 
 - Tag 指向 [`5190a7020d0d00ea06776676921469736859bfbd`](https://github.com/hope140/EmbyTheaterEnhanced/tree/5190a7020d0d00ea06776676921469736859bfbd)。发布页显示预发行、安装器未签名；发行 API 和随包外置的 [provenance](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.7/EmbyTheaterEnhanced-0.4.7-win-x64-setup.exe.provenance.json) 均绑定该提交。

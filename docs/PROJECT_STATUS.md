@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-01 — v0.4.7包内通知实物核对完成
+
+重新下载并校验公开安装器，用支持该格式的innoextract1.13.0只读提取。2225清单成员全部存在且hash相同，额外仅manifest自身；内置manifest与外置provenance相符。16项目通知、36生产npm许可命名文件、7继承包通知、3份Koffi通知和Electron两份全文分别对Git/blob、锁定官方tarball及Electron原ZIP核对通过；所核集合未发现漏装/修改。来源授权、完整对应源码与组合判断仍未闭合。方法和范围见[包内核对](SIGNPATH_V047_PAYLOAD_NOTICES.md)，未运行安装器或产品。
+
 ## 2026-10-31 — 来源历史有界追查
 
 [历史追查](SIGNPATH_V047_HISTORY.md)已记录具体停止点：preload只追到d941bcd首次模板导入；官方4.7.6/4.7.14包六重点Web输入共12项均非字节/BOM换行等同，未推翻既有局部许可映射；Model/Common参考nuspec为3.0.748 portable而非3.3.10 netstandard发布源证明。流式只读核验原libmpv归档八条目和DLL哈希，未发现另附完整源码包；固定builder和run artifact元数据仍不足完整依赖/通知闭合。没有产品更改或许可判定。
