@@ -39,12 +39,14 @@ function fixture(refreshShutdown = () => Promise.resolve()) {
         stop(id) {assert.notEqual(id, 99); active.delete(id); stops.push(id);}
     };
     const context = {
-        electron: {protocol: {registerStringProtocol(_name, handler) {dispatcher = handler;}}},
+        electron: {dialog:{showMessageBox:()=>Promise.resolve()},protocol: {registerStringProtocol(_name, handler) {dispatcher = handler;}}},
         appHostCommand,
-        appIsShuttingDown: false,
+        appIsShuttingDown: false, updateShutdownLease: null, require: id => require('../src/electronapp/enhanced/shutdown-drain'),
         playbackPowerOwner: createOwner(power),
         enhancedLog(entry) {logs.push(entry);},
-        app: {once(name, handler) {assert.equal(name, 'before-quit'); beforeQuit = handler;}, quit() {calls.push('quit');}},
+        app: {on(){},once(name, handler) {assert.equal(name, 'before-quit'); beforeQuit = handler;}, quit() {calls.push('quit');}},
+        unregisterCacheManagementIpc() {},
+        mainWindow:null,
         unregisterDiagnosticsIpc() {calls.push('diagnostics');},
         unregisterMaintenanceIpc() {calls.push('maintenance');},
         unregisterStrmConfigIpc() {calls.push('config');},
@@ -92,7 +94,8 @@ test('main shutdown keeps async cleanup progressing when one power release fails
     f.power.stop = id => {if (id === 0) throw new Error('synthetic stop failure'); originalStop(id);};
     f.quit();
     assert.deepEqual(f.stops, [1], 'audio cleanup still runs');
-    assert.ok(f.logs.some(entry => entry.event === 'power-cleanup-failed'));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(f.logs.some(entry => entry.event === 'shutdown-cleanup-failed' && entry.details.step === 'power'));
     f.command('video-on'); f.command('audio-on');
     assert.equal(f.starts.length, 2);
     f.native.resolve(); f.kernel.resolve(); f.ready.resolve();
@@ -114,7 +117,7 @@ for (const mode of ['reject', 'throw']) {
         assert.equal(f.calls.includes('quit'), false, 'startup still owns its pending completion');
         f.ready.resolve();
         await new Promise(resolve => setImmediate(resolve));
-        assert.equal(f.calls.filter(call => call === 'quit').length, 1);
+        assert.equal(f.calls.filter(call => call === 'quit').length, 0, 'failed critical refresh release remains unconfirmed');
     });
 }
 

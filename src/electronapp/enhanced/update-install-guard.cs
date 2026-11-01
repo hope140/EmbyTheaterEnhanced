@@ -21,7 +21,11 @@ public sealed class EteUpdateGuard : IDisposable {
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool GetFileInformationByHandle(SafeFileHandle file, out Info info);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool SetFileInformationByHandle(SafeFileHandle file, int kind, ref byte value, uint size);
     readonly List<SafeFileHandle> directories = new List<SafeFileHandle>();
-    readonly string directory;
+    readonly string directory, rootDirectory;
+    FileStream outcome;
+    System.Threading.Mutex installation;
+    bool ownsInstallation;
+    readonly Stopwatch elapsed = Stopwatch.StartNew();
     readonly bool cleanup;
     readonly string volume;
     SafeFileHandle attempt;
@@ -35,7 +39,7 @@ public sealed class EteUpdateGuard : IDisposable {
     }
     static bool FileId(Info value, string ino) { return (((ulong)value.IndexHigh << 32) | value.IndexLow).ToString() == ino; }
     public EteUpdateGuard(string root, string rootIno, string rootDev, string target, string targetIno, bool forCleanup) {
-        cleanup = forCleanup;
+        cleanup = forCleanup; rootDirectory = root;
         volume = rootDev;
         Require(Regex.IsMatch(root ?? "", @"^[A-Za-z]:\\") && Path.GetFullPath(root) == root);
         Require(Path.GetFullPath(target) == target && Path.GetDirectoryName(target) == root &&
@@ -85,12 +89,44 @@ public sealed class EteUpdateGuard : IDisposable {
             Require(zone != null && zone.Contains("\r\nZoneId=3\r\n") && zoneStream.Length < 4096 && reader.ReadToEnd() == zone);
         }
     }
+    public void AcquireInstallation(string executable) {
+        string key;
+        using (var sha = SHA256.Create()) key = BitConverter.ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(Path.GetFullPath(executable).ToLowerInvariant()))).Replace("-", "");
+        installation = new System.Threading.Mutex(false, @"Local\ETEUpdateGuard-" + key);
+        try { ownsInstallation = installation.WaitOne(0, false); }
+        catch (System.Threading.AbandonedMutexException) { ownsInstallation = true; throw new IOException("previous-handoff-unconfirmed"); }
+        Require(ownsInstallation);
+    }
+    public void OpenOutcome(string name, string ino) {
+        Require(!cleanup && Regex.IsMatch(name ?? "", @"^handoff-[0-9a-f]{32}\.json$"));
+        var handle = CreateFileW(Path.Combine(rootDirectory, name), Read | 0x40000000, 1, IntPtr.Zero, 3, Reparse, IntPtr.Zero);
+        try {
+            Info info = Information(handle);
+            Require((info.Attributes & 0x10) == 0 && info.Links == 1 && FileId(info, ino) && info.Volume.ToString() == volume);
+            outcome = new FileStream(handle, FileAccess.ReadWrite);
+        } catch { handle.Dispose(); throw; }
+    }
+    public void WriteOutcome(string stage) { WriteOutcome(stage, -1); }
+    public void WriteOutcome(string stage, int exitCode) {
+        try {
+            if (outcome == null || !Regex.IsMatch(stage ?? "", @"^(armed|waiting-release|cancelled|waiting-client|client-exited|waiting-host|host-exited|client-timeout|host-timeout|client-nonzero|host-nonzero|release-timeout|shell-entered|shell-started|wizard-exited|shell-failed|handoff-failed)$")) return;
+            string code = exitCode >= 0 && exitCode <= 65535 ? exitCode.ToString() : "null";
+            var bytes = System.Text.Encoding.ASCII.GetBytes("{\"schemaVersion\":1,\"stage\":\"" + stage + "\",\"elapsedMs\":" + elapsed.ElapsedMilliseconds + ",\"exitCode\":" + code + "}\n");
+            outcome.Position = 0; outcome.SetLength(0); outcome.Write(bytes, 0, bytes.Length); outcome.Flush(true);
+        } catch { /* Diagnostic persistence cannot authorize installation. */ }
+    }
     public void OpenWizard() {
-        Require(installer != null && zoneStream != null);
+        Require(installer != null && zoneStream != null && outcome != null && ownsInstallation);
         // Keep locks through ShellExecute and wizard lifetime; no /SILENT,
         // elevation bypass, security-warning suppression, or forced client kill.
         var start = new ProcessStartInfo(installerPath) { UseShellExecute = true, WorkingDirectory = directory };
-        using (var process = Process.Start(start)) { Require(process != null); process.WaitForExit(); }
+        WriteOutcome("shell-entered");
+        try {
+            using (var process = Process.Start(start)) {
+                Require(process != null); WriteOutcome("shell-started");
+                process.WaitForExit(); WriteOutcome("wizard-exited", process.ExitCode);
+            }
+        } catch { WriteOutcome("shell-failed"); throw; }
     }
     public void DeleteOwned(string name, string ino, long size, string hash) {
         Require(cleanup && (name == "receipt.json" || Regex.IsMatch(name ?? "", @"^\.ete-download-[0-9a-f]{32}\.part$") ||
@@ -111,7 +147,9 @@ public sealed class EteUpdateGuard : IDisposable {
         Require(SetFileInformationByHandle(attempt, 4, ref value, 1));
     }
     public void Dispose() {
+        if (outcome != null) outcome.Dispose();
         if (zoneStream != null) zoneStream.Dispose(); if (installer != null) installer.Dispose();
         for (int index = directories.Count - 1; index >= 0; index--) directories[index].Dispose();
+        if (installation != null) { if (ownsInstallation) installation.ReleaseMutex(); installation.Dispose(); }
     }
 }

@@ -9,7 +9,9 @@ const failure = () => Object.assign(Error('installer-launch-failed'), {code: 'in
 
 function createHandoff(options) {
     const settings = options || {};
+    const uncertainOwners = new Set();
     function start(record, mode, signal) {
+        if (uncertainOwners.size) return Promise.reject(Object.assign(failure(), {code: 'handoff-cancel-unconfirmed'}));
         if ((settings.platform || process.platform) !== 'win32') return Promise.reject(failure());
         if (signal && signal.aborted) return Promise.reject(Object.assign(Error('cancelled'), {code: 'cancelled'}));
         const environment = settings.environment || process.env, systemRoot = environment.SystemRoot;
@@ -22,6 +24,7 @@ function createHandoff(options) {
             mainExecutable: record.executable, hostPid: process.ppid, hostPath: path.resolve(__dirname, '../..', 'Emby.Theater.exe'),
             directory: record.directory, directoryIno: record.directoryId.ino, name: record.installer.name,
             ino: record.fileId && record.fileId.ino, size: record.installer.size, sha256: record.installer.sha256,
+            outcome: record.outcome || null,
             zone: source ? update.internetZone(source.prefix + record.installer.url) : '', files: record.files || []};
         const ascii = value => JSON.stringify(value).replace(/[^\x20-\x7e]/g, character => '\\u' + character.charCodeAt(0).toString(16).padStart(4, '0'));
         const guard = fs.readFileSync(path.join(__dirname, 'update-install-guard.cs')).toString('base64');
@@ -35,8 +38,8 @@ function createHandoff(options) {
         // host's module-analysis cache can consume the entire prepare budget.
         const launch = "Import-Module ([IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop; Add-Type -TypeDefinition ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + relay + "'))); exit [EteUpdateRelay]::Run()";
         return new Promise((resolve, reject) => {
-            let child, socket, server, ready = false, settled = false, committed = false, stopping = false, cleaned = false, disposed = false;
-            let commitResolve, commitReject, commitTimer, commitDeadline, guardPid;
+            let child, socket, server, ready = false, settled = false, committed = false, released = false, stopping = false, cleaned = false, disposed = false;
+            let commitResolve, commitReject, commitTimer, commitDeadline, releaseResolve, releaseReject, releaseTimer, releaseDeadline, guardPid;
             const sockets = new Set(), deadline = Date.now() + 30000;
             let confirmExit; const exited = new Promise(done => { confirmExit = done; });
             const disposeTransport = () => { if (disposed) return; disposed = true; for (const item of sockets) item.destroy(); if (server) server.close(); };
@@ -44,22 +47,30 @@ function createHandoff(options) {
                 if (settled) return;
                 settled = true; clearTimeout(timer); if (signal) signal.removeEventListener('abort', abort);
                 const complete = () => { disposeTransport(); error ? reject(error) : resolve(); };
-                if (error && child) exited.then(complete); else complete();
+                if (error && child) { const limit = setTimeout(() => { uncertainOwners.add(child); disposeTransport(); reject(Object.assign(failure(), {code: 'handoff-cancel-unconfirmed'})); }, 5000); exited.then(() => { clearTimeout(limit); complete(); }); } else complete();
             };
-            const abort = () => {
-                if (committed) return Promise.resolve();
+            const waitForOwnedExit = () => new Promise((yes, no) => {
+                if (!child) { yes(); return; }
+                const limit = setTimeout(() => { uncertainOwners.add(child); no(Object.assign(failure(), {code: 'handoff-cancel-unconfirmed'})); }, 5000);
+                exited.then(() => { clearTimeout(limit); yes(); });
+            });
+            const abortImpl = () => {
+                if (released) return Promise.reject(Object.assign(failure(), {code: 'handoff-cancel-unconfirmed'}));
                 if (signal) signal.removeEventListener('abort', abort);
-                if (commitReject) { clearTimeout(commitTimer); const failed = commitReject; commitReject = null; exited.then(() => failed(failure())); }
                 if (!stopping) { stopping = true; if (child) child.stdin.end('abort\n'); }
+                const completion = waitForOwnedExit();
+                if (commitReject) { clearTimeout(commitTimer); const no = commitReject; commitReject = null; completion.then(() => no(failure()), no); }
+                if (releaseReject) { clearTimeout(releaseTimer); const no = releaseReject; releaseReject = null; completion.then(() => no(failure()), no); }
                 if (!child) finish(signal && signal.aborted ? Object.assign(Error('cancelled'), {code: 'cancelled'}) : failure());
-                return child ? exited : Promise.resolve();
+                return completion;
             };
+            const abort = () => { const result = abortImpl(); result.catch(() => {}); return result; };
             const timer = setTimeout(() => { abort(); finish(failure()); }, 30000);
             server = (settings.createServer || net.createServer)(connection => {
                 sockets.add(connection); let pending = '', authenticated = false;
                 connection.on('error', () => {});
                 connection.on('data', chunk => {
-                    if (stopping || committed) { connection.destroy(); return; }
+                    if (stopping || released) { connection.destroy(); return; }
                     pending += chunk.toString('ascii').replace(/\r/g, '');
                     if (pending.length > 1024) { connection.destroy(); return; }
                     let index;
@@ -72,7 +83,7 @@ function createHandoff(options) {
                             socket.write(Buffer.from(command, 'utf8').toString('base64') + '\n' + ascii(payload) + '\n');
                             continue;
                         }
-                        if (stopping || Date.now() >= deadline || (signal && signal.aborted)) { abort(); return; }
+                        if (stopping || (!ready && Date.now() >= deadline) || (signal && signal.aborted)) { abort(); return; }
                         if (mode === 'cleanup' && line === 'ETE_CLEANUP_DONE') { cleaned = true; continue; }
                         if (mode === 'install' && line === 'ETE_INSTALL_READY' && !ready) {
                             ready = true; settled = true; clearTimeout(timer);
@@ -80,16 +91,26 @@ function createHandoff(options) {
                                 commit() {
                                     if (committed || stopping || commitResolve || child.exitCode !== null || (signal && signal.aborted)) throw failure();
                                     return new Promise((yes, no) => { commitResolve = yes; commitReject = no; commitDeadline = Date.now() + 5000; commitTimer = setTimeout(abort, 5000); socket.write('commit\n'); });
+                                },
+                                release() {
+                                    if (!committed || released || stopping || releaseResolve || child.exitCode !== null) return Promise.reject(failure());
+                                    return new Promise((yes, no) => { releaseResolve = yes; releaseReject = no; releaseDeadline = Date.now() + 5000;
+                                        releaseTimer = setTimeout(() => { abort().catch(() => {}); no(failure()); }, 5000);
+                                        socket.write('launch\n'); });
                                 }, abort});
                         } else if (mode === 'install' && line === 'ETE_INSTALL_ARMED' && commitResolve) {
                             if (Date.now() >= commitDeadline) { abort(); return; }
-                            committed = true; clearTimeout(commitTimer); if (signal) signal.removeEventListener('abort', abort);
-                            child.stdin.end('detach\n'); child.unref(); disposeTransport();
+                            committed = true; clearTimeout(commitTimer);
                             const done = commitResolve; commitResolve = null; commitReject = null; done();
+                        } else if (mode === 'install' && line === 'ETE_INSTALL_RELEASED' && releaseResolve) {
+                            if (Date.now() >= releaseDeadline) { abort().catch(() => {}); return; }
+                            released = true; clearTimeout(releaseTimer); if (signal) signal.removeEventListener('abort', abort);
+                            child.stdin.end('detach\n'); child.unref(); disposeTransport();
+                            const done = releaseResolve; releaseResolve = null; releaseReject = null; done();
                         } else { abort(); finish(failure()); }
                     }
                 });
-                connection.on('close', () => { sockets.delete(connection); if (connection === socket && !committed && !cleaned && !stopping) abort(); });
+                connection.on('close', () => { sockets.delete(connection); if (connection === socket && !released && !cleaned && !stopping) abort(); });
             });
             server.on('error', () => { abort(); finish(failure()); });
             server.listen('\\\\.\\pipe\\' + pipe, () => {
@@ -99,10 +120,11 @@ function createHandoff(options) {
                         windowsHide: true, detached: false, stdio: ['pipe', 'ignore', 'ignore'],
                         env: Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'APPDATA', 'LOCALAPPDATA', 'USERPROFILE', 'ProgramData', 'ProgramFiles', 'ProgramFiles(x86)']
                             .filter(key => environment[key] !== undefined).map(key => [key, environment[key]]))});
-                    child.stdin.on('error', () => { if (!committed) { abort(); finish(failure()); } });
+                    child.stdin.on('error', () => { if (!released) { abort(); finish(failure()); } });
                     child.on('error', () => { abort(); finish(failure()); });
                     child.on('close', code => {
-                        confirmExit(); if (committed) return;
+                        uncertainOwners.delete(child); confirmExit(); if (released) return;
+                        if (releaseReject) { clearTimeout(releaseTimer); releaseReject(failure()); releaseReject = null; }
                         if (commitReject) { clearTimeout(commitTimer); commitReject(failure()); commitReject = null; }
                         disposeTransport();
                         if (mode === 'cleanup' && code === 0 && cleaned) finish();

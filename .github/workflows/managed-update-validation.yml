@@ -9,7 +9,7 @@ permissions:
 jobs:
   windows-managed-update-short:
     name: Windows updater native checks (interactive installer validation pending)
-    if: github.head_ref == 'feature/managed-app-update-install' || github.ref == 'refs/heads/feature/managed-app-update-install'
+    if: github.head_ref == 'fix/update-handoff-safety' || github.head_ref == 'feature/managed-app-update-install' || github.ref == 'refs/heads/feature/managed-app-update-install'
     runs-on: windows-2022
     timeout-minutes: 8
     steps:

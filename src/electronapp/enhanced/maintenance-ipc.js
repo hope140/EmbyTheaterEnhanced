@@ -55,7 +55,7 @@ function register(options) {
                 return record.timedOut ? {status: 'error', reason: 'timeout'} : result;
             }
             catch (error) {
-                const reasons = new Set(['file-exists', 'directory-invalid', 'unsafe-redirect', 'http-rejected', 'encoding-rejected', 'size-mismatch', 'hash-mismatch', 'timeout', 'cache-unsafe', 'disk-full', 'installer-launch-failed']);
+                const reasons = new Set(['file-exists', 'directory-invalid', 'unsafe-redirect', 'http-rejected', 'encoding-rejected', 'size-mismatch', 'hash-mismatch', 'timeout', 'cache-unsafe', 'disk-full', 'installer-launch-failed', 'handoff-cancel-unconfirmed']);
                 if (['ENOSPC', 'EDQUOT'].includes(error.code)) return {status: 'error', reason: 'disk-full'};
                 if (['EACCES', 'EPERM', 'EROFS'].includes(error.code)) return {status: 'error', reason: 'cache-unwritable'};
                 return record.timedOut ? {status: 'error', reason: 'timeout'} : controller.signal.aborted ? {status: 'cancelled'} :
@@ -212,9 +212,9 @@ function register(options) {
                     installing = true;
                     // Queue normal quit after this IPC operation releases its owner,
                     // so before-quit can drain maintenance without a self-deadlock.
-                    settings.quitForUpdate();
+                    settings.quitForUpdate(lease);
                     return {status: 'installing', fileName: fresh.installer.name, sha256: fresh.installer.sha256,
-                        source: downloaded.source, directory: downloaded.directory, reused: downloaded.reused};
+                        source: downloaded.source, directory: downloaded.directory, reused: downloaded.reused, replacedInvalidCache: downloaded.replacedInvalidCache === true};
                 } finally { if (!installing) await lease.abort(); }
             } finally { clearTimeout(timer); }
         });

@@ -21,14 +21,17 @@ function fixture(mode = 'install') {
     connection.write = bytes => {
         outgoing += bytes.toString();
         setImmediate(() => {
-            if (outgoing.endsWith('commit\n')) connection.emit('data', Buffer.from('ETE_INSTALL_ARMED\r\n'));
-            else if (mode === 'install') connection.emit('data', Buffer.from('ETE_INSTALL_READY\r\n'));
+            if (mode === 'hold-release' && outgoing.endsWith('launch\n')) return;
+            if (mode === 'hold-armed' && outgoing.endsWith('commit\n')) return;
+            if (outgoing.endsWith('launch\n')) connection.emit('data', Buffer.from('ETE_INSTALL_RELEASED\r\n'));
+            else if (outgoing.endsWith('commit\n')) connection.emit('data', Buffer.from('ETE_INSTALL_ARMED\r\n'));
+            else if (!['cleanup', 'empty-exit', 'bad-auth'].includes(mode)) connection.emit('data', Buffer.from('ETE_INSTALL_READY\r\n'));
             else { if (mode === 'cleanup') connection.emit('data', Buffer.from('ETE_CLEANUP_DONE\r\n')); child.exitCode = 0; child.emit('close', 0); }
         });
     };
     child.stdin.on('data', bytes => {
         input += bytes.toString();
-        if (input.includes('\nabort\n')) { child.killed = true; setImmediate(() => { child.exitCode = 1; child.emit('close', 1); }); }
+        if (mode !== 'abort-hangs' && input.includes('\nabort\n')) { child.killed = true; setImmediate(() => { child.exitCode = 1; child.emit('close', 1); }); }
     });
     const handoff = createHandoff({platform: 'win32', environment: {SystemRoot: 'C:\\Windows', APPDATA: 'C:\\profile', GITHUB_TOKEN: 'secret-canary', NODE_OPTIONS: 'secret-canary', HTTPS_PROXY: 'secret-canary'},
         randomBytes: size => Buffer.alloc(size, 1),
@@ -43,7 +46,7 @@ function fixture(mode = 'install') {
             connection.emit('data', Buffer.from((mode === 'bad-auth' ? '02' : '01').repeat(32) + ' 4321\r\n'));
             if (mode === 'bad-auth') { child.exitCode = 1; child.emit('close', 1); }
         }); return child; }});
-    return {handoff, child, calls, transmitted: () => outgoing, payload: () => JSON.parse(outgoing.split('\n')[1])};
+    return {handoff, child, connection, calls, transmitted: () => outgoing, payload: () => JSON.parse(outgoing.split('\n')[1])};
 }
 
 test('private handoff uses fixed system executable, no inherited credentials/policy override or installer args', async () => {
@@ -60,7 +63,7 @@ test('private handoff uses fixed system executable, no inherited credentials/pol
     assert.equal(f.payload().rootIno, '9007199254740993');
     assert.equal(f.payload().zone.includes('ZoneId=3'), true);
     assert.equal(f.child.unreferenced, undefined);
-    await lease.commit(); assert.equal(f.child.unreferenced, true); assert.equal(f.child.killed, false);
+    await lease.commit(); assert.equal(f.child.unreferenced, undefined); await lease.release(); assert.equal(f.child.unreferenced, true); assert.equal(f.child.killed, false);
 });
 
 test('cancellation before commit kills only the owned helper and never detaches it', async () => {
@@ -73,8 +76,40 @@ test('cancellation before commit kills only the owned helper and never detaches 
 
 test('a committed helper is independent of subsequent normal main shutdown cancellation', async () => {
     const f = fixture(), controller = new AbortController();
-    const lease = await f.handoff.prepare(record, controller.signal); await lease.commit(); controller.abort(); lease.abort();
+    const lease = await f.handoff.prepare(record, controller.signal); await lease.commit(); await lease.release(); controller.abort(); await assert.rejects(lease.abort(), {code: 'handoff-cancel-unconfirmed'});
     assert.equal(f.child.killed, false);
+});
+
+test('arming is cancellable until the final launch release and never detaches early', async () => {
+    const f = fixture(), controller = new AbortController();
+    const lease = await f.handoff.prepare(record, controller.signal); await lease.commit();
+    assert.equal(f.child.unreferenced, undefined); controller.abort(); await lease.abort();
+    assert.equal(f.child.exitCode, 1); assert.equal(f.child.killed, true);
+    await assert.rejects(lease.release());
+});
+
+for (const [mode, frame] of [['hold-armed', 'ETE_INSTALL_ARMED'], ['hold-release', 'ETE_INSTALL_RELEASED']]) {
+    test('late ' + frame + ' cannot authorize detachment or installation', async t => {
+        const f = fixture(mode); let now = Date.now(); t.mock.method(Date, 'now', () => now);
+        const lease = await f.handoff.prepare(record, new AbortController().signal);
+        if (mode === 'hold-release') await lease.commit();
+        const result = mode === 'hold-release' ? lease.release() : lease.commit();
+        const rejected = assert.rejects(result);
+        await new Promise(resolve => setImmediate(resolve)); now += 5001;
+        f.connection.emit('data', Buffer.from(frame + '\n')); await rejected;
+        assert.equal(f.child.unreferenced, undefined); assert.equal(f.child.exitCode, 1);
+    });
+}
+
+test('a cancellation deadline reports unconfirmed while retaining the owned child', async t => {
+    const f = fixture('abort-hangs'), lease = await f.handoff.prepare(record, new AbortController().signal);
+    t.mock.timers.enable({apis: ['setTimeout']});
+    const aborted = lease.abort(); const rejected = assert.rejects(aborted, {code: 'handoff-cancel-unconfirmed'});
+    t.mock.timers.tick(5001); await rejected;
+    assert.equal(f.child.exitCode, null); assert.equal(f.child.unreferenced, undefined);
+    await assert.rejects(f.handoff.prepare(record, new AbortController().signal), {code: 'handoff-cancel-unconfirmed'});
+    assert.equal(f.calls.length, 1);
+    f.child.exitCode = 1; f.child.emit('close', 1); await lease.abort();
 });
 
 test('cleanup is local-only and waits for helper exit', async () => {
