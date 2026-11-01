@@ -87,6 +87,7 @@ function createStore(options) {
             record.installer.name !== 'EmbyTheaterEnhanced-' + record.targetVersion + '-win-x64-setup.exe' ||
             (record.state !== 'downloading' && (!validId(record.fileId) || !update.SOURCES.some(source => source.id === record.source)))) throw fail('cache-unsafe');
         ownDirectory(directory, record.directoryId);
+        Object.defineProperty(record, 'receiptModifiedMs', {value: Number(before.mtimeMs)});
         Object.defineProperty(record, 'receiptProof', {value: {ino: String(before.ino), size: receiptBytes.length, sha256: digest(receiptBytes)}});
         return record;
     }
@@ -202,11 +203,15 @@ function createStore(options) {
         }
         return outcome;
     }
+    function recentRecords() {
+        return entries().map(directory => { try { return {directory, record: read(directory)}; } catch (_) { return null; } })
+            .filter(Boolean).sort((a, b) => b.record.receiptModifiedMs - a.record.receiptModifiedMs);
+    }
     function recovery(version) {
         let status = false;
-        for (const directory of entries()) {
+        for (const {record} of recentRecords()) {
             try {
-                const record = read(directory), compared = maintenance.compareVersions(version, record.targetVersion);
+                const compared = maintenance.compareVersions(version, record.targetVersion);
                 if (compared === 0 || compared === 1) status = 'cleanup-pending';
                 else if (record.state === 'armed') {
                     if (record.outcome) {
@@ -221,9 +226,8 @@ function createStore(options) {
     }
     function outcomes() {
         const rows = [];
-        for (const directory of entries().slice(-16)) {
+        for (const {directory, record} of recentRecords().slice(0, 16)) {
             try {
-                const record = read(directory);
                 if (record.outcome) rows.push({...outcome.read(root, record.outcome), attemptId: digest(path.basename(directory)).slice(0, 16)});
             } catch (_) { /* Unknown receipts do not become diagnostic objects. */ }
         }

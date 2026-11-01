@@ -43,3 +43,11 @@ test('an uncertain previous shell launch blocks a different cached attempt until
  await assert.rejects(f.store.prepare(record),{code:'handoff-cancel-unconfirmed'});assert.equal(f.store.outcomes().some(r=>r.stage==='shell-started'),true);
  fs.writeFileSync(file,JSON.stringify({schemaVersion:1,stage:'wizard-exited',elapsedMs:5,exitCode:1}));const lease=await f.store.prepare(record);await lease.abort();
 });
+
+test('recovery reports the newest attempt rather than an old cancelled record in directory order',async t=>{
+ const f=managed(t),old=await f.store.download(f.asset,f.request),first=await f.store.prepare(old);await first.abort();
+ const next={...f.asset,id:2,name:f.asset.name.replace('9.1.0','9.2.0'),url:f.asset.url.replaceAll('9.1.0','9.2.0')},fresh=await f.store.download(next,{...f.request,targetVersion:'9.2.0',tag:'v9.2.0'});await f.store.prepare(fresh);
+ fs.utimesSync(path.join(old.directory,'receipt.json'),10,10);fs.utimesSync(path.join(fresh.directory,'receipt.json'),20,20);
+ const original=fs.readdirSync;t.mock.method(fs,'readdirSync',(dir,...args)=>dir===path.join(f.root,'updates')?[path.basename(old.directory),path.basename(fresh.directory)]:original(dir,...args));
+ assert.equal(f.store.recovery('9.0.0'),'handoff-preparing');assert.equal(f.store.outcomes()[0].stage,'preparing');
+});
