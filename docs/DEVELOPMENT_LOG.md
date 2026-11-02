@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-02 — 字幕首选语言多选本地候选
+
+基于最新远端 main `2e728a6`；原工作树干净，公开远端无现行同名 PR。核对 ETE 固定 `settings/subtitles.js` 只有单值 `.value`，但随附 `emby-select` 和 ActionSheet 已支持多选；`PlaybackManager` 和 libmpv 消费服务端 `DefaultSubtitleStreamIndex`。另查当前 Emby 公开网页的字幕模板、控制器和 BaseSettingsContainer，确认继续使用 `SubtitleLanguagePreference`，多选按逗号连接，语言选项为 `getCultures()` 的原始代码；没有推断 `Chinese` 为简体，也没有重写服务器轨道优先级。
+
+新增两份固定源哈希 Web overlay 和定向 VM 回归；未修改只读 vendor 输入。测试范围和未执行项见项目状态。真实用户服务器及旧版服务器没有连接或写入验证，逗号值的服务端解释仍需实际版本验收；本分支不包含此前暂停的播放异常修复。
+
 ## 2026-10-31 — v0.4.10合main与testing发布核验
 
 来源`52288ab3f3d6a9fb51f0f205c38df6339e702a01`的Windows公开41216718273为2334 pass／0 fail／5 skip；标准发行构建41216728814为2434 pass／0 fail／2 skip，显式材料135/135、Host材料2/2、实际Electron44.5.0接口绑定、隐藏窗口退出及安装器编译／解包比对通过。构建ZIP13049021858独立下载／哈希、五附件及summary的来源／版本／run核验通过。核对main仍为cd39dd1后，正常原子推送main快进及新Tag v0.4.10，未强推或移动旧Tag。

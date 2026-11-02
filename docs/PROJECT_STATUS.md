@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-02 — 字幕首选语言多选候选
+
+从当前 main `2e728a6` 建立独立分支。Emby 公开网页客户端 `https://app.emby.media/settings/subtitles.html`、`subtitles.js` 与 `modules/viewmanager/basesettingscontainer.js`（2026-11-02 读取）确认：`SubtitleLanguagePreference` 是用户配置中的逗号连接字符串，语言代码来自 `getCultures()` 的 `TwoLetterISOLanguageName`，多选值按所选顺序保存。ETE 的固定旧 Web 快照仍按单值读写；本候选只覆写字幕设置页 JS/HTML，复用旧 `emby-select` 多选控件，未改 PlaybackManager 或 Native 选轨。进入设置不触发保存，未修改语言时提交其余设置也保留服务器原字符串；清空选项写空字符串。字幕模式、记住选择和清除已记轨道仍走原字段与接口。
+
+自动回归覆盖多选保存、重新进入、清空、默认空值、其他/未知语言、模式与记轨字段，以及现有播放字幕选轨归属。网页客户端没有为多选设置服务器版本门槛；旧服务器对逗号值的实际解释、用户当前服务器的配置读回、真实 GUI 与播放仍未验证。本候选不把 `Chinese` 单标签解释为简体。
+
 ## 2026-10-31 — v0.4.10片头修复与诊断测试版已发布
 
 main已从cd39dd1正常快进至准确发行来源`52288ab3f3d6a9fb51f0f205c38df6339e702a01`，新Tag v0.4.10固定同一提交。Windows公开CI41216718273、标准构建41216728814及testing发布41218837469均success；Release430043604为prerelease、非draft，构建ZIP及公开五附件独立下载后来源／大小／SHA／校验与notes一致。正式Latest保持422090288／v0.4.0，不含预载／暂存改动；普通Seek提前结束根因仍未确认，见[本版核验](V0410_RELEASE_VERIFICATION.md)。

@@ -20,6 +20,7 @@ const connectionManagerTransport = require('./patch-connectionmanager-transport.
 const trackedFileHash = require('./tracked-file-hash.cjs');
 const advanceDownload = require('./patch-advance-download.cjs');
 const playbackInputDiagnostics = require('./patch-playback-input-diagnostics.cjs');
+const subtitleLanguagePreference = require('./patch-subtitle-language-preference.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
@@ -35,8 +36,25 @@ const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
 const ACTIONSHEET_LAYOUT_GENERATOR_PATH = 'tools/patch-actionsheet-layout.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
+const SUBTITLE_LANGUAGE_GENERATOR_PATH = 'tools/patch-subtitle-language-preference.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'subtitle-language-preference-script', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/settings/subtitles.js', inputPath: null,
+        runtimePath: 'electronapp/www/settings/subtitles.js',
+        expectedBaseSha256: '6D087C280019FC13D5B5062F760E1757FD203AFDC2A8207CC28F6B4CC38A1B15', expectedInputSha256: null,
+        expectedOutputSha256: 'C6B0916FFFAA1E58D13AF389725C5B801D8D4CEC4D0678724CE38B7BDE56F605',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'subtitle-language-preference-template', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/settings/subtitles.html', inputPath: null,
+        runtimePath: 'electronapp/www/settings/subtitles.html',
+        expectedBaseSha256: '70018E65B8FBFDEF3128F93683CB2BF424DBE4BA38A7F0B7577F529002EBE536', expectedInputSha256: null,
+        expectedOutputSha256: '38763CA7F9FFC7396904EB05A353540D58FEE1E6CB3FE11224FE9B3DB7E9E3DC',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
+    }),
     Object.freeze({
         id: 'playback-input-diagnostics', mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/modules/common/input/api.js', inputPath: null,
@@ -382,6 +400,8 @@ function retireCustomCssJs(text) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.id === 'subtitle-language-preference-script') return {base, input: Buffer.from(subtitleLanguagePreference.patchScript(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'subtitle-language-preference-template') return {base, input: Buffer.from(subtitleLanguagePreference.patchHtml(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-multiselect') return {base, input: Buffer.from(advanceDownload.patchMultiSelect(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-menu') return {base, input: Buffer.from(advanceDownload.patchItemContextMenu(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};
