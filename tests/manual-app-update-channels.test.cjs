@@ -90,6 +90,18 @@ function harness(options = {}) {
         invoke: (channel, payload) => handlers.get(channel)(event, payload)};
 }
 
+test('maintenance shutdown observes quarantined guard exits after the active request has returned', async () => {
+    const handlers = new Map(), sender = {}; let finish, releaseGuard, observed = 0, closed = false;
+    const unregister = ipc.register({ipcMain: {handle: (name, fn) => handlers.set(name, fn), removeHandler: name => handlers.delete(name)},
+        getWebContents: () => sender, getAppInfo: async () => ({appVersion: '0.4.0'}),
+        requestJson: () => new Promise(resolve => { finish = resolve; }),
+        updateCache: {close: () => Promise.resolve(), drain: () => { observed++; return new Promise(resolve => { releaseGuard = resolve; }); }}});
+    const request = handlers.get(ipc.CHANNELS.CHECK_UPDATE)(eventFor(sender)); await tick();
+    const closing = unregister().then(() => { closed = true; }); await tick(); assert.equal(observed, 0);
+    finish(release()); await request; await tick(); assert.equal(observed, 1); assert.equal(closed, false);
+    releaseGuard(); await closing; assert.equal(closed, true);
+});
+
 test('switching aborts and drains the old check, clears its candidate/links and does not check automatically', async () => {
     let finish, signal;
     const h = harness({requestJson: async (_url, settings) => { signal = settings.signal; return new Promise(resolve => { finish = resolve; }); }});

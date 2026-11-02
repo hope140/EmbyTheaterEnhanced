@@ -15,6 +15,9 @@ test('real relay and authenticated pipe cancel an inert guard and drain the owne
     const original = fs.readFileSync;
     const stub = `using System; public sealed class EteUpdateGuard:IDisposable {
  public EteUpdateGuard(string r,string i,string v,string d,string n,bool c){}
+ public void AcquireInstallation(string executable){}
+ public void OpenOutcome(string name,string ino){}
+ public void WriteOutcome(string stage){}
  public void Prepare(string n,string i,long s,string h,string z){}
  public void OpenWizard(){throw new NotSupportedException("Never execute in transport test");}
  public void Dispose(){}
@@ -34,7 +37,7 @@ test('real relay and authenticated pipe cancel an inert guard and drain the owne
         }});
     t.after(async () => { if (lease) await lease.abort(); else if (child && child.exitCode === null) { child.stdin.end('abort\n'); await closed; } });
     const record = {root: '/inert', rootId: {dev: '1', ino: '1'}, directory: '/inert/update-' + 'a'.repeat(32), directoryId: {ino: '2'},
-        executable: process.execPath, fileId: {ino: '3'}, source: 'github',
+        executable: process.execPath, fileId: {ino: '3'}, source: 'github',outcome:{name:'synthetic',ino:'1'},
         installer: {name: 'EmbyTheaterEnhanced-9.1.0-win-x64-setup.exe', size: 1, sha256: 'a'.repeat(64), url: 'https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v9.1.0/a.exe'}};
     const controller = new AbortController();
     try { lease = await handoff.prepare(record, controller.signal); } catch (error) { throw Error(error.message + ': ' + diagnostics); }

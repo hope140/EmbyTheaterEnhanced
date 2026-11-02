@@ -22,11 +22,9 @@ fs.readFileSync=function(file,...args){
     const value=originalRead.call(fs,file,...args);
     if(file===nativePath){
         const source=value.toString();
-        const boundary='using (var process = Process.Start(start)) { Require(process != null); process.WaitForExit(); }';
+        const boundary='WriteOutcome("shell-entered");';
         if(source.split(boundary).length!==2)throw Error('exact-shell-boundary-required');
-        const log=name=>JSON.stringify(path.join(root,name));
-        const traced='File.WriteAllText('+log('shell-entered')+',"entered"); try { using (var process = Process.Start(start)) { Require(process != null); File.WriteAllText('+log('shell-started')+',process.Id.ToString()); process.WaitForExit(); File.WriteAllText('+log('shell-exited')+',process.ExitCode.ToString()); } } catch(Exception e) { var native=e as System.ComponentModel.Win32Exception; File.WriteAllText('+log('shell-error')+',e.GetType().FullName+"|"+e.HResult+"|"+(native==null?"none":native.NativeErrorCode.ToString())); throw; }';
-        return Buffer.from(source.replace(boundary,traced));
+        return Buffer.from(source.replace(boundary,'File.WriteAllText('+JSON.stringify(path.join(root,'shell-entered'))+',"entered"); '+boundary));
     }
     if(file===scriptPath){
         const destination=Buffer.from(path.join(root,'script-error'),'utf8').toString('base64');
@@ -62,6 +60,7 @@ const store = require('../../src/electronapp/enhanced/update-install-cache').cre
     const launched = JSON.parse(fs.readFileSync(path.join(root, 'helper-pid.json')));
     fs.writeFileSync(path.join(root, 'helper-pid.json'), JSON.stringify({...launched, pid: lease.processId}));
     await lease.commit();
+    await lease.release();
     fs.writeFileSync(path.join(root, 'committed.json'), JSON.stringify({directory: record.directory, installer}));
     // Natural Node exit after the real handoff detaches; no forced exit/kill.
 })().catch(error => { process.stderr.write('Controlled client handoff failed: '+String(error.code||error.message).slice(0,160)+'\n'); process.exitCode = 1; });

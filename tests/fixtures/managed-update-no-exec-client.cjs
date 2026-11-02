@@ -14,6 +14,9 @@ const source = `using System; using System.IO; public sealed class EteUpdateGuar
  string root;
  public EteUpdateGuard(string r,string i,string v,string d,string n,bool c){root=r;Log("constructed");}
  void Log(string s){File.AppendAllText(Path.Combine(root,"trace"),s+"\\n");}
+ public void AcquireInstallation(string executable){}
+ public void OpenOutcome(string name,string ino){}
+ public void WriteOutcome(string stage){}
  public void Prepare(string n,string i,long s,string h,string z){Log("prepared");}
  public void OpenWizard(){Log("marker-only-no-execution");File.WriteAllText(Path.Combine(root,"marker"),"client-exited");}
  public void Dispose(){Log("disposed");}
@@ -25,13 +28,14 @@ const handoff = require('../../src/electronapp/enhanced/update-install-handoff')
     finally { fs.closeSync(fd); }
 }});
 (async()=>{
-    const lease = await handoff.prepare({root, rootId:{dev:'1',ino:'1'},directory:root,directoryId:{ino:'2'},executable:process.execPath,fileId:{ino:'3'},source:'github',
+    const lease = await handoff.prepare({root, rootId:{dev:'1',ino:'1'},directory:root,directoryId:{ino:'2'},executable:process.execPath,fileId:{ino:'3'},source:'github',outcome:{name:'synthetic',ino:'1'},
         installer:{name:'EmbyTheaterEnhanced-9.1.0-win-x64-setup.exe',size:1,sha256:'a'.repeat(64),url:'https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v9.1.0/fixture.exe'}},new AbortController().signal);
     fs.writeFileSync(path.join(root,'guard-pid'),String(lease.processId));
     const deadline=Date.now()+15000;
     while(!fs.existsSync(path.join(root,'allow-exit')) && Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,25));
     if(!fs.existsSync(path.join(root,'allow-exit'))){await lease.abort();throw Error('observer-not-ready');}
     await lease.commit();
+    await lease.release();
     fs.writeFileSync(path.join(root,'committed'),'yes');
     // Deliberately natural exit; no app bootstrap or forced client termination.
 })().catch(()=>{process.stderr.write('No-exec lifecycle fixture failed.\n');process.exitCode=1;});
