@@ -236,6 +236,12 @@ test('single external subtitle still submits after 700ms', async () => {
     assert.deepEqual(additions(h).map(row => [row.at, row.value]), [[700, 'opaque:A']]);
 });
 
+test('play applies the server-provided default subtitle index', async () => {
+    const h = makeHarness(); await h.play(streams, 1);
+    await h.clock.advanceTo(700);
+    assert.deepEqual(additions(h).map(row => [row.at, row.value]), [[700, 'opaque:B']]);
+});
+
 test('default external subtitle from play is superseded by Off', async () => {
     const h = makeHarness(); await h.play(streams, 0);
     await h.clock.advanceTo(100);

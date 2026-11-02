@@ -1,5 +1,15 @@
 # 维护记录
 
+## 2026-11-02 — 字幕首选语言多选本地候选
+
+首个推送 `409b31bf1f1c1da974003c7d93594ac771d2fe2b` 的 Windows 公开离线 CI `41452804042` 为 2342 pass／0 fail／5 skip，固定快照、归档、语法和差异检查通过。手动完整测试包运行 `41453274888` 在 2444 项中为 2436 pass／6 fail／2 skip，按原门禁停止且没有上传安装包。六项均为 runtime-provenance 合成夹具未复制新字幕 overlay 生成器，首个失败和五个后续失败同因；没有放宽生产哈希或来源门禁。本地公开离线全集首轮在未改的 CD2 计时断言上 2315 pass／1 fail／31 skip，隔离 CD2 复跑 27/27 通过，随后无并行本地负载的全集复跑为 2316 pass／0 fail／31 skip。
+
+现将新生成器纳入运行时来源夹具、构建输入清单及消费/源码绑定断言。定向 runtime-provenance 6/6、build-input-contract 28/28、Web overlay 4/4 通过。后续 Windows 完整测试与构建需绑定修订后的准确提交重新运行；旧失败运行不计为包验证成功。
+
+基于最新远端 main `2e728a6`；原工作树干净，公开远端无现行同名 PR。核对 ETE 固定 `settings/subtitles.js` 只有单值 `.value`，但随附 `emby-select` 和 ActionSheet 已支持多选；`PlaybackManager` 和 libmpv 消费服务端 `DefaultSubtitleStreamIndex`。另查当前 Emby 公开网页的字幕模板、控制器和 BaseSettingsContainer，确认继续使用 `SubtitleLanguagePreference`，多选按逗号连接，语言选项为 `getCultures()` 的原始代码；没有推断 `Chinese` 为简体，也没有重写服务器轨道优先级。
+
+新增两份固定源哈希 Web overlay 和定向 VM 回归；未修改只读 vendor 输入。设置、Web 产物、ActionSheet 取消、字幕选轨和 PlaybackManager 请求会话共 94 项自动回归通过，JS 语法与 Git diff 检查通过。真实用户服务器及旧版服务器没有连接或写入验证，逗号值的服务端解释仍需实际版本验收；本分支不包含此前暂停的播放异常修复。
+
 ## 2026-10-31 — v0.4.10合main与testing发布核验
 
 来源`52288ab3f3d6a9fb51f0f205c38df6339e702a01`的Windows公开41216718273为2334 pass／0 fail／5 skip；标准发行构建41216728814为2434 pass／0 fail／2 skip，显式材料135/135、Host材料2/2、实际Electron44.5.0接口绑定、隐藏窗口退出及安装器编译／解包比对通过。构建ZIP13049021858独立下载／哈希、五附件及summary的来源／版本／run核验通过。核对main仍为cd39dd1后，正常原子推送main快进及新Tag v0.4.10，未强推或移动旧Tag。
