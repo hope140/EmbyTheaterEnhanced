@@ -4,7 +4,7 @@
 
 基于最新远端 main `2e728a6`；原工作树干净，公开远端无现行同名 PR。核对 ETE 固定 `settings/subtitles.js` 只有单值 `.value`，但随附 `emby-select` 和 ActionSheet 已支持多选；`PlaybackManager` 和 libmpv 消费服务端 `DefaultSubtitleStreamIndex`。另查当前 Emby 公开网页的字幕模板、控制器和 BaseSettingsContainer，确认继续使用 `SubtitleLanguagePreference`，多选按逗号连接，语言选项为 `getCultures()` 的原始代码；没有推断 `Chinese` 为简体，也没有重写服务器轨道优先级。
 
-新增两份固定源哈希 Web overlay 和定向 VM 回归；未修改只读 vendor 输入。测试范围和未执行项见项目状态。真实用户服务器及旧版服务器没有连接或写入验证，逗号值的服务端解释仍需实际版本验收；本分支不包含此前暂停的播放异常修复。
+新增两份固定源哈希 Web overlay 和定向 VM 回归；未修改只读 vendor 输入。设置、Web 产物、ActionSheet 取消、字幕选轨和 PlaybackManager 请求会话共 94 项自动回归通过，JS 语法与 Git diff 检查通过。真实用户服务器及旧版服务器没有连接或写入验证，逗号值的服务端解释仍需实际版本验收；本分支不包含此前暂停的播放异常修复。
 
 ## 2026-10-31 — v0.4.10合main与testing发布核验
 

@@ -121,10 +121,12 @@ test('opening and leaving settings preserves ordered multi-language configuratio
     const h = harness('zh-CN,zh');
     await h.open();
     assert.deepEqual(Array.from(h.select.getValues()), ['zh-CN', 'zh']);
+    assert.equal(h.writes.length, 0);
     const items = await h.select.getItems({Ids: ['zh-CN', 'zh']});
     assert.deepEqual(Array.from(items.Items, item => item.Name), ['Chinese Simplified', 'Chinese']);
     h.instance.onPause();
-    assert.equal(h.writes.length, 0);
+    await h.flush();
+    assert.equal(h.writes.at(-1).SubtitleLanguagePreference, 'zh-CN,zh');
     h.control('.selectSubtitlePlaybackMode').value = 'Always';
     await h.submit();
     assert.equal(h.writes.at(-1).SubtitleLanguagePreference, 'zh-CN,zh');
@@ -132,11 +134,21 @@ test('opening and leaving settings preserves ordered multi-language configuratio
     assert.equal(h.writes.at(-1).RememberSubtitleSelections, true);
 });
 
+test('leaving an untouched page keeps a newer preference from the server', async () => {
+    const h = harness('en');
+    await h.open();
+    h.user.Configuration.SubtitleLanguagePreference = 'ja,zh';
+    h.instance.onPause();
+    await h.flush();
+    assert.equal(h.writes.at(-1).SubtitleLanguagePreference, 'ja,zh');
+});
+
 test('multi-select saves in selection order and reloads without changing the playback fields', async () => {
     const h = harness('en');
     await h.open();
     h.select.choose(['ja', 'en', 'zh']);
-    await h.submit();
+    h.instance.onPause();
+    await h.flush();
     assert.equal(h.writes.at(-1).SubtitleLanguagePreference, 'ja,en,zh');
     assert.equal(h.writes.at(-1).SubtitleMode, 'Smart');
     assert.equal(h.writes.at(-1).RememberSubtitleSelections, true);

@@ -2,7 +2,7 @@
 
 ## 2026-11-02 — 字幕首选语言多选候选
 
-从当前 main `2e728a6` 建立独立分支。Emby 公开网页客户端 `https://app.emby.media/settings/subtitles.html`、`subtitles.js` 与 `modules/viewmanager/basesettingscontainer.js`（2026-11-02 读取）确认：`SubtitleLanguagePreference` 是用户配置中的逗号连接字符串，语言代码来自 `getCultures()` 的 `TwoLetterISOLanguageName`，多选值按所选顺序保存。ETE 的固定旧 Web 快照仍按单值读写；本候选只覆写字幕设置页 JS/HTML，复用旧 `emby-select` 多选控件，未改 PlaybackManager 或 Native 选轨。进入设置不触发保存，未修改语言时提交其余设置也保留服务器原字符串；清空选项写空字符串。字幕模式、记住选择和清除已记轨道仍走原字段与接口。
+从当前 main `2e728a6` 建立独立分支。Emby 公开网页客户端 `https://app.emby.media/settings/subtitles.html`、`subtitles.js` 与 `modules/viewmanager/basesettingscontainer.js`（2026-11-02 读取）确认：`SubtitleLanguagePreference` 是用户配置中的逗号连接字符串，语言代码来自 `getCultures()` 的 `TwoLetterISOLanguageName`，多选值按所选顺序保存。ETE 的固定旧 Web 快照仍按单值读写；本候选只覆写字幕设置页 JS/HTML，复用旧 `emby-select` 多选控件，未改 PlaybackManager 或 Native 选轨。旧页面离开时会自动提交，未修改语言时保留服务端新取回的原字符串；清空选项写空字符串。字幕模式、记住选择和清除已记轨道仍走原字段与接口。
 
 自动回归覆盖多选保存、重新进入、清空、默认空值、其他/未知语言、模式与记轨字段，以及现有播放字幕选轨归属。网页客户端没有为多选设置服务器版本门槛；旧服务器对逗号值的实际解释、用户当前服务器的配置读回、真实 GUI 与播放仍未验证。本候选不把 `Chinese` 单标签解释为简体。
 
