@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-02 — v0.4.11 字幕多选独立测试版准备
+
+按用户确认的顺序，从已验收字幕候选 `aa63c461` 单独准备 0.4.11 testing；保留已发布 0.4.10 基线，不纳入更新退出／安装交接修复或提前 EOF 日志。修复版另以较低 0.4.10 普通验收包运行，再由该客户端检查并升级到 0.4.11，验证其自身交接。字幕准确发行源码、Windows CI 与标准构建尚待验证；未合 main、建 Tag 或发布。见[本版候选核验](V0411_RELEASE_VERIFICATION.md)。
+
 ## 2026-11-02 — 字幕首选语言多选候选
 
 从当前 main `2e728a6` 建立独立分支。Emby 公开网页客户端 `https://app.emby.media/settings/subtitles.html`、`subtitles.js` 与 `modules/viewmanager/basesettingscontainer.js`（2026-11-02 读取）确认：`SubtitleLanguagePreference` 是用户配置中的逗号连接字符串，语言代码来自 `getCultures()` 的 `TwoLetterISOLanguageName`，多选值按所选顺序保存。ETE 的固定旧 Web 快照仍按单值读写；本候选只覆写字幕设置页 JS/HTML，复用旧 `emby-select` 多选控件，未改 PlaybackManager 或 Native 选轨。旧页面离开时会自动提交，未修改语言时保留服务端新取回的原字符串；清空选项写空字符串。字幕模式、记住选择和清除已记轨道仍走原字段与接口。
