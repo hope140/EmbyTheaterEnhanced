@@ -139,6 +139,8 @@
     var nativeHelperService;
     var mpvKernelStore = null;
     var appIsShuttingDown = false;
+    var updateShutdownLease = null;
+    var appShutdownOwner = null, appShutdownDrained = false;
     var readyStartupPromise = Promise.resolve();
 
     var readCurrentBundledVersions = bundledVersions.createBundledVersionReader(path.resolve(__dirname, '..'), diagnosticsAppInfo.buildCommit);
@@ -968,6 +970,9 @@
     }
 
     function onWindowClose(event) {
+        if (typeof appShutdownOwner !== 'undefined' && appShutdownOwner && !appShutdownDrained) {
+            event.preventDefault(); appShutdownOwner.retry(); return;
+        }
         var closingWindow = mainWindow;
         if (detailCacheCloseOwner && detailCacheCloseOwner.beforeClose(event, function (status) {
             enhancedLog({level: status === 'flushed' ? 'info' : 'warn', category: 'app', event: 'detail-cache-flush', details: {status: status}});
@@ -1074,21 +1079,26 @@
     } catch (_) { enhancedLog({category: 'app', event: 'download-service-unavailable'}); }
     unregisterMaintenanceIpc = maintenanceIpc.register({
         updateCache: (function () {
+            var handoff = require('./enhanced/update-install-handoff').createHandoff();
             var store = require('./enhanced/update-install-cache').createStore({
                 profileRoot: appBootstrapState.profileRoot, executable: process.execPath,
-                handoff: require('./enhanced/update-install-handoff').createHandoff()
+                handoff: handoff
             });
             // Local-only reconciliation never checks for releases or starts an installer.
-            var reconciled = Promise.resolve().then(function () { return store.reconcile(getAppVersion()); })
+            var reconciled = Promise.resolve().then(function () {
+                store.outcomes().forEach(function (details) { enhancedLog({category: 'app', event: 'update-handoff-recovery', details: details}); });
+                return store.reconcile(getAppVersion());
+            })
                 .catch(function () { enhancedLog({category: 'app', event: 'update-cache-retained'}); });
             return {
                 download: async function (installer, options) { await reconciled; return store.download(installer, options); },
                 prepare: function (record, signal) { return store.prepare(record, signal); },
                 recovery: async function () { await reconciled; return store.recovery(getAppVersion()); },
-                close: function () { return reconciled; }
+                close: function () { return reconciled; },
+                drain: function () { return handoff.drainUncertain(); }
             };
         })(),
-        quitForUpdate: function () { setImmediate(function () { app.quit(); }); },
+        quitForUpdate: function (lease) { updateShutdownLease = lease; setImmediate(function () { app.quit(); }); },
         preferences: require('./enhanced/app-update-preferences').createStore(appBootstrapState.configDirectory),
         ipcMain: ipcMain,
         getWebContents: getWebContents,
@@ -1157,34 +1167,50 @@
     app.once('before-quit', function (event) {
         event.preventDefault();
         appIsShuttingDown = true;
-        try {
-            playbackPowerOwner.shutdown();
-        } catch (error) {
-            enhancedLog({category: 'app', event: 'power-cleanup-failed', details: {message: error.message}});
-        }
+        var drained = false;
+        // Every repeated quit is held by this same owner until actual release.
+        app.on('before-quit', function (next) {
+            if (!drained) { next.preventDefault(); owner.retry(); }
+        });
         enhancedLog({category: 'app', event: 'shutdown', details: {reason: 'before-quit'}});
-        function runCleanup(step, cleanup) {
-            var completion;
-            try { completion = cleanup(); }
-            catch (error) { completion = Promise.reject(error); }
-            return Promise.resolve(completion).catch(function () {
-                enhancedLog({level: 'warn', category: 'app', event: 'shutdown-cleanup-failed', details: {step: step}});
-            });
-        }
-        // A failed owner must not let quit outrun the other pending cleanups.
-        Promise.allSettled([
-            runCleanup('diagnostics', function () { return unregisterDiagnosticsIpc(); }),
-            runCleanup('maintenance', function () { return unregisterMaintenanceIpc(); }),
-            runCleanup('http-cache', function () { return unregisterCacheManagementIpc(); }),
-            runCleanup('downloads', function () { return typeof unregisterDownloadIpc === 'function' ? unregisterDownloadIpc() : undefined; }),
-            runCleanup('strm-config', function () { return unregisterStrmConfigIpc(); }),
-            runCleanup('cd2', function () { return unregisterCd2Ipc(); }),
-            runCleanup('refresh-rate', function () { return unregisterRefreshRate(); }),
-            runCleanup('native-helper', function () { return unregisterNativeHelperIpc(); }),
-            runCleanup('mpv-kernel', function () { return unregisterMpvKernelIpc(); }),
-            runCleanup('windows-media', function () { if (typeof disposeWindowsNativeMedia === 'function') return disposeWindowsNativeMedia(); }),
-            runCleanup('startup', function () { return readyStartupPromise; })
-        ]).then(function () { app.quit(); });
+        var owner = require('./enhanced/shutdown-drain').createDrain({
+            log: enhancedLog,
+            nonCritical: ['power', 'diagnostics'],
+            steps: {
+                'power': function () { return playbackPowerOwner.shutdown(); },
+                'diagnostics': function () { return unregisterDiagnosticsIpc(); },
+                'maintenance': function () { return unregisterMaintenanceIpc(); },
+                'http-cache': function () { return unregisterCacheManagementIpc(); },
+                'downloads': function () { return typeof unregisterDownloadIpc === 'function' ? unregisterDownloadIpc() : undefined; },
+                'strm-config': function () { return unregisterStrmConfigIpc(); },
+                'cd2': function () { return unregisterCd2Ipc(); },
+                'refresh-rate': function () { return unregisterRefreshRate(); },
+                'native-helper': function () { return unregisterNativeHelperIpc(); },
+                'mpv-kernel': function () { return unregisterMpvKernelIpc(); },
+                'windows-media': function () { if (typeof disposeWindowsNativeMedia === 'function') return disposeWindowsNativeMedia(); },
+                'startup': function () { return readyStartupPromise; }
+            },
+            onReady: async function () {
+                if (updateShutdownLease) await updateShutdownLease.release();
+                drained = true; appShutdownDrained = true;
+                app.quit();
+                updateShutdownLease = null;
+            },
+            onBlocked: async function () {
+                var wasUpdate = !!updateShutdownLease, confirmed = true;
+                if (updateShutdownLease) {
+                    try { await updateShutdownLease.abort(); updateShutdownLease = null; }
+                    catch (_) { confirmed = false; }
+                }
+                enhancedLog({category: 'app', event: 'update-shutdown-blocked', details: {guardCancellation: !wasUpdate ? 'not-requested' : confirmed ? 'confirmed' : 'unconfirmed'}});
+                // A blocked cleanup is not cancelled, and never authorizes a kill.
+                electron.dialog.showMessageBox(mainWindow, {type: 'warning', buttons: ['知道了'],
+                    message: !wasUpdate ? '退出清理未完成，客户端暂不能安全退出。' : confirmed ? '退出清理未完成，已停止本次安装交接。' : '退出清理未完成，安装交接取消尚未确认。',
+                    detail: '客户端不会强制结束。请保留诊断信息；清理完成后可再次退出并重开，检查更新后重试。已校验安装包会重新验证后复用。'}).catch(function () {});
+            }
+        });
+        appShutdownOwner = owner;
+        owner.start();
     });
     ipcMain.on('enhanced-diagnostics', function (event, snapshot) {
         if (rendererBoundary.isTrusted(event, getWebContents())) {

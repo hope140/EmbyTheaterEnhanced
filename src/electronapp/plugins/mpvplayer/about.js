@@ -180,7 +180,19 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
             if (result.recovery) setStatus(view.querySelector('.aboutUpdateState'), result.recovery === 'cache-unavailable' ?
                 '专用更新缓存暂不可用，仍可检查版本；请检查磁盘或当前用户权限后重试下载。' : result.recovery === 'cleanup-pending' ?
                 '新版本已启动，更新缓存仍被占用或无法安全清理；下次启动会再次核验。' :
-                '上次更新尚未确认安装完成。可检查更新后重试，已校验的安装包会复用。', false);
+                ({
+                    'handoff-waiting-client': '上次安装交接仍记录为等待 Electron 退出，尚未确认结束。请保留诊断信息。',
+                    'handoff-waiting-host': '上次安装交接仍记录为等待 Host 退出，尚未确认结束。请保留诊断信息。',
+                    'handoff-release-timeout': '上次安装交接等待清理放行超时，安装器未启动，可重新检查后重试。',
+                    'handoff-shell-entered': '上次交接已请求系统打开安装器，尚未确认启动；请检查系统提示并保留诊断信息。',
+                    'handoff-client-timeout': '上次更新等待客户端退出超时，安装器未启动。请重试；安装包会重新校验。',
+                    'handoff-host-timeout': '上次更新等待启动器退出超时，安装器未启动。请重试；安装包会重新校验。',
+                    'handoff-shell-failed': '上次安装器启动失败，安装包已保留。可检查更新后重试。',
+                    'handoff-cancelled': '上次安装交接已取消。可检查更新后重试，安装包会重新校验。',
+                    'handoff-shell-started': '上次安装器已启动，尚未确认升级成功。请核对当前版本。',
+                    'handoff-wizard-exited': '上次安装器已退出，尚未确认升级成功。可检查更新后重试。',
+                    'handoff-unavailable': '上次安装交接状态不可用，不能确认已取消或已升级。请保留诊断信息。'
+                })[result.recovery] || '上次更新尚未确认安装完成。可检查更新后重试，已校验的安装包会复用。' , false);
         }.bind(this)).catch(function () {
             if (this.view && requestId === this.channelRequestId) setStatus(view.querySelector('.aboutUpdateState'), '无法读取更新通道，请重新进入本页重试。', true);
         }.bind(this));
@@ -258,7 +270,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
                 this.installing = true;
                 view.querySelector('.aboutDownloadProgress').value = 1;
                 view.querySelector('.aboutDownloadDetails').textContent = '来源：' + result.source + '\n目录：' + result.directory + '\n文件：' + result.fileName + '\nSHA-256：' + result.sha256;
-                setStatus(state, '校验成功，正在正常退出客户端并打开安装向导。下次启动确认新版本后清理安装包。请保留 Windows 安全检查。', false);
+                setStatus(state, (result.replacedInvalidCache ? '旧缓存校验未通过，已重新下载并校验。' : '') + '校验成功，正在清理退出；清理完成后才打开安装向导。下次启动确认新版本后清理安装包。请保留 Windows 安全检查。', false);
             } else if (result && result.status === 'cancelled') {
                 setStatus(state, '已取消下载。', false);
             } else {
@@ -269,6 +281,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
                     'cache-unsafe': '更新缓存身份已改变，已拒绝执行；已有文件未覆盖，请检查专用更新缓存。',
                     'disk-full': '更新缓存所在磁盘空间不足，请释放空间后重试。',
                     'cache-unwritable': '无法写入专用更新缓存，请检查当前用户权限或磁盘状态后重试。',
+                    'handoff-cancel-unconfirmed': '安装交接取消尚未确认，当前不能开始另一次交接。请保留诊断信息并稍后重试，勿将等待视为已取消。',
                     'installer-launch-failed': '无法安全准备安装向导，客户端仍保持运行。已校验包保留，可重试；请检查系统策略。',
                     'hash-mismatch': 'SHA-256 不匹配，下载已拒绝。',
                     'http-rejected': '服务器拒绝请求，已停止下载。',

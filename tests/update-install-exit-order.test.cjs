@@ -13,6 +13,9 @@ const guard = `using System; using System.IO;
 public sealed class EteUpdateGuard : IDisposable {
  string root;
  public EteUpdateGuard(string r,string i,string v,string d,string n,bool c){root=r;}
+ public void AcquireInstallation(string executable){}
+ public void OpenOutcome(string name,string ino){}
+ public void WriteOutcome(string stage){}
  public void Prepare(string n,string i,long s,string h,string z){}
  public void OpenWizard(){File.WriteAllText(Path.Combine(root,"wizard-marker"),"synthetic guard only");}
  public void ValidateCleanup(string[] names){}
@@ -55,11 +58,12 @@ for (const [name, mainCode, hostCode, opens] of [['normal', 0, 0, true], ['main-
         });
         const request = {mode: 'install', root, rootIno: '1', rootDev: '1', directory: root, directoryIno: '1',
             parentPid: main.child.pid, mainExecutable: process.execPath, hostPid: host.child.pid, hostPath: process.execPath,
-            name: 'inert', ino: '1', size: 1, sha256: 'a'.repeat(64), zone: 'not used by synthetic guard'};
+            outcome:{name:'synthetic',ino:'1'},name: 'inert', ino: '1', size: 1, sha256: 'a'.repeat(64), zone: 'not used by synthetic guard'};
         helper.child.stdin.write(JSON.stringify(request).replace(/[^\x20-\x7e]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0')) + '\n');
         await token('ETE_INSTALL_READY');
         assert.equal(fs.existsSync(path.join(root, 'wizard-marker')), false);
-        helper.child.stdin.end('commit\n'); await token('ETE_INSTALL_ARMED');
+        helper.child.stdin.write('commit\n'); await token('ETE_INSTALL_ARMED');
+        helper.child.stdin.end('launch\n'); await token('ETE_INSTALL_RELEASED');
         main.child.send(mainCode); await main.exited;
         assert.equal(fs.existsSync(path.join(root, 'wizard-marker')), false, 'same-location host is still alive');
         host.child.send(hostCode); await host.exited;
