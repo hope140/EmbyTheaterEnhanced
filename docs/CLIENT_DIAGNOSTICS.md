@@ -8,6 +8,12 @@
 
 客户端诊断是只读可观测层。它不改变 Resolver precedence、DirectUrl、CD2 budget、Mount 判定、PlaybackManager、Session、WebSocket、DeviceId、播放上报、NextTrack、WatchTogether 或 libmpv source selection。
 
+## v0.4.12 缓存 EOF 定位
+
+v0.4.12 测试版的 `playback/cache-observation` 只针对当前播放代次记录原生 `demuxer-cache-state` 可用的 `cacheEndSeconds`、`cacheDurationSeconds`、`cacheEof`、`cacheReaderEof`、`cacheUnderrun`，并在位置仍属于当前播放且 Seek 已由原生 `playback-restart` 确认时记录 `positionSeconds`。可计算时还记录 `cacheAheadSeconds`（缓存末端减播放位置）与 `remainingSeconds`（时长减播放位置）；缺失或归属不明时值为 `null`。`cause` 区分初次、状态变化和周期观察，`cacheEofPrevious` 只在缓存 EOF 转变时提供前态。普通样本每次播放至少间隔 5 秒，状态未变时至少间隔 30 秒；结束时可补记尚未写出的 EOF 转变。
+
+这些字段是播放器当时状态，不是网络故障结论。现有原生桥接不提供可核实的读取失败分类、HTTP 状态或重连结果，因此本版不生成这些字段，不推断提前 EOF 的根因，也不自动恢复或切线路。日志不采集完整 URL、query、令牌、请求头、User-Agent、网盘路径或原始错误文本；导出仍须用户检查是否存在其他私人信息。发布来源与回归边界见[v0.4.12 核验](V0412_RELEASE_VERIFICATION.md)。
+
 ## 日志位置与轮转
 
 日志始终启用，默认写入：
@@ -48,7 +54,7 @@ ete-client.jsonl.3
 - `resolver`：`context-observed`、必要时的 `invalid-context`、每次 STRM resolve 的 `route-selected`，以及设置页的 `smart-path-mapping-preview` / `smart-path-mapping-accepted`。
 - `cd2`：`resolve-start`、`client-ready`、`find-file-start`、`find-file-end`、`download-url-start`、`download-url-end`、`resolve-hit`、`resolve-miss`、`resolve-error`、`resolve-cancelled`。
 - `mount`：`resolve-start`、`resolve-hit`、`resolve-miss`。
-- `playback`：`play-request`、`resolver-complete`、`loadfile-requested`、`core-playing`、`pause`、`resume`、`seek`、`next`、`stop`、`playback-error`。
+- `playback`：`play-request`、`resolver-complete`、`loadfile-requested`、`core-playing`、`pause`、`resume`、`seek`、`next`、`stop`、`playback-error`，以及 v0.4.12 的 `cache-observation`。
 - `mpv`：ready/playing 属性快照；不导出 `mpv.conf` 原文。
 
 IPC 也保持两条明确边界：`enhanced-diagnostics` 只接收旧的 mpv property snapshot，`enhanced-diagnostics-log` 只接收 structured client event。两条通道都只接受当前 BrowserWindow 的 trusted sender；logger 自身继续负责最终 sanitizer 和 fail-open。

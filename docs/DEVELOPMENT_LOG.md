@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-03 — v0.4.12 发布后文档对齐
+
+复核 [v0.4.12 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)、[标准构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480)、[发布运行](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)及正式 Latest：PR #89 已合 main，Tag／来源为 `676888a09220a7cc95fd10eee035432f715e471b`，五附件公开并校验通过，正式 Latest 为 v0.4.0。补齐首页下载入口、文档索引、用户指南、变更记录、项目状态、两版发行核验与更新／诊断技术说明；旧候选段落标明是发布前记录，不改写其当时证据。用户确认独立更新修复包交接验收；不扩大为组合版交互安装或现场提前 EOF 验收。此项仅整理文档，未改产品源码、版本、Tag、Release 或正式 Latest；准确文档检查与 PR 结果见后续提交／CI。
+
 ## 2026-11-03 — v0.4.12 更新交接与 EOF 定位组合准备
 
 从 v0.4.11 的远端 main `5749f99182cbf6ec6f2b9ed9ed2d5db70e3a258d` 创建独立工作树，将已由用户验收的更新交接分支 `d2a7a0f58eb011b6c2b4b021a3351aef098d4b12` 正常合入。冲突仅为两份维护文档顶部段落，双方记录均保留；字幕源码与修复源码无冲突。版本三处升到0.4.12，发行资料只列本轮更新修复与低频 EOF 定位日志。先前混合分支中的未提交日志草稿未直接复用：其固定“unavailable”错误分类并不能证明原生读取原因；新候选只投影实际缓存状态和既有有限 mpv 错误码，HTTP／重连信息缺失时不生成字段。新日志按播放归属、Seek 后原生落点和5秒／30秒限频约束，保持播放命令和行为不变。准确组合测试、Windows 构建与现场边界见[本版核验](V0412_RELEASE_VERIFICATION.md)。
