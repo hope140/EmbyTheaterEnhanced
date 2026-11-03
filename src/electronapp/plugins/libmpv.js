@@ -263,6 +263,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 nativeGenerationId: null,
                 diagnosticSeekSequence: 0,
                 lastSeekDiagnostic: null,
+                cacheDiagnosticAt: 0,
+                cacheDiagnosticState: null,
+                cacheDiagnosticSeekPending: false,
                 mediaSourceDurationSeconds: diagnosticNumber(options && options.mediaSource && options.mediaSource.RunTimeTicks) === null
                     ? null : options.mediaSource.RunTimeTicks / 10000000,
                 itemDurationSeconds: diagnosticNumber(options && options.item && options.item.RunTimeTicks) === null
@@ -306,25 +309,67 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         function cachedPlaybackDiagnostic(request) {
             var cache = playerState.demuxerCacheState;
             var eof = diagnosticField(cache, 'eof-cached');
+            var readerEof = diagnosticField(cache, 'eof');
+            var underrun = diagnosticField(cache, 'underrun');
+            var positionSeconds = diagnosticNumber(playerState.positionTicks) === null ? null : playerState.positionTicks / 10000000;
+            var durationSeconds = diagnosticNumber(playerState.durationTicks) === null ? null : playerState.durationTicks / 10000000;
+            var cacheEndSeconds = diagnosticNumber(diagnosticField(cache, 'cache-end'));
+            var positionCurrent = diagnosticCachedOwnerMatches(request, 'position') === true && !request.cacheDiagnosticSeekPending;
+            var durationCurrent = diagnosticCachedOwnerMatches(request, 'duration') === true;
+            var cacheCurrent = diagnosticCachedOwnerMatches(request, 'cache') === true;
             return {
-                positionSeconds: diagnosticNumber(playerState.positionTicks) === null ? null : playerState.positionTicks / 10000000,
+                positionSeconds: positionSeconds,
                 positionGenerationId: diagnosticObservationOwners.position,
                 positionCurrentGeneration: diagnosticCachedOwnerMatches(request, 'position'),
-                durationSeconds: diagnosticNumber(playerState.durationTicks) === null ? null : playerState.durationTicks / 10000000,
+                durationSeconds: durationSeconds,
                 durationGenerationId: diagnosticObservationOwners.duration,
                 durationCurrentGeneration: diagnosticCachedOwnerMatches(request, 'duration'),
                 cacheGenerationId: diagnosticObservationOwners.cache,
                 cacheCurrentGeneration: diagnosticCachedOwnerMatches(request, 'cache'),
                 cacheReaderSeconds: diagnosticNumber(diagnosticField(cache, 'reader-pts')),
-                cacheEndSeconds: diagnosticNumber(diagnosticField(cache, 'cache-end')),
+                cacheEndSeconds: cacheEndSeconds,
                 cacheDurationSeconds: diagnosticNumber(diagnosticField(cache, 'cache-duration')),
                 cacheEof: typeof eof === 'boolean' ? eof : null,
+                cacheReaderEof: typeof readerEof === 'boolean' ? readerEof : null,
+                cacheUnderrun: typeof underrun === 'boolean' ? underrun : null,
+                cacheAheadSeconds: positionCurrent && cacheCurrent && positionSeconds !== null && cacheEndSeconds !== null
+                    ? diagnosticNumber(Math.max(0, cacheEndSeconds - positionSeconds)) : null,
+                remainingSeconds: positionCurrent && durationCurrent && positionSeconds !== null && durationSeconds !== null
+                    ? diagnosticNumber(Math.max(0, durationSeconds - positionSeconds)) : null,
                 cacheTimeSeconds: diagnosticNumber(playerState['demuxer-cache-time']),
                 cacheTimeGenerationId: diagnosticObservationOwners.cacheTime,
                 cacheTimeCurrentGeneration: diagnosticCachedOwnerMatches(request, 'cacheTime'),
                 mediaSourceDurationSeconds: request && request.mediaSourceDurationSeconds,
                 itemDurationSeconds: request && request.itemDurationSeconds
             };
+        }
+
+        function noteCacheDiagnostic(request, generationId, atStop) {
+            try {
+                if (!isCurrentPlayRequest(request) || diagnosticOwnerMatches(request, diagnosticGeneration(generationId)) !== true) return;
+                var now = Date.now();
+                var previous = request.cacheDiagnosticState;
+                if (previous && !atStop && now - request.cacheDiagnosticAt < 5000) return;
+                var cached = cachedPlaybackDiagnostic(request);
+                if (cached.cacheCurrentGeneration !== true) return;
+                var state = [cached.cacheEof, cached.cacheReaderEof, cached.cacheUnderrun];
+                var changed = previous && state.some(function (value, index) { return value !== previous[index]; });
+                if (previous && !changed && now - request.cacheDiagnosticAt < 30000) return;
+                request.cacheDiagnosticAt = now;
+                request.cacheDiagnosticState = state;
+                emitClientDiagnostic('info', 'playback', 'cache-observation', Object.assign(requestDiagnosticDetails(request), {
+                    cause: !previous ? 'initial' : changed ? 'state-change' : 'periodic',
+                    positionSeconds: cached.positionCurrentGeneration === true && !request.cacheDiagnosticSeekPending ? cached.positionSeconds : null,
+                    cacheEndSeconds: cached.cacheEndSeconds,
+                    cacheDurationSeconds: cached.cacheDurationSeconds,
+                    cacheAheadSeconds: cached.cacheAheadSeconds,
+                    remainingSeconds: cached.remainingSeconds,
+                    cacheEof: cached.cacheEof,
+                    cacheReaderEof: cached.cacheReaderEof,
+                    cacheUnderrun: cached.cacheUnderrun,
+                    cacheEofPrevious: previous && previous[0] !== state[0] ? previous[0] : null
+                }));
+            } catch (_) { /* Optional cache diagnostics cannot affect playback. */ }
         }
 
         function latestSeekDiagnostic(request) {
@@ -880,6 +925,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         var restartRequest = activePlayRequest;
                         if (!isCurrentPlayRequest(restartRequest) || typeof position !== 'number' ||
                             !Number.isFinite(position) || position < 0) break;
+                        restartRequest.cacheDiagnosticSeekPending = false;
                         self._onTimeUpdate(toTicks(position), recv.generationId);
                         emitClientDiagnostic('info', 'playback', 'seek', Object.assign(requestDiagnosticDetails(restartRequest), {
                             nativeEvent: 'playback-restart',
@@ -1341,6 +1387,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             emitClientDiagnostic('info', 'playback', 'seek-command-submitted', Object.assign(requestDiagnosticDetails(request), {
                 seek: Object.assign({}, seek), cachedBeforeSeek: before
             }));
+            request.cacheDiagnosticSeekPending = true;
             sendCommand(command).then(function () {
                 if (!isCurrentPlayRequest(request)) return;
                 seek.submissionStatus = 'accepted';
@@ -1620,6 +1667,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             playerState.positionTicks = ticks;
             noteDiagnosticObservation('position', generationId);
+            if (activePlayRequest && Date.now() - activePlayRequest.cacheDiagnosticAt >= 5000) {
+                noteCacheDiagnostic(activePlayRequest, generationId, false);
+            }
 
             events.trigger(self, 'timeupdate');
         };
@@ -1633,6 +1683,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         self._onDemuxerCacheStateChanged = function (value, generationId) {
             playerState.demuxerCacheState = value;
             noteDiagnosticObservation('cache', generationId);
+            noteCacheDiagnostic(activePlayRequest, generationId, false);
         };
 
         self._onError = function (error) {
@@ -1671,6 +1722,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self._onStopped = function (stopped, generationId) {
             if (stopped) {
+                noteCacheDiagnostic(activePlayRequest, generationId, true);
                 if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'stop', Object.assign(requestDiagnosticDetails(activePlayRequest), {
                     stopSource: 'native-eof-reached',
                     eventGenerationId: diagnosticGeneration(generationId),
