@@ -89,7 +89,7 @@ test('download displays progress and actual source in details, cancels only on e
 test('verified handoff explains normal quit and wizard, with all update controls locked', async () => {
     const h = harness(), work = h.controller.downloadUpdate();
     h.pending[0].resolve({status: 'installing', source: 'github', directory: '/test', fileName: 'fixture.exe', sha256: 'a'.repeat(64)}); await work;
-    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /正常退出.*安装向导/);
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /清理退出.*清理完成后才打开安装向导/);
     assert.match(h.view.querySelector('.aboutUpdateState').textContent, /Windows 安全检查/);
     for (const selector of ['.selectUpdateChannel', '.btnCheckUpdates', '.btnDownloadUpdate']) assert.equal(h.view.querySelector(selector).disabled, true);
     await h.controller.downloadUpdate(); await h.controller.checkUpdates(); await h.controller.changeChannel();
@@ -230,7 +230,7 @@ test('reading the saved channel is local only and does not start a check', async
     assert.equal(h.pending.length, 1);
 });
 
-for (const [recovery, message] of [['pending-install', /尚未确认安装完成/], ['cleanup-pending', /新版本已启动.*无法安全清理/], ['cache-unavailable', /缓存暂不可用.*仍可检查版本/]]) {
+for (const [recovery, message] of [['handoff-waiting-client', /等待 Electron/], ['handoff-waiting-host', /等待 Host/], ['handoff-client-timeout', /退出超时/], ['handoff-host-timeout', /退出超时/], ['handoff-shell-failed', /启动失败/], ['handoff-cancelled', /已取消/], ['handoff-wizard-exited', /尚未确认升级成功/], ['pending-install', /尚未确认安装完成/], ['cleanup-pending', /新版本已启动.*无法安全清理/], ['cache-unavailable', /缓存暂不可用.*仍可检查版本/]]) {
     test('local recovery distinguishes ' + recovery + ' without a check or popup', async () => {
         const h = harness(), reading = h.controller.loadChannel();
         h.pending[0].resolve({status: 'ok', channel: 'stable', recovery}); await reading;

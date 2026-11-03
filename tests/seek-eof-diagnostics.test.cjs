@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const {EventEmitter} = require('node:events');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
@@ -13,6 +14,7 @@ function fixture() {
     const ipc = new EventEmitter(), operations = [], records = [], eventNames = [], pendingSeeks = [];
     const windowEvents = new EventTarget();
     let factory, generation = 0, playSequence = 0, repeatedGeneration = null, failSeek = false, throwLog = false;
+    let now = 10000;
     const property = (name, value, owner = generation) => ipc.emit(nativeClient.EVENT_CHANNEL, {}, {
         type: 'property_change', generationId: owner, data: {name, value}
     });
@@ -48,7 +50,7 @@ function fixture() {
         removeEventListener: windowEvents.removeEventListener.bind(windowEvents),
         dispatchEvent: windowEvents.dispatchEvent.bind(windowEvents),
         Event, CustomEvent: class extends Event { constructor(name, options) { super(name); this.detail = options && options.detail; } },
-        AbortController, setTimeout, clearTimeout, console: {log() {}}
+        AbortController, setTimeout, clearTimeout, Date: class extends Date { static now() { return now; } }, console: {log() {}}
     };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/electronapp/plugins/libmpv.js'), 'utf8'), context);
     const Player = factory({}, {getSubtitleUrl() { return ''; }}, {mapPath: (_player, file) => file},
@@ -64,8 +66,10 @@ function fixture() {
     Player.call(player);
     return {
         player, operations, records, eventNames, property,
+        rawEvent: value => ipc.emit(nativeClient.EVENT_CHANNEL, {}, value),
         generation: () => generation,
         repeatGeneration: value => { repeatedGeneration = value; },
+        advance: milliseconds => { now += milliseconds; },
         failSeek: () => { failSeek = true; },
         throwLog: () => { throwLog = true; },
         acknowledge: (index = 0) => pendingSeeks.splice(index, 1)[0](),
@@ -231,4 +235,105 @@ test('intro rejection diagnostics project only safe scalars and remain fail-open
     assert.doesNotThrow(() => f.player.currentTime(1000, new Proxy({}, {getOwnPropertyDescriptor() { throw Error('private'); }})));
     assert.deepEqual(Array.from(f.command()), ['seek', '1', 'absolute', 'exact']);
     f.acknowledge(); await flush();
+});
+
+test('cache observations are bounded, include only current playable numbers, and export EOF transitions safely', async t => {
+    const f = fixture(); await f.play();
+    f.property('duration', 120); f.property('time-pos', 10);
+    const operationsBefore = f.operations.length;
+    const cache = {'reader-pts': 10, 'cache-end': 25, 'cache-duration': 15,
+        'eof-cached': false, eof: false, underrun: false,
+        url: 'https://PRIVATE_CANARY.invalid/movie?token=PRIVATE_CANARY', path: 'C:\\PRIVATE_CANARY\\movie'};
+    f.property('demuxer-cache-state', cache);
+    const first = f.log('cache-observation').details;
+    assert.equal(first.cause, 'initial');
+    assert.equal(first.positionSeconds, 10);
+    assert.equal(first.cacheEndSeconds, 25);
+    assert.equal(first.cacheDurationSeconds, 15);
+    assert.equal(first.cacheAheadSeconds, 15);
+    assert.equal(first.remainingSeconds, 110);
+    assert.equal(first.cacheEof, false);
+    assert.equal(first.cacheEofPrevious, null);
+    for (let index = 0; index < 100; index++) {
+        f.advance(100);
+        f.property('time-pos', 10 + index / 100);
+        f.property('demuxer-cache-state', cache);
+    }
+    assert.equal(f.records.filter(row => row.event === 'cache-observation').length, 1, 'rapid updates cannot fill the log');
+    f.advance(30000);
+    f.property('time-pos', 11);
+    assert.equal(f.log('cache-observation').details.cause, 'periodic');
+    f.advance(5000);
+    f.property('demuxer-cache-state', {...cache, 'eof-cached': true, eof: true});
+    const eof = f.log('cache-observation').details;
+    assert.equal(eof.cause, 'state-change');
+    assert.equal(eof.cacheEofPrevious, false);
+    assert.equal(eof.cacheEof, true);
+    f.property('eof-reached', true);
+    assert.equal(f.eventNames.filter(name => name === 'stopped').length, 1);
+    assert.equal(f.operations.length, operationsBefore, 'diagnostics add no native command or query');
+    const report = diagnostics.buildDiagnosticReport(f.records, {}, new Date('2026-11-03T00:00:00Z'));
+    assert.match(report, /cache-observation/);
+    assert.doesNotMatch(report, /PRIVATE_CANARY|token=/);
+    assert.ok(JSON.stringify(diagnostics.sanitizeRecord(f.log('cache-observation'))).length < 1200);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-cache-diagnostic-'));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const logger = diagnostics.createLogger(root);
+    for (const record of f.records.filter(row => row.event === 'cache-observation')) await logger(record);
+    const persisted = await logger.readRecords();
+    assert.equal(persisted.records.length, 3);
+    assert.doesNotMatch(JSON.stringify(persisted), /PRIVATE_CANARY|token=/);
+    assert.doesNotMatch(await logger.exportReport({}), /PRIVATE_CANARY|token=/);
+});
+
+test('cache observations mark seek positions unavailable until native restart and reject old playback events', async () => {
+    const f = fixture(); await f.play();
+    const firstGeneration = f.generation();
+    f.property('duration', 120); f.property('time-pos', 10);
+    f.property('demuxer-cache-state', {'cache-end': 12, 'cache-duration': 2, 'eof-cached': false, underrun: true});
+    assert.equal(f.log('cache-observation').details.cacheAheadSeconds, 2);
+    assert.equal(f.log('cache-observation').details.cacheUnderrun, true);
+    f.player.currentTime(80000);
+    f.advance(6000);
+    f.property('time-pos', 11);
+    f.property('demuxer-cache-state', {'cache-end': 12, 'cache-duration': 1, 'eof-cached': false, underrun: false});
+    const pending = f.log('cache-observation').details;
+    assert.equal(pending.positionSeconds, null);
+    assert.equal(pending.cacheAheadSeconds, null);
+    assert.equal(pending.remainingSeconds, null);
+    f.property('playback-restart', 80);
+    f.advance(6000);
+    f.property('demuxer-cache-state', {'cache-end': 85, 'cache-duration': 5, 'eof-cached': false, underrun: true});
+    assert.equal(f.log('cache-observation').details.positionSeconds, 80);
+    assert.equal(f.log('cache-observation').details.cacheAheadSeconds, 5);
+    const count = f.records.filter(row => row.event === 'cache-observation').length;
+    await f.play();
+    f.advance(6000);
+    f.property('demuxer-cache-state', {'cache-end': 99, 'eof-cached': true}, firstGeneration);
+    f.property('time-pos', 12);
+    assert.equal(f.records.filter(row => row.event === 'cache-observation').length, count);
+    f.property('demuxer-cache-state', {'cache-end': 18, 'eof-cached': false});
+    assert.equal(f.log('cache-observation').details.positionSeconds, 12);
+    assert.equal(f.log('cache-observation').details.remainingSeconds, null, 'previous media duration is not current');
+});
+
+test('cache shortage and native error records omit unavailable transport facts and raw error text', async () => {
+    const f = fixture(); await f.play();
+    f.property('time-pos', 20);
+    f.property('demuxer-cache-state', {'cache-end': 18, 'cache-duration': 0, underrun: true, 'eof-cached': false});
+    assert.equal(f.log('cache-observation').details.cacheAheadSeconds, 0);
+    f.property('demuxer-cache-state', {'cache-end': 18, 'cache-duration': 0, underrun: true, 'eof-cached': true});
+    f.property('eof-reached', true);
+    assert.equal(f.log('cache-observation').details.cacheEofPrevious, false, 'terminal EOF flushes a throttled transition');
+    const ipcError = {type: 'bridge_error', generationId: f.generation(),
+        reason: 'https://PRIVATE_CANARY.invalid/movie?token=PRIVATE_CANARY', endReason: 4, mpvErrorCode: -13,
+        httpStatus: 'PRIVATE_CANARY', reconnectOutcome: 'PRIVATE_CANARY'};
+    f.rawEvent(ipcError);
+    const error = f.log('playback-error');
+    assert.equal(error.details.mpvErrorCode, -13);
+    assert.equal(error.details.endReason, 4);
+    assert.equal(Object.hasOwn(error.details, 'httpStatus'), false);
+    assert.equal(Object.hasOwn(error.details, 'readFailureClass'), false);
+    assert.equal(Object.hasOwn(error.details, 'reconnectOutcome'), false);
+    assert.doesNotMatch(diagnostics.buildDiagnosticReport(f.records, {}), /PRIVATE_CANARY|token=/);
 });

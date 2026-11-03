@@ -7,6 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 const update = require('./manual-app-update');
 const maintenance = require('./maintenance');
+const outcome = require('./update-handoff-outcome');
 const fail = code => Object.assign(Error(code), {code});
 const id = stat => ({dev: String(stat.dev), ino: String(stat.ino)});
 const same = (stat, expected) => expected && String(stat.dev) === expected.dev && String(stat.ino) === expected.ino;
@@ -86,6 +87,7 @@ function createStore(options) {
             record.installer.name !== 'EmbyTheaterEnhanced-' + record.targetVersion + '-win-x64-setup.exe' ||
             (record.state !== 'downloading' && (!validId(record.fileId) || !update.SOURCES.some(source => source.id === record.source)))) throw fail('cache-unsafe');
         ownDirectory(directory, record.directoryId);
+        Object.defineProperty(record, 'receiptModifiedMs', {value: Number(before.mtimeMs)});
         Object.defineProperty(record, 'receiptProof', {value: {ino: String(before.ino), size: receiptBytes.length, sha256: digest(receiptBytes)}});
         return record;
     }
@@ -117,14 +119,14 @@ function createStore(options) {
     async function download(installer, options) {
         const request = options || {};
         if (request.signal && request.signal.aborted) throw fail('cancelled');
-        let retry;
+        let retry, replacedInvalidCache = false;
         for (const directory of entries()) {
             if (request.signal && request.signal.aborted) throw fail('cancelled');
             let record;
             try { record = read(directory); } catch (_) { continue; } // Unknown files are never removed or executed.
             if (record.state !== 'downloading' && JSON.stringify(record.installer) === JSON.stringify(installer)) {
-                await verified(directory, record, request.signal);
-                return {...record, directory, reused: true};
+                try { await verified(directory, record, request.signal); return {...record, directory, reused: true}; }
+                catch (error) { if (error.code === 'cancelled') throw error; replacedInvalidCache = true; continue; }
             }
             if (record.state === 'downloading' && JSON.stringify(record.installer) === JSON.stringify(installer) &&
                 fs.readdirSync(directory).join(',') === 'receipt.json') retry = {directory, record};
@@ -145,7 +147,7 @@ function createStore(options) {
         record.fileId = id(identity(path.join(directory, installer.name)));
         save(directory, record);
         await verified(directory, record, request.signal);
-        return {...record, directory, reused: false};
+        return {...record, directory, reused: false, replacedInvalidCache};
     }
     async function prepare(record, signal) {
         // Re-read the receipt and file: the renderer never supplies a path or digest.
@@ -156,9 +158,15 @@ function createStore(options) {
         await verified(record.directory, current, signal);
         // Persist intent before the guard denies directory mutation. This is
         // only a retry hint; neither intent nor launch proves installation.
+        for (const otherDirectory of entries()) {
+            let other;
+            try { other = read(otherDirectory); } catch (_) { continue; }
+            if (other.outcome && ['shell-entered', 'shell-started'].includes(outcome.read(root, other.outcome).stage)) throw fail('handoff-cancel-unconfirmed');
+        }
+        current.outcome = outcome.prepare(root, record.directory, current.outcome);
         current.state = 'armed'; save(record.directory, current);
         const lease = await settings.handoff.prepare({...current, root, directory: record.directory}, signal);
-        let committed = false;
+        let committed = false, released = false;
         return {
             processId: lease.processId,
             async commit() {
@@ -166,7 +174,16 @@ function createStore(options) {
                 try { await lease.commit(); committed = true; }
                 catch (error) { await lease.abort(); throw error; }
             },
-            abort() { if (!committed) return lease.abort(); }
+            async release() {
+                if (!committed || released) throw fail('installer-launch-failed');
+                await lease.release(); released = true;
+            },
+            async abort() {
+                if (released) throw fail('handoff-cancel-unconfirmed');
+                await lease.abort(); // Actual owned guard exit, never a timer.
+                ownDirectory(record.directory, current.directoryId);
+                outcome.cancelled(root, current.outcome);
+            }
         };
     }
     async function reconcile(version) {
@@ -186,18 +203,37 @@ function createStore(options) {
         }
         return outcome;
     }
+    function recentRecords() {
+        return entries().map(directory => { try { return {directory, record: read(directory)}; } catch (_) { return null; } })
+            .filter(Boolean).sort((a, b) => b.record.receiptModifiedMs - a.record.receiptModifiedMs);
+    }
     function recovery(version) {
         let status = false;
-        for (const directory of entries()) {
+        for (const {record} of recentRecords()) {
             try {
-                const record = read(directory), compared = maintenance.compareVersions(version, record.targetVersion);
+                const compared = maintenance.compareVersions(version, record.targetVersion);
                 if (compared === 0 || compared === 1) status = 'cleanup-pending';
-                else if (record.state === 'armed') return 'pending-install';
+                else if (record.state === 'armed') {
+                    if (record.outcome) {
+                        try { return 'handoff-' + outcome.read(root, record.outcome).stage; }
+                        catch (_) { return 'handoff-unavailable'; }
+                    }
+                    return 'pending-install';
+                }
             } catch (_) {}
         }
         return status;
     }
-    return {download, prepare, reconcile, recovery};
+    function outcomes() {
+        const rows = [];
+        for (const {directory, record} of recentRecords().slice(0, 16)) {
+            try {
+                if (record.outcome) rows.push({...outcome.read(root, record.outcome), attemptId: digest(path.basename(directory)).slice(0, 16)});
+            } catch (_) { /* Unknown receipts do not become diagnostic objects. */ }
+        }
+        return rows;
+    }
+    return {download, prepare, reconcile, recovery, outcomes};
 }
 function validId(value) { return value && /^\d+$/.test(value.dev) && /^\d+$/.test(value.ino) && value.ino !== '0'; }
 

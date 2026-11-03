@@ -39,7 +39,7 @@ test('managed cache is fixed below profile; a verified retry reuses only the sam
     assert.equal((await f.store.download(asset(), f.request())).reused, true);
     assert.equal(f.state.downloads, 1);
     const lease = await f.store.prepare(record, f.request().signal);
-    await lease.commit(); assert.equal(f.state.commits, 1); assert.equal(f.store.recovery(), 'pending-install');
+    await lease.commit(); assert.equal(f.state.commits, 1); assert.equal(f.store.recovery(), 'handoff-preparing');
     assert.equal((await f.store.reconcile('9.0.0')).removed, 0);
     assert.equal((await f.store.reconcile('invalid')).removed, 0);
     // A fresh target startup reads the persisted receipt; it cannot rely on

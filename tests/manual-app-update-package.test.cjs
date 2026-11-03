@@ -22,7 +22,7 @@ test('unpacked-source fixture binds its twelve modules to a synthetic manifest a
     t.after(() => fs.rmSync(root, {recursive: true, force: true}));
     const directory = path.join(root, 'electronapp', 'enhanced'); fs.mkdirSync(directory, {recursive: true});
     const names = ['manual-app-update.js', 'maintenance.js', 'maintenance-ipc.js', 'renderer-boundary.js', 'release-note-links.js', 'app-update-preferences.js', 'manual-app-update-selftest.js',
-        'update-install-cache.js', 'update-install-handoff.js', 'update-install-handoff.ps1', 'update-install-guard.cs', 'update-install-relay.cs'];
+        'update-install-cache.js', 'update-install-handoff.js', 'update-install-handoff.ps1', 'update-install-guard.cs', 'update-install-relay.cs', 'shutdown-drain.js', 'update-handoff-outcome.js'];
     const files = names.map(name => {
         const bytes = fs.readFileSync(path.resolve(__dirname, '../src/electronapp/enhanced', name));
         fs.writeFileSync(path.join(directory, name), bytes);
