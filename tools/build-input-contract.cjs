@@ -68,7 +68,7 @@ const INPUT_PATHS = Object.freeze([
     'tools/patch-content-width.cjs',
     'tools/patch-actionsheet-layout.cjs',
     'tools/patch-item-lifecycle.cjs',
-        'tools/patch-search-ui.cjs', 'tools/patch-select-cancel.cjs', 'tools/patch-startup.cjs',
+        'tools/patch-search-ui.cjs', 'tools/patch-select-cancel.cjs', 'tools/patch-actionsheet-reordering.cjs', 'tools/patch-startup.cjs',
     'tools/patch-external-player-registration.cjs', 'tools/patch-plugin-settings.cjs', 'tools/patch-server-home.cjs', 'tools/patch-movie-browser.cjs',
     'tools/patch-playbackmanager.cjs', 'tools/runtime-exclusions.cjs',
     'tools/copy-runtime-dependencies.cjs', 'tools/electron-runtime-input.cjs',

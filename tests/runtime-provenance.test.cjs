@@ -171,7 +171,7 @@ function createFixture(root) {
         'tools/patch-content-width.cjs',
         'tools/patch-actionsheet-layout.cjs',
         'tools/patch-item-lifecycle.cjs',
-        'tools/patch-search-ui.cjs', 'tools/patch-select-cancel.cjs',
+        'tools/patch-search-ui.cjs', 'tools/patch-select-cancel.cjs', 'tools/patch-actionsheet-reordering.cjs',
         'tools/patch-external-player-registration.cjs',
         'tools/patch-plugin-settings.cjs',
         'tools/patch-server-home.cjs',
