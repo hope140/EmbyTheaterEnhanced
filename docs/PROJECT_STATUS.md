@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-04 — v0.4.13 语言偏好候选
+
+当前官方网页参考图已核对：选择框留在弹层上方、虚拟弹层约十行、桌面右侧仅手柄且与滚动条留白。鉴于现行网页资产没有已确认的可分发许可，本候选不搬运新版源码；只在既有 ETE 控件上作语言弹窗局部适配，并保留键盘／遥控路径。具体来源、验证和边界见[候选核验](V0413_LANGUAGE_PREFERENCES.md)。
+
+以 2026-11-04 远端 main `25b8086` 为基线，独立分支准备音轨首选语言多选与明确排序，以及现有字幕多选的顺序调整。两页继续用 Emby 用户配置的 `AudioLanguagePreference`／`SubtitleLanguagePreference` 逗号分隔字段，语言代码来自服务器 `getCultures()`；未修改时保存沿用新取回的服务端原值，未知代码保留。原“播放默认音轨”“记住音轨／字幕选择”和清除记轨字段及接口保持，播放轨道由服务器选择。根据用户对早期设置页常驻排序行的反馈，改在原有公共选择弹窗中为两种语言选择单独启用已选项置顶、拖动手柄及键鼠／遥控可聚焦的上下图标按钮；设置页仅保留已选摘要，其他选择弹窗不启用排序。针对后续反馈已恢复原弹窗虚拟滚动和普通行高；打开弹窗时外部按钮首次点击由原全屏遮罩用于关闭弹窗，隔离复现中关闭后再次点击正常，真实 Windows 窗口仍待验收。版本仅在候选分支设为 0.4.13，未合 main、建 Tag 或发布。验证层级与现场验收步骤见[候选核验](V0413_LANGUAGE_PREFERENCES.md)。
+
 ## 2026-11-03 — v0.4.12 更新交接与 EOF 定位测试版已发布
 
 [PR #89](https://github.com/hope140/EmbyTheaterEnhanced/pull/89) 已以 `98ea09a22708a7d845f46318df3f3a49272ccac0` 合入 main，保留准确产品来源 `676888a09220a7cc95fd10eee035432f715e471b`；`v0.4.12` Tag 指向该来源。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480) 与[testing 发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)成功，[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12) 为非草稿 Pre-release，五附件公开下载独立核验通过；正式 Latest 仍为 v0.4.0。用户确认独立低版本更新修复包升级到 v0.4.11 的交接验收通过；v0.4.12 组合包的交互安装、真实播放和提前 EOF 现场根因仍未验收。日志只补观察，不提供自动恢复或切线路，见[发行核验](V0412_RELEASE_VERIFICATION.md)。下面的候选条目保留其当时状态。
