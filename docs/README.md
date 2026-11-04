@@ -11,7 +11,7 @@
 | 各版更新内容 | [变更记录](../CHANGELOG.md) |
 | 项目许可与第三方来源 | [许可说明](LICENSING.md) · [第三方通知](../THIRD_PARTY_NOTICES.md) |
 
-截至 2026-10-30，正式版为 [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，最新测试版为 [v0.4.6](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.6)。测试版保留页面／详情缓存、缓存管理、手动更新／通道及系统媒体控制与一秒预览；v0.4.5 修复首页导航、删除及字幕问题，并在主动下载更新校验成功后正常退出、打开安装向导。v0.4.6 修复配置保存失败后的临时文件与内存状态处理，并整理用户和开发文档。功能是否发布以对应 Release 和 Tag 为准，主分支文档不改变历史安装包。
+截至 2026-11-03，正式版为 [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，最新测试版为 [v0.4.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)。测试版保留此前的缓存、手动更新、系统媒体控制与下载等功能；v0.4.11 增加字幕首选语言多选（实际选轨依服务器返回），v0.4.12 改进更新交接并增加提前 EOF 的低频脱敏定位日志。提前 EOF 的现场根因和自动恢复均未解决。功能是否发布以对应 Release 和 Tag 为准，主分支文档不改变历史安装包。
 
 ## 开发与技术合同
 
@@ -20,18 +20,22 @@
 | 主题 | 合同与参考材料 |
 | --- | --- |
 | 代理协作 | [统一入口](../AGENTS.md) · [模型建议、分工与交接](AGENT_WORKFLOW.md) |
-| 播放与解析 | [架构](ARCHITECTURE.md) · [播放链路](PLAYBACK_PIPELINE.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [STRM](STRM_RESOLVER.md) |
-| 缓存及更新 | [详情缓存](DETAIL_PAGE_CACHE.md) · [缓存管理](CACHE_MANAGEMENT.md) · [手动更新](MANUAL_APP_UPDATE.md) |
+| 播放与解析 | [架构](ARCHITECTURE.md) · [播放链路](PLAYBACK_PIPELINE.md) · [Native Helper](NATIVE_HELPER_BRIDGE.md) · [STRM](STRM_RESOLVER.md) · [Seek／EOF 调查阶段记录](SEEK_EOF_DIAGNOSTICS.md) |
+| 缓存及更新 | [详情缓存](DETAIL_PAGE_CACHE.md) · [缓存管理](CACHE_MANAGEMENT.md) · [手动更新](MANUAL_APP_UPDATE.md) · [更新交接安全](UPDATE_HANDOFF_SAFETY.md) |
 | Windows 媒体集成 | [v0.4.3 接入范围](V043_NATIVE_PREVIEW.md) · [早期实验合同](WINDOWS_MEDIA_CONTROLS.md) |
 | 构建与材料 | [构建合同与历史记录](PACKAGING.md) · [Actions 测试包合同](ACTIONS_TEST_PACKAGE.md) · [源码材料索引](SOURCE_MATERIALS.md) · [依赖来源研究](DEPENDENCY_RESEARCH.md) |
 | 测试与发行 | [测试分层与材料用例](TESTING.md) · [Release 规范](RELEASE_CONVENTIONS.md) · [发行说明模板](templates/RELEASE_TEMPLATE.md) |
 
-**阅读阶段记录时**：技术文档保留早期分支、候选和当时的待验收说明。例如 Windows 媒体实验“尚未纳入发行”、手动更新“独立候选”、构建合同“尚无干净 runner 成功”描述其编写阶段，已发布状态以上表和对应 Release 为准。首页布局／流畅度的显式测试参数也不等同于 v0.4.2 已发布的详情持久缓存；普通用户无需按实验启动脚本开启已发布功能。当前开发操作入口为贡献指南，具体材料身份仍按各组件合同核验。
+**阅读阶段记录时**：技术文档保留早期分支、候选和当时的待验收说明。例如 v0.4.11／v0.4.12 核验页中的“未合并／未发布”属于各版发布前记录，不表示截至 2026-11-03 的状态；各页页首新增发布后回读。Windows 媒体实验“尚未纳入发行”、手动更新“独立候选”、构建合同“尚无干净 runner 成功”也描述其编写阶段，已发布状态以上表和对应 Release 为准。首页布局／流畅度的显式测试参数不等同于 v0.4.2 已发布的详情持久缓存；普通用户无需按实验启动脚本开启已发布功能。当前开发操作入口为贡献指南，具体材料身份仍按各组件合同核验。
 
 公开离线检查、完整固定材料测试、实际客户端、真实服务器、安装与硬件验收各有范围，通过其中一层不能替代其他层。
 
 ## 发布记录与后续范围
 
+- [v0.4.12 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)：更新退出与安装交接修复、提前 EOF 定位日志；[发布后核验与候选历史](V0412_RELEASE_VERIFICATION.md)。
+- [v0.4.11 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.11)：字幕首选语言多选；[发布后核验与候选历史](V0411_RELEASE_VERIFICATION.md)。
+- [v0.4.10 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.10)：片头归属修复及定位诊断；[发行核验](V0410_RELEASE_VERIFICATION.md)。
+- [v0.4.9 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.9)、[v0.4.8 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.8)、[v0.4.7 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.7)：焦点修复、下载筛选与提前下载；核验见 [v0.4.9](V049_RELEASE_VERIFICATION.md)、[v0.4.8](V048_RELEASE_VERIFICATION.md)、[v0.4.7](V047_RELEASE_VERIFICATION.md)。
 - [v0.4.6 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.6)：配置持久化修复和文档维护；[实际发布与五附件核验](V046_RELEASE_VERIFICATION.md)。
 - [v0.4.5 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.5)：首页导航／滚动、单条删除、透明字幕及更新交接修正；[发行记录与验证边界](V045_RELEASE_VERIFICATION.md)。
 - [v0.4.4 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4)：详情／首页交接修复、诊断补充与旧 shader 退役；[发行核验](V044_RELEASE_VERIFICATION.md)。

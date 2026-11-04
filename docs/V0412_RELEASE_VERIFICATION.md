@@ -1,4 +1,12 @@
-# v0.4.12 更新交接与 EOF 定位候选核验
+# v0.4.12 更新交接与 EOF 定位发行核验
+
+## 发布后回读（2026-11-03）
+
+[PR #89](https://github.com/hope140/EmbyTheaterEnhanced/pull/89) 以 merge commit `98ea09a22708a7d845f46318df3f3a49272ccac0` 合入 main；其父提交保留准确构建来源 `676888a09220a7cc95fd10eee035432f715e471b`。轻量 Tag `v0.4.12` 指向该来源。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480) 与[发布工作流](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)均成功；构建回执为 `version=0.4.12`、五附件通过，Windows 完整测试 2488 项：2486 pass／0 fail／2 skip，安装器解包与 runtime 回比通过。[PR 公开 CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562278806)、[push 公开 CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562251265) 均为 2391 项：2386 pass／0 fail／5 skip；[隔离原生更新检查](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562278796) 为 178／178，未执行真实交互安装。
+
+[公开 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12) ID `432215370` 为 `prerelease=true`、`draft=false`，目标来源同上；安装器、provenance、`.sha256`、`RELEASE_NOTES.md` 和 `SHA256SUMS.txt` 五附件均已公开。安装器 [Windows x64 下载](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.12/EmbyTheaterEnhanced-0.4.12-win-x64-setup.exe) 大小 `161850235` 字节，SHA-256 `b3d3c8214e04461f8bdbb9a4809a371f2e51dcf3fb2f52355b3d330ace670b43`。发布后独立下载五附件并复算大小／SHA-256，与 GitHub digest、构建回执及校验表一致；notes 与来源文档字节一致，provenance 的来源／版本一致。正式 Latest 回读仍为 `v0.4.0`（Release ID `422090288`）。
+
+用户确认此前独立 0.4.10-test 更新修复包发起升级到 v0.4.11 的安装交接验收通过。此反馈没有覆盖 v0.4.12 组合包的交互安装、真实服务播放或现场提前 EOF；根因仍未知，自动恢复未加入。以下为**发布前候选阶段记录**，其中“未合并／未发布”只描述当时状态。
 
 ## 来源与范围
 

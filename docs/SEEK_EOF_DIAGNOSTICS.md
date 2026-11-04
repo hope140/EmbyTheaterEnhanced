@@ -1,5 +1,7 @@
 # Seek／片头结束异常调查候选
 
+**当前状态（2026-11-03）**：本页记录 2026-10-31 的调查候选阶段。片头归属修复与当时的 Seek／EOF 定位诊断已随 [v0.4.10 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.10)发布；[v0.4.12 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)进一步增加低频缓存 EOF 观察，字段及限制见[当前诊断合同](CLIENT_DIAGNOSTICS.md#v0412-缓存-eof-定位)。下文“独立候选／不单独发布”只描述当时状态。普通 Seek 后提前结束的现场根因仍未确定，没有加入自动恢复或切线路。
+
 本候选基于 v0.4.9 的播放实现，修复可控模拟已确认的片头归属与边界缺陷，并补充普通 Seek／EOF 诊断。它没有证明实际媒体在普通拖动后结束的根因，也不表示新的 Windows 安装包或真实服务验收已完成。
 
 ## 已确认的片头缺陷与修复

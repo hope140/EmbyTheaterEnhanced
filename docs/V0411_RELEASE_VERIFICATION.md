@@ -1,4 +1,10 @@
-# v0.4.11 字幕多选测试版候选核验
+# v0.4.11 字幕多选测试版发行核验
+
+## 发布后回读（2026-11-02）
+
+[PR #88](https://github.com/hope140/EmbyTheaterEnhanced/pull/88) 以 merge commit `5749f99182cbf6ec6f2b9ed9ed2d5db70e3a258d` 合入 main，保留准确发行来源 `ab66744349794221a4b633af325dcb3a52a39fc9` 为父提交；轻量 Tag `v0.4.11` 指向该来源。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41468086861) 和[发布工作流](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41544694352)均成功；准确源码的 Windows 完整测试 2444 项：2442 pass／0 fail／2 skip，安装器解包与 runtime 回比通过。
+
+[公开 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.11) ID `432074897` 为 `prerelease=true`、`draft=false`，五附件已公开并与构建回执的大小／哈希一致；安装器 SHA-256 `77da76f96db178f09af8467ddd2a8aba80ec0a95ea233ba93edf0b518dc02573`。正式 Latest 回读仍为 `v0.4.0`（Release ID `422090288`）。用户已验收字幕多选设置；默认轨道实际由服务器返回的选轨结果决定。此版不含更新交接修复。以下为**发布前候选阶段记录**，其中“未合并／未发布”只描述当时状态。
 
 ## 来源与范围
 

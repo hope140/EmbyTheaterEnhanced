@@ -1,8 +1,16 @@
 # 项目状态
 
+## 2026-11-03 — v0.4.12 更新交接与 EOF 定位测试版已发布
+
+[PR #89](https://github.com/hope140/EmbyTheaterEnhanced/pull/89) 已以 `98ea09a22708a7d845f46318df3f3a49272ccac0` 合入 main，保留准确产品来源 `676888a09220a7cc95fd10eee035432f715e471b`；`v0.4.12` Tag 指向该来源。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480) 与[testing 发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)成功，[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12) 为非草稿 Pre-release，五附件公开下载独立核验通过；正式 Latest 仍为 v0.4.0。用户确认独立低版本更新修复包升级到 v0.4.11 的交接验收通过；v0.4.12 组合包的交互安装、真实播放和提前 EOF 现场根因仍未验收。日志只补观察，不提供自动恢复或切线路，见[发行核验](V0412_RELEASE_VERIFICATION.md)。下面的候选条目保留其当时状态。
+
 ## 2026-11-03 — v0.4.12 更新交接与 EOF 定位独立候选
 
 已公开 v0.4.11 字幕测试版，正式 Latest 仍为 v0.4.0。用户确认独立 0.4.10-test 更新修复包作为发起端升级到 v0.4.11 的交接验收通过；现从 v0.4.11 所在 main `5749f99` 单独整合修复 `d2a7a0f`，保留字幕多选，并补低频、脱敏、按代次隔离的缓存 EOF 定位日志。日志只记录可核实的数值／布尔值，不推断 HTTP 状态、读取失败类别或重连结果，也不改变 Seek、EOF、恢复或切线路行为。0.4.12 版本资料与组合回归按[候选核验](V0412_RELEASE_VERIFICATION.md)推进；本候选不合 main、不建 Tag、不发布，现场提前 EOF 根因仍未知。
+
+## 2026-11-02 — v0.4.11 字幕多选测试版已发布
+
+[PR #88](https://github.com/hope140/EmbyTheaterEnhanced/pull/88) 以 `5749f99182cbf6ec6f2b9ed9ed2d5db70e3a258d` 合入 main，Tag／来源固定 `ab66744349794221a4b633af325dcb3a52a39fc9`。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41468086861)和[testing 发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41544694352)成功，五附件公开核验通过；正式 Latest 保持 v0.4.0。用户已验收字幕多选设置，但实际默认轨道仍依服务器选轨结果，见[发行核验](V0411_RELEASE_VERIFICATION.md)。
 
 ## 2026-11-02 — v0.4.11 字幕多选独立测试版准备
 
