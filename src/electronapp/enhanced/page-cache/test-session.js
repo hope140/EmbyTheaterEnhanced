@@ -40,7 +40,7 @@ const FLOW_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/modules/approuter.js', sha256: '364CF6818BA4D92D237943FFD1D59FDB8B533E944BE7E4AB06588F203A1E66C5'})
 ]);
 const DETAIL_OVERLAYS = Object.freeze([
-    Object.freeze({path: 'electronapp/www/app.js', sha256: '02AC6C7D2206F5BD78F1709A1D1160AE490B2C71DE2C33E98DA40F2ADAF26BF2'}),
+    Object.freeze({path: 'electronapp/www/app.js', sha256: 'FFE1D6E1A34CFF8CCA9F77284C475900B3DAF3C82EAF43502AE2400E355DD771'}),
     Object.freeze({path: 'electronapp/www/item/item.js', sha256: '9336D92E4B2A7A9150F296E181651E3DC6EA8104C715333E52933FC2913FDA69'})
 ]);
 function identity(runtimeRoot, homeFlow) {

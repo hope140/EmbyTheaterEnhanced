@@ -21,9 +21,10 @@ const before = require('../tools/patch-search-ui.cjs').patchApp(
                 require('../tools/patch-external-player-registration.cjs').patchText(original).text))));
 const output = before;
 
-test('declared cache aliases are the only changes to the approved retired CSS/plugin output',()=>{
+test('declared cache and recent search aliases are the only changes to the approved retired CSS/plugin output',()=>{
     const home = require('../tools/patch-server-home.cjs');
-    const aliases = [home.CACHE_ALIAS, home.DETAIL_CACHE_ALIAS, home.DETAIL_PAGE_ALIAS];
+    const aliases = [home.CACHE_ALIAS, home.DETAIL_CACHE_ALIAS, home.DETAIL_PAGE_ALIAS,
+        'define("ete-recent-search", [], getDynamicImport("./../enhanced/search/recent-search.js"))'];
     let approved = output;
     for (const definition of aliases) { const alias = definition + ',\n      '; assert.equal(approved.split(alias).length, 2); approved = approved.replace(alias, ''); }
     assert.equal(hash(approved),'1F518BE3FFA0E59780AC68E468FEAC105C696DF468CFA9C90E88B9F6792E8EB6');
