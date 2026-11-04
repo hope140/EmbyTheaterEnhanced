@@ -1,4 +1,10 @@
-# v0.4.13 语言偏好测试版候选
+# v0.4.13 语言偏好测试版：发布核验与候选历史
+
+## 发布后回读（2026-11-04）
+
+用户确认普通测试包验收通过，其源码为 `c686e189ca2ce51359270624f45b6652e4618213`。[PR #91](https://github.com/hope140/EmbyTheaterEnhanced/pull/91) 以 `715bc5af6f9be8a87c6813a0cee10f4fb3196a10` 合入 main，两提交源码树相同；`v0.4.13` Tag 指向验收源码。[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41823937341)、[main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41844044695) 与[testing 发行运行](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41846593844)均成功。发行构建从准确源码重建，2499 项为 2497 pass／0 fail／2 skip，显式材料 135/135 通过；五附件独立下载后大小、SHA-256、来源证明、校验表和原始 notes 均一致，安装器 SHA-256 为 `797dfcc9048119e6917376815308c26d964121166bd76e0148cdd5470fc25794`。安装器及对应校验文件也经匿名公开链接下载核对。[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) 为非草稿 Pre-release，正式 Latest 保持 v0.4.0。
+
+用户验收未提供旧服务器解释、遥控操作、实际选轨与安装组合的逐项结果，不能把自动测试扩成这些现场证据。此前窗口按钮偶发无法点击的根因尚未确定，本版不声称已修复。以下范围、方法和“待授权”语句是发布前候选记录，按当时阶段阅读。
 
 ## 范围与语义
 
