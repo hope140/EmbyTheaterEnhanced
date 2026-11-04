@@ -173,6 +173,18 @@ test('TV, missing/unsupported parent and non-latest sections keep ordinary headi
         f.controller.dispose();
     }
 });
+test('new server media sections keep order and Thumb uses the existing card renderer', async () => {
+    const f = fixture();
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? [
+        {Id: 'dynamic', SectionType: 'dynamicmedia', Name: 'Filtered', ImageType: 'Thumb'},
+        {Id: 'playlist', SectionType: 'singleplaylist', Name: 'Playlist'}
+    ] : {Items: [{Id: 'one'}]});
+    assert.equal((await f.controller.resume()).status, 'server');
+    assert.deepEqual(f.root.querySelectorAll('h2').map(x => x.textContent), ['Filtered', 'Playlist']);
+    assert.equal(f.root.querySelectorAll('.itemsContainer')[0].options.options.preferThumb, true);
+    assert.equal(f.root.querySelectorAll('.itemsContainer')[0].options.options.shape, 'backdrop');
+    f.controller.dispose();
+});
 
 test('default Home return retains its native title while freshly reading layout and items', async () => {
     const f = fixture(); f.deps.layout.tv = false;

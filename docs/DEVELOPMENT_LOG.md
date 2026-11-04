@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-04 — v0.4.14 首页／最近搜索独立实现
+
+从干净远端 main `25b8086` 起分支，PR #91 保持独立。核对官方 HomeSections/Section Items 合同：类型由服务器给出，条目按 section ID 取回；仅对当前可真实呈现的水平 cards 扩展通用媒体类型与 Thumb，沿用原请求票据、卡片、焦点和完整回退。文本、按钮、Spotlight、垂直及异常 DTO 保持回退，未引入服务端配置写操作。最近搜索依据官方用户清除接口和公开 `WasSearched` 请求记录，在较新的版本门槛下以当前用户查询，采用独立 epoch/AbortSignal 拒绝迟到响应；清除失败保留条目。没有猜测关键词历史接口或自动报告搜索条目的写入时机。
+
+代码、固定 Web overlay 输出 SHA、定向测试与合同文档在同一分支。合成 API 与离线 DOM 测试不能证明当前用户 NAS 的服务器版本、实际 schema 或前台体验；待合入后需针对准确组合来源再验证语言偏好回归和完整包。
+
 ## 2026-11-03 — v0.4.12 发布后文档对齐
 
 复核 [v0.4.12 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)、[标准构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480)、[发布运行](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)及正式 Latest：PR #89 已合 main，Tag／来源为 `676888a09220a7cc95fd10eee035432f715e471b`，五附件公开并校验通过，正式 Latest 为 v0.4.0。补齐首页下载入口、文档索引、用户指南、变更记录、项目状态、两版发行核验与更新／诊断技术说明；旧候选段落标明是发布前记录，不改写其当时证据。用户确认独立更新修复包交接验收；不扩大为组合版交互安装或现场提前 EOF 验收。此项仅整理文档，未改产品源码、版本、Tag、Release 或正式 Latest；准确文档检查与 PR 结果见后续提交／CI。

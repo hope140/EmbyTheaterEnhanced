@@ -1,5 +1,11 @@
 # 服务端首页接入合同
 
+## v0.4.14 独立候选：通用媒体分区
+
+官方 [HomeSections GET](https://dev.emby.media/reference/RestAPI/ContentService/getUsersByUseridHomesections.html) 将 `SectionType` 定义为字符串，且 [Section Items GET](https://dev.emby.media/reference/RestAPI/ContentService/getUsersByUseridSectionsBySectionidItems.html) 按服务器返回的分区 ID 读取已筛选条目。官方[首页设置说明](https://emby.media/support/articles/apps/common/User-Prefs-HomeScreen.html)列出 Dynamic Media、Single Collection、Single Playlist、Recently Released Episodes 等类型及 Cards、Thumb 等展示选项。新候选允许格式安全的服务器分区类型在水平 cards 布局使用原 CardBuilder，保持服务端顺序、标题、筛选和权限；Thumb 选择现有 `preferThumb`/backdrop 卡片选项。客户端不解释 `Query`、不重建筛选、不写服务器配置。无效类型标识、文本／付费说明、交互 HeaderButtons、按钮／列表／Spotlight、垂直滚动、Backdrop 或非默认尺寸仍整页回旧首页，避免将未实现的展示悄悄渲染成横向卡片。显式空布局继续保留。
+
+此合同基于公开 API 与合成响应。用户 NAS 当前版本、实际 HomeSections DTO、非默认布局的前台画面和真实遥控焦点尚未核实；较早一次 4.10.0.40 服务只读观察不能当作当前配置。下文首批范围为历史基线，以上新增范围以本候选源码和测试为准。
+
 首批采用服务端首页分区和顺序，保留旧首页回退；只读取配置，不在客户端实现服务端分区编辑。HomeTab 接线、卡片渲染与固定源码 overlay 已形成来源绑定候选，后台和用户前台证据分别记录在项目状态中。
 
 ## 当前模块

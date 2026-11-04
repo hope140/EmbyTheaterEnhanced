@@ -38,31 +38,36 @@ function patchSearchResults(text) {
 }
 
 function patchSearchFields(text) {
+    text = once(text, '  "./../modules/approuter.js",',
+        '  "./../modules/approuter.js",\n  "ete-recent-search",');
+    text = once(text, '  _approuter\n) {', '  _approuter,\n  _eteRecentSearch\n) {');
     text = once(text, '  function onSearchTimeout() {',
         '  function onSearchTimeout() {\n    this.searchTimeout = null;\n    if (!this.options || this._eteFieldsPaused || !this._eteEmbedded) return;\n    var epoch = this._eteFieldsEpoch;');
+    text = once(text, '    value \n      ? ((this.mode = "search"),',
+        '    if (this._eteRecent) { if (value) this._eteRecent.hide(); else this._eteRecent.load(); }\n    value \n      ? ((this.mode = "search"),');
     text = once(text, '          apiClient.getItems(apiClient.getCurrentUserId(), options).then(function (result) {',
         '          apiClient.getItems(apiClient.getCurrentUserId(), options).then(function (result) {\n            if (!instance.options || instance._eteFieldsPaused || instance._eteFieldsEpoch !== epoch) return;');
     text = once(text, '                : searchSuggestions.classList.add("hide");\n          });',
         '                : searchSuggestions.classList.add("hide");\n          }, function () {\n            if (instance.options && !instance._eteFieldsPaused && instance._eteFieldsEpoch === epoch) {\n              context.querySelector(".searchSuggestions").classList.add("hide");\n              console.warn("Search suggestions unavailable.");\n            }\n          });');
     text = once(text, '  function triggerSearch(instance, value, immediate) {',
-        '  function triggerSearch(instance, value, immediate) {\n    if (!instance.options || instance._eteFieldsPaused) return;\n    instance._eteResumeSearch = false;\n    instance._eteFieldsEpoch = (instance._eteFieldsEpoch || 0) + 1;\n    _events.default.trigger(instance, "searchpending", [value]);');
+        '  function triggerSearch(instance, value, immediate) {\n    if (instance._eteRecent) instance._eteRecent.hide();\n    if (!instance.options || instance._eteFieldsPaused) return;\n    instance._eteResumeSearch = false;\n    instance._eteFieldsEpoch = (instance._eteFieldsEpoch || 0) + 1;\n    _events.default.trigger(instance, "searchpending", [value]);');
     text = once(text, '    require(["text!search/searchfields.template.html"]).then(function (responses) {',
         '    require(["text!search/searchfields.template.html"]).then(function (responses) {\n      if (instance.options !== options) return;');
     text = once(text, '        instance.focus();',
         '        instance._eteEmbedded = true;\n      if (!instance._eteFieldsPaused && instance._eteResumeRequested && !instance.firstLoad) {\n        instance.firstLoad = true;\n        onSearchTimeout.call(instance);\n      }\n      if (!instance._eteFieldsPaused) instance.focus();');
     text = once(text, '    (SearchFields.prototype.pause = function () {\n      this.destroyVoiceInput();',
-        '    (SearchFields.prototype.pause = function () {\n      this._eteFieldsPaused = true;\n      this._eteFieldsEpoch = (this._eteFieldsEpoch || 0) + 1;\n      this._eteResumeSearch = !!this.searchTimeout;\n      if (this.searchTimeout) clearTimeout(this.searchTimeout);\n      this.searchTimeout = null;\n      this.destroyVoiceInput();');
+        '    (SearchFields.prototype.pause = function () {\n      this._eteFieldsPaused = true;\n      if (this._eteRecent) this._eteRecent.pause();\n      this._eteFieldsEpoch = (this._eteFieldsEpoch || 0) + 1;\n      this._eteResumeSearch = !!this.searchTimeout;\n      if (this.searchTimeout) clearTimeout(this.searchTimeout);\n      this.searchTimeout = null;\n      this.destroyVoiceInput();');
     text = once(text, '    (SearchFields.prototype.resume = function () {\n      this.firstLoad || ((this.firstLoad = !0), onSearchTimeout.call(this));',
         '    (SearchFields.prototype.resume = function () {\n      this._eteFieldsPaused = false;\n      this._eteResumeRequested = true;\n      if (!this._eteEmbedded) return;\n      if (this._eteResumeSearch) {\n        this._eteResumeSearch = false;\n        triggerSearch(this, this.nextSearchValue, true);\n      } else this.firstLoad || ((this.firstLoad = !0), onSearchTimeout.call(this));');
     text = once(text, '  function SearchFields(options) {',
-        '  function SearchFields(options) {\n    this.nextSearchValue = options.value;');
+        '  function SearchFields(options) {\n    this.nextSearchValue = options.value;\n    this._eteRecent = _eteRecentSearch.create(this, _connectionmanager.default, _globalize.default, _approuter.default);');
     return once(text, '    (SearchFields.prototype.destroy = function () {\n      this.destroyVoiceInput();',
-        '    (SearchFields.prototype.destroy = function () {\n      this.pause();');
+        '    (SearchFields.prototype.destroy = function () {\n      this.pause();\n      if (this._eteRecent) this._eteRecent.destroy();');
 }
 
 function patchApp(text) {
     return once(text, 'define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),',
-        'define("ete-search-list", [], getDynamicImport("./../enhanced/search/list-search.js")),\n      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
+        'define("ete-search-list", [], getDynamicImport("./../enhanced/search/list-search.js")),\n      define("ete-recent-search", [], getDynamicImport("./../enhanced/search/recent-search.js")),\n      define("baseView", [], getDynamicImport("./modules/viewmanager/baseview.js")),');
 }
 
 function patchListView(text) {

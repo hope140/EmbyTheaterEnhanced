@@ -16,6 +16,7 @@
             focusTransformTitleAdjust: true};
         if (section.SectionType === 'userviews') { options.fields = ['Name']; options.multiSelect = false; options.hoverPlayButton = false; }
         if (section.SectionType === 'resumeaudio') { options.fields = ['Name', 'Album', 'ParentName']; options.albumFirst = true; }
+        if (section.ImageType === 'Thumb' && !onNow) { options.preferThumb = true; options.shape = 'backdrop'; }
         if (resume) options.lines = 2;
         if (onNow) Object.assign(options, {fields: ['CurrentProgramName', 'CurrentProgramParentName', 'CurrentProgramTime'],
             shape: 'autooverflow', defaultShape: 'portrait', showCurrentProgramImage: true, showAirDateTime: false,
@@ -464,7 +465,7 @@
                 var result = await provider.loadSections({displayMode: layoutManager.tv ? 'tv' : 'mobile,desktop'});
                 if (!current(ticket) || result.status === 'cancelled') return {status: 'cancelled'};
                 if (result.status !== 'server' || result.sections.some(function(section) { return section.ViewType !== 'cards' ||
-                    section.ScrollDirection !== 'Horizontal' || section.ImageType !== 'Primary' || section.CardSizeOffset !== 0; })) {
+                    section.ScrollDirection !== 'Horizontal' || !['Primary', 'Thumb'].includes(section.ImageType) || section.CardSizeOffset !== 0; })) {
                     flowRows = []; flowLayout = null; flowTicket = null;
                     unwatchClient(); // Legacy refresh ownership remains with homesections/itemsrefresher.
                     return await fallback(ticket, options);
@@ -530,7 +531,7 @@
                 if (response.status === 'cancelled') return {status: 'cancelled'};
                 if (response.status !== 'server' || response.sections.some(function(section) {
                     return section.ViewType !== 'cards' || section.ScrollDirection !== 'Horizontal' ||
-                        section.ImageType !== 'Primary' || section.CardSizeOffset !== 0;
+                        !['Primary', 'Thumb'].includes(section.ImageType) || section.CardSizeOffset !== 0;
                 })) return await fallback(ticket, options);
                 var initial = await Promise.all(response.sections.map(function(section) { return provider.loadItems(section, {limit: 12}); }));
                 if (!current(ticket) || initial.some(function(result) { return result.status === 'cancelled'; })) return {status: 'cancelled'};

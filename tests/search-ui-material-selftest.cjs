@@ -117,6 +117,7 @@ function createSearchFieldModule() {
     modules['./../modules/emby-elements/emby-button/emby-button.js'] = {};
     modules['./../modules/common/servicelocator.js'] = {appHost: {supports() { return false; }}};
     modules['./../modules/approuter.js'] = {default: {getRouteUrl() { return '/item'; }}};
+    modules['ete-recent-search'] = {create() { return {load() {}, hide() {}, pause() {}, destroy() {}}; }};
     const sandbox = {
         console: {log() {}, warn(message) { events.push({name: 'warning', value: message}); }},
         self: {},

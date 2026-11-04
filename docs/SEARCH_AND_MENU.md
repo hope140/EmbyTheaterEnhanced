@@ -1,5 +1,13 @@
 # v0.3.5 搜索与菜单取消合同
 
+## v0.4.14 独立候选：最近搜索
+
+“最近搜索”指服务器记录的媒体条目，不是输入过的关键词。公开 [Emby 4.10.0.40 发行说明](https://github.com/MediaBrowser/Emby.Releases/releases/tag/4.10.0.40)记录了最近搜索数据与性能修复；[Emby 插件 API](https://dev.emby.media/reference/pluginapi/MediaBrowser.Controller.Entities.InternalItemsQuery.html?q=InternalItemsQuery)定义 `WasSearched`，公开[实际请求记录](https://emby.media/community/topic/144128-search-very-slow-3-minute-response/page/8/)给出 `Items?...WasSearched=true&SortBy=DateLastSearched`。REST 参考未完整列出这两个较新的查询参数，因此候选保守地仅在严格版本 `4.10.0.40+` 查询，并在失败、空结果或无效 DTO 时继续原推荐；这不是任意 4.10 服务的兼容保证。
+
+搜索空白时按当前认证用户读取最多 12 条，仅显示同服务器安全条目名称与原路由。输入、暂停、销毁、账号／服务器／client 变更会退休旧响应。清除按钮仅在有结果时出现，调用官方 [DELETE `/Users/{Id}/RecentlySearched`](https://dev.emby.media/reference/RestAPI/UserService/deleteUsersByIdRecentlysearched.html)；[Emby 4.10.0.40 发行记录](https://github.com/MediaBrowser/Emby.Releases/releases/tag/4.10.0.40)说明清除需服务器 `4.10.0.31+`。候选使用更高的读取门槛，故清除也不会发给较旧服务器。清除范围为当前服务器当前用户的全部最近搜索条目；成功才移除显示，失败保留原条目并提示重试，过期结果不回填。搜索结果和推荐的原查询、分类及分页不变。
+
+目前未证实 Emby 对 ETE 搜索何时记录条目；候选只读取服务器已有记录，不另发 `SearchedItems` 写请求。真实 NAS 版本、历史响应、清除确认、桌面／TV 视觉和焦点均待用户服务器实测。下文 v0.3.5 合同为原基线。
+
 用户已接受将原搜索批次和必要菜单取消修正并入尚未发布的v0.3.5；详情候选反馈记录为已测场景USER_REPORTED_NO_ISSUE / MONITORING。旧详情产品来源51ae2e4及其本地目录、ZIP、profile保留，新合批产物独立命名。
 
 ## 实际路由与最小差异

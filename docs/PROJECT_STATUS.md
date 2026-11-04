@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-04 — v0.4.14 首页与最近搜索独立候选
+
+从远端 main `25b8086` 建立独立分支，不包含待用户验收的 [0.4.13 PR #91](https://github.com/hope140/EmbyTheaterEnhanced/pull/91)。首页允许服务器返回的格式安全媒体分区类型使用既有水平 cards 与原分区 Items 接口，Thumb 选用原卡片缩略图路径；按钮、Spotlight、垂直、文字说明等未实现布局仍整体回退。搜索空白时在 4.10.0.40+ 保守读取服务器记录的已搜索条目，提供当前用户的全部历史清除；旧服务器及读取失败保留原推荐。没有改服务器配置、搜索记录写入或播放归属。公开接口证据与未支持范围见[首页合同](SERVER_HOME_SECTIONS.md#v0414-独立候选通用媒体分区)和[搜索合同](SEARCH_AND_MENU.md#v0414-独立候选最近搜索)。
+
+本候选的自动回归、构建来源门禁和 CI 结果以后续准确提交为准；用户 NAS 当前版本和真实首页 DTO、最近搜索返回、前台焦点／视觉尚未验收。0.4.13 语言偏好合入主线后，需从准确 main 复核并集成本分支，再考虑 0.4.14 的版本号、构建、合并与发布；本分支暂不改产品版本或发布。
+
 ## 2026-11-03 — v0.4.12 更新交接与 EOF 定位测试版已发布
 
 [PR #89](https://github.com/hope140/EmbyTheaterEnhanced/pull/89) 已以 `98ea09a22708a7d845f46318df3f3a49272ccac0` 合入 main，保留准确产品来源 `676888a09220a7cc95fd10eee035432f715e471b`；`v0.4.12` Tag 指向该来源。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480) 与[testing 发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)成功，[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12) 为非草稿 Pre-release，五附件公开下载独立核验通过；正式 Latest 仍为 v0.4.0。用户确认独立低版本更新修复包升级到 v0.4.11 的交接验收通过；v0.4.12 组合包的交互安装、真实播放和提前 EOF 现场根因仍未验收。日志只补观察，不提供自动恢复或切线路，见[发行核验](V0412_RELEASE_VERIFICATION.md)。下面的候选条目保留其当时状态。
