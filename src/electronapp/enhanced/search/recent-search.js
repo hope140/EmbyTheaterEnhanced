@@ -29,12 +29,16 @@
             return now && now.api === bound.api && now.user === bound.user && now.server === bound.server && now.auth === bound.auth;
         }
         function retire() { epoch++; if (controller) controller.abort(); controller = null; }
-        function hide() {
+        function hide(restore) {
             retire();
             clearing = null;
             if (root) root.remove(); root = null;
-            if (old) old.hidden = false;
-            old = null;
+            if (restore === false && !old && instance.options) old = instance.options.element.querySelector('.searchSuggestions');
+            if (old) {
+                old.hidden = restore === false;
+                old.style.display = restore === false ? 'none' : '';
+                if (restore !== false) old = null;
+            }
         }
         function mount(items, bound, stamp) {
             var context = instance.options.element, parent = context.querySelector('.searchFieldsInner');
@@ -81,7 +85,7 @@
                     }
                 });
             });
-            old = context.querySelector('.searchSuggestions'); if (old) old.hidden = true;
+            old = context.querySelector('.searchSuggestions'); if (old) { old.hidden = true; old.style.display = 'none'; }
             root = section; parent.appendChild(section);
         }
         function load() {

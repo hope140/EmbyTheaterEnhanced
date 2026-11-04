@@ -166,7 +166,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/search/searchfields.js',
         expectedBaseSha256: '7F051FEA8519DF0233723CAE1635BF13D3AECAA194846B73BEFE3FFA95A82ACC',
         expectedInputSha256: null,
-        expectedOutputSha256: '6AA4CB59FC067730851B086D21E21AA0409A4DF60A3A30AB0E45120CF9670776',
+        expectedOutputSha256: '2D92F9E44958D880AC15941DA67E4EF2D97DF4F86B38F7A96665760A10E61609',
         searchTransform: 'patchSearchFields',
         generatorPaths: Object.freeze([GENERATOR_PATH, SEARCH_GENERATOR_PATH])
     }),

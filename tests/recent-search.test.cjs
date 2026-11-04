@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const recent = require('../src/electronapp/enhanced/search/recent-search.js');
 class Element {
-    constructor(document) { this.ownerDocument = document; this.children = []; this.attributes = {}; this.hidden = false; this.events = {}; this.textContent = ''; }
+    constructor(document) { this.ownerDocument = document; this.children = []; this.attributes = {}; this.hidden = false; this.style = {}; this.events = {}; this.textContent = ''; }
     appendChild(child) { child.parent = this; this.children.push(child); return child; }
     remove() { if (this.parent) this.parent.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; }
     setAttribute(name, value) { this.attributes[name] = value; }
@@ -32,11 +32,18 @@ test('old server keeps legacy recommendations and issues no history request', as
     const f = fixture(); f.setVersion('4.10.0.30'); f.controller.load(); await settle();
     assert.equal(f.calls.length, 0); assert.equal(f.old.hidden, false);
 });
+test('typing hides recently searched and legacy suggestions immediately until the normal search runs', async () => {
+    const f = fixture(); f.controller.load(); await settle();
+    f.controller.hide(false);
+    assert.equal(f.old.hidden, true); assert.equal(f.old.style.display, 'none');
+    assert.equal(f.context.querySelector('.searchFieldsInner').children.length, 1);
+    f.controller.hide(); assert.equal(f.old.hidden, false);
+});
 test('reads fixed per-user recently searched items and renders safe text and route', async () => {
     const f = fixture(); f.controller.load(); await settle();
     assert.equal(f.calls[0].url.route, 'Users/user-1/Items');
     assert.deepEqual(f.calls[0].url.query, {WasSearched: true, SortBy: 'DateLastSearched', SortOrder: 'Descending', Limit: 12, Recursive: true, ImageTypeLimit: 1, EnableImageTypes: 'Primary,Thumb'});
-    assert.equal(f.old.hidden, true);
+    assert.equal(f.old.hidden, true); assert.equal(f.old.style.display, 'none');
     const list = f.context.querySelector('.eteRecentSearch');
     // The mock does not parse classes; inspect rendered tree directly.
     const section = f.context.querySelector('.searchFieldsInner').children[1];
