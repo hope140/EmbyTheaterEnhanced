@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-04 — v0.4.13 语言偏好候选
+
+以 2026-11-04 远端 main `25b8086` 为基线，独立分支准备音轨首选语言多选与明确排序，以及现有字幕多选的顺序调整。两页继续用 Emby 用户配置的 `AudioLanguagePreference`／`SubtitleLanguagePreference` 逗号分隔字段，语言代码来自服务器 `getCultures()`；未修改时保存沿用新取回的服务端原值，未知代码保留。原“播放默认音轨”“记住音轨／字幕选择”和清除记轨字段及接口保持，播放轨道由服务器选择。固定旧 Emby 弹层没有新版网页的重排控件，因此在已选列表提供键鼠和遥控可聚焦的上／下按钮。版本仅在候选分支设为 0.4.13，未合 main、建 Tag 或发布。验证层级与现场验收步骤见[候选核验](V0413_LANGUAGE_PREFERENCES.md)。
+
 ## 2026-11-03 — v0.4.12 更新交接与 EOF 定位测试版已发布
 
 [PR #89](https://github.com/hope140/EmbyTheaterEnhanced/pull/89) 已以 `98ea09a22708a7d845f46318df3f3a49272ccac0` 合入 main，保留准确产品来源 `676888a09220a7cc95fd10eee035432f715e471b`；`v0.4.12` Tag 指向该来源。[标准发行构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480) 与[testing 发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)成功，[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12) 为非草稿 Pre-release，五附件公开下载独立核验通过；正式 Latest 仍为 v0.4.0。用户确认独立低版本更新修复包升级到 v0.4.11 的交接验收通过；v0.4.12 组合包的交互安装、真实播放和提前 EOF 现场根因仍未验收。日志只补观察，不提供自动恢复或切线路，见[发行核验](V0412_RELEASE_VERIFICATION.md)。下面的候选条目保留其当时状态。

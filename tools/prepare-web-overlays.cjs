@@ -40,11 +40,27 @@ const SUBTITLE_LANGUAGE_GENERATOR_PATH = 'tools/patch-subtitle-language-preferen
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
     Object.freeze({
+        id: 'audio-language-preference-script', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/settings/playback.js', inputPath: null,
+        runtimePath: 'electronapp/www/settings/playback.js',
+        expectedBaseSha256: 'B7F2CADCD158B2956B4E6997A010AC9A193BFDA7597E79DBBB8B575C43B1D75B', expectedInputSha256: null,
+        expectedOutputSha256: '3BB4E5EF5E8B4A5591E95EB1B48D18F933FF3F2C7299DC8D1230D76F476D7B7B',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
+    }),
+    Object.freeze({
+        id: 'audio-language-preference-template', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/settings/playback.html', inputPath: null,
+        runtimePath: 'electronapp/www/settings/playback.html',
+        expectedBaseSha256: '53A2D7E8F55EE35C42F7C9F1F16033F8D3A8472E3E9AA51CF149D3F859C562FE', expectedInputSha256: null,
+        expectedOutputSha256: 'B714A5E821277512EC8D17E8371AAF67945893C9759AE2730875C8F74503EA5E',
+        generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
+    }),
+    Object.freeze({
         id: 'subtitle-language-preference-script', mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/settings/subtitles.js', inputPath: null,
         runtimePath: 'electronapp/www/settings/subtitles.js',
         expectedBaseSha256: '6D087C280019FC13D5B5062F760E1757FD203AFDC2A8207CC28F6B4CC38A1B15', expectedInputSha256: null,
-        expectedOutputSha256: 'C6B0916FFFAA1E58D13AF389725C5B801D8D4CEC4D0678724CE38B7BDE56F605',
+        expectedOutputSha256: '6D855A1704126F796B2FD7576B153AA57C96BC44F79D333A52E49F894A112668',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -52,7 +68,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/subtitles.html', inputPath: null,
         runtimePath: 'electronapp/www/settings/subtitles.html',
         expectedBaseSha256: '70018E65B8FBFDEF3128F93683CB2BF424DBE4BA38A7F0B7577F529002EBE536', expectedInputSha256: null,
-        expectedOutputSha256: '38763CA7F9FFC7396904EB05A353540D58FEE1E6CB3FE11224FE9B3DB7E9E3DC',
+        expectedOutputSha256: 'FBAEC6D4F6AAFB021332269B2338DD47B66B799EB8CA4FF53302E3DF667865DF',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -402,6 +418,8 @@ function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
     if (contract.id === 'subtitle-language-preference-script') return {base, input: Buffer.from(subtitleLanguagePreference.patchScript(base.toString('utf8')), 'utf8')};
     if (contract.id === 'subtitle-language-preference-template') return {base, input: Buffer.from(subtitleLanguagePreference.patchHtml(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'audio-language-preference-script') return {base, input: Buffer.from(subtitleLanguagePreference.patchPlaybackScript(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'audio-language-preference-template') return {base, input: Buffer.from(subtitleLanguagePreference.patchPlaybackHtml(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-multiselect') return {base, input: Buffer.from(advanceDownload.patchMultiSelect(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-menu') return {base, input: Buffer.from(advanceDownload.patchItemContextMenu(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};

@@ -13,19 +13,29 @@ const template = patch.patchHtml(fs.readFileSync(path.join(root, 'vendor/web-sna
 
 function harness(preference) {
     const controls = new Map();
+    function element() {
+        const classes = new Set();
+        let children = [];
+        const events = new Map();
+        return {
+            style: {},
+            classList: {add(...names) { names.forEach(name => classes.add(name)); }, remove(name) { classes.delete(name); }, toggle(name, force) { if (force) classes.add(name); else classes.delete(name); }, contains(name) { return classes.has(name); }},
+            set textContent(value) { this._text = value; children = []; },
+            get textContent() { return this._text; },
+            get children() { return children; },
+            appendChild(child) { children.push(child); },
+            setAttribute() {},
+            addEventListener(type, callback) { events.set(type, callback); },
+            dispatchEvent(event) { if (!event.target) event.target = this; if (events.has(event.type)) events.get(event.type).call(this, event); },
+            querySelector(selector) { return children.find(child => child.classList.contains(selector.slice(1))); },
+            querySelectorAll(selector) { return children.filter(child => child.classList.contains(selector.slice(1))); },
+            focus() { this.focused = true; },
+            closest() { return container; }
+        };
+    }
     function control(selector) {
         if (!controls.has(selector)) {
-            const events = new Map();
-            controls.set(selector, {
-                value: '', checked: false,
-                classList: {add() {}, remove() {}},
-                addEventListener(type, callback) { events.set(type, callback); },
-                dispatchEvent(event) {
-                    if (!event.target) event.target = this;
-                    if (events.has(event.type)) events.get(event.type).call(this, event);
-                },
-                closest() { return container; }
-            });
+            controls.set(selector, Object.assign(element(), {value: '', checked: false}));
         }
         return controls.get(selector);
     }
@@ -44,6 +54,10 @@ function harness(preference) {
     select.choose = function (values) {
         this.values = values;
         this.dispatchEvent({type: 'change', target: this});
+    };
+    select.setValues = function (values, trigger) {
+        this.values = values;
+        if (trigger) this.dispatchEvent({type: 'change', target: this});
     };
     const user = {Id: 'user', Configuration: {
         SubtitleLanguagePreference: preference, SubtitleMode: 'Smart', RememberSubtitleSelections: true
@@ -96,6 +110,7 @@ function harness(preference) {
             }
         },
         CustomEvent: class { constructor(type) { this.type = type; } },
+        document: {createElement: element},
         Intl, Promise, console
     };
     // The dependency count follows the frozen AMD module contract.
@@ -113,8 +128,21 @@ function harness(preference) {
 
 test('template enables the existing Emby multi-select control', () => {
     assert.match(template, /class="selectSubtitleLanguage" multiple label=/);
+    assert.match(template, /class="ete-language-order" role="list"/);
     assert.match(template, /class="selectSubtitlePlaybackMode"/);
     assert.match(template, /class="chkRememberSubtitles"/);
+});
+
+test('selected subtitle order moves with focusable buttons and preserves unknown values', async () => {
+    const h = harness('zz,en,ja');
+    await h.open();
+    const list = h.control('.ete-language-order');
+    assert.deepEqual(list.children.map(row => row.children[0].textContent), ['1. zz', '2. English', '3. Japanese']);
+    list.children[1].querySelector('.ete-move-up').dispatchEvent({type: 'click'});
+    assert.deepEqual(Array.from(h.select.getValues()), ['en', 'zz', 'ja']);
+    assert.equal(h.control('.ete-language-order').children[0].querySelector('.ete-move-down').focused, true);
+    await h.submit();
+    assert.equal(h.writes.at(-1).SubtitleLanguagePreference, 'en,zz,ja');
 });
 
 test('opening and leaving settings preserves ordered multi-language configuration', async () => {

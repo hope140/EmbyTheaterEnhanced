@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-04 — v0.4.13 语言偏好实现
+
+从远端 main `25b8086` 建独立分支，对照 2026-11-04 官方 Emby 网页[播放设置](https://app.emby.media/settings/playback.html)、[字幕设置](https://app.emby.media/settings/subtitles.html)及对应脚本的用户配置字段、逗号连接与重排标记。原 ETE 冻结 `playback.js` 只读写单个音轨语言，现有字幕多选有序保存但无显式重排入口；旧 ActionSheet 不识别官方新版 `data-reordering`。复用原 `emby-select` 多选，用已选列表的原生按钮调整顺序；只在语言值实际改变时改写该配置字段。固定源哈希 overlay、新 VM 回归和候选验收文档随分支提交，验证结果以后续准确 SHA 回执为准。未触及 PlaybackManager、Native 或服务器实例。
+
 ## 2026-11-03 — v0.4.12 发布后文档对齐
 
 复核 [v0.4.12 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)、[标准构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41562289480)、[发布运行](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41567001625)及正式 Latest：PR #89 已合 main，Tag／来源为 `676888a09220a7cc95fd10eee035432f715e471b`，五附件公开并校验通过，正式 Latest 为 v0.4.0。补齐首页下载入口、文档索引、用户指南、变更记录、项目状态、两版发行核验与更新／诊断技术说明；旧候选段落标明是发布前记录，不改写其当时证据。用户确认独立更新修复包交接验收；不扩大为组合版交互安装或现场提前 EOF 验收。此项仅整理文档，未改产品源码、版本、Tag、Release 或正式 Latest；准确文档检查与 PR 结果见后续提交／CI。
