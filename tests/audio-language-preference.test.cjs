@@ -81,7 +81,8 @@ function harness(preference) {
 }
 
 test('audio preference uses the existing multi-select and visible order controls', () => {
-    assert.match(template, /class="selectAudioLanguage" multiple data-reordering="true" data-virtualscroll="false" label=/);
+    assert.match(template, /class="selectAudioLanguage" multiple data-reordering="true" label=/);
+    assert.doesNotMatch(template, /class="selectAudioLanguage"[^>]*data-virtualscroll="false"/);
     assert.doesNotMatch(template, /ete-language-order/);
     assert.match(template, /class="chkRememberAudioTracks"/);
 });

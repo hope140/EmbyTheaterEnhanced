@@ -15,7 +15,7 @@ const selectSource = reorder.patchSelect(cancel.patchSelect(fs.readFileSync(path
 function helpers() {
     const exports = {};
     const instrumented = actionSource.replace('function getListOptions(){',
-        '_exports.__eteTest={eteReorderItems:eteReorderItems,eteMoveSelection:eteMoveSelection,eteSyncDrop:eteSyncDrop,eteSetupReorderRows:eteSetupReorderRows,getListOptions:getListOptions};function getListOptions(){');
+        '_exports.__eteTest={eteReorderItems:eteReorderItems,eteMoveSelection:eteMoveSelection,eteSyncDrop:eteSyncDrop,eteDecorateReorderRow:eteDecorateReorderRow,eteSetupReorderRows:eteSetupReorderRows,getListOptions:getListOptions};function getListOptions(){');
     assert.notEqual(instrumented, actionSource);
     vm.runInNewContext(instrumented, {
         require() {},
@@ -51,6 +51,8 @@ test('only explicit multi-select opts in to ActionSheet reordering', () => {
     assert.equal(ordinary.options.dragHandle, false);
     assert.equal(ordered.options.draggable, true);
     assert.equal(ordered.options.dragHandle, true);
+    assert.match(actionSource, /itemsContainer\.onUpdateElement=function\(row,item\)\{eteDecorateReorderRow\(options,itemsContainer,row,item\)\}/);
+    assert.doesNotMatch(actionSource, /options\.enableVirtualScroller=!1/);
 });
 
 test('popup selected values sort first, keep unknown codes, and use full-list paging', async () => {
@@ -108,7 +110,7 @@ test('each selected row button moves its own language, including the last render
         getAttribute() { return id; }
     }));
     const nestedContent = {insertBefore(controls, handle) { this.controls = controls; this.before = handle; }};
-    const nestedHandle = {parentNode: nestedContent, setAttribute() {}};
+    const nestedHandle = {parentNode: nestedContent, classList: {remove() {}}, setAttribute() {}};
     rows[0].querySelector = selector => selector === '.listViewDragHandle' ? nestedHandle : null;
     const container = {
         getItemSelector() { return '.listItem'; },
@@ -121,6 +123,45 @@ test('each selected row button moves its own language, including the last render
     rows[1].controls.children[0].click({preventDefault() {}, stopPropagation() {}});
     assert.deepEqual(Array.from(options.selectedValuesClone), ['ja', 'en']);
     assert.equal(container.refreshes, 1);
+});
+
+test('virtual row recycling removes stale controls and drag state', () => {
+    const {eteDecorateReorderRow} = helpers();
+    const classes = new Set();
+    const handleClasses = new Set();
+    const content = {controls: null, insertBefore(controls) { this.controls = controls; }};
+    const handle = {parentNode: content, classList: {
+        add(name) { handleClasses.add(name); }, remove(name) { handleClasses.delete(name); }
+    }, setAttribute() {}};
+    const row = {
+        attributes: new Map(),
+        classList: {
+            add(...names) { names.forEach(name => classes.add(name)); },
+            remove(...names) { names.forEach(name => classes.delete(name)); },
+            contains(name) { return classes.has(name); }
+        },
+        querySelector(selector) {
+            if (selector === '.listViewDragHandle') return handle;
+            return selector === '.ete-reorder-controls' ? content.controls : null;
+        },
+        setAttribute(name, value) { this.attributes.set(name, value); },
+        getAttribute(name) { return this.attributes.get(name) || null; },
+        hasAttribute(name) { return this.attributes.has(name); },
+        removeAttribute(name) { this.attributes.delete(name); }
+    };
+    const options = {selectedValuesClone: ['en', 'ja']};
+    eteDecorateReorderRow(options, {}, row, {Id: 'en', Name: 'English'});
+    assert.equal(row.attributes.get('draggable'), 'true');
+    assert.equal(content.controls.children.length, 2);
+    content.controls.remove = () => { content.controls = null; };
+    eteDecorateReorderRow(options, {}, row, {Id: 'zz', Name: 'Other'});
+    assert.equal(row.attributes.has('draggable'), false);
+    assert.equal(classes.has('ete-reorder-selected'), false);
+    assert.equal(handleClasses.has('hide'), true);
+    eteDecorateReorderRow(options, {}, row, {Id: 'ja', Name: 'Japanese'});
+    assert.equal(row.attributes.get('data-ete-reorder-id'), 'ja');
+    assert.equal(content.controls.children.length, 2);
+    assert.equal(handleClasses.has('hide'), false);
 });
 
 test('source transforms reject a changed or duplicate frozen anchor', () => {

@@ -127,7 +127,8 @@ function harness(preference) {
 }
 
 test('template enables the existing Emby multi-select control', () => {
-    assert.match(template, /class="selectSubtitleLanguage" multiple data-reordering="true" data-virtualscroll="false" label=/);
+    assert.match(template, /class="selectSubtitleLanguage" multiple data-reordering="true" label=/);
+    assert.doesNotMatch(template, /class="selectSubtitleLanguage"[^>]*data-virtualscroll="false"/);
     assert.doesNotMatch(template, /ete-language-order/);
     assert.match(template, /class="selectSubtitlePlaybackMode"/);
     assert.match(template, /class="chkRememberSubtitles"/);

@@ -54,7 +54,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/playback.html', inputPath: null,
         runtimePath: 'electronapp/www/settings/playback.html',
         expectedBaseSha256: '53A2D7E8F55EE35C42F7C9F1F16033F8D3A8472E3E9AA51CF149D3F859C562FE', expectedInputSha256: null,
-        expectedOutputSha256: '58FEC4127B46C8667E8B8DA6F39EAE91AD246D23E8E9EE4FC8D008AE7C0209C8',
+        expectedOutputSha256: 'FB205FAA55211D8B5ABD56AA5CD0EDB5A2B548E34E5EEE58219AEDDD2688A03F',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -70,7 +70,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/subtitles.html', inputPath: null,
         runtimePath: 'electronapp/www/settings/subtitles.html',
         expectedBaseSha256: '70018E65B8FBFDEF3128F93683CB2BF424DBE4BA38A7F0B7577F529002EBE536', expectedInputSha256: null,
-        expectedOutputSha256: '8D457DC13D8D43F50483933AE80F2F40A3D0E294095235A37316A0D536C8596E',
+        expectedOutputSha256: '65226A06ECDA727A80BF8851BABDC268244FB1C0DC1981A63EC67F822B1B2BA7',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -127,7 +127,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.css',
         expectedBaseSha256: '5A4D6A7C89F9CF86FF3D5FB4DBB4ED4B53982DF0883CAA19C2E29F164AC7E39D',
         expectedInputSha256: null,
-        expectedOutputSha256: '3808923618DAC1968456C191111D5725B8DC49DB8CD96FDA795679C02489B9C6',
+        expectedOutputSha256: 'C5C5D7FEB3E42580900C6151C0664259A8E8B5FC894CAF46AA201CE2CAAD5D9D',
         generatorPaths: Object.freeze([GENERATOR_PATH, ACTIONSHEET_LAYOUT_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -220,7 +220,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.js',
         expectedBaseSha256: '0AD2BFAD1AD2B694EC07C693A44F0EDFBD4EB76121C8939F0E5DE27E0ABEFE67',
         expectedInputSha256: null,
-        expectedOutputSha256: 'BD913C43CA1EA42A1FC50A9B47E0A391C655F48D541DEDA8941819958801270A',
+        expectedOutputSha256: 'B5548076D91B275B62BBB29036434936F5296B30CD764790E8FF7873A92A7673',
         menuTransform: 'patchActionSheet',
         generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH, ACTIONSHEET_REORDER_GENERATOR_PATH])
     }),

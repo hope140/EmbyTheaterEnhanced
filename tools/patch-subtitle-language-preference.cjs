@@ -9,7 +9,7 @@ function once(source, before, after) {
 
 function patchHtml(source) {
     return once(source, 'class="selectSubtitleLanguage" label=',
-        'class="selectSubtitleLanguage" multiple data-reordering="true" data-virtualscroll="false" label=');
+        'class="selectSubtitleLanguage" multiple data-reordering="true" label=');
 }
 
 // Frozen EmbySelect supports multiple values. Its ActionSheet reorder extension
@@ -69,7 +69,7 @@ function patchScript(source) {
 
 function patchPlaybackHtml(source) {
     return once(source, 'class="selectAudioLanguage" label=',
-        'class="selectAudioLanguage" multiple data-reordering="true" data-virtualscroll="false" label=');
+        'class="selectAudioLanguage" multiple data-reordering="true" label=');
 }
 
 function patchPlaybackScript(source) {

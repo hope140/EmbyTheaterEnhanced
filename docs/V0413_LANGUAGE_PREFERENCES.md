@@ -18,4 +18,4 @@
 
 ## 证据边界
 
-本分支运行 Node VM 设置页回归、Web overlay 来源校验和公开源码检查；另在 Chromium 中加载准确生成的 ActionSheet JS、Material Icons 字体，以隔离的页面与 ItemsContainer 夹具检查音轨／字幕弹窗、鼠标和键盘按钮、重复排序、取消选择后的焦点、滚动及未启用排序的普通弹窗。拖放只通过与旧 ItemsContainer 相同的 `itemdrop` 事件检查更新合同；隔离夹具不等于实际 Windows 客户端或真实遥控器。Windows 测试包、安装包解包回比、真实服务器读回与播放按准确提交另行记录；构建通过不替代现场验收。合并 main、建 Tag、发布 testing 均待单独授权，不发布正式版。
+本分支运行 Node VM 设置页回归、Web overlay 来源校验和公开源码检查。隔离 Chromium 页面加载冻结版的 ActionSheet、EmbySelect、ItemsContainer、VirtualScroller 和 DialogHelper 组件及本版补丁，复测已选与普通语言行同高、鼠标排序、取消选择、滚动后的行复用及普通多选弹窗；键盘按钮移动后的焦点需等列表重绘完成再恢复。音轨与字幕共用同一弹窗扩展，页面保存分别由 VM 回归覆盖。该页面使用模拟语言数据和服务，未验证 Windows 原生窗口、真实遥控、真实服务端、队列实际操作或拖拽手势；拖放仅检查旧 ItemsContainer 的 `itemdrop` 事件合同。弹窗打开时原 DialogHelper 的全屏容器会接收首次外部点击并关闭弹窗，首次点击不传给背后的设置或窗口按钮；隔离复现中再次点击可触发按钮。若弹窗关闭后按钮仍失效，需要现场录屏或日志继续定位。Windows 测试包、安装包解包回比、真实服务器读回与播放按准确提交另行记录；构建通过不替代现场验收。合并 main、建 Tag、发布 testing 均待单独授权，不发布正式版。

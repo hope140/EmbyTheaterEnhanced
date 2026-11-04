@@ -29,6 +29,7 @@ const helper = `function eteReorderItems(options,query){
     var values=options.selectedValuesClone,oldIndex=values.indexOf(id);
     if(oldIndex<0||newIndex<0||newIndex>=values.length||newIndex===oldIndex)return;
     values.splice(oldIndex,1);values.splice(newIndex,0,id);
+    options._eteReorderVersion=(options._eteReorderVersion||0)+1;
     options._eteReorderFocus=direction?{id:id,direction:direction}:null;
     itemsContainer.refreshItems();
 }function eteSyncDrop(options,itemsContainer){
@@ -36,21 +37,29 @@ const helper = `function eteReorderItems(options,query){
     for(var i=0;i<rows.length;i++)ids.push(rows[i].getAttribute("data-ete-reorder-id"));
     if(ids.length!==options.selectedValuesClone.length)return;
     options.selectedValuesClone=ids;
+    options._eteReorderVersion=(options._eteReorderVersion||0)+1;
     itemsContainer.refreshItems();
-}function eteSetupReorderRows(options,itemsContainer){
-    var rows=itemsContainer.querySelectorAll(itemsContainer.getItemSelector());
+}function eteDecorateReorderRow(options,itemsContainer,row,item){
     var selected=options.selectedValuesClone;
-    for(var i=0;i<rows.length;i++){
-        let row=rows[i],item=itemsContainer.getItemFromElement(row);
-        if(!item)continue;
-        row.setAttribute("data-ete-reorder-id",item.Id);
-        if(selected.indexOf(item.Id)<0){
-            row.removeAttribute("draggable");
-            row.classList.remove("drop-target","ordered-drop-target-y");
-            var unused=row.querySelector(".listViewDragHandle");if(unused)unused.classList.add("hide");
-            continue;
-        }
-        row.classList.add("ete-reorder-selected");
+    if(!item)return;
+    var chosen=selected.indexOf(item.Id)>=0,version=options._eteReorderVersion||0;
+    var previous=row.querySelector(".ete-reorder-controls");
+    var handle=row.querySelector(".listViewDragHandle");
+    if(row.getAttribute("data-ete-reorder-id")===item.Id&&row._eteReorderVersion===version&&
+       row.classList.contains("ete-reorder-selected")===chosen&&row.hasAttribute("draggable")===chosen&&
+       !!previous===chosen&&(!handle||handle.classList.contains("hide")===!chosen))return;
+    if(previous)previous.remove();
+    row._eteReorderVersion=version;
+    row.setAttribute("data-ete-reorder-id",item.Id);
+    if(!chosen){
+        row.removeAttribute("draggable");
+        row.classList.remove("drop-target","ordered-drop-target-y","ete-reorder-selected");
+        if(handle)handle.classList.add("hide");
+        return;
+    }
+    row.setAttribute("draggable","true");
+    row.classList.add("drop-target","ordered-drop-target-y","ete-reorder-selected");
+    if(handle)handle.classList.remove("hide");
         var controls=document.createElement("span");controls.classList.add("ete-reorder-controls");
         [-1,1].forEach(function(direction){
             var button=document.createElement("button",{is:"emby-button"});
@@ -65,18 +74,22 @@ const helper = `function eteReorderItems(options,query){
             });
             controls.appendChild(button);
         });
-        var handle=row.querySelector(".listViewDragHandle");
         if(handle){handle.setAttribute("title",_globalize.default.translate("DragDropToReorder"));handle.parentNode.insertBefore(controls,handle)}
         else row.appendChild(controls);
-    }
     var pending=options._eteReorderFocus;
-    if(pending){
-        options._eteReorderFocus=null;
-        for(var j=0;j<rows.length;j++)if(rows[j].getAttribute("data-ete-reorder-id")===pending.id){
-            var focus=pending.direction===0?rows[j].querySelector("input"):rows[j].querySelector(pending.direction<0?".ete-reorder-up":".ete-reorder-down");
-            if(focus&&focus.disabled)focus=rows[j].querySelector(pending.direction<0?".ete-reorder-down":".ete-reorder-up");
-            if(focus)focus.focus();break;
-        }
+    if(pending&&pending.id===item.Id)setTimeout(function(){
+        if(options._eteReorderFocus!==pending)return;
+        var rows=itemsContainer.querySelectorAll(itemsContainer.getItemSelector()),current=null;
+        for(var j=0;j<rows.length;j++)if(rows[j].getAttribute("data-ete-reorder-id")===pending.id){current=rows[j];break}
+        if(!current)return;
+        var focus=pending.direction===0?current.querySelector("input"):current.querySelector(pending.direction<0?".ete-reorder-up":".ete-reorder-down");
+        if(focus&&focus.disabled)focus=current.querySelector(pending.direction<0?".ete-reorder-down":".ete-reorder-up");
+        if(focus){focus.focus();options._eteReorderFocus=null}
+    },250);
+}function eteSetupReorderRows(options,itemsContainer){
+    var rows=itemsContainer.querySelectorAll(itemsContainer.getItemSelector());
+    for(var i=0;i<rows.length;i++){
+        var row=rows[i];eteDecorateReorderRow(options,itemsContainer,row,itemsContainer.getItemFromElement(row));
     }
 }`;
 
@@ -85,11 +98,11 @@ function patchActionSheet(source) {
     source = once(source, 'draggable:!1,multiSelect:!1',
         'draggable:!!options.enableReordering,dragHandle:!!options.enableReordering,multiSelect:!1');
     source = once(source, 'show:function(options){var dialogOptions=',
-        'show:function(options){if(options.enableReordering){options=Object.assign({},options);options.enableVirtualScroller=!1;options._eteGetItems=options.getItems;options.getItems=function(query){return eteReorderItems(options,query||{})}}var dialogOptions=');
+        'show:function(options){if(options.enableReordering){options=Object.assign({},options);options._eteGetItems=options.getItems;options.getItems=function(query){return eteReorderItems(options,query||{})}}var dialogOptions=');
     source = once(source, 'dlg.classList.add("actionSheet"),',
         'dlg.classList.add("actionSheet"),options.enableReordering&&dlg.classList.add("ete-reorder-actionsheet"),');
     source = once(source, 'e.checked&&options.selectedValuesClone.push(itemValue)}),itemsContainer.afterRefresh=',
-        'e.checked&&options.selectedValuesClone.push(itemValue),options.enableReordering&&(options._eteReorderFocus={id:itemValue,direction:0},Promise.resolve().then(function(){itemsContainer.refreshItems()}))}),options.enableReordering&&itemsContainer.addEventListener("itemdrop",function(e){if(e.target.getAttribute("data-ete-reorder-id"))eteSyncDrop(options,itemsContainer)}),itemsContainer.afterRefresh=');
+        'e.checked&&options.selectedValuesClone.push(itemValue),options.enableReordering&&(options._eteReorderVersion=(options._eteReorderVersion||0)+1,options._eteReorderFocus={id:itemValue,direction:0},Promise.resolve().then(function(){itemsContainer.refreshItems()}))}),options.enableReordering&&(itemsContainer.onUpdateElement=function(row,item){eteDecorateReorderRow(options,itemsContainer,row,item)},itemsContainer.addEventListener("itemdrop",function(e){var id=e.target.getAttribute("data-ete-reorder-id");if(id){if(itemsContainer.virtualScroller)eteMoveSelection(options,itemsContainer,id,Math.min(e.detail.newIndex,options.selectedValuesClone.length-1),0);else eteSyncDrop(options,itemsContainer)}})),itemsContainer.afterRefresh=');
     source = once(source, '_layoutmanager.default.tv&&itemsContainer.insertAdjacentHTML("afterbegin",previewHtml)},new Promise(function(resolve,reject){dlg.addEventListener("opened",resolve)})),',
         '_layoutmanager.default.tv&&itemsContainer.insertAdjacentHTML("afterbegin",previewHtml),options.enableReordering&&eteSetupReorderRows(options,itemsContainer)},new Promise(function(resolve,reject){dlg.addEventListener("opened",resolve)})),');
     return source;
