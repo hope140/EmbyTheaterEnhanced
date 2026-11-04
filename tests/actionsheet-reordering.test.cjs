@@ -107,6 +107,9 @@ test('each selected row button moves its own language, including the last render
         appendChild(child) { this.controls = child; },
         getAttribute() { return id; }
     }));
+    const nestedContent = {insertBefore(controls, handle) { this.controls = controls; this.before = handle; }};
+    const nestedHandle = {parentNode: nestedContent, setAttribute() {}};
+    rows[0].querySelector = selector => selector === '.listViewDragHandle' ? nestedHandle : null;
     const container = {
         getItemSelector() { return '.listItem'; },
         querySelectorAll() { return rows; },
@@ -114,6 +117,7 @@ test('each selected row button moves its own language, including the last render
         refreshItems() { this.refreshes = (this.refreshes || 0) + 1; }
     };
     eteSetupReorderRows(options, container);
+    assert.equal(nestedContent.controls.children.length, 2);
     rows[1].controls.children[0].click({preventDefault() {}, stopPropagation() {}});
     assert.deepEqual(Array.from(options.selectedValuesClone), ['ja', 'en']);
     assert.equal(container.refreshes, 1);

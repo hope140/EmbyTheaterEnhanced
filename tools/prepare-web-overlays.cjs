@@ -220,7 +220,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.js',
         expectedBaseSha256: '0AD2BFAD1AD2B694EC07C693A44F0EDFBD4EB76121C8939F0E5DE27E0ABEFE67',
         expectedInputSha256: null,
-        expectedOutputSha256: 'DE9925E086E069FE11C7DD87B7DDB6740B0804634D8D4E6EC6C91E63C5F4B7D1',
+        expectedOutputSha256: 'BD913C43CA1EA42A1FC50A9B47E0A391C655F48D541DEDA8941819958801270A',
         menuTransform: 'patchActionSheet',
         generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH, ACTIONSHEET_REORDER_GENERATOR_PATH])
     }),

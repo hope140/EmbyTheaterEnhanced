@@ -66,7 +66,7 @@ const helper = `function eteReorderItems(options,query){
             controls.appendChild(button);
         });
         var handle=row.querySelector(".listViewDragHandle");
-        if(handle){handle.setAttribute("title",_globalize.default.translate("DragDropToReorder"));row.insertBefore(controls,handle)}
+        if(handle){handle.setAttribute("title",_globalize.default.translate("DragDropToReorder"));handle.parentNode.insertBefore(controls,handle)}
         else row.appendChild(controls);
     }
     var pending=options._eteReorderFocus;
