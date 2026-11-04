@@ -76,7 +76,7 @@ test('repeat keyboard moves update only the popup clone and restore focus on ref
     eteMoveSelection(options, container, 'zh', 1, -1);
     eteMoveSelection(options, container, 'zh', 0, -1);
     assert.deepEqual(Array.from(options.selectedValuesClone), ['zh', 'en', 'ja']);
-    assert.deepEqual({...options._eteReorderFocus}, {id: 'zh', direction: -1});
+    assert.deepEqual({...options._eteReorderFocus}, {id: 'zh', direction: -1, handle: false});
     assert.equal(container.refreshes, 2);
     eteMoveSelection(options, container, 'zh', -1, -1);
     assert.equal(container.refreshes, 2);
@@ -110,7 +110,7 @@ test('each selected row button moves its own language, including the last render
         getAttribute() { return id; }
     }));
     const nestedContent = {insertBefore(controls, handle) { this.controls = controls; this.before = handle; }};
-    const nestedHandle = {parentNode: nestedContent, classList: {remove() {}}, setAttribute() {}};
+    const nestedHandle = {parentNode: nestedContent, classList: {add() {}, remove() {}}, setAttribute() {}};
     rows[0].querySelector = selector => selector === '.listViewDragHandle' ? nestedHandle : null;
     const container = {
         getItemSelector() { return '.listItem'; },
@@ -132,7 +132,7 @@ test('virtual row recycling removes stale controls and drag state', () => {
     const content = {controls: null, insertBefore(controls) { this.controls = controls; }};
     const handle = {parentNode: content, classList: {
         add(name) { handleClasses.add(name); }, remove(name) { handleClasses.delete(name); }
-    }, setAttribute() {}};
+    }, setAttribute() {}, removeAttribute() {}};
     const row = {
         attributes: new Map(),
         classList: {
@@ -150,18 +150,23 @@ test('virtual row recycling removes stale controls and drag state', () => {
         removeAttribute(name) { this.attributes.delete(name); }
     };
     const options = {selectedValuesClone: ['en', 'ja']};
-    eteDecorateReorderRow(options, {}, row, {Id: 'en', Name: 'English'});
+    const container = {refreshItems() { this.refreshes = (this.refreshes || 0) + 1; }};
+    eteDecorateReorderRow(options, container, row, {Id: 'en', Name: 'English'});
     assert.equal(row.attributes.get('draggable'), 'true');
     assert.equal(content.controls.children.length, 2);
     content.controls.remove = () => { content.controls = null; };
-    eteDecorateReorderRow(options, {}, row, {Id: 'zz', Name: 'Other'});
+    eteDecorateReorderRow(options, container, row, {Id: 'zz', Name: 'Other'});
     assert.equal(row.attributes.has('draggable'), false);
     assert.equal(classes.has('ete-reorder-selected'), false);
     assert.equal(handleClasses.has('hide'), true);
-    eteDecorateReorderRow(options, {}, row, {Id: 'ja', Name: 'Japanese'});
+    eteDecorateReorderRow(options, container, row, {Id: 'ja', Name: 'Japanese'});
     assert.equal(row.attributes.get('data-ete-reorder-id'), 'ja');
     assert.equal(content.controls.children.length, 2);
     assert.equal(handleClasses.has('hide'), false);
+    handle.onkeydown({key: 'ArrowUp', preventDefault() {}, stopPropagation() {}});
+    assert.deepEqual(Array.from(options.selectedValuesClone), ['ja', 'en']);
+    assert.equal(options._eteReorderFocus.handle, true);
+    assert.equal(container.refreshes, 1);
 });
 
 test('source transforms reject a changed or duplicate frozen anchor', () => {

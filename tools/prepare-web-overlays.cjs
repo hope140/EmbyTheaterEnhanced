@@ -127,7 +127,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.css',
         expectedBaseSha256: '5A4D6A7C89F9CF86FF3D5FB4DBB4ED4B53982DF0883CAA19C2E29F164AC7E39D',
         expectedInputSha256: null,
-        expectedOutputSha256: 'C5C5D7FEB3E42580900C6151C0664259A8E8B5FC894CAF46AA201CE2CAAD5D9D',
+        expectedOutputSha256: '771E26E3BC3DB08D4E19EF502C382A2C3FF0119EDB8E4E51F5488555FF7B4C9D',
         generatorPaths: Object.freeze([GENERATOR_PATH, ACTIONSHEET_LAYOUT_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -208,7 +208,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/emby-elements/emby-select/emby-select.js',
         expectedBaseSha256: '5A26DED88A18643FD189FDF4E367B1AE6B37B24664C75D55207192F58C5C6CD2',
         expectedInputSha256: null,
-        expectedOutputSha256: 'C63B71294BF7CA9D19337C14844C39A3F4F3C5C52C260CF50CAFE00A270D1C55',
+        expectedOutputSha256: '09BBFFB34E46454B80B5C34DCE7D485241AACE062F9A0E123C9F5B80A4CD1F06',
         menuTransform: 'patchSelect',
         generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH, ACTIONSHEET_REORDER_GENERATOR_PATH])
     }),
@@ -220,7 +220,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.js',
         expectedBaseSha256: '0AD2BFAD1AD2B694EC07C693A44F0EDFBD4EB76121C8939F0E5DE27E0ABEFE67',
         expectedInputSha256: null,
-        expectedOutputSha256: 'B5548076D91B275B62BBB29036434936F5296B30CD764790E8FF7873A92A7673',
+        expectedOutputSha256: '5D507730DBCAD1CF1A516AD6EE42EB9BFF79A7060AC901753044693EAF6EBE26',
         menuTransform: 'patchActionSheet',
         generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH, ACTIONSHEET_REORDER_GENERATOR_PATH])
     }),

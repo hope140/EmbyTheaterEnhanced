@@ -16,6 +16,7 @@ function patchActionSheetCss(text) {
         '  padding-bottom: 0;',
         '}',
         '/* ETE opt-in language order controls inside the existing ActionSheet */',
+        '.actionSheet.ete-reorder-actionsheet:not(.dialog-fullscreen) { max-height: min(30em, 70vh); }',
         '.ete-reorder-actionsheet .listItemBody-tall { min-height: 2.6em; }',
         '.ete-reorder-actionsheet .ete-reorder-controls {',
         '  display: inline-flex;',
@@ -41,6 +42,11 @@ function patchActionSheetCss(text) {
         '  opacity: .8;',
         '  font-size: 1.2em;',
         '  padding: 0.2em;',
+        '  margin-inline-end: 2.5em;',
+        '}',
+        '.ete-reorder-actionsheet .ete-reorder-selected .listViewDragHandle:focus-visible { outline: 2px solid currentColor; }',
+        '@media (pointer: fine) {',
+        '  .ete-reorder-actionsheet .ete-reorder-controls { display: none; }',
         '}'
     ].join(eol);
     return text + (text.endsWith('\n') ? '' : eol) + addition + eol;
