@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-04 — v0.4.13 语言选择弹窗调整
+
+根据用户对早期设置页常驻排序行的反馈，将音轨和字幕已选语言的排序入口移入原公共选择弹窗。只为两处语言控件开启可选扩展；已选项置顶、复用旧列表拖动手柄并增加可聚焦上下图标按钮，设置页只显示选中摘要。普通选择弹窗和队列调用保持默认行为。浏览器隔离夹具与准确 Windows 测试包验证结果见[候选核验](V0413_LANGUAGE_PREFERENCES.md)；未合主线或发布。
+
 ## 2026-11-04 — v0.4.13 语言偏好实现
 
 从远端 main `25b8086` 建独立分支，对照 2026-11-04 官方 Emby 网页[播放设置](https://app.emby.media/settings/playback.html)、[字幕设置](https://app.emby.media/settings/subtitles.html)及对应脚本的用户配置字段、逗号连接与重排标记。原 ETE 冻结 `playback.js` 只读写单个音轨语言，现有字幕多选有序保存但无显式重排入口；旧 ActionSheet 不识别官方新版 `data-reordering`。复用原 `emby-select` 多选，用已选列表的原生按钮调整顺序；只在语言值实际改变时改写该配置字段。固定源哈希 overlay、新 VM 回归和候选验收文档随分支提交，验证结果以后续准确 SHA 回执为准。未触及 PlaybackManager、Native 或服务器实例。

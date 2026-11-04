@@ -13,6 +13,7 @@ const serverHome = require('./patch-server-home.cjs');
 const movieBrowser = require('./patch-movie-browser.cjs');
 const searchUi = require('./patch-search-ui.cjs');
 const selectCancel = require('./patch-select-cancel.cjs');
+const actionSheetReordering = require('./patch-actionsheet-reordering.cjs');
 const actionSheetLayout = require('./patch-actionsheet-layout.cjs');
 const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
@@ -33,6 +34,7 @@ const HOME_GENERATOR_PATH = 'tools/patch-server-home.cjs';
 const MOVIE_GENERATOR_PATH = 'tools/patch-movie-browser.cjs';
 const SEARCH_GENERATOR_PATH = 'tools/patch-search-ui.cjs';
 const SELECT_CANCEL_GENERATOR_PATH = 'tools/patch-select-cancel.cjs';
+const ACTIONSHEET_REORDER_GENERATOR_PATH = 'tools/patch-actionsheet-reordering.cjs';
 const ACTIONSHEET_LAYOUT_GENERATOR_PATH = 'tools/patch-actionsheet-layout.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
@@ -44,7 +46,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/playback.js', inputPath: null,
         runtimePath: 'electronapp/www/settings/playback.js',
         expectedBaseSha256: 'B7F2CADCD158B2956B4E6997A010AC9A193BFDA7597E79DBBB8B575C43B1D75B', expectedInputSha256: null,
-        expectedOutputSha256: '3BB4E5EF5E8B4A5591E95EB1B48D18F933FF3F2C7299DC8D1230D76F476D7B7B',
+        expectedOutputSha256: '2B30206A7B72D646EFF5765E76F0A70509E0B21C7A93BD8564839292DD707B77',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -52,7 +54,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/playback.html', inputPath: null,
         runtimePath: 'electronapp/www/settings/playback.html',
         expectedBaseSha256: '53A2D7E8F55EE35C42F7C9F1F16033F8D3A8472E3E9AA51CF149D3F859C562FE', expectedInputSha256: null,
-        expectedOutputSha256: 'B714A5E821277512EC8D17E8371AAF67945893C9759AE2730875C8F74503EA5E',
+        expectedOutputSha256: '58FEC4127B46C8667E8B8DA6F39EAE91AD246D23E8E9EE4FC8D008AE7C0209C8',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -60,7 +62,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/subtitles.js', inputPath: null,
         runtimePath: 'electronapp/www/settings/subtitles.js',
         expectedBaseSha256: '6D087C280019FC13D5B5062F760E1757FD203AFDC2A8207CC28F6B4CC38A1B15', expectedInputSha256: null,
-        expectedOutputSha256: '6D855A1704126F796B2FD7576B153AA57C96BC44F79D333A52E49F894A112668',
+        expectedOutputSha256: '731D13FDA408848607D5810893A0853AAB59C190C8EE8218FC553AFA4A2BAFA2',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -68,7 +70,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         basePath: 'vendor/web-snapshot/www/settings/subtitles.html', inputPath: null,
         runtimePath: 'electronapp/www/settings/subtitles.html',
         expectedBaseSha256: '70018E65B8FBFDEF3128F93683CB2BF424DBE4BA38A7F0B7577F529002EBE536', expectedInputSha256: null,
-        expectedOutputSha256: 'FBAEC6D4F6AAFB021332269B2338DD47B66B799EB8CA4FF53302E3DF667865DF',
+        expectedOutputSha256: '8D457DC13D8D43F50483933AE80F2F40A3D0E294095235A37316A0D536C8596E',
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -125,7 +127,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.css',
         expectedBaseSha256: '5A4D6A7C89F9CF86FF3D5FB4DBB4ED4B53982DF0883CAA19C2E29F164AC7E39D',
         expectedInputSha256: null,
-        expectedOutputSha256: '77E5268334ABA94F29C7C34F792BE92A94E7EC321451ABB1F9E80C1015E888E0',
+        expectedOutputSha256: '3808923618DAC1968456C191111D5725B8DC49DB8CD96FDA795679C02489B9C6',
         generatorPaths: Object.freeze([GENERATOR_PATH, ACTIONSHEET_LAYOUT_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -206,9 +208,9 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/emby-elements/emby-select/emby-select.js',
         expectedBaseSha256: '5A26DED88A18643FD189FDF4E367B1AE6B37B24664C75D55207192F58C5C6CD2',
         expectedInputSha256: null,
-        expectedOutputSha256: '5C10C056FF8E075E6A7D54F1558EE51EE402463755B960678F4681A6C69E0CAB',
+        expectedOutputSha256: 'C63B71294BF7CA9D19337C14844C39A3F4F3C5C52C260CF50CAFE00A270D1C55',
         menuTransform: 'patchSelect',
-        generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH])
+        generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH, ACTIONSHEET_REORDER_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'actionsheet-cancellation',
@@ -218,9 +220,9 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/actionsheet/actionsheet.js',
         expectedBaseSha256: '0AD2BFAD1AD2B694EC07C693A44F0EDFBD4EB76121C8939F0E5DE27E0ABEFE67',
         expectedInputSha256: null,
-        expectedOutputSha256: '948F67D423647CC5D354DCCC2707D06C43E34CB42965D69A41C5A3C436D2511E',
+        expectedOutputSha256: 'DE9925E086E069FE11C7DD87B7DDB6740B0804634D8D4E6EC6C91E63C5F4B7D1',
         menuTransform: 'patchActionSheet',
-        generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH])
+        generatorPaths: Object.freeze([GENERATOR_PATH, SELECT_CANCEL_GENERATOR_PATH, ACTIONSHEET_REORDER_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'movie-browse-items-container',
@@ -429,7 +431,7 @@ function outputFor(root, contract) {
     if (contract.id === 'startup-index') return {base, input: base};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};
     if (contract.searchTransform) return {base, input: Buffer.from(searchUi[contract.searchTransform](base.toString('utf8')), 'utf8')};
-    if (contract.menuTransform) return {base, input: Buffer.from(selectCancel[contract.menuTransform](base.toString('utf8')), 'utf8')};
+    if (contract.menuTransform) return {base, input: Buffer.from(actionSheetReordering[contract.menuTransform](selectCancel[contract.menuTransform](base.toString('utf8'))), 'utf8')};
     if (contract.id === 'item-externalplayer-residue' && contract.mode === 'tracked-canonical-transform') {
         return {base, input: Buffer.from(itemLifecycle.patchDetailCache(itemLifecycle.patchItemLifecycle(externalPlayerResidue.patchItemText(base.toString('utf8')))), 'utf8')};
     }

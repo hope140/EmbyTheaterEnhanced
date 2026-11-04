@@ -127,20 +127,18 @@ function harness(preference) {
 }
 
 test('template enables the existing Emby multi-select control', () => {
-    assert.match(template, /class="selectSubtitleLanguage" multiple label=/);
-    assert.match(template, /class="ete-language-order" role="list"/);
+    assert.match(template, /class="selectSubtitleLanguage" multiple data-reordering="true" data-virtualscroll="false" label=/);
+    assert.doesNotMatch(template, /ete-language-order/);
     assert.match(template, /class="selectSubtitlePlaybackMode"/);
     assert.match(template, /class="chkRememberSubtitles"/);
 });
 
-test('selected subtitle order moves with focusable buttons and preserves unknown values', async () => {
+test('subtitle menu presents selected and unknown languages for popup reordering', async () => {
     const h = harness('zz,en,ja');
     await h.open();
-    const list = h.control('.ete-language-order');
-    assert.deepEqual(list.children.map(row => row.children[0].textContent), ['1. zz', '2. English', '3. Japanese']);
-    list.children[1].querySelector('.ete-move-up').dispatchEvent({type: 'click'});
-    assert.deepEqual(Array.from(h.select.getValues()), ['en', 'zz', 'ja']);
-    assert.equal(h.control('.ete-language-order').children[0].querySelector('.ete-move-down').focused, true);
+    const menu = await h.select.getItems({});
+    assert.deepEqual(Array.from(menu.Items.slice(0, 3), item => item.Id), ['zz', 'en', 'ja']);
+    h.select.choose(['en', 'zz', 'ja']);
     await h.submit();
     assert.equal(h.writes.at(-1).SubtitleLanguagePreference, 'en,zz,ja');
 });

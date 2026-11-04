@@ -81,8 +81,8 @@ function harness(preference) {
 }
 
 test('audio preference uses the existing multi-select and visible order controls', () => {
-    assert.match(template, /class="selectAudioLanguage" multiple label=/);
-    assert.match(template, /class="ete-language-order" role="list"/);
+    assert.match(template, /class="selectAudioLanguage" multiple data-reordering="true" data-virtualscroll="false" label=/);
+    assert.doesNotMatch(template, /ete-language-order/);
     assert.match(template, /class="chkRememberAudioTracks"/);
 });
 
@@ -90,15 +90,14 @@ test('audio order, unknown code and existing track settings survive save and rel
     const h = harness('zz,en,ja');
     await h.open();
     assert.deepEqual(Array.from(h.select.getValues()), ['zz', 'en', 'ja']);
-    const list = h.control('.ete-language-order');
-    assert.deepEqual(list.children.map(row => row.children[0].textContent), ['1. zz', '2. English', '3. Japanese']);
-    list.children[1].querySelector('.ete-move-up').dispatchEvent({type: 'click'});
+    const initial = await h.select.getItems({});
+    assert.deepEqual(Array.from(initial.Items.slice(0, 3), item => item.Id), ['zz', 'en', 'ja']);
+    h.select.choose(['en', 'zz', 'ja']);
     assert.deepEqual(Array.from(h.select.getValues()), ['en', 'zz', 'ja']);
     const menu = await h.select.getItems({});
-    assert.deepEqual(Array.from(menu.Items.slice(0, 2), item => item.Id), ['en', 'ja']);
+    assert.deepEqual(Array.from(menu.Items.slice(0, 2), item => item.Id), ['en', 'zz']);
     const labels = await h.select.getItems({Ids: ['en', 'zz']});
     assert.deepEqual(Array.from(labels.Items, item => item.Name), ['English', 'zz']);
-    assert.equal(list.children[0].querySelector('.ete-move-down').focused, true);
     await h.submit();
     assert.equal(h.writes.at(-1).AudioLanguagePreference, 'en,zz,ja');
     assert.equal(h.writes.at(-1).PlayDefaultAudioTrack, true);
