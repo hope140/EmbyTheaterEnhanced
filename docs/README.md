@@ -11,7 +11,7 @@
 | 各版更新内容 | [变更记录](../CHANGELOG.md) |
 | 项目许可与第三方来源 | [许可说明](LICENSING.md) · [第三方通知](../THIRD_PARTY_NOTICES.md) |
 
-截至 2026-11-03，正式版为 [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，最新测试版为 [v0.4.12](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)。测试版保留此前的缓存、手动更新、系统媒体控制与下载等功能；v0.4.11 增加字幕首选语言多选（实际选轨依服务器返回），v0.4.12 改进更新交接并增加提前 EOF 的低频脱敏定位日志。提前 EOF 的现场根因和自动恢复均未解决。功能是否发布以对应 Release 和 Tag 为准，主分支文档不改变历史安装包。
+截至 2026-11-04，正式版为 [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest)，最新测试版为 [v0.4.13](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13)。测试版保留此前的缓存、手动更新、系统媒体控制与下载等功能；v0.4.11 增加字幕首选语言多选，v0.4.12 改进更新交接并增加提前 EOF 的低频脱敏定位日志，v0.4.13 增加音轨语言多选及音轨／字幕语言排序。实际轨道仍由服务器选择，提前 EOF 的现场根因和自动恢复仍未解决。功能是否发布以对应 Release 和 Tag 为准，主分支文档不改变历史安装包。
 
 ## 开发与技术合同
 
@@ -26,12 +26,13 @@
 | 构建与材料 | [构建合同与历史记录](PACKAGING.md) · [Actions 测试包合同](ACTIONS_TEST_PACKAGE.md) · [源码材料索引](SOURCE_MATERIALS.md) · [依赖来源研究](DEPENDENCY_RESEARCH.md) |
 | 测试与发行 | [测试分层与材料用例](TESTING.md) · [Release 规范](RELEASE_CONVENTIONS.md) · [发行说明模板](templates/RELEASE_TEMPLATE.md) |
 
-**阅读阶段记录时**：技术文档保留早期分支、候选和当时的待验收说明。例如 v0.4.11／v0.4.12 核验页中的“未合并／未发布”属于各版发布前记录，不表示截至 2026-11-03 的状态；各页页首新增发布后回读。Windows 媒体实验“尚未纳入发行”、手动更新“独立候选”、构建合同“尚无干净 runner 成功”也描述其编写阶段，已发布状态以上表和对应 Release 为准。首页布局／流畅度的显式测试参数不等同于 v0.4.2 已发布的详情持久缓存；普通用户无需按实验启动脚本开启已发布功能。当前开发操作入口为贡献指南，具体材料身份仍按各组件合同核验。
+**阅读阶段记录时**：技术文档保留早期分支、候选和当时的待验收说明。例如 v0.4.11～v0.4.13 核验页中的“未合并／未发布”属于各版发布前记录，不表示截至 2026-11-04 的状态；各页页首新增发布后回读。Windows 媒体实验“尚未纳入发行”、手动更新“独立候选”、构建合同“尚无干净 runner 成功”也描述其编写阶段，已发布状态以上表和对应 Release 为准。首页布局／流畅度的显式测试参数不等同于 v0.4.2 已发布的详情持久缓存；普通用户无需按实验启动脚本开启已发布功能。当前开发操作入口为贡献指南，具体材料身份仍按各组件合同核验。
 
 公开离线检查、完整固定材料测试、实际客户端、真实服务器、安装与硬件验收各有范围，通过其中一层不能替代其他层。
 
 ## 发布记录与后续范围
 
+- [v0.4.13 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13)：音轨语言多选与音轨／字幕语言排序；[发布后核验与候选历史](V0413_LANGUAGE_PREFERENCES.md)。
 - [v0.4.12 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)：更新退出与安装交接修复、提前 EOF 定位日志；[发布后核验与候选历史](V0412_RELEASE_VERIFICATION.md)。
 - [v0.4.11 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.11)：字幕首选语言多选；[发布后核验与候选历史](V0411_RELEASE_VERIFICATION.md)。
 - [v0.4.10 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.10)：片头归属修复及定位诊断；[发行核验](V0410_RELEASE_VERIFICATION.md)。
