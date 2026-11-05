@@ -4,8 +4,9 @@
 })(function() {
     'use strict';
     var minimumVersion = '4.10.0.4';
-    var types = ['userviews', 'resume', 'resumeaudio', 'nextup', 'latestmedia', 'latestmoviereleases',
-        'playlists', 'collections', 'activerecordings', 'onnow'];
+    // ContentSection.SectionType is a server-defined string. Items are fetched
+    // by the returned section ID, so new media sections use generic cards.
+    function sectionType(value) { return typeof value === 'string' && /^[a-z][a-z0-9]{0,63}$/.test(value); }
     var views = ['cards', 'buttons', 'list', 'spotlight'];
     var imageTypes = ['Primary', 'Backdrop', 'Thumb'];
     var monitors = ['videoplayback', 'audioplayback', 'markplayed', 'Recordings', 'Timers'];
@@ -39,7 +40,7 @@
         if (!Array.isArray(input) || input.length > 64) throw new Error('sections-invalid');
         var ids = new Set();
         return input.map(function(row) {
-            if (!plain(row) || !text(row.Id, 256, false) || ['.', '..'].includes(row.Id) || ids.has(row.Id) || !types.includes(row.SectionType) ||
+            if (!plain(row) || !text(row.Id, 256, false) || ['.', '..'].includes(row.Id) || ids.has(row.Id) || !sectionType(row.SectionType) ||
                 !text(row.Name, 256, true) || row.Subtitle != null && !text(row.Subtitle, 1024, true) ||
                 row.ViewType != null && !views.includes(row.ViewType) ||
                 row.ScrollDirection != null && !['Horizontal', 'Vertical'].includes(row.ScrollDirection) ||
@@ -48,6 +49,7 @@
                 row.CardSizeOffset != null && (!Number.isInteger(row.CardSizeOffset) || row.CardSizeOffset < -3 || row.CardSizeOffset > 3) ||
                 row.Monitor != null && (!Array.isArray(row.Monitor) || row.Monitor.length > 8 || row.Monitor.some(function(value) { return !monitors.includes(value); })) ||
                 row.RandomSeed != null && (!Number.isSafeInteger(row.RandomSeed) || row.RandomSeed < 1 || row.RandomSeed > 10000000) ||
+                row.TextInfo != null || row.PremiumFeature != null || row.PremiumMessage != null ||
                 row.HeaderButtons != null && (!Array.isArray(row.HeaderButtons) || row.HeaderButtons.length)) throw new Error('sections-unsupported');
             ids.add(row.Id);
             return Object.freeze({Id: row.Id, SectionType: row.SectionType, Name: row.Name, Subtitle: row.Subtitle || '',

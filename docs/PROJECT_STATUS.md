@@ -1,5 +1,15 @@
 # 项目状态
 
+2026-11-05 v0.4.14 首页窄窗口跟进：隔离 Chromium 已复现三条与四条同形状分区因冻结 ItemsContainer 不同渲染路径而宽度不同，局部统一为原生虚拟横向路径；700/960/1280/1920px 与同页缩放及不支持布局回退通过。用户 NAS 前台未验证。依用户取舍，本候选已完整移除新增最近搜索读取、清除、接线及专属测试；原搜索推荐与已有取消保护保持。旧验收包不代表此候选。
+
+## 2026-11-04 — v0.4.14 服务端首页独立候选
+
+最初从远端 main `25b8086` 建立独立分支，不混入当时待验收的 [0.4.13 PR #91](https://github.com/hope140/EmbyTheaterEnhanced/pull/91)；随后仅在本分支合入包含已验收 0.4.13 的 main `715bc5a`。首页允许服务器返回的格式安全媒体分区类型使用既有水平 cards 与原分区 Items 接口，Thumb 选用原卡片缩略图路径；按钮、Spotlight、垂直、文字说明等未实现布局仍整体回退。没有改服务器配置或播放归属。公开接口证据与未支持范围见[首页合同](SERVER_HOME_SECTIONS.md#v0414-独立候选通用媒体分区)。
+
+本候选的自动回归、构建来源门禁和 CI 结果以后续准确提交为准；用户 NAS 的真实首页 DTO、前台焦点／视觉尚未验收。0.4.13 已发布，本分支另合入其发布后文档 main `53094bd`；组合语言回归、构建与 CI 须绑定同步后的准确提交。0.4.14 仍为独立草稿，未经另行确认不合并或发布；为普通验收包准备，候选产品版本已改为 0.4.14。
+
+用户验收后决定不做新增最近搜索。当前候选已撤去其读取与清除实现，原空搜索推荐不变；需按新准确提交重跑门禁与普通 Windows 验收包。原包来源 `211c445` 及 `d574eb6` 与新候选分开记录。
+
 ## 2026-11-04 — v0.4.13 语言偏好测试版已发布
 
 [PR #91](https://github.com/hope140/EmbyTheaterEnhanced/pull/91) 以 merge commit `715bc5af6f9be8a87c6813a0cee10f4fb3196a10` 合入 main，其源码树与用户验收提交 `c686e189ca2ce51359270624f45b6652e4618213` 相同；`v0.4.13` Tag 指向该验收源码。[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41823937341)、[main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41844044695) 与[testing 发行构建及发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41846593844)均成功。[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) 为非草稿 Pre-release，五附件下载、大小、SHA-256、来源和校验表核对通过；正式 Latest 仍为 v0.4.0。用户确认 v0.4.13 普通测试包验收通过；旧服务器解释、实际选轨和遥控组合未获具体结果。先前反馈的窗口按钮偶发无法点击尚无确定根因，不能称已修复。下面的候选条目保留当时状态，发行核验见[语言偏好记录](V0413_LANGUAGE_PREFERENCES.md)。

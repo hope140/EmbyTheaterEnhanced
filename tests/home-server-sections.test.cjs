@@ -39,10 +39,21 @@ test('preserves server section order and titles, projects commands and URLs away
 test('empty layout is retained, invalid or unsupported layout falls back as a whole', async () => {
     assert.deepEqual(await start(fixture(() => Promise.resolve([]))), {status: 'server', sections: []});
     for (const input of [null, {Items: rows()}, [rows()[0], rows()[0]], [{...rows()[0], ViewType: 'script'}],
-        [{...rows()[0], HeaderButtons: [{ButtonBehavior: 'taskbutton'}]}], [{...rows()[0], SectionType: 'unknown'}],
+        [{...rows()[0], HeaderButtons: [{ButtonBehavior: 'taskbutton'}]}], [{...rows()[0], TextInfo: {Text: 'banner'}}],
+        [{...rows()[0], SectionType: 'bad/type'}],
         [{...rows()[0], Name: '\0bad'}], Array.from({length: 65}, (_, i) => ({...rows()[0], Id: String(i)}))]) {
         assert.equal((await start(fixture(() => Promise.resolve(input)))).status, 'fallback');
     }
+});
+test('server-defined media section types retain order and use the section item endpoint', async () => {
+    const input = ['dynamicmedia', 'singlecollection', 'singleplaylist', 'latestepisodes'].map((type, index) =>
+        ({Id: String(index), SectionType: type, Name: type, ViewType: 'cards'}));
+    const f = fixture(request => Promise.resolve(request.route.endsWith('/HomeSections') ? input : {Items: [{Id: 'item-1'}]}));
+    const sections = (await start(f)).sections;
+    assert.deepEqual(sections.map(section => section.SectionType), input.map(section => section.SectionType));
+    assert.equal((await f.provider.loadItems(sections[1])).status, 'server');
+    assert.equal(f.calls[1].request.route, 'Users/user%201/Sections/1/Items');
+    f.provider.dispose();
 });
 test('items requests use encoded server section ID, stable random seed, fixed query and original Item DTO', async () => {
     const item = {Id: 'item-1', ServerId: 'server-1', UserData: {PlaybackPositionTicks: 123}};
