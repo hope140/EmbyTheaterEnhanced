@@ -313,6 +313,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     ? null : options.item.RunTimeTicks / 10000000
             };
             activePlayRequest = request;
+            request.configSnapshot = strmConfigClient && typeof strmConfigClient.begin === 'function'
+                ? strmConfigClient.begin({requestId: request.requestId, signal: request.controller.signal}) : Promise.resolve(null);
             if (enhancedRouteState) enhancedRouteState.begin(request);
             return request;
         }
@@ -465,6 +467,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 request.bridgeErrorListener = function (event) {
                     var error = new Error(event && event.detail && event.detail.reason || 'Native helper terminated');
                     error.name = 'NativeHelperError';
+                    error.unexpectedEof = !!(event && event.detail && event.detail.unexpectedEof);
                     cleanupCorePlaying(request);
                     reject(error);
                 };
@@ -996,7 +999,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         self._onMute(recv.data.data.value)
                         break
                     case 'eof-reached':
-                        self._onStopped(recv.data.data.value, recv.generationId)
+                        self._onStopped(recv.data.data.value, recv.generationId, true)
                         break
                     case 'demuxer-cache-state':
                         self._onDemuxerCacheStateChanged(recv.data.data.value, recv.generationId)
@@ -1046,6 +1049,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             try {
                 assertCurrentPlayRequest(request);
+                request.playbackConfig = await request.configSnapshot;
+                assertCurrentPlayRequest(request);
                 if (options.fullscreen && options.item.MediaType == 'Video') {
                     await embyRouter.showVideoOsd()
                     assertCurrentPlayRequest(request);
@@ -1071,6 +1076,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 nextTransition.playbackReady(request.playbackRequestId);
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
+                if (request.playbackConfig) request.playbackConfig.release();
                 cleanupCorePlaying(request);
                 nextTransition.playbackFailed(request.playbackRequestId);
                 if (!error || !error.playbackSuperseded) {
@@ -1149,20 +1155,27 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
             try {
                 isStrmRequest = !!(strmResolver && typeof strmResolver.isStrm === 'function' && strmResolver.isStrm(resolverContext));
-                if (isStrmRequest && strmConfigClient && typeof strmConfigClient.get === 'function') {
-                    resolverConfig = await strmConfigClient.get();
+                if (isStrmRequest) {
+                    resolverConfig = request.playbackConfig ? request.playbackConfig.config : null;
                     assertCurrentPlayRequest(request);
                 }
                 var downloaded = null;
+                var downloadLookup = 'not-attempted';
                 if (advanceDownload && typeof advanceDownload.localSource === 'function' && String(options.playMethod || '').toLowerCase() !== 'transcode') {
-                    try { downloaded = await advanceDownload.localSource(connectionManager.getApiClient(item.ServerId), item, mediaSource, request.controller.signal); }
-                    catch (_) { /* Original playback remains available if lookup fails. */ }
+                    try {
+                        downloaded = await advanceDownload.localSource(connectionManager.getApiClient(item.ServerId), item, mediaSource, request.controller.signal);
+                        downloadLookup = downloaded ? 'hit' : 'miss';
+                    }
+                    catch (_) { downloadLookup = 'failed'; /* Original playback remains available if lookup fails. */ }
                     assertCurrentPlayRequest(request);
                 }
+                emitClientDiagnostic('info', 'playback', 'download-lookup', Object.assign(requestDiagnosticDetails(request), {result: downloadLookup}));
+                if (!downloaded && isStrmRequest && !request.playbackConfig) throw Error('resolver-config-unavailable');
                 resolverResult = downloaded ? {type: 'local', source: downloaded.source, sourceKind: 'downloaded-file',
                     reason: 'download_hit', isStrm: isStrmRequest, localExists: true, fallback: false} : await strmResolver.resolveAsync(resolverContext, {
                     fs: typeof window !== 'undefined' ? window.fs : null,
                     requestId: request.requestId,
+                    configLease: request.playbackConfig && request.playbackConfig.lease,
                     signal: request.controller.signal,
                     config: resolverConfig,
                     onDiagnostic: function (record) {
@@ -1253,6 +1266,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 "audio-display": 'no',
                 "wid": window.PlayerWindowId,
                 "keep-open": 'yes',
+                "start": String(Math.floor(startPositionTicks / 10000000)),
                 "speed": 1,
                 "sub-delay": 0
             }
@@ -1310,13 +1324,16 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertCurrentPlayRequest(request);
+            request.loadStartedAt = Date.now();
+            request.loadRoute = diagnosticEnum(resolverObservation.route,
+                ['direct-url', 'cd2-http', 'mount', 'native', 'download'], 'unknown');
             emitClientDiagnostic('info', 'playback', 'loadfile-requested', Object.assign(requestDiagnosticDetails(request), {
                 route: resolverObservation.route,
                 sourceKind: resolverResult && resolverResult.sourceKind,
                 directUserAgentApplied: fileLocalLoadOptions.length > 0,
                 requestedStartSeconds: diagnosticNumber(startPositionTicks) === null ? null : startPositionTicks / 10000000,
                 plannedStartSeconds: diagnosticNumber(startPositionTicks) === null ? null : Math.floor(startPositionTicks / 10000000),
-                startOptionWriteOrder: 'after-loadfile-submission',
+                startOptionWriteOrder: 'before-loadfile-submission',
                 cached: cachedPlaybackDiagnostic(request)
             }));
             await sendCommand(fileLocalLoadOptions.length
@@ -1333,7 +1350,6 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             await setSubtitleStream(subtitleIndexToSet, request)
             assertCurrentPlayRequest(request);
             await setProperty({
-                start: `${Math.floor(startPositionTicks / 10000000)}`,
                 pause: false
             })
             assertCurrentPlayRequest(request);
@@ -1708,14 +1724,26 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         };
 
         self._onError = function (error) {
+            if (activePlayRequest && activePlayRequest.terminalError) return;
+            if (activePlayRequest) activePlayRequest.terminalError = true;
 
             emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(activePlayRequest), {
                 stage: 'player-event',
+                route: activePlayRequest && activePlayRequest.loadRoute || 'unknown',
+                loadElapsedMs: activePlayRequest && activePlayRequest.loadStartedAt
+                    ? Math.max(0, Date.now() - activePlayRequest.loadStartedAt) : null,
+                reason: diagnosticEnum(error && error.reason,
+                    ['load-failed', 'helper-terminated', 'native-helper-terminated', 'bridge-call-failed'], 'other'),
+                inputErrorDetail: 'unavailable',
                 endReason: error && error.endReason === 4 ? 4 : null,
                 mpvErrorCode: error && Number.isInteger(error.mpvErrorCode) && error.mpvErrorCode >= -2147483648 &&
                     error.mpvErrorCode <= 2147483647 ? error.mpvErrorCode : null
             }));
-            events.trigger(self, 'error');
+            // During loading the rejected play promise owns manager cleanup.
+            // After startup the event owns it; never submit both paths at once.
+            if (activePlayRequest && activePlayRequest.corePlayingLogged) {
+                events.trigger(self, 'error', [{type: 'NativeHelperError'}]);
+            }
         };
 
         self._onPlayPause = function (paused) {
@@ -1741,8 +1769,24 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             events.trigger(self, 'volumechange');
         };
 
-        self._onStopped = function (stopped, generationId) {
+        self._onStopped = function (stopped, generationId, nativeEof) {
             if (stopped) {
+                if (nativeEof) {
+                    var request = activePlayRequest;
+                    if (!isCurrentPlayRequest(request) || request.terminalEof || request.terminalError ||
+                        (generationId != null && diagnosticOwnerMatches(request, generationId) !== true)) return;
+                    request.terminalEof = true;
+                    if (!request.corePlayingLogged) {
+                        emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(request), {
+                            stage: 'premature-eof', reason: 'eof-before-core-playing',
+                            eventGenerationId: diagnosticGeneration(generationId), cached: cachedPlaybackDiagnostic(request)
+                        }));
+                        dispatchEvent(new CustomEvent('native-helper-error', {detail: {
+                            reason: 'eof-before-core-playing', unexpectedEof: true
+                        }}));
+                        return;
+                    }
+                }
                 noteCacheDiagnostic(activePlayRequest, generationId, true);
                 if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'stop', Object.assign(requestDiagnosticDetails(activePlayRequest), {
                     stopSource: 'native-eof-reached',
@@ -1758,8 +1802,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         self._onCoreIdleUpdate = function (idle) {
             if (!idle) {
+                if (!isCurrentPlayRequest(activePlayRequest) || activePlayRequest.terminalEof || activePlayRequest.terminalError || !activePlayRequest.loadStartedAt) return;
                 if (activePlayRequest && !activePlayRequest.corePlayingLogged) {
                     activePlayRequest.corePlayingLogged = true;
+                    if (activePlayRequest.playbackConfig && typeof activePlayRequest.playbackConfig.started === 'function') {
+                        activePlayRequest.playbackConfig.started();
+                    }
                     emitClientDiagnostic('info', 'playback', 'core-playing', requestDiagnosticDetails(activePlayRequest));
                 }
                 dispatchEvent(new Event('core-playing'))

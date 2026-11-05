@@ -318,10 +318,12 @@ function makeFixture(options = {}) {
         },
         require(dependencies, callback) {
             if (dependencies[0] === 'alert') {
-                callback(function alert(options) {
-                    calls.alerts.push(options);
-                    return Promise.resolve();
+                const deliver = () => callback(function alert(alertOptions) {
+                    calls.alerts.push(alertOptions);
+                    return options.alertResult || Promise.resolve();
                 });
+                if (options.alertLoader) options.alertLoader.push(deliver);
+                else deliver();
             } else if (dependencies[0] === 'filesystem') {
                 callback({fileExists() { return Promise.resolve(); }, directoryExists() { return Promise.resolve(); }});
             }
@@ -384,6 +386,42 @@ async function settle() {
     for (let index = 0; index < 6; index++) {
         await Promise.resolve();
         await new Promise(resolve => setImmediate(resolve));
+    }
+}
+
+for (const retirement of ['new-play', 'stop', 'none']) {
+    for (const delay of ['loader', 'close']) {
+        test(`error dialog ${delay} remains owned across ${retirement}`, async () => {
+            const loaders = [], close = deferred();
+            const fixture = makeFixture({alertLoader: loaders, alertResult: close.promise});
+            const items = [makeItem('error-A'), makeItem('next-B')];
+            fixture.queue.items = items;
+            fixture.queueControl.nextItem = queue => {
+                const index = queue.currentIndex + 1;
+                return items[index] ? {item: items[index], index} : null;
+            };
+            const first = fixture.manager.nextTrack();
+            await waitFor(() => fixture.calls.metadata.length === 1);
+            fixture.resolveMetadata(0, 'error-session');
+            await first;
+            fixture.events.trigger(fixture.player, 'stopped', [null, {errorCode: 'NoCompatibleStream'}]);
+            await settle();
+            assert.equal(loaders.length, 1);
+            if (delay === 'close') loaders[0]();
+            if (retirement === 'stop') await fixture.manager.stop();
+            if (retirement === 'new-play') {
+                fixture.queueControl.nextItem = () => ({item: makeItem('new-C'), index: 1});
+                const newer = fixture.manager.nextTrack();
+                await waitFor(() => fixture.calls.metadata.length === 2);
+                fixture.resolveMetadata(1, 'new-session');
+                await newer;
+            }
+            if (delay === 'loader') { loaders[0](); loaders[0](); }
+            close.resolve();
+            await settle();
+            assert.equal(fixture.calls.alerts.length, delay === 'loader' && retirement !== 'none' ? 0 : 1);
+            assert.equal(fixture.calls.metadata.length, retirement === 'stop' ? 1 : 2);
+        });
     }
 }
 

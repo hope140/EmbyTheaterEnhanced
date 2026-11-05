@@ -3,6 +3,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     var CHANNELS = {
         get: 'enhanced-strm-config-get',
+        playbackStatus: 'enhanced-strm-playback-status',
         save: 'enhanced-strm-config-save',
         setToken: 'enhanced-strm-token-set',
         clearToken: 'enhanced-strm-token-clear',
@@ -79,6 +80,32 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
     function setStatus(node, text, isError) {
         node.textContent = text || '';
         node.setAttribute('role', isError ? 'alert' : 'status');
+    }
+
+    function playbackStatus(view, status) {
+        var node = view.querySelector('.playbackConfigState');
+        if (!node) return;
+        if (!status || !Number.isSafeInteger(status.savedRevision)) {
+            setStatus(node, '无法确认播放配置状态；保存的设置用于下一次新播放。', false);
+            return;
+        }
+        if (Number.isSafeInteger(status.stateRevision)) {
+            if (Number.isSafeInteger(node.eteStateRevision) && status.stateRevision < node.eteStateRevision) return;
+            node.eteStateRevision = status.stateRevision;
+        }
+        var text = '已保存配置 #' + status.savedRevision + '。无需重启，下次新播放使用已保存设置。';
+        if (Number.isSafeInteger(status.playbackRevision)) {
+            text += ' 当前播放会话使用 #' + status.playbackRevision + (status.playbackRevision === status.savedRevision ? '。' : '，保持原配置直到结束。');
+        } else if (Number.isSafeInteger(status.pendingPlaybackRevision)) {
+            text += ' 正在准备的播放会话使用 #' + status.pendingPlaybackRevision + '。';
+        }
+        setStatus(node, text, false);
+    }
+
+    function tokenStatus(view, text, error) {
+        setStatus(view.querySelector('.saveState'), text, error);
+        var node = view.querySelector('.tokenSaveState');
+        if (node) setStatus(node, text, error);
     }
 
     function connectionText(status) {
@@ -607,7 +634,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             renderConfig(view, this.config, this.draftRuleIds, this.connectionStatus);
             this.invalidateAssistant();
             this.refreshConnectionStatus();
-            setStatus(view.querySelector('.saveState'), '', false);
+            playbackStatus(view, config.playbackStatus);
+            setStatus(view.querySelector('.saveState'), '普通设置和规则需点击“保存设置”；Token 使用独立按钮保存。', false);
             loading.hide();
             return config;
         }.bind(this)).catch(function () {
@@ -642,7 +670,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             this.connectionRequestSequence++;
             this.applyConnectionSnapshot(response);
             view.querySelector('.btnTestConnection').disabled = false;
-            setStatus(view.querySelector('.saveState'), response.requiresRestart ? '已保存，重启应用后播放链生效。' : '设置已保存。', false);
+            playbackStatus(view, response.playbackStatus);
+            setStatus(view.querySelector('.saveState'), '设置已保存，无需重启，下次新播放生效。当前播放保持原配置。', false);
         }.bind(this)).catch(function () {
             setStatus(view.querySelector('.saveState'), '保存失败，请检查配置服务。', true);
         }).finally(function () {
@@ -661,6 +690,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
             if (operationId !== this.tokenOperationSequence) return;
             var config = results[0].status === 'fulfilled' ? results[0].value : null;
             if (config && config.cd2 && typeof config.cd2.tokenConfigured === 'boolean') {
+                if (config.playbackStatus) playbackStatus(this.view, config.playbackStatus);
                 if (this.config && this.config.cd2) this.config.cd2.tokenConfigured = config.cd2.tokenConfigured;
                 this.view.querySelector('.tokenState').textContent = config.cd2.tokenConfigured ? '已配置 ········' : '未配置';
             }
@@ -680,17 +710,18 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var input = view.querySelector('.txtCd2Token');
         var value = input.value;
         if (!value) {
-            setStatus(view.querySelector('.saveState'), '请输入新的 Token。', true);
+            tokenStatus(view, '请输入新的 Token。', true);
             input.focus();
             return;
         }
         var operationId = ++this.tokenOperationSequence;
         var connectionSequenceAtStart = this.connectionRequestSequence;
         input.disabled = true;
-        request(CHANNELS.setToken, {token: value}).then(function (response) {
+        tokenStatus(view, '正在保存 Token…', false);
+        return request(CHANNELS.setToken, {token: value}).then(function (response) {
             if (operationId !== this.tokenOperationSequence) return;
             if (!response || response.status !== 'saved') {
-                setStatus(view.querySelector('.saveState'), statusText(response), true);
+                tokenStatus(view, statusText(response), true);
                 return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
             }
             if (this.config && this.config.cd2) {
@@ -703,10 +734,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
                 view.querySelector('.btnTestConnection').disabled = false;
             }
             this.applyConnectionSnapshot(response);
-            setStatus(view.querySelector('.saveState'), 'Token 已保存，重启应用后播放链生效。', false);
+            playbackStatus(view, response.playbackStatus);
+            tokenStatus(view, 'Token 已保存，无需重启，下次新播放生效。普通设置草稿需另行保存。', false);
         }.bind(this)).catch(function () {
             if (operationId !== this.tokenOperationSequence) return;
-            setStatus(view.querySelector('.saveState'), 'Token 保存失败。', true);
+            tokenStatus(view, 'Token 保存失败。', true);
             return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
         }.bind(this)).then(function () {
             if (operationId === this.tokenOperationSequence) input.disabled = false;
@@ -719,10 +751,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         var connectionSequenceAtStart = this.connectionRequestSequence;
         var input = this.view.querySelector('.txtCd2Token');
         input.disabled = true;
-        request(CHANNELS.clearToken).then(function (response) {
+        tokenStatus(this.view, '正在清除 Token…', false);
+        return request(CHANNELS.clearToken).then(function (response) {
             if (operationId !== this.tokenOperationSequence) return;
             if (!response || response.status !== 'saved') {
-                setStatus(this.view.querySelector('.saveState'), statusText(response), true);
+                tokenStatus(this.view, statusText(response), true);
                 return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
             }
             if (this.config && this.config.cd2) {
@@ -734,10 +767,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
                 this.view.querySelector('.btnTestConnection').disabled = false;
             }
             this.applyConnectionSnapshot(response);
-            setStatus(this.view.querySelector('.saveState'), 'Token 已清除，重启应用后播放链生效。', false);
+            playbackStatus(this.view, response.playbackStatus);
+            tokenStatus(this.view, 'Token 已清除，无需重启，下次新播放生效。普通设置草稿需另行保存。', false);
         }.bind(this)).catch(function () {
             if (operationId !== this.tokenOperationSequence) return;
-            setStatus(this.view.querySelector('.saveState'), 'Token 清除失败。', true);
+            tokenStatus(this.view, 'Token 清除失败。', true);
             return this.reconcileTokenFailure(operationId, connectionSequenceAtStart);
         }.bind(this)).then(function () {
             if (operationId === this.tokenOperationSequence) input.disabled = false;
@@ -897,8 +931,11 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
 
     SettingsView.prototype.onResume = function (options) {
         BaseView.prototype.onResume.apply(this, arguments);
-        if (!this.config || (options && options.refresh)) this.loadSettings();
-        else loading.hide();
+        if (!this.config || (options && options.refresh)) return this.loadSettings();
+        else {
+            loading.hide();
+            return request(CHANNELS.playbackStatus).then(function (status) {playbackStatus(this.view, status);}.bind(this), function () {playbackStatus(this.view, null);}.bind(this));
+        }
     };
 
     SettingsView.prototype.onPause = function () {

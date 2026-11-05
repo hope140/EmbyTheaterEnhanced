@@ -9,6 +9,10 @@ const smartMappingBoundary = require('../resolvers/smart-mapping-boundary');
 
 const CHANNELS = Object.freeze({
     GET: 'enhanced-strm-config-get',
+    PLAYBACK_BEGIN: 'enhanced-strm-playback-begin',
+    PLAYBACK_END: 'enhanced-strm-playback-end',
+    PLAYBACK_STATUS: 'enhanced-strm-playback-status',
+    PLAYBACK_STARTED: 'enhanced-strm-playback-started',
     SAVE: 'enhanced-strm-config-save',
     SET_TOKEN: 'enhanced-strm-token-set',
     CLEAR_TOKEN: 'enhanced-strm-token-clear',
@@ -32,6 +36,7 @@ function register(options) {
     const getWebContents = settings.getWebContents;
     const fileSystem = settings.fs || fs;
     const createTestService = settings.createTestService;
+    const playback = settings.playback;
     const handlers = [];
     let connectionStatus = 'unknown';
     let connectionRevision = 0;
@@ -43,6 +48,12 @@ function register(options) {
     function invalidateConnectionStatus() {
         connectionRevision++;
         connectionStatus = 'unknown';
+    }
+
+    function savedResponse(config) {
+        const playbackStatus = playback ? playback.saved() : undefined;
+        return Object.assign({status: 'saved', requiresRestart: !playback, config: config,
+            playbackStatus: playbackStatus}, connectionSnapshot());
     }
 
     function isTrusted(event) {
@@ -69,7 +80,7 @@ function register(options) {
         try {
             const saved = store.save(config);
             invalidateConnectionStatus();
-            return Object.assign({status: 'saved', requiresRestart: true, config: saved}, connectionSnapshot());
+            return savedResponse(saved);
         } catch (error) {
             return {status: 'error', reason: errorReason(error)};
         }
@@ -170,15 +181,23 @@ function register(options) {
     }
 
     registerHandler(CHANNELS.GET, function () {
-        return store.getPublicConfig();
+        return Object.assign({}, store.getPublicConfig(), playback ? {playbackStatus: playback.status()} : {});
     });
+    registerHandler(CHANNELS.PLAYBACK_BEGIN, function (request) {
+        return playback ? playback.begin(request, getWebContents()) : {status: 'error', reason: 'service_unavailable'};
+    });
+    registerHandler(CHANNELS.PLAYBACK_END, function (request) {
+        return playback ? playback.release(request, getWebContents()) : {status: 'ok'};
+    });
+    registerHandler(CHANNELS.PLAYBACK_STATUS, function () {return playback ? playback.status() : null;});
+    registerHandler(CHANNELS.PLAYBACK_STARTED, function (request) {return playback ? playback.started(request, getWebContents()) : null;});
     registerHandler(CHANNELS.GET_CONNECTION_STATUS, connectionSnapshot);
     registerHandler(CHANNELS.SAVE, saveRequest);
     registerHandler(CHANNELS.SET_TOKEN, function (request) {
         try {
             const saved = store.setToken(request && request.token);
             invalidateConnectionStatus();
-            return Object.assign({status: 'saved', requiresRestart: true, config: saved}, connectionSnapshot());
+            return savedResponse(saved);
         } catch (error) {
             return {status: 'error', reason: errorReason(error)};
         }
@@ -187,7 +206,7 @@ function register(options) {
         try {
             const saved = store.clearToken();
             invalidateConnectionStatus();
-            return Object.assign({status: 'saved', requiresRestart: true, config: saved}, connectionSnapshot());
+            return savedResponse(saved);
         } catch (_) {
             return {status: 'error', reason: 'invalid_config'};
         }

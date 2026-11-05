@@ -359,6 +359,7 @@
                         if (!candidates.length) continue;
                         result = await cd2Resolver.resolve(context, {
                             cd2Transport: dependencies && dependencies.cd2Transport,
+                            configLease: dependencies && dependencies.configLease,
                             requestId: dependencies && dependencies.requestId,
                             signal: dependencies && dependencies.signal,
                             candidates: candidates,
@@ -388,6 +389,7 @@
             if (candidates.length) {
                 result = await cd2Resolver.resolve(context, {
                     cd2Transport: dependencies && dependencies.cd2Transport,
+                    configLease: dependencies && dependencies.configLease,
                     requestId: dependencies && dependencies.requestId,
                     signal: dependencies && dependencies.signal,
                     candidates: candidates

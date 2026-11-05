@@ -17,18 +17,20 @@ function register(options) {
 
     ipcMain.handle(RESOLVE_CHANNEL, function (event, request) {
         if (!isTrusted(event)) return {status: 'miss', reason: 'untrusted_sender'};
-        return service.resolve(request);
+        return options.playback ? options.playback.resolve(request, undefined, getWebContents()) : service.resolve(request);
     });
 
     ipcMain.on(CANCEL_CHANNEL, function (event, request) {
         if (!isTrusted(event)) return;
-        service.cancel(request && request.requestId);
+        if (options.playback) options.playback.cancel(request && request.requestId, getWebContents(), request && request.configLease);
+        else service.cancel(request && request.requestId);
     });
 
     return function unregister() {
         if (typeof ipcMain.removeHandler === 'function') ipcMain.removeHandler(RESOLVE_CHANNEL);
         if (typeof ipcMain.removeAllListeners === 'function') ipcMain.removeAllListeners(CANCEL_CHANNEL);
-        service.close();
+        if (options.playback) options.playback.close();
+        else service.close();
     };
 }
 

@@ -119,7 +119,6 @@
         return null;
     }
 
-    var cd2Service;
     var strmConfigStore;
     var unregisterCd2Ipc = function () {};
     var unregisterStrmConfigIpc = function () {};
@@ -1033,16 +1032,17 @@
         rootDir: require('path').join(app.getPath('userData'), 'config'),
         environment: Object.assign({}, process.env)
     });
-    cd2Service = cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig(), onDiagnostic: enhancedLog});
+    var strmPlaybackConfig = require('./enhanced/strm-playback-config').create({store: strmConfigStore,
+        createService: function (config) {return cd2ServiceModule.createService({config: config, onDiagnostic: enhancedLog});}});
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,
-        service: cd2Service,
+        playback: strmPlaybackConfig,
         getWebContents: getWebContents
     });
     unregisterStrmConfigIpc = require('./enhanced/strm-config-ipc').register({
         ipcMain: ipcMain,
         store: strmConfigStore,
-        service: cd2Service,
+        playback: strmPlaybackConfig,
         getWebContents: getWebContents,
         createTestService: function () {
             return cd2ServiceModule.createService({config: strmConfigStore.getRuntimeConfig()});
