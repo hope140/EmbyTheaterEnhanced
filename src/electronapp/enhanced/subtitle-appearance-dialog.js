@@ -9,18 +9,21 @@ function (dialogHelper, globalize, userSettings) {
             ['large', 'Large'], ['larger', 'Larger'], ['extralarge', 'ExtraLarge']]},
         {key: 'textColor', label: 'LabelTextColor', values: [
             ['#000000', 'Black'], ['#0000FF', 'Blue'], ['#00FFFF', 'Cyan'],
-            ['#808080', 'DarkGray'], ['#008000', 'Green'], ['#D3D3D3', 'LightGray'],
+            ['#808080', 'DarkGray'], ['#696969', 'DimGray'], ['#A9A9A9', 'Gray'],
+            ['#008000', 'Green'], ['#D3D3D3', 'LightGray'],
             ['#00FF00', 'Lime'], ['#FF00FF', 'Magenta'], ['#FFA500', 'Orange'],
-            ['#FFC0CB', 'Pink'], ['#FF0000', 'Red'], ['#FFFF00', 'Yellow'], ['#ffffff', 'White']]},
+            ['#FFC0CB', 'Pink'], ['#FF0000', 'Red'], ['#C0C0C0', 'Silver'],
+            ['#FFFF00', 'Yellow'], ['#ffffff', 'White']]},
         {key: 'dropShadow', label: 'LabelDropShadow', values: [
             ['none', 'None'], ['raised', 'Raised'], ['depressed', 'Depressed'],
             ['uniform', 'Uniform'], ['dropshadow', 'DropShadow']]},
         {key: 'textBackground', label: 'LabelBackgroundColor', values: [
             ['transparent', 'Transparent'], ['#000000', 'Black'], ['#0000FF', 'Blue'],
-            ['#00FFFF', 'Cyan'], ['#808080', 'DarkGray'], ['#008000', 'Green'],
-            ['#D3D3D3', 'LightGray'], ['#00FF00', 'Lime'], ['#FF00FF', 'Magenta'],
+            ['#00FFFF', 'Cyan'], ['#808080', 'DarkGray'], ['#696969', 'DimGray'],
+            ['#A9A9A9', 'Gray'], ['#008000', 'Green'], ['#D3D3D3', 'LightGray'],
+            ['#00FF00', 'Lime'], ['#FF00FF', 'Magenta'],
             ['#FFA500', 'Orange'], ['#FFC0CB', 'Pink'], ['#FF0000', 'Red'],
-            ['#FFFF00', 'Yellow'], ['#ffffff', 'White']]},
+            ['#C0C0C0', 'Silver'], ['#FFFF00', 'Yellow'], ['#ffffff', 'White']]},
         {key: 'textBackgroundOpacity', label: 'LabelBackgroundOpacity', values: [
             ['.25', '25%'], ['.50', '50%'], ['.75', '75%'], ['1', '100%']]}
     ];
