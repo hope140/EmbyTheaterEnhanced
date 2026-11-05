@@ -53,7 +53,7 @@ function patchVideoOsd(source) {
         `                      if (id === "subtitleappearance") {
                         if (player !== self.currentPlayer ||
                             !canAdjustSubtitleAppearance(player, _playbackmanager.default.getSubtitleStream(player))) return;
-                        require(["./../../enhanced/subtitle-appearance-dialog.js"], function (SubtitleAppearanceDialog) {
+                        require(["../enhanced/subtitle-appearance-dialog.js"], function (SubtitleAppearanceDialog) {
                           if (player !== self.currentPlayer ||
                               !canAdjustSubtitleAppearance(player, _playbackmanager.default.getSubtitleStream(player))) return;
                           destroySubtitleAppearanceDialog(self);
