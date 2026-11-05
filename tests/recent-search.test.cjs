@@ -1,7 +1,11 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const recent = require('../src/electronapp/enhanced/search/recent-search.js');
+const searchOverlay = require('../tools/patch-search-ui.cjs');
 class Element {
     constructor(document) { this.ownerDocument = document; this.children = []; this.attributes = {}; this.hidden = false; this.style = {}; this.events = {}; this.textContent = ''; }
     appendChild(child) { child.parent = this; this.children.push(child); return child; }
@@ -71,4 +75,33 @@ test('late read after user, server, client change or pause cannot replace curren
         resolve({Items: [{Id: 'stale', Name: 'old'}]}); await settle();
         assert.equal(f.old.hidden, false); assert.equal(f.context.querySelector('.searchFieldsInner').children.length, 1);
     }
+});
+
+test('returning to an empty search page reloads recent items after pause', () => {
+    const source = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/search/searchfields.js'), 'utf8');
+    let SearchFields;
+    const sandbox = {require() {}, define(names, factory) {
+        const exports = {};
+        factory(...names.map(name => name === 'exports' ? exports : {}));
+        SearchFields = exports.default;
+    }};
+    vm.runInNewContext(searchOverlay.patchSearchFields(source), sandbox, {filename: 'searchfields.js'});
+    const calls = [];
+    const fields = Object.create(SearchFields.prototype);
+    const input = {value: ''};
+    fields.options = {element: {querySelector(selector) {
+        assert.equal(selector, '.searchfields-txtSearch');
+        return input;
+    }}};
+    fields._eteEmbedded = true;
+    fields.firstLoad = true;
+    fields._eteRecent = {pause() { calls.push('pause'); }, load() { calls.push('load'); }};
+    fields.pause();
+    fields._eteFieldsPaused = false; // The standard list route clears this before SearchFields.resume().
+    fields.resume();
+    fields.resume();
+    assert.deepEqual(calls, ['pause', 'load'], 'return reloads once without a new input event');
+    input.value = 'movie';
+    fields.pause(); fields.resume();
+    assert.deepEqual(calls, ['pause', 'load', 'pause'], 'a populated search does not load the empty-state history');
 });
