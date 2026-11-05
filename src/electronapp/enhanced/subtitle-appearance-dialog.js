@@ -106,9 +106,9 @@ function (dialogHelper, globalize, userSettings) {
         if (this.dlg) return Promise.resolve();
         var self = this;
         var dlg = dialogHelper.createDialog({removeOnClose: true, scrollY: true, transparentBackground: true});
-        dlg.classList.add('formDialog', 'subtitleAppearanceDialog');
+        dlg.classList.add('formDialog', 'subtitleAppearanceDialog', 'dialog-blur');
         var header = document.createElement('div');
-        header.className = 'formDialogHeader';
+        header.className = 'formDialogHeader formDialogHeader-clear';
         var back = document.createElement('button', {is: 'paper-icon-button-light'});
         back.setAttribute('is', 'paper-icon-button-light');
         back.className = 'btnCancel autoSize';
