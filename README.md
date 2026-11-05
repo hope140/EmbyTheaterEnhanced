@@ -6,12 +6,12 @@
 
 ## 下载安装
 
-截至 2026-11-03，正式版与最新测试版如下。只需使用客户端时，下载安装包即可，无需准备源码和构建工具。
+截至 2026-11-04，正式版与最新测试版如下。只需使用客户端时，下载安装包即可，无需准备源码和构建工具。
 
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.4.12（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.12/EmbyTheaterEnhanced-0.4.12-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.12/EmbyTheaterEnhanced-0.4.12-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.4.13（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.13/EmbyTheaterEnhanced-0.4.13-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.13/EmbyTheaterEnhanced-0.4.13-win-x64-setup.exe.sha256) |
 
 从同一 Release 下载安装包和校验文件，核对 SHA-256 后，正常退出客户端再安装。`Source code` 压缩包不是安装包。安装程序未签名，Windows 可能提示未知发布者；校验值用于核对下载字节。
 
@@ -49,6 +49,7 @@
 - **v0.4.10 片头修复与定位诊断**：修复旧片头信息／点击跨播放生效及越界终点，增加脱敏定位与结束诊断；普通拖进度后提前结束的现场根因仍待确认。
 - **v0.4.11 字幕语言多选**：按选择顺序保存首选语言；实际默认字幕轨道仍取决于服务器返回的选轨结果。
 - **v0.4.12 更新交接与 EOF 定位**：改进更新退出和安装器交接，加入低频、脱敏的缓存 EOF 观察日志；未加入自动恢复或切线路。
+- **v0.4.13 语言偏好排序**：首选音轨语言可多选，音轨与字幕的已选语言可在原选择弹窗中调整顺序；实际播放轨道仍由服务器决定。
 
 各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预加载、缓冲暂存和飞牛认证仍是[独立实验](docs/NEXT_RELEASE_SCOPE.md#未发布实验)，不属于上述已发布功能。
 
