@@ -1,4 +1,4 @@
-param([switch]$ReleasePackage, [string]$ExpectedSourceCommit = $env:GITHUB_SHA)
+param([switch]$ReleasePackage, [ValidateSet('serial','isolated')][string]$RegressionMode = 'isolated', [string]$ExpectedSourceCommit = $env:GITHUB_SHA)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -81,7 +81,7 @@ New-Item -ItemType Directory -Path (Split-Path -Parent $testLog) -Force | Out-Nu
 $phase = Start-CIPhase 'tests.regression'
 $phaseSucceeded = $false
 try {
-    & node --test --test-reporter=tap --test-concurrency=1 @tests | Tee-Object -FilePath $testLog
+    & node tools/ci-full-tests.cjs $RegressionMode $testLog
     if ($LASTEXITCODE -ne 0) { throw 'Full regression failed; no package will be uploaded.' }
     $phaseSucceeded = $true
 } finally {

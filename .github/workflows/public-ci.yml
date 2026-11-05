@@ -9,6 +9,10 @@ on:
         description: Stage the standard installer name and five release files (does not publish)
         type: boolean
         default: false
+      full_regression_benchmark:
+        description: Four cold full-package A/B jobs on the exact reviewed SHA (no release)
+        type: boolean
+        default: false
       build_input_benchmark:
         description: Run short A/B only (0 unit tests; never builds a package)
         type: boolean
@@ -121,12 +125,14 @@ jobs:
         run: node tools/ci-change-scope.cjs summary
 
   manual-windows-test-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && !inputs.build_input_benchmark && !inputs.full_regression_benchmark
     # Keep the existing VS2022/MSBuild17 contract; windows-2025 now selects VS2026.
     runs-on: windows-2022
     timeout-minutes: 60
     concurrency:
-      group: ete-manual-windows-test-package
+      # Release material, main and tags retain the original global queue.
+      # Ordinary branch packages use separate hosted runners and run-specific outputs.
+      group: ${{ (inputs.release_package || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) && 'ete-manual-windows-test-package' || format('ete-manual-windows-test-package-test-{0}', github.ref) }}
       cancel-in-progress: false
     steps:
       - name: Check out exact source
@@ -159,7 +165,7 @@ jobs:
 
   windows-build-input-benchmark:
     name: Windows build input A/B (0 unit tests)
-    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark
+    if: github.event_name == 'workflow_dispatch' && inputs.build_input_benchmark && !inputs.full_regression_benchmark
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -209,6 +215,67 @@ jobs:
         with:
           name: build-input-ab-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ci-input-ab-${{ github.run_id }}-${{ github.run_attempt }}/artifact
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
+
+
+  windows-full-package-benchmark:
+    name: Full package A/B (${{ matrix.mode }}, round ${{ matrix.trial }})
+    if: github.event_name == 'workflow_dispatch' && inputs.full_regression_benchmark
+    runs-on: windows-2022
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {mode: serial, trial: 1}
+          - {mode: isolated, trial: 1}
+          - {mode: isolated, trial: 2}
+          - {mode: serial, trial: 2}
+    steps:
+      - name: Require exact reviewed source and no release or short benchmark
+        shell: pwsh
+        env:
+          AB_EXPECTED_SHA: ${{ inputs.benchmark_expected_sha }}
+          AB_RELEASE: ${{ inputs.release_package }}
+          AB_SHORT: ${{ inputs.build_input_benchmark }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:AB_RELEASE -eq 'true' -or $env:AB_SHORT -eq 'true' -or
+              $env:AB_EXPECTED_SHA -cnotmatch '^[a-f0-9]{40}$' -or
+              $env:AB_EXPECTED_SHA -cne $env:GITHUB_SHA) {
+            throw 'Full A/B requires exact reviewed SHA, no release and no short benchmark.'
+          }
+
+      - name: Check out exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up locked Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.18.1
+
+      - name: Cold full package with all production gates
+        shell: pwsh
+        env:
+          AB_MODE: ${{ matrix.mode }}
+        run: ./tools/ci-windows-test-package.ps1 -ExpectedSourceCommit $env:GITHUB_SHA -RegressionMode $env:AB_MODE
+
+      - name: Upload package receipts and complete regression logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: full-package-ab-${{ matrix.mode }}-${{ matrix.trial }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-output/manual-windows-package/*
+            test-output/manual-tests-*
           if-no-files-found: error
           retention-days: 1
           compression-level: 0

@@ -47,3 +47,31 @@ libmpv 下载失败时输出一次 `LIBMPV_HTTP_DIAGNOSTIC` JSON，带本次 `at
 每一跳仅记录通过原来源校验的公开 host/path、状态及有限 MIME。响应字段仅接受 Server 产品家族、格式正确的 CF-Ray、秒数或 HTTP 日期形式的 Retry-After；其他值省略或标记脱敏。查询、片段、用户信息、响应正文、Cookie、Authorization、完整 URL 和完整请求/响应头均不输出，也不回显底层异常或原始命令失败文本。成功回执和归档大小、7z 签名、SHA256、DLL 校验保持原合同。
 
 本地 HTTP 回归仅通过库函数测试入口连接回环地址；生产命令行没有传输替换参数，仍拒绝非原官方 HTTPS 路径。诊断增强不重试请求、不改源、UA、代理或权限，也不表示已解除远端 403。恢复真实下载须先取得新的正常访问依据或明确合规条件变化。
+
+
+## 普通测试包排队隔离
+
+普通开发分支的 `release_package=false` 使用完整 ref 对应的并发组；同分支仍串行，不取消进行中的作业。标准发行材料（`release_package=true`）、main 和 tag 继续使用原全局组 `ete-manual-windows-test-package`。正式发布工作流不变。每次作业仍使用独立托管 runner、准确 `github.sha` 检出和带 run/attempt 身份的输出。
+
+此调整只减少不同开发分支之间的队列等待，不缩短单次构建，也不能消除账号 runner 配额导致的等待。GitHub concurrency 仍不是 FIFO；同组新的 pending 作业可替换旧 pending，`cancel-in-progress=false` 只保护正在运行的作业。
+
+公开 push、PR 合并结果和手动包检查保留：其源码身份、材料范围与门禁不同，不能只凭 head 提交相同去重。当前完整回归只对白名单四文件采用受控并行，其余和显式材料仍串行，具体资源审查与同提交 Windows 验证要求见下一节。Host 本轮编译验证、精确提交校验及安装器解包逐文件比对保持。
+
+## 完整回归受控并行与冷构建 A/B
+
+`ci-full-tests.cjs` 每次重新发现全部 `tests/*.test.cjs`，不使用公开集合的六文件排除。`serial` 模式保持原完整串行命令；`isolated` 先以最多两个独立 Node 子进程执行以下四文件，再串行执行全部其余文件。未知新文件自动进入串行组，缺失已审核文件、重复发现、未知模式或集合分区不完整直接失败。
+
+| 并行白名单 | 资源与归属审查 |
+| --- | --- |
+| `runtime-provenance.test.cjs` | 每例物理化的 `mkdtemp` 根；Git、变造输入、runtime 和链接均属于该根。仓库快照只读；`createRuntime` 和真实来源校验每次执行，不缓存校验结果。 |
+| `build-input-contract.test.cjs` | 每例独立仓库/runtime；已有进程内 fixture seed 只用于复制，变造不回写 seed，Git 操作指向所属夹具。 |
+| `web-overlay-preparation.test.cjs` | 每例独立 source/runtime 临时目录；只读仓库 base/generator，全部输出、删改与清理在所属目录。 |
+| `ci-fixed-git-batch.test.cjs` | 每例独立 Git 仓库；child-process mock 只在该测试文件的 Node 进程内有效，不改全局 Git 配置。 |
+
+这四文件不启动真实 Host、绑定固定端口、使用公共输出目录或按进程名清理。两个阶段不重叠；其他 Windows 进程／端口／句柄测试及显式发行材料继续串行。并行文件内部仍沿 Node 默认串行行为。完整命令的非零退出、取消、缺失／重复 TAP 汇总均阻止打包；失败组之后仍执行剩余组以保留诊断覆盖。各组原始 TAP、完整文件列表与内容哈希保留，汇总日志合计全部用例，不把单组通过冒充全量通过。
+
+`ci-windows-test-package.ps1 -RegressionMode serial|isolated` 选择同集合调度方式，候选默认 `isolated`；显式材料、Host 本轮编译探测、来源及安装器解包比对不变。公开 CI 入口保持原串行设置。
+
+手动 `full_regression_benchmark=true` 且 `benchmark_expected_sha` 为所选分支准确 SHA，可启动四个标准 `windows-2022` 冷作业：serial/isolated 各两轮，最多两个作业同时执行，失败不取消其他轮。该模式拒绝 `release_package=true` 或短输入 benchmark，不回退普通包；每轮走完整普通包流程，不共享 `.work`、prepared 输入、Host 成品或测试成功缓存。它不是正式发布，也不能代替 `release_package=true` 的额外显式材料覆盖。产物/回执/原始测试日志保留一天。
+
+比较须绑定相同 SHA、测试选择哈希、输入组件身份和 runner image，分别报告等待、作业执行、回归阶段及通过/失败/跳过。runner 资源和下载噪声可使单轮结果变化，不以历史不同版本或公开 CI 耗时替代冷完整包对照。实际结果另按运行链接记录。

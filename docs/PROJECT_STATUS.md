@@ -1,5 +1,34 @@
 # 项目状态
 
+## 2026-11-05 — 构建优化完成同提交 Windows 冷构建对照
+
+实测代码固定 `8e308cfd7555c4ef9da3236e12955e07f1a15d43`，后续证据文档提交不冒充该测量来源。[完整 A/B 42046345848](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42046345848) 获得 serial / isolated 各两份成功冷完整包；仅四个已审查文件并发 2，其余全部串行。队列隔离与资源审查见[Actions 测试包](ACTIONS_TEST_PACKAGE.md#完整回归受控并行与冷构建-ab)。
+
+| 模式／轮次 | 原始 job | 完整回归墙钟 | 完整 job 执行 |
+| --- | --- | --- | --- |
+| serial 1 | [127310220371](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42046345848/job/127310220371) | 702.665 秒 | 24 分 29 秒 |
+| serial 2 | [127310221144](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42046345848/job/127310221144) | 821.602 秒 | 23 分 59 秒 |
+| isolated 1，补测 | [127338843601](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42046345848/job/127338843601) | 663.448 秒 | 21 分 30 秒 |
+| isolated 2 | [127310221001](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42046345848/job/127310221001) | 620.179 秒 | 22 分 49 秒 |
+
+完整回归均值 762.133 → 641.813 秒，少 120.320 秒（15.79%）；完整 job 均值 1454 → 1329.5 秒，少 124.5 秒（8.56%）。每组只有两份成功样本，托管 runner／下载存在噪声，不能承诺固定收益；例如串行第二轮回归更慢，但 Host 编译验证从约 296 秒降至 202 秒，使整包反而略快。保留受控并行默认，不扩大白名单或缓存成品。
+
+四份均为 248 文件、2510 项：2508 pass／0 fail／0 cancelled／2 相同 skip。两项跳过分别是显式 hosted-Windows 短验证入口和 Unix 传输专用用例。选择哈希均为 `30a132a8bceefa936a61af03a44334a979849d9497383134840509c5e2f648e7`，映像 `windows-2022 / 20261101.353.1`，Node `v24.18.1`，组件提交 `ad14a95bfe2122d45508bbb21ea88cfc4f71ee77`。四份归档实际下载、CRC 与 JSON 回执交叉核验通过：固定 Model、libmpv 归档／DLL／组件树、Framework 身份及 build-input-provenance 一致；prepared/work cache 起始均为空。每轮独立完成 Host 本轮编译探针和安装器解包 2230 文件的路径／大小／SHA256 比对，安装器本身因本轮构建证据而不宣称字节相同。
+
+等待另计：attempt 1 从创建至 serial 1、isolated 2、serial 2 启动分别 4、66、1437 秒，含矩阵 max-parallel=2 调度；补测 attempt 2 创建至启动 2 秒。这不是跨分支队列隔离的实测收益。isolated 1 首次 job `127310221003` 执行 60 秒，在固定 windows-host 输入获取时失败，未进入回归；日志未暴露 HTTP 状态，根因未定。工作流结束后仅补测该 job，未换源、权限或身份；此前 run 尚在运行时 GitHub 拒绝补测，终态后接受。失败和等待不计入成功样本均值，不能删除其可靠性记录。
+
+该准确代码的 Linux 全量为 2478 pass／0 fail／32 平台 skip，相关定向 84/84；[Windows PR 公开 CI 42045313059](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42045313059) 为 2408 pass／0 fail／5 skip，公开集合仍排除原六个材料依赖文件。初版 `cc71a264` 的预检兼容失败、时间敏感用例失败和取消的 A/B `42043834659` 保留在维护记录，不算成功样本。四轮为 `release_package=false` 完整普通包，不包含 `release_package=true` 的额外显式材料；不代替系统安装或客户端播放验收。[PR #95](https://github.com/hope140/EmbyTheaterEnhanced/pull/95) 保持草稿，未合并或发布，未修改其他版本开发分支。以下候选条目保留当时状态。
+
+## 2026-11-05 — 完整 Windows 构建受控并行候选
+
+优化分支同步已发布 0.4.15 主线，仅解决两份进度文档的追加记录冲突。完整测试入口保留全部发现文件，只对白名单四个独立临时仓库测试文件采用进程并发 2，其余及显式材料保持串行。新增同 SHA 的 serial/isolated 四轮冷完整包入口，全部来源、Host 本轮编译及安装器验证保持。共享资源审查、失败传播和测量边界见[Actions 测试包](ACTIONS_TEST_PACKAGE.md#完整回归受控并行与冷构建-ab)。Windows 实测尚待执行；本条不宣称提速已验证。
+
+
+## 2026-11-05 — 普通测试包分支队列隔离候选
+
+普通开发分支测试包改为按完整 ref 分组；标准发行材料、main 与 tag 保留原全局队列，进行中作业不取消。公开 push/PR 和全部打包门禁保持，未启用测试并行或成品缓存。定向工作流／发行／公开测试入口回归 30/30、562 份 JavaScript 语法与 659 份维护文本有限凭据模式检查通过；Windows CI 另按准确提交核验。此变化只针对跨分支排队，不宣称单次构建提速；同提交多轮 Windows 并发 A/B 尚未完成。队列语义与验证边界见[Actions 测试包](ACTIONS_TEST_PACKAGE.md#普通测试包排队隔离)。
+
+
 ## 2026-11-05 — v0.4.15 用户验收通过，准备测试版发行
 
 用户确认整合包 `3cbc81639517adef2f9df13845ca91eef815b8b7` 验收通过，并授权合并 PR #94、发布 0.4.15 测试版；正式 Latest 保持 v0.4.0。该提交包含已发布 0.4.14 main `be81184`，没有恢复最近搜索增量。Windows 定向回归 113/113、完整回归 2502 pass／0 fail／3 skip，Host 编译探测、运行包与安装器解包比对通过。验收安装器 SHA-256 为 `fdad96435dfc73935990cd52dfb73d72c830104100b152d21760a8685d9897b3`。本次仅补齐发行文档，不增加产品改动；标准五附件必须绑定准确后续提交重新构建，公开 CI、合并和实际发布结果以回读为准，不提前宣称完成。以下候选记录保留各自编写时的状态。

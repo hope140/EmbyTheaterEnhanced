@@ -20,7 +20,7 @@ const benchmark = jobBlock('windows-build-input-benchmark');
 
 // Evaluate only this workflow's simple AND/string/boolean route clauses.
 // Unknown syntax fails rather than silently treating a broader route as safe.
-function routes(job, event, ref, benchmarkMode) {
+function routes(job, event, ref, benchmarkMode, fullBenchmarkMode = false) {
     const conditions = [...job.matchAll(/^    if: (.+)$/gm)];
     assert.equal(conditions.length, 1, 'one top-level job condition required');
     return conditions[0][1].split(/\s+&&\s+/).map(clause => {
@@ -29,8 +29,9 @@ function routes(job, event, ref, benchmarkMode) {
             const equal = (compare[1] === 'event_name' ? event : ref) === compare[3];
             return compare[2] === '==' ? equal : !equal;
         }
-        assert.ok(['inputs.build_input_benchmark', '!inputs.build_input_benchmark'].includes(clause), 'unsupported route clause');
-        return clause.startsWith('!') ? !benchmarkMode : benchmarkMode;
+        assert.ok(['inputs.build_input_benchmark', '!inputs.build_input_benchmark', 'inputs.full_regression_benchmark', '!inputs.full_regression_benchmark'].includes(clause), 'unsupported route clause');
+        const value = clause.includes('full_regression') ? fullBenchmarkMode : benchmarkMode;
+        return clause.startsWith('!') ? !value : value;
     }).every(Boolean);
 }
 function assertPinnedSource(job) {
@@ -62,7 +63,7 @@ test('package job requires an explicit manual event and the MSBuild17-compatible
     }
     assert.match(manual, /^    runs-on: windows-2022$/m);
     assert.doesNotMatch(manual, /self-hosted|windows-latest|larger|workflow_run|pull_request_target/);
-    assert.match(manual, /^      group: ete-manual-windows-test-package$/m);
+    assert.match(manual, /^      group: \$\{\{ .+ \}\}$/m);
     assert.match(manual, /cancel-in-progress: false/);
 });
 
@@ -140,4 +141,50 @@ test('benchmark retains pinned read-only inputs and uploads only bounded diagnos
     assert.match(benchmark, /retention-days: 1/);
     assert.match(benchmark, /include-hidden-files: false/);
     assert.doesNotMatch(benchmark, /path: (?:\.|dist|vendor|\.work)(?:\/\*\*|$)/m);
+});
+
+test('ordinary branch queues are isolated while release material, main and tags retain their global lock', () => {
+    const expression = /^      group: \$\{\{ (.+) \}\}$/m.exec(manual)[1];
+    // Evaluate the actual workflow expression, with only GitHub's used helpers exposed.
+    const vm = require('node:vm');
+    const group = (ref, release_package, sha = 'a'.repeat(40), run_id = 1) => vm.runInNewContext(expression, {
+        github: {ref, sha, run_id}, inputs: {release_package},
+        startsWith: (value, prefix) => value.startsWith(prefix),
+        format: (pattern, value) => pattern.replace('{0}', value)
+    });
+    const global = 'ete-manual-windows-test-package';
+    const branches = ['refs/heads/review-a', 'refs/heads/review-b'];
+    assert.notEqual(group(branches[0], false), group(branches[1], false));
+    for (const ref of branches) {
+        assert.notEqual(group(ref, false), global);
+        assert.equal(group(ref, true), global);
+        assert.equal(group(ref, false), group(ref, false, 'b'.repeat(40), 2), 'different commits/runs on the same branch remain serialized');
+    }
+    for (const ref of ['refs/heads/main', 'refs/tags/v0.4.13', 'refs/tags/review-a']) {
+        for (const release of [false, true]) assert.equal(group(ref, release), global);
+    }
+    assert.match(manual, /cancel-in-progress: false/);
+});
+
+
+test('full package A/B is explicit, source-bound, cold and separate from short or normal packages', () => {
+    const full = jobBlock('windows-full-package-benchmark');
+    for (const enabled of [false, true]) for (const event of ['push','pull_request','workflow_dispatch']) {
+        assert.equal(routes(full,event,'refs/heads/fixture',false,enabled), event === 'workflow_dispatch' && enabled);
+        if (enabled) {
+            assert.equal(routes(manual,event,'refs/heads/fixture',false,enabled),false);
+            assert.equal(routes(benchmark,event,'refs/heads/fixture',true,enabled),false);
+        }
+    }
+    assert.match(full,/AB_EXPECTED_SHA.*inputs.benchmark_expected_sha/);
+    assert.match(full,/AB_EXPECTED_SHA -cne \$env:GITHUB_SHA/);
+    assert.match(full,/AB_RELEASE -eq 'true'.*AB_SHORT -eq 'true'/);
+    assert.match(full,/max-parallel: 2/);
+    assert.match(full,/fail-fast: false/);
+    assert.match(full,/runs-on: windows-2022/);
+    assert.match(full,/ci-windows-test-package.ps1 -ExpectedSourceCommit \$env:GITHUB_SHA -RegressionMode \$env:AB_MODE/);
+    assert.match(full,/ref: \$\{\{ github.sha \}\}/);
+    assert.doesNotMatch(full,/actions\/cache|git push|gh release|contents: write/);
+    assert.equal((full.match(/mode: serial, trial:/g)||[]).length,2);
+    assert.equal((full.match(/mode: isolated, trial:/g)||[]).length,2);
 });
