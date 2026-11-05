@@ -1,5 +1,4 @@
-param([switch]$ReleasePackage, [string]$ExpectedSourceCommit = $env:GITHUB_SHA,
-    [ValidateSet('serial','isolated')][string]$RegressionMode = 'isolated')
+param([switch]$ReleasePackage, [ValidateSet('serial','isolated')][string]$RegressionMode = 'isolated', [string]$ExpectedSourceCommit = $env:GITHUB_SHA)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
