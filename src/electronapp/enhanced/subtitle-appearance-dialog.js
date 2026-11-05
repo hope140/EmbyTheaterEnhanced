@@ -35,12 +35,16 @@ function (dialogHelper, globalize, userSettings) {
         select.setAttribute('label', label(field.label));
         select.setAttribute('data-setting', field.key);
         var known = false;
+        var selectedValue = value;
         field.values.forEach(function (entry) {
             var option = doc.createElement('option');
             option.value = entry[0];
             option.textContent = entry[1].endsWith('%') ? entry[1] : label(entry[1]);
             select.appendChild(option);
-            if (entry[0].toLowerCase() === String(value).toLowerCase()) known = true;
+            if (entry[0].toLowerCase() === String(value).toLowerCase()) {
+                known = true;
+                selectedValue = entry[0];
+            }
         });
         if (!known && typeof value === 'string' && value) {
             var saved = doc.createElement('option');
@@ -48,7 +52,7 @@ function (dialogHelper, globalize, userSettings) {
             saved.textContent = value;
             select.appendChild(saved);
         }
-        select.value = value;
+        select.value = selectedValue;
         container.appendChild(select);
         return container;
     }
