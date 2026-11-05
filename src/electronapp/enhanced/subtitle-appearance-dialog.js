@@ -25,7 +25,9 @@ function (dialogHelper, globalize, userSettings) {
             ['#FFA500', 'Orange'], ['#FFC0CB', 'Pink'], ['#FF0000', 'Red'],
             ['#C0C0C0', 'Silver'], ['#FFFF00', 'Yellow'], ['#ffffff', 'White']]},
         {key: 'textBackgroundOpacity', label: 'LabelBackgroundOpacity', values: [
-            ['.25', '25%'], ['.50', '50%'], ['.75', '75%'], ['1', '100%']]}
+            ['.1', '10%'], ['.2', '20%'], ['.25', '25%'], ['.3', '30%'],
+            ['.4', '40%'], ['.50', '50%'], ['.6', '60%'], ['.7', '70%'],
+            ['.75', '75%'], ['.8', '80%'], ['.9', '90%'], ['1', '100%']]}
     ];
 
     function label(name) { return globalize.translate(name); }
