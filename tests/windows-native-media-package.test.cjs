@@ -69,14 +69,11 @@ test('formal Windows wiring uses no trial flag and keeps one-second capture, mai
  for(const name of ['tools/build.ps1','tools/package.ps1'])assert.match(read(name),/windows-native-media-input.cjs/);
  const contract=require('../tools/build-input-contract.cjs');for(const name of tool.INPUTS)assert.ok(contract.INPUT_PATHS.includes(name));
  const productVersion=require('../package.json').version,productLock=require('../package-lock.json');assert.equal(productLock.version,productVersion);assert.equal(productLock.packages[''].version,productVersion);assertCheckoutBytes(fs.readFileSync(path.join(root,'src/config/system-defaults.json')),cp.execFileSync('git',['-C',root,'show','ff92bead:src/config/system-defaults.json']));
- // Preserve the whole historical workflow guard, with only the reviewed queue block transformed.
- const queueBefore = '      group: ete-manual-windows-test-package\n';
- const queueAfter = "      # Release material, main and tags retain the original global queue.\n" +
-  "      # Ordinary branch packages use separate hosted runners and run-specific outputs.\n" +
-  "      group: ${{ (inputs.release_package || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) && 'ete-manual-windows-test-package' || format('ete-manual-windows-test-package-test-{0}', github.ref) }}\n";
- const baseline = cp.execFileSync('git',['-C',root,'show','ff92bead:.github/workflows/public-ci.yml']).toString('utf8');
- assert.equal(baseline.split(queueBefore).length,2,'exactly one historical queue block');
- assertCheckoutBytes(fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml')),Buffer.from(baseline.replace(queueBefore,queueAfter)));
+ // Reviewed full workflow identity, allowing only exact Git CRLF checkout conversion.
+ const workflowBytes = fs.readFileSync(path.join(root,'.github/workflows/public-ci.yml'));
+ const workflowLf = Buffer.from(workflowBytes.toString('utf8').replace(/\r\n/g,'\n'));
+ assertCheckoutBytes(workflowBytes,workflowLf);
+ assert.equal(sha(workflowLf),'41b9beb913a163db900ee7f65a36dfc6146dfd5c159d9c633570fd577e8df0be');
 });
 
 
