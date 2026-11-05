@@ -151,6 +151,10 @@ test('subtitle appearance changes update the active native generation and stop w
   assert.equal(reset['sub-font-size'], 38);
   assert.equal(reset['sub-back-color'], '0/0/0/0');
   assert.equal(reset['sub-outline-size'], 0);
+  await instance.applySubtitleAppearance({textSize: 'small'});
+  assert.equal(capturedAll().at(-1)['sub-font-size'], 35);
+  await instance.applySubtitleAppearance({textSize: 'smaller'});
+  assert.equal(capturedAll().at(-1)['sub-font-size'], 28);
   const beforeStop = capturedAll().length;
   await instance.stop(false);
   assert.equal(await instance.applySubtitleAppearance({textSize: 'large'}), false);
@@ -256,7 +260,7 @@ test('full AMD player assembles current video/audio settings from exact keys on 
   assert.equal(boundary23['audio-channels'], '7.1,5.1,stereo');
   assert.equal(boundary23['audio-spdif'], 'ac3');
   assert.equal(boundary23['ad-lavc-ac3drc'], 0.25);
-  assert.equal(boundary23['sub-font-size'], 45);
+  assert.equal(boundary23['sub-font-size'], 35);
   assert.equal(boundary23['sub-back-color'], '0/0/0/0.5');
   assert.equal(boundary23['sub-color'], '#ffffff');
 

@@ -145,7 +145,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
     function subtitleAppearanceProperties(settings, live) {
         settings = settings || {};
-        var sizes = {smaller: 35, small: 45, large: 65, larger: 75, extralarge: 85};
+        // Keep the two small presets below mpv's 38-point normal default.
+        var sizes = {smaller: 28, small: 35, large: 65, larger: 75, extralarge: 85};
         var props = {};
         if (Object.prototype.hasOwnProperty.call(sizes, settings.textSize)) {
             props['sub-font-size'] = sizes[settings.textSize];

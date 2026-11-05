@@ -72,6 +72,13 @@ test('subtitle menu click loads the real dialog through Alameda and opens it', a
   const document = {
     createElement() { return new Element(); },
     head: {appendChild(script) {
+      if (script.attributes.href) {
+        const cssPath = fileURLToPath(new URL(script.attributes.href, documentUrl));
+        assert.equal(cssPath, path.join(root, 'src/electronapp/enhanced/subtitle-appearance-dialog.css'));
+        assert.ok(fs.existsSync(cssPath));
+        setImmediate(() => script.onload());
+        return;
+      }
       const url = new URL(script.src, documentUrl);
       requested.push(fileURLToPath(url));
       setImmediate(() => {
@@ -101,7 +108,7 @@ test('subtitle menu click loads the real dialog through Alameda and opens it', a
   vm.runInContext(fs.readFileSync(path.join(root, 'vendor/web-snapshot/www/modules/alameda/alameda.js'), 'utf8'), context);
   context.require.config({baseUrl: documentUrl.href.replace(/index\.html$/, '')});
   const dependencies = {
-    dialogHelper, globalize: {translate: key => key},
+    dialogHelper, globalize: {translate: key => key, getCurrentLocales: () => ['zh-CN']},
     userSettings: {getSubtitleAppearanceSettings: () => ({}), setSubtitleAppearanceSettings() {}},
     'emby-select': {}, 'paper-icon-button-light': {}, 'emby-scroller': {}, formDialogStyle: {}
   };
@@ -129,5 +136,9 @@ test('subtitle menu click loads the real dialog through Alameda and opens it', a
   for (const field of ['textSize', 'textColor', 'dropShadow', 'textBackground', 'textBackgroundOpacity']) {
     assert.ok(dialog.querySelector('[data-setting="' + field + '"]'), field + ' field missing');
   }
+  const choices = field => dialog.querySelector('[data-setting="' + field + '"]').children.map(item => item.textContent);
+  assert.ok(choices('textColor').includes('白色'));
+  assert.ok(choices('textBackground').includes('透明'));
+  assert.ok(choices('dropShadow').includes('标准描边'));
   assert.deepEqual(requested, [path.join(root, 'src/electronapp/enhanced/subtitle-appearance-dialog.js')]);
 });

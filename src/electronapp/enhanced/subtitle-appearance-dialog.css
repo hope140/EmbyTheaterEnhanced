@@ -1,0 +1,73 @@
+/* Keep the in-playback editor compact and close to ETE's dark player chrome. */
+.formDialog.subtitleAppearanceDialog {
+    box-sizing: border-box;
+    width: min(30rem, calc(100vw - 2rem));
+    min-width: 0;
+    max-width: calc(100vw - 2rem);
+    max-height: min(84vh, 42rem);
+    --background-hue: 230;
+    --background-saturation: 5%;
+    --background-lightness: 14%;
+    --theme-background: hsl(var(--background-hue), var(--background-saturation), var(--background-lightness));
+    --header-background: hsl(var(--background-hue), var(--background-saturation), 19%);
+    --button-background-hue: var(--background-hue);
+    --button-background-saturation: var(--background-saturation);
+    --button-background-lightness: 24%;
+    color: #fff;
+}
+.subtitleAppearanceDialog .formDialogHeader {
+    gap: .55em;
+    padding: .7em 1em;
+    border-bottom: 1px solid var(--line-background, rgba(255, 255, 255, .16));
+}
+.subtitleAppearanceDialog .formDialogHeaderTitle {
+    margin: 0;
+    font-size: 1.15em;
+}
+.subtitleAppearanceDialog .btnCancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 2.5em;
+    width: 2.5em;
+    height: 2.5em;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.subtitleAppearanceDialog .btnCancel:hover,
+.subtitleAppearanceDialog .btnCancel:focus-visible {
+    background: rgba(255, 255, 255, .14);
+}
+.subtitleAppearanceDialog .btnCancel:focus-visible,
+.subtitleAppearanceDialog select:focus-visible {
+    outline: 2px solid var(--theme-accent-text-color, #fff);
+    outline-offset: 2px;
+}
+.subtitleAppearanceDialog .formDialogContent.no-grow {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+.subtitleAppearanceDialog .dialogContentInner {
+    box-sizing: border-box;
+    max-width: none;
+    padding: 1em 1.25em 1.2em;
+}
+.subtitleAppearanceDialog .selectContainer { margin-bottom: .85em; }
+.subtitleAppearanceDialog .selectContainer:last-child { margin-bottom: 0; }
+.subtitleAppearanceDialog .subtitleAppearanceHint {
+    margin-top: .3em;
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .7));
+    font-size: .76em;
+    line-height: 1.35;
+}
+@media (max-width: 36rem) {
+    .formDialog.subtitleAppearanceDialog { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); }
+    .subtitleAppearanceDialog .dialogContentInner { padding-inline: 1em; }
+}

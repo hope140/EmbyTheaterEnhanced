@@ -1,8 +1,33 @@
 define(['dialogHelper', 'globalize', 'userSettings',
-    'emby-select', 'paper-icon-button-light', 'emby-scroller'],
+    'emby-select', 'paper-icon-button-light', 'emby-scroller',
+    'css!../enhanced/subtitle-appearance-dialog'],
 function (dialogHelper, globalize, userSettings) {
     'use strict';
     require(['formDialogStyle']);
+    var chineseNames = {
+        LabelDropShadow: '描边与阴影：',
+        None: '关闭', Raised: '偏移阴影（原右下）', Depressed: '偏移阴影（原左上）',
+        Uniform: '加粗描边', DropShadow: '标准描边',
+        Transparent: '透明', Black: '黑色', Blue: '蓝色', Cyan: '青色',
+        DarkGray: '深灰色', DimGray: '暗灰色', Gray: '灰色', Green: '绿色',
+        LightGray: '浅灰色', Lime: '亮绿色', Magenta: '品红色',
+        Orange: '橙色', Pink: '粉色', Red: '红色', Silver: '银色',
+        Yellow: '黄色', White: '白色'
+    };
+    var traditionalNames = {
+        LabelDropShadow: '描邊與陰影：',
+        None: '關閉', Raised: '偏移陰影（原右下）', Depressed: '偏移陰影（原左上）',
+        Uniform: '加粗描邊', DropShadow: '標準描邊',
+        Transparent: '透明', Black: '黑色', Blue: '藍色', Cyan: '青色',
+        DarkGray: '深灰色', DimGray: '暗灰色', Gray: '灰色', Green: '綠色',
+        LightGray: '淺灰色', Lime: '亮綠色', Magenta: '洋紅色',
+        Orange: '橙色', Pink: '粉紅色', Red: '紅色', Silver: '銀色',
+        Yellow: '黃色', White: '白色'
+    };
+    var locales = typeof globalize.getCurrentLocales === 'function' ? globalize.getCurrentLocales() : [];
+    var language = (locales && locales[0]) || (typeof navigator !== 'undefined' && navigator.language) || '';
+    var useChineseNames = /^zh(?:-|$)/i.test(language);
+    var localNames = /^zh-(?:TW|HK|MO)(?:-|$)/i.test(language) ? traditionalNames : chineseNames;
     var fields = [
         {key: 'textSize', label: 'LabelTextSize', values: [
             ['smaller', 'Smaller'], ['small', 'Small'], ['', 'Normal'],
@@ -30,11 +55,13 @@ function (dialogHelper, globalize, userSettings) {
             ['.75', '75%'], ['.8', '80%'], ['.9', '90%'], ['1', '100%']]}
     ];
 
-    function label(name) { return globalize.translate(name); }
+    function label(name) {
+        return useChineseNames && Object.prototype.hasOwnProperty.call(localNames, name) ?
+            localNames[name] : globalize.translate(name);
+    }
     function makeField(doc, field, value) {
         var container = doc.createElement('div');
         container.className = 'selectContainer';
-        container.style.marginBottom = '1.2em';
         var select = doc.createElement('select', {is: 'emby-select'});
         select.setAttribute('is', 'emby-select');
         select.setAttribute('label', label(field.label));
@@ -59,6 +86,15 @@ function (dialogHelper, globalize, userSettings) {
         }
         select.value = selectedValue;
         container.appendChild(select);
+        if (field.key === 'dropShadow') {
+            var note = doc.createElement('div');
+            note.className = 'fieldDescription subtitleAppearanceHint';
+            note.textContent = useChineseNames ?
+                (localNames === traditionalNames ? '本地播放器對兩種偏移陰影使用相同的近似效果。' :
+                    '本地播放器对两种偏移阴影使用相同的近似效果。') :
+                'The two offset shadows use the same approximation in the local player.';
+            container.appendChild(note);
+        }
         return container;
     }
 
@@ -87,10 +123,9 @@ function (dialogHelper, globalize, userSettings) {
         dlg.appendChild(header);
         var body = document.createElement('div', {is: 'emby-scroller'});
         body.setAttribute('is', 'emby-scroller');
-        body.className = 'formDialogContent';
+        body.className = 'formDialogContent no-grow';
         var form = document.createElement('form');
         form.className = 'dialogContentInner dialog-content-centered padded-left padded-right padded-top padded-bottom';
-        form.style.maxWidth = '34em';
         form.addEventListener('submit', function (event) { event.preventDefault(); });
         var settings = userSettings.getSubtitleAppearanceSettings();
         fields.forEach(function (field) {
