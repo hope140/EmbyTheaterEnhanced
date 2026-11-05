@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-05 — v0.4.15 播放字幕外观候选
+
+以 main `53094bd` 为基底，不纳入 v0.4.14 草稿内容。对照当前 Emby 网页端字幕菜单和外观编辑器，在 ETE 原 OSD 字幕菜单增加文本字幕可见入口；自有弹窗复用旧用户字段、原组件与语言键，改变时持久化并提交原生属性。libmpv 仅接受当前播放请求，停止后拒绝旧更新。固定 Web overlay 继续从仓库旧快照生成，新增 patcher 进入构建输入和来源合同。验证证据与限制见[V0415 候选记录](V0415_SUBTITLE_APPEARANCE.md)。
+
 ## 2026-11-04 — v0.4.13 testing 发布后核验
 
 用户确认准确源码 `c686e189ca2ce51359270624f45b6652e4618213` 的普通测试包验收通过。PR #91 正常合并为 `715bc5af6f9be8a87c6813a0cee10f4fb3196a10`，两提交 Git tree 同为 `0006c19b32b9343333c7d250922f55f02ee95b4d`；Tag v0.4.13 固定到验收源码。PR/main 公开 CI 与[发行 run 41846593844](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41846593844)成功；发行构建 2499 项为 2497 pass／0 fail／2 skip，显式材料 135/135 通过。五附件完整下载、API 大小／SHA-256、安装器来源、独立校验文件与原始 notes 均一致；安装器 SHA-256 为 `797dfcc9048119e6917376815308c26d964121166bd76e0148cdd5470fc25794`，匿名安装器和校验文件下载亦与同一摘要一致。[v0.4.13 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) 是非草稿 Pre-release，正式 Latest 仍 v0.4.0。用户验收未细分旧服务器、遥控、实际选轨或安装组合；窗口按钮偶发不可点击的现场根因未确认，不列为修复。以下候选记录保留各自编写时的状态。

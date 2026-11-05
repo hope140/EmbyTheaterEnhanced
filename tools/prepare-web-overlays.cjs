@@ -17,6 +17,7 @@ const actionSheetReordering = require('./patch-actionsheet-reordering.cjs');
 const actionSheetLayout = require('./patch-actionsheet-layout.cjs');
 const startup = require('./patch-startup.cjs');
 const videoOsdLifecycle = require('./patch-videoosd-lifecycle.cjs');
+const subtitleAppearance = require('./patch-subtitle-appearance.cjs');
 const connectionManagerTransport = require('./patch-connectionmanager-transport.cjs');
 const trackedFileHash = require('./tracked-file-hash.cjs');
 const advanceDownload = require('./patch-advance-download.cjs');
@@ -38,6 +39,7 @@ const ACTIONSHEET_REORDER_GENERATOR_PATH = 'tools/patch-actionsheet-reordering.c
 const ACTIONSHEET_LAYOUT_GENERATOR_PATH = 'tools/patch-actionsheet-layout.cjs';
 const STARTUP_GENERATOR_PATH = 'tools/patch-startup.cjs';
 const OSD_LIFECYCLE_GENERATOR_PATH = 'tools/patch-videoosd-lifecycle.cjs';
+const SUBTITLE_APPEARANCE_GENERATOR_PATH = 'tools/patch-subtitle-appearance.cjs';
 const SUBTITLE_LANGUAGE_GENERATOR_PATH = 'tools/patch-subtitle-language-preference.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
@@ -138,8 +140,8 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/videoosd/videoosd.js',
         expectedBaseSha256: '86AB60C897E827B5152435350FE7B3801D8AFD6B8889EEF96E9996E71BB5EEAB',
         expectedInputSha256: null,
-        expectedOutputSha256: '889DDA18AFD91D055F5E21F7E7396AE3201E303E7C89E024BEEC29D080E518A3',
-        generatorPaths: Object.freeze([GENERATOR_PATH, OSD_LIFECYCLE_GENERATOR_PATH])
+        expectedOutputSha256: '2AF19CA534BE606602F0CB54EAD6106A55D575FC4A08350279CE495318821DE3',
+        generatorPaths: Object.freeze([GENERATOR_PATH, OSD_LIFECYCLE_GENERATOR_PATH, SUBTITLE_APPEARANCE_GENERATOR_PATH])
     }),
     Object.freeze({
         id: 'startup-index',
@@ -426,7 +428,7 @@ function outputFor(root, contract) {
     if (contract.id === 'advance-download-menu') return {base, input: Buffer.from(advanceDownload.patchItemContextMenu(base.toString('utf8')), 'utf8')};
     if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};
     if (contract.id === 'connectionmanager-transport') return {base, input: Buffer.from(connectionManagerTransport.patchConnectionManager(base.toString('utf8')), 'utf8')};
-    if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(videoOsdLifecycle.patchVideoOsd(base.toString('utf8')), 'utf8')};
+    if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(subtitleAppearance.patchVideoOsd(videoOsdLifecycle.patchVideoOsd(base.toString('utf8'))), 'utf8')};
     if (contract.id === 'playback-input-diagnostics') return {base, input: Buffer.from(playbackInputDiagnostics.patchInputApi(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: base};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};

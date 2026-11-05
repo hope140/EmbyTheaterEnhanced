@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-05 — v0.4.15 播放中字幕外观独立候选
+
+从已发布 v0.4.13 所在 main `53094bd` 建独立分支；v0.4.14 PR #92 仍在草稿验收中，未并入此候选。沿现有字幕设置和原生播放器增加播放菜单外观弹窗、即时应用与代次收尾。网页端只读行为参考、原生阴影近似限制及验收范围见[候选记录](V0415_SUBTITLE_APPEARANCE.md)。版本仅在候选分支设为 0.4.15；Windows 构建、真实 GUI/字幕渲染和用户 NAS 尚待核验。未合 main、建 Tag 或发布。
+
 ## 2026-11-04 — v0.4.13 语言偏好测试版已发布
 
 [PR #91](https://github.com/hope140/EmbyTheaterEnhanced/pull/91) 以 merge commit `715bc5af6f9be8a87c6813a0cee10f4fb3196a10` 合入 main，其源码树与用户验收提交 `c686e189ca2ce51359270624f45b6652e4618213` 相同；`v0.4.13` Tag 指向该验收源码。[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41823937341)、[main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41844044695) 与[testing 发行构建及发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41846593844)均成功。[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) 为非草稿 Pre-release，五附件下载、大小、SHA-256、来源和校验表核对通过；正式 Latest 仍为 v0.4.0。用户确认 v0.4.13 普通测试包验收通过；旧服务器解释、实际选轨和遥控组合未获具体结果。先前反馈的窗口按钮偶发无法点击尚无确定根因，不能称已修复。下面的候选条目保留当时状态，发行核验见[语言偏好记录](V0413_LANGUAGE_PREFERENCES.md)。

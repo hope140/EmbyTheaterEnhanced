@@ -59,7 +59,7 @@ function loadPlayer(refresh = {}) {
     addEventListener() {}, removeEventListener() {}
   };
   const pluginManager = {registerPlugin: (instance, id) => { instance.id = id; }, mapPath: (instance, file) => file};
-  const events = {on() {}, off() {}};
+  const events = {on() {}, off() {}, trigger() {}};
   const router = {showVideoOsd: async () => {}, show: async () => {}, setTransparency() {}};
   const userSettings = {get: () => null, getSubtitleAppearanceSettings: () => subtitleAppearance};
   const modules = [
@@ -80,7 +80,7 @@ function loadPlayer(refresh = {}) {
   const playbackOptions = () => captured.filter(value => Object.prototype.hasOwnProperty.call(value, 'audio-channels'));
   const Player = factory(...modules);
   const instance = new Player();
-  return {instance, settings, captured: playbackOptions, refreshRequests,
+  return {instance, settings, captured: playbackOptions, capturedAll: () => captured, refreshRequests,
     async settleDisplayChange(fps) {
       const pending = instance._onEstimatedVfFpsChanged(fps);
       for (let index = 0; index < 8; index++) await Promise.resolve();
@@ -129,6 +129,35 @@ test('real vendor subtitle defaults map transparent and preserve configured hex 
   setSubtitleAppearance(configuredAlpha);
   await instance.play({...options, _etePlayRequestId: 3});
   assert.equal(captured()[2]['sub-back-color'], '0.07058823529411765/0.20392156862745098/0.33725490196078434/0.5');
+});
+
+test('subtitle appearance changes update the active native generation and stop with playback', async () => {
+  const {instance, captured, capturedAll, setSubtitleAppearance} = loadPlayer();
+  const options = {item: {MediaType: 'video', Type: 'Movie', Path: 'fixture.mkv'}, mediaType: 'video',
+    mediaSource: {Path: 'fixture.mkv', RunTimeTicks: 10000000, MediaStreams: []},
+    url: 'fixture.mkv', playMethod: 'DirectPlay', startPositionTicks: 0, _etePlayRequestId: 1};
+  await instance.play(options);
+  assert.equal(instance.supports('SetSubtitleAppearance'), true);
+  assert.equal(await instance.applySubtitleAppearance({textSize: 'large', textColor: '#FF0000',
+    textBackground: '#000000', textBackgroundOpacity: '.50', dropShadow: 'uniform'}), true);
+  const changed = capturedAll().at(-1);
+  assert.equal(changed['sub-font-size'], 65);
+  assert.equal(changed['sub-color'], '#FF0000');
+  assert.equal(changed['sub-back-color'], '0/0/0/0.5');
+  assert.equal(changed['sub-outline-size'], 2);
+  assert.equal(changed['sub-shadow-offset'], 0);
+  await instance.applySubtitleAppearance({textSize: '', textBackground: 'transparent', dropShadow: 'none'});
+  const reset = capturedAll().at(-1);
+  assert.equal(reset['sub-font-size'], 38);
+  assert.equal(reset['sub-back-color'], '0/0/0/0');
+  assert.equal(reset['sub-outline-size'], 0);
+  const beforeStop = capturedAll().length;
+  await instance.stop(false);
+  assert.equal(await instance.applySubtitleAppearance({textSize: 'large'}), false);
+  assert.equal(capturedAll().length, beforeStop);
+  setSubtitleAppearance({textSize: 'large', textColor: '#FF0000'});
+  await instance.play({...options, _etePlayRequestId: 2});
+  assert.equal(captured().at(-1)['sub-font-size'], 65);
 });
 
 test('full AMD player assembles current video/audio settings from exact keys on consecutive Plays', async () => {

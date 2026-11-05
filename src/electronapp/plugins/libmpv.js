@@ -143,6 +143,46 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         throw new Error('Bad Hex');
     }
 
+    function subtitleAppearanceProperties(settings, live) {
+        settings = settings || {};
+        var sizes = {smaller: 35, small: 45, large: 65, larger: 75, extralarge: 85};
+        var props = {};
+        if (Object.prototype.hasOwnProperty.call(sizes, settings.textSize)) {
+            props['sub-font-size'] = sizes[settings.textSize];
+        } else if (live) {
+            // The bundled mpv 0.41 default is 38; reset the active generation to it.
+            props['sub-font-size'] = 38;
+        }
+        var background = settings.textBackground || 'transparent';
+        var opacity = Number(settings.textBackgroundOpacity == null ? 1 : settings.textBackgroundOpacity);
+        if (background === 'transparent' || /^#(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(background)) {
+            props['sub-back-color'] = hexToRgbA(background, Number.isFinite(opacity) ? opacity : 1);
+        }
+        var color = settings.textColor || '#ffffff';
+        if (/^#(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(color)) props['sub-color'] = color;
+        if (live || (settings.dropShadow && settings.dropShadow !== 'dropshadow')) {
+            switch (settings.dropShadow) {
+                case 'none':
+                    props['sub-outline-size'] = 0;
+                    props['sub-shadow-offset'] = 0;
+                    break;
+                case 'uniform':
+                    props['sub-outline-size'] = 2;
+                    props['sub-shadow-offset'] = 0;
+                    break;
+                case 'raised':
+                case 'depressed':
+                    props['sub-outline-size'] = 1.65;
+                    props['sub-shadow-offset'] = 1;
+                    break;
+                default:
+                    props['sub-outline-size'] = 1.65;
+                    props['sub-shadow-offset'] = 0;
+            }
+        }
+        return props;
+    }
+
     return function () {
 
         var self = this;
@@ -1206,26 +1246,6 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var startPositionTicks = options.playerStartPositionTicks || 0
 
             var subtitleAppearanceSettings = userSettings.getSubtitleAppearanceSettings();
-            var fontSize;
-            switch (subtitleAppearanceSettings.textSize || '') {
-                case 'smaller':
-                    fontSize = 35;
-                    break;
-                case 'small':
-                    fontSize = 45;
-                    break;
-                case 'larger':
-                    fontSize = 75;
-                    break;
-                case 'extralarge':
-                    fontSize = 85;
-                    break;
-                case 'large':
-                    fontSize = 65;
-                    break;
-                default:
-                    break;
-            }
 
             var playerOptions = {
                 "volume": appSettings.get('mpv-volume') || playerState.volume,
@@ -1276,17 +1296,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 playerOptions["demuxer-readahead-secs"] = 1800
             }
 
-            if (fontSize) {
-                playerOptions["sub-font-size"] = fontSize
-            }
-
-            if (subtitleAppearanceSettings.textBackground) {
-                playerOptions["sub-back-color"] = hexToRgbA(subtitleAppearanceSettings.textBackground, parseFloat(subtitleAppearanceSettings.textBackgroundOpacity || '1'));
-            }
-
-            if (subtitleAppearanceSettings.textColor && subtitleAppearanceSettings.textColor.indexOf('#') === 0) {
-                playerOptions["sub-color"] = subtitleAppearanceSettings.textColor
-            }
+            Object.assign(playerOptions, subtitleAppearanceProperties(subtitleAppearanceSettings, false));
 
             if (libmpv && typeof libmpv.beginGeneration === 'function') {
                 var nativeGeneration = await libmpv.beginGeneration(request.requestId, nextTransition.loadingToken(request.playbackRequestId), {
@@ -1588,6 +1598,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             list.push('SetAspectRatio');
             list.push('SetPlaybackRate');
             list.push('SetSubtitleOffset');
+            list.push('SetSubtitleAppearance');
 
             return list;
         }
@@ -1599,6 +1610,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             return supportedFeatures.indexOf(feature) !== -1;
+        };
+
+        self.applySubtitleAppearance = function (settings) {
+            var request = activePlayRequest;
+            if (!isCurrentPlayRequest(request) || !libmpv) return Promise.resolve(false);
+            var props = subtitleAppearanceProperties(settings, true);
+            return Promise.resolve(setProperty(props)).then(function () {
+                return isCurrentPlayRequest(request);
+            });
         };
 
         self.setAspectRatio = function (val) {
