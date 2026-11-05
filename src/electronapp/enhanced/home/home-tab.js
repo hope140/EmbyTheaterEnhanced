@@ -349,6 +349,10 @@
                     bound.input === inputRevision && !(pending && flowFocus && flowFocus.interacted); };
                 items.setAttribute('data-monitor', section.Monitor.join(','));
                 items.parentContainer = block;
+                // The frozen ItemsContainer uses onUpdateElement to select its virtual
+                // horizontal renderer even when a section contains fewer than four
+                // items. Keep every server section on the same responsive card path.
+                items.onUpdateElement = function() {};
                 items.getListOptions = function() { return listOptions(lease.section, renderer); };
                 items.fetchData = async function(query, signal) {
                     var ticket = lease.ticket, section = lease.section;
