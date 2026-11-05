@@ -47,3 +47,12 @@ libmpv 下载失败时输出一次 `LIBMPV_HTTP_DIAGNOSTIC` JSON，带本次 `at
 每一跳仅记录通过原来源校验的公开 host/path、状态及有限 MIME。响应字段仅接受 Server 产品家族、格式正确的 CF-Ray、秒数或 HTTP 日期形式的 Retry-After；其他值省略或标记脱敏。查询、片段、用户信息、响应正文、Cookie、Authorization、完整 URL 和完整请求/响应头均不输出，也不回显底层异常或原始命令失败文本。成功回执和归档大小、7z 签名、SHA256、DLL 校验保持原合同。
 
 本地 HTTP 回归仅通过库函数测试入口连接回环地址；生产命令行没有传输替换参数，仍拒绝非原官方 HTTPS 路径。诊断增强不重试请求、不改源、UA、代理或权限，也不表示已解除远端 403。恢复真实下载须先取得新的正常访问依据或明确合规条件变化。
+
+
+## 普通测试包排队隔离
+
+普通开发分支的 `release_package=false` 使用完整 ref 对应的并发组；同分支仍串行，不取消进行中的作业。标准发行材料（`release_package=true`）、main 和 tag 继续使用原全局组 `ete-manual-windows-test-package`。正式发布工作流不变。每次作业仍使用独立托管 runner、准确 `github.sha` 检出和带 run/attempt 身份的输出。
+
+此调整只减少不同开发分支之间的队列等待，不缩短单次构建，也不能消除账号 runner 配额导致的等待。GitHub concurrency 仍不是 FIFO；同组新的 pending 作业可替换旧 pending，`cancel-in-progress=false` 只保护正在运行的作业。
+
+公开 push、PR 合并结果和手动包检查保留：其源码身份、材料范围与门禁不同，不能只凭 head 提交相同去重。完整回归和显式材料仍串行；未完成 Windows 同提交多轮并发 A/B 及共享资源审查前，不推广测试并行。Host 本轮编译验证、精确提交校验及安装器解包逐文件比对保持。

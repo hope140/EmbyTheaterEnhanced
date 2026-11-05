@@ -126,7 +126,9 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 60
     concurrency:
-      group: ete-manual-windows-test-package
+      # Release material, main and tags retain the original global queue.
+      # Ordinary branch packages use separate hosted runners and run-specific outputs.
+      group: ${{ (inputs.release_package || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) && 'ete-manual-windows-test-package' || format('ete-manual-windows-test-package-test-{0}', github.ref) }}
       cancel-in-progress: false
     steps:
       - name: Check out exact source

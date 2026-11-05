@@ -62,7 +62,7 @@ test('package job requires an explicit manual event and the MSBuild17-compatible
     }
     assert.match(manual, /^    runs-on: windows-2022$/m);
     assert.doesNotMatch(manual, /self-hosted|windows-latest|larger|workflow_run|pull_request_target/);
-    assert.match(manual, /^      group: ete-manual-windows-test-package$/m);
+    assert.match(manual, /^      group: \$\{\{ .+ \}\}$/m);
     assert.match(manual, /cancel-in-progress: false/);
 });
 
@@ -140,4 +140,27 @@ test('benchmark retains pinned read-only inputs and uploads only bounded diagnos
     assert.match(benchmark, /retention-days: 1/);
     assert.match(benchmark, /include-hidden-files: false/);
     assert.doesNotMatch(benchmark, /path: (?:\.|dist|vendor|\.work)(?:\/\*\*|$)/m);
+});
+
+test('ordinary branch queues are isolated while release material, main and tags retain their global lock', () => {
+    const expression = /^      group: \$\{\{ (.+) \}\}$/m.exec(manual)[1];
+    // Evaluate the actual workflow expression, with only GitHub's used helpers exposed.
+    const vm = require('node:vm');
+    const group = (ref, release_package, sha = 'a'.repeat(40), run_id = 1) => vm.runInNewContext(expression, {
+        github: {ref, sha, run_id}, inputs: {release_package},
+        startsWith: (value, prefix) => value.startsWith(prefix),
+        format: (pattern, value) => pattern.replace('{0}', value)
+    });
+    const global = 'ete-manual-windows-test-package';
+    const branches = ['refs/heads/review-a', 'refs/heads/review-b'];
+    assert.notEqual(group(branches[0], false), group(branches[1], false));
+    for (const ref of branches) {
+        assert.notEqual(group(ref, false), global);
+        assert.equal(group(ref, true), global);
+        assert.equal(group(ref, false), group(ref, false, 'b'.repeat(40), 2), 'different commits/runs on the same branch remain serialized');
+    }
+    for (const ref of ['refs/heads/main', 'refs/tags/v0.4.13', 'refs/tags/review-a']) {
+        for (const release of [false, true]) assert.equal(group(ref, release), global);
+    }
+    assert.match(manual, /cancel-in-progress: false/);
 });

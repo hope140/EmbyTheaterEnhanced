@@ -1,5 +1,10 @@
 # 项目状态
 
+## 2026-11-05 — 普通测试包分支队列隔离候选
+
+普通开发分支测试包改为按完整 ref 分组；标准发行材料、main 与 tag 保留原全局队列，进行中作业不取消。公开 push/PR 和全部打包门禁保持，未启用测试并行或成品缓存。定向工作流／发行／公开测试入口回归 30/30、562 份 JavaScript 语法与 659 份维护文本有限凭据模式检查通过；Windows CI 另按准确提交核验。此变化只针对跨分支排队，不宣称单次构建提速；同提交多轮 Windows 并发 A/B 尚未完成。队列语义与验证边界见[Actions 测试包](ACTIONS_TEST_PACKAGE.md#普通测试包排队隔离)。
+
+
 ## 2026-11-04 — v0.4.13 语言偏好测试版已发布
 
 [PR #91](https://github.com/hope140/EmbyTheaterEnhanced/pull/91) 以 merge commit `715bc5af6f9be8a87c6813a0cee10f4fb3196a10` 合入 main，其源码树与用户验收提交 `c686e189ca2ce51359270624f45b6652e4618213` 相同；`v0.4.13` Tag 指向该验收源码。[PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41823937341)、[main CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41844044695) 与[testing 发行构建及发布](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41846593844)均成功。[Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) 为非草稿 Pre-release，五附件下载、大小、SHA-256、来源和校验表核对通过；正式 Latest 仍为 v0.4.0。用户确认 v0.4.13 普通测试包验收通过；旧服务器解释、实际选轨和遥控组合未获具体结果。先前反馈的窗口按钮偶发无法点击尚无确定根因，不能称已修复。下面的候选条目保留当时状态，发行核验见[语言偏好记录](V0413_LANGUAGE_PREFERENCES.md)。
