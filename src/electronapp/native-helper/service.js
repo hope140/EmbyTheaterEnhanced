@@ -34,6 +34,7 @@ const SET_PROPERTIES = new Set([
   'wid', 'fullscreen',
   'demuxer-max-bytes', 'vo', 'video-output-levels', 'profile', 'video-sync', 'interpolation',
   'demuxer-readahead-secs', 'sub-font-size', 'sub-back-color', 'sub-color',
+  'sub-outline-size', 'sub-shadow-offset',
   'sub-create-cc-track', 'deinterlace', 'audio-delay', 'af', 'audio-channels',
   'audio-spdif', 'ad-lavc-ac3drc', 'audio-exclusive', 'start', 'pause', 'mute',
   'video-unscaled', 'video-aspect', 'panscan', 'sid', 'teletext-page', 'aid',

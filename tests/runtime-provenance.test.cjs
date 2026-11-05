@@ -164,6 +164,7 @@ function createFixture(root) {
         'tools/patch-subtitle-language-preference.cjs',
         'tools/patch-advance-download.cjs',
         'tools/patch-videoosd-lifecycle.cjs',
+        'tools/patch-subtitle-appearance.cjs',
         'tools/patch-playback-input-diagnostics.cjs',
         'tools/patch-connectionmanager-transport.cjs',
         'tools/patch-externalplayer-residue.cjs',

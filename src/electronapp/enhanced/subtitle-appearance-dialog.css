@@ -1,0 +1,72 @@
+/* Use the subtitle menu's theme-owned blur surface; keep form layout local. */
+.formDialog.subtitleAppearanceDialog {
+    box-sizing: border-box;
+    width: min(80vw, 60ch);
+    min-width: 0;
+    max-width: calc(100vw - 2rem);
+    max-height: 84vh;
+}
+.subtitleAppearanceDialog .formDialogHeader {
+    position: relative;
+    justify-content: center;
+    padding: 1em 3.5em .7em;
+    min-height: 2.5em;
+    background: transparent;
+    border: 0;
+}
+.subtitleAppearanceDialog .formDialogHeaderTitle {
+    margin: 0;
+    font-size: 1.17em;
+    text-align: center;
+}
+.subtitleAppearanceDialog .btnCancel {
+    position: absolute;
+    inset-inline-start: .6em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 2.5em;
+    width: 2.5em;
+    height: 2.5em;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: inherit;
+}
+.subtitleAppearanceDialog .btnCancel:hover,
+.subtitleAppearanceDialog .btnCancel:focus-visible {
+    background: rgba(255, 255, 255, .14);
+}
+.subtitleAppearanceDialog .btnCancel:focus-visible,
+.subtitleAppearanceDialog select:focus-visible {
+    outline: 2px solid var(--theme-accent-text-color, #fff) !important;
+    outline-offset: 2px;
+}
+.subtitleAppearanceDialog .formDialogContent.no-grow {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+.subtitleAppearanceDialog .dialogContentInner {
+    box-sizing: border-box;
+    max-width: none;
+    padding: .3em 1.25em 1.2em;
+}
+.subtitleAppearanceDialog .emby-select:not(:focus) { background: rgba(255, 255, 255, .12); }
+.subtitleAppearanceDialog .selectContainer { margin-bottom: .85em; }
+.subtitleAppearanceDialog .selectContainer:last-child { margin-bottom: 0; }
+.subtitleAppearanceDialog .subtitleAppearanceHint {
+    margin-top: .3em;
+    color: var(--theme-secondary-text-color, rgba(255, 255, 255, .7));
+    font-size: .76em;
+    line-height: 1.35;
+}
+@media (max-width: 36rem) {
+    .formDialog.subtitleAppearanceDialog { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); }
+    .subtitleAppearanceDialog .dialogContentInner { padding-inline: 1em; }
+}
