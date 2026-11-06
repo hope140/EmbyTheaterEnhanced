@@ -2,7 +2,7 @@
 
 This CLI directory is excluded from production runtime assembly and installers. Its transport modules now reference the shared production source under `src/electronapp/enhanced/fn-connect/core/`; the default-off product experiment is separate. This is not a completed FN feature. See the [current contract](../../../docs/FN_CONNECT_V0417.md) for source recovery, authentication ownership, unsupported modes and acceptance gaps.
 
-Run local Node regressions from the repository root:
+Run local regressions from the repository root with fixed Node.js 24.18.1 and PowerShell 7 on PATH (runner tests use synthetic subprocess/clock fixtures, without downloading Electron):
 
 ```sh
 node --test tests/fn-connect-*.test.cjs
