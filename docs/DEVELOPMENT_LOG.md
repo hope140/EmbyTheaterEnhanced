@@ -1708,3 +1708,5 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 独立只读审查提出的认证载体、原登录事件时序、绑定前退役三组问题已补测试；末轮另发现同 token 的旧 provisional route 可复活及 WS FIN 未退休，分别增加不可再绑定标记和取消／销毁。新增合成回归通过，限定静态复核无剩余阻断。原 Emby 返回身份先等待旧请求退休，再绑定选中的 FN profile，避免同账号同 token 无新身份事件时漏绑定。
 
 较早原型的公开集合在锁定依赖安装后为 2618 pass／0 fail／32 skip，不作为这轮正式接线的验收。新全公开集合、语法、有限凭据检查及提交保存结果待本轮追加。固定 Electron 为产品 44.5.0；Windows fixture、产品 UI／Native 解码、真实 FN／CDN／seek 均未运行。历史 0x80000003 启动问题根因未知，历史外源请求次数不完整；不以新合成测试或版本对齐宣称修复。下一步仅干净提交的无凭据回环 fixture，不启动真实登录或取流。
+
+产品切片保存为 `c75a31d58164785fb6cb3dcde1bab67e72fd3afc` 后，首轮完整公开集合为 2701 项：2665 pass／4 fail／32 平台 skip。4 个失败位于原有 main 退出片段夹具，夹具未提供新增的 `unregisterFnConnect` 依赖，因关键清理未确认而不退出；没有改生产安全退出逻辑。补齐两份旧夹具的依赖，并断言新 owner 确实被调用一次；原退出屏障和失败断言保留。另行 Web 覆盖层合同 4／4 通过。修复后将以新准确提交重跑公开集合。

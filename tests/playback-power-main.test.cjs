@@ -46,6 +46,7 @@ function fixture(refreshShutdown = () => Promise.resolve()) {
         enhancedLog(entry) {logs.push(entry);},
         app: {on(){},once(name, handler) {assert.equal(name, 'before-quit'); beforeQuit = handler;}, quit() {calls.push('quit');}},
         unregisterCacheManagementIpc() {},
+        unregisterFnConnect() {calls.push('fn-connect');},
         mainWindow:null,
         unregisterDiagnosticsIpc() {calls.push('diagnostics');},
         unregisterMaintenanceIpc() {calls.push('maintenance');},
@@ -70,6 +71,7 @@ test('real main quit retires power before pending native/kernel/startup drain an
     f.command('video-on'); f.command('audio-on');
     f.quit();
     assert.equal(f.context.appIsShuttingDown, true);
+    assert.equal(f.calls.filter(call => call === 'fn-connect').length, 1);
     assert.deepEqual(f.stops, [0, 1]);
     assert.deepEqual([...f.active], [99]);
     for (let i = 0; i < 3; i++) {

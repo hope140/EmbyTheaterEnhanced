@@ -76,7 +76,7 @@ test('real main shutdown drain waits for a real registered HTTP clear even when 
     let handler,quit=0;const noop=()=>Promise.resolve();
     const context={app:{on(){},once(n,h){handler=h;},quit(){quit++;}},appIsShuttingDown:false,updateShutdownLease:null,require:id=>require('../src/electronapp/enhanced/shutdown-drain'),playbackPowerOwner:{shutdown(){}},enhancedLog(){},
         unregisterDiagnosticsIpc:()=>Promise.reject(Error('synthetic failure')),unregisterMaintenanceIpc:noop,unregisterCacheManagementIpc:f.close,
-        unregisterStrmConfigIpc:noop,unregisterCd2Ipc:noop,unregisterRefreshRate:noop,unregisterNativeHelperIpc:noop,unregisterMpvKernelIpc:noop,readyStartupPromise:Promise.resolve()};
+        unregisterFnConnect:noop,unregisterStrmConfigIpc:noop,unregisterCd2Ipc:noop,unregisterRefreshRate:noop,unregisterNativeHelperIpc:noop,unregisterMpvKernelIpc:noop,readyStartupPromise:Promise.resolve()};
     vm.runInNewContext(source.slice(start,end),context);handler({preventDefault(){}});await flush();assert.equal(quit,0);assert.equal(f.handlers.size,0);
     held.resolve();await request;await flush();assert.equal(quit,1);
 });
