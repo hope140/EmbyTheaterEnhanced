@@ -20,7 +20,6 @@ catch {
     throw 'FN_FIXTURE_PREPARATION_FAILED'
 }
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('ete-fn-runner-' + [Guid]::NewGuid().ToString('N'))
-$null = New-Item -ItemType Directory -Path $temporaryRoot
 $stdoutFile = Join-Path $temporaryRoot 'runtime-stdout.txt'
 $profilesRoot = Join-Path $temporaryRoot 'profiles'
 $resultFile = Join-Path $outputRoot 'result.json'
@@ -38,6 +37,7 @@ $preparation = $null
 $preparationChild = $null
 $preparationStarted = $false
 try {
+    $null = New-Item -ItemType Directory -Path $temporaryRoot
     if (-not $IsWindows) { $launchState = 'PLATFORM_UNSUPPORTED'; throw 'FN_FIXTURE_WINDOWS_REQUIRED' }
     $watch = [Diagnostics.Stopwatch]::StartNew()
     $progressPath = Join-Path $temporaryRoot 'preparation-progress.json'

@@ -9,6 +9,16 @@ function Write-FnAtomicJson($Path, $Value, [switch]$Exclusive) {
         [IO.File]::Move($temporary, $Path, -not $Exclusive.IsPresent)
     } finally { if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) } }
 }
+function Read-FnPreparationProgress([string]$Path) {
+    # Allow atomic replacement while reading the old snapshot on Windows.
+    $share = [IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete
+    $stream = [IO.FileStream]::new($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, $share)
+    try {
+        if ($stream.Length -gt 4096) { throw 'INVALID' }
+        $reader = [IO.StreamReader]::new($stream, [Text.UTF8Encoding]::new($false, $true))
+        try { return ($reader.ReadToEnd() | ConvertFrom-Json) } finally { $reader.Dispose() }
+    } finally { $stream.Dispose() }
+}
 function Write-FnRunnerFailure($ResultPath, $Outcome) {
     # Written before any recursive cleanup; never replace an existing result.
     Write-FnAtomicJson $ResultPath ([ordered]@{
@@ -29,8 +39,7 @@ function Wait-FnPreparation {
         try {
             $exitObservedBeforeRead = $Child.HasExited
             if ([IO.File]::Exists($ProgressPath)) {
-                if ((Get-Item -LiteralPath $ProgressPath).Length -gt 4096) { throw 'INVALID' }
-                $progress = Get-Content -LiteralPath $ProgressPath -Raw | ConvertFrom-Json
+                $progress = Read-FnPreparationProgress $ProgressPath
                 $keys = @($progress.PSObject.Properties.Name)
                 if (@($keys | Where-Object { $_ -notin @('schemaVersion','runId','sourceCommit','stage','phase','archiveVerified','exeVerified') }).Count -or
                     $keys.Count -ne 7 -or $progress.schemaVersion -ne 1 -or $progress.runId -cne $RunId -or

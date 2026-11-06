@@ -37,3 +37,13 @@ test('initial status failure still produces a fixed result without starting any 
     const r=cp.spawnSync(pwsh,['-NoProfile','-File',path.join(client,'run-windows-smoke.ps1')],{encoding:'utf8',timeout:15000});assert.notEqual(r.status,0);assert.doesNotMatch(r.stderr,/PRIVATE_TOKEN_URL/);
     const result=JSON.parse(fs.readFileSync(path.join(dir,'test-output/fn-connect-fixture/result.json')));assert.equal(result.result,'FAILED');assert.equal(result.reason,'PREPARATION_FAILED');assert.equal(result.sourceCommit,'UNKNOWN');assert.equal(result.preparation.stage,'RUNNER_STARTED');
 });
+test('owned temporary-directory creation failure also receives an early result',t=>{
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ete-fn-temp-create-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+    const client=path.join(dir,'prototypes/fn-connect/client');fs.mkdirSync(client,{recursive:true});
+    const helper=fs.readFileSync(path.join(root,'prototypes/fn-connect/client/runner-preparation.ps1'),'utf8');
+    const marker=path.join(dir,'attempt.txt');
+    fs.writeFileSync(path.join(client,'runner-preparation.ps1'),helper+`\nfunction New-Item {param($ItemType,$Path) [IO.File]::WriteAllText('${marker.replaceAll("'","''")}','synthetic');throw 'PRIVATE_TOKEN_URL'}\n`);
+    fs.copyFileSync(path.join(root,'prototypes/fn-connect/client/run-windows-smoke.ps1'),path.join(client,'run-windows-smoke.ps1'));
+    const r=cp.spawnSync(pwsh,['-NoProfile','-File',path.join(client,'run-windows-smoke.ps1')],{encoding:'utf8',timeout:15000});assert.notEqual(r.status,0);assert.doesNotMatch(r.stderr,/PRIVATE_TOKEN_URL/);assert.equal(fs.readFileSync(marker,'utf8'),'synthetic');
+    const result=JSON.parse(fs.readFileSync(path.join(dir,'test-output/fn-connect-fixture/result.json')));assert.equal(result.result,'FAILED');assert.equal(result.reason,'PREPARATION_FAILED');assert.equal(result.processExited,true);
+});
