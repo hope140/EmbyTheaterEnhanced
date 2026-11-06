@@ -396,6 +396,8 @@ test('reentrant destroy retains the first physical teardown snapshot and old obs
     const f = fixture(); await f.play();
     const a = f.generation(); f.property('time-pos', 31, a);
     await f.play(); const b = f.generation();
+    assert.equal(f.log('invalidation-requested').details.nativeGenerationId, a);
+    assert.equal(f.log('invalidation-requested').details.cached.positionCurrentGeneration, true, 'replacement snapshot precedes new admission ownership');
     f.property('demuxer-cache-state', {'cache-end': 90}, a);
     const one = f.player.destroy({operationId: 'manager-1', controlOrigin: 'osd-route', controlReason: 'destroy'});
     const first = f.log('destroy-requested').details;

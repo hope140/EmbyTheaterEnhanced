@@ -18,7 +18,7 @@ function projectControl(value) {
         var allowed = {
             "controlOrigin": ["unknown", "osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "manager", "queue"],
             "controlReason": ["stop", "next", "replacement", "error-cleanup", "error-auto-next", "ended-auto-next", "queue-empty", "destroy", "new-play"],
-            "callSite": ["manager-stop", "manager-next", "manager-replacement", "manager-ended", "adapter-stop", "adapter-destroy", "adapter-new-play"]};
+            "callSite": ["manager-play", "manager-stop", "manager-next", "manager-replacement", "manager-ended", "adapter-stop", "adapter-destroy", "adapter-new-play"]};
         for (var name in allowed) {
             var descriptor = Object.getOwnPropertyDescriptor(value, name);
             output[name] = descriptor && allowed[name].indexOf(descriptor.value) >= 0 ? descriptor.value : 'unknown';

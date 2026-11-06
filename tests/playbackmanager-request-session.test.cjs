@@ -2382,3 +2382,24 @@ test('ordinary error still advances after the dialog and records the exact queue
     assert.equal(next.details.control.operationId, decision.details.control.operationId);
     f.resolveMetadata(1, 'session-next-B'); await settle();
 });
+
+test('Stop diagnostic owner is the explicit player, even when another player is current', async () => {
+    const f = makeFixture(); await startQueueItem(f, [makeItem('current-A')], 'session-A');
+    const other = {...f.player, streamInfo: {_etePlayRequestId: 99}, stop: () => Promise.resolve()};
+    await f.manager.stop(other, {controlOrigin: 'osd'});
+    const row = f.calls.diagnostics.filter(row => row.details.control.controlReason === 'stop').at(-1);
+    assert.equal(row.details.playbackRequestId, 99);
+    assert.equal(f.player.streamInfo.item.Id, 'current-A');
+});
+
+test('remote PlayNow retains one operation through replacement stop and the generated stream handed to the adapter', async () => {
+    const f = makeStopBoundaryFixture(); await startPublicItem(f, 'A');
+    f.player.supportsControlDiagnostics = true;
+    const replacement = f.manager.play({items: [makeItem('B')], _eteDiagnosticControl: {controlOrigin: 'remote-playstate'}});
+    await waitFor(() => f.calls.metadata.length === 2);
+    const control = f.calls.stop.at(-1)[2];
+    assert.equal(control.controlOrigin, 'remote-playstate');
+    f.resolveMetadata(1, 'session-B'); await replacement;
+    assert.equal(f.calls.play.at(-1)._eteDiagnosticControl.operationId, control.operationId);
+    assert.equal(f.calls.play.at(-1)._eteDiagnosticControl.controlOrigin, 'remote-playstate');
+});
