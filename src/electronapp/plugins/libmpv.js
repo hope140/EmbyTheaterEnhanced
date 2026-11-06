@@ -1172,7 +1172,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
                 if (request.routeSequence) routeAttemptDiagnostic(request, error && (error.playbackSuperseded || error.name === 'AbortError') ? 'cancelled' : 'exhausted',
-                    error && (error.playbackSuperseded || error.name === 'AbortError') ? 'request-retired' : 'startup-failed');
+                    error && (error.playbackSuperseded || error.name === 'AbortError') ? 'request-retired' : request.startupExpired ? 'total-deadline' : 'startup-failed');
                 if (request.startupExpired && isCurrentPlayRequest(request) && libmpv) {
                     libmpv.style.opacity = 0;
                     if (typeof libmpv.retireGeneration === 'function') libmpv.retireGeneration('startup-deadline', request.diagnosticControl);

@@ -333,6 +333,10 @@ test('absolute startup deadline rejects late core-playing even before timeout ca
     assert.equal(f.counts().started, 0);
     expire();
     await assert.rejects(play, /startup-route-deadline/);
+    const lastRoute = f.ipc.notifications.filter(row => row.channel === 'enhanced-diagnostics-log' && row.request.event === 'startup-route').at(-1).request.details;
+    assert.equal(lastRoute.reason, 'total-deadline');
+    assert.equal(lastRoute.remainingMs, 0);
+    assert.equal(lastRoute.elapsedMs, 15001);
     f.property('core-idle', false); f.failure();
     assert.equal(f.ipc.loadCalls.length, 1);
     assert.equal(f.counts().released, 1);
