@@ -402,7 +402,7 @@ test('reentrant destroy retains the first physical teardown snapshot and old obs
     const one = f.player.destroy({operationId: 'manager-1', controlOrigin: 'osd-route', controlReason: 'destroy'});
     const first = f.log('destroy-requested').details;
     assert.equal(first.nativeGenerationId, b);
-    assert.equal(first.cached.cacheCurrentGeneration, false);
+    assert.equal(first.cached.cacheCurrentGeneration, null, 'stale generation is discarded before observation, leaving no current cache evidence');
     assert.equal(first.cached.cacheAheadSeconds, null);
     const two = f.player.destroy({operationId: 'manager-2', controlOrigin: 'unknown'});
     await Promise.all([one, two]);
