@@ -1,0 +1,7 @@
+{
+  "bootstrapUrl": "https://nas.example.test/device-entry",
+  "embyUrl": "https://media.example.test/",
+  "probePath": "System/Info/Public",
+  "authOrigins": [],
+  "externalMediaOrigins": []
+}

@@ -1,0 +1,8 @@
+# Non-installable review template. Not validated against an official fnpack.
+appname = ete-fn-transport
+version = {{REVIEWED_PACKAGE_VERSION}}
+display_name = ETE FN transport companion
+source = thirdparty
+platform = {{CONFIRMED_FNOS_ARCH_AND_SCHEMA}}
+desktop_uidir = ui
+desktop_applaunchname = ete-fn-transport.main

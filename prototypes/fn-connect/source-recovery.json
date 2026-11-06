@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "purpose": "FN Connect source reconstruction snapshot",
+  "sourceArchiveCommit": "51b90f965063c05d20b925e6c74b7a3fb673b58b",
+  "sourceArchiveSha256": "9a5a7ad7bb65ad27e50a39433df89967ca13c0f2af2b35318669d1b2eb7f85ea",
+  "patchMaterialsCommit": "80ecbb8270eeb0f72fce3b784291eeb62c0e9bc9",
+  "checkpoint": 7,
+  "checkpointFilesVerified": 14,
+  "appliedPatchSteps": [
+    8,
+    26
+  ],
+  "everyPatchInputAndOutputMatched": true,
+  "unrelatedFilesUnchanged": true,
+  "finalCoreFiles": [
+    {
+      "path": "bridge.cjs",
+      "sha256": "cb679c569c00af7dc86ce51652857e762428d020fcb5d7634fca115dd81a2876"
+    },
+    {
+      "path": "controller.cjs",
+      "sha256": "f1a69428bb608ecb893e89aafa37306979e4a5590772d2d5caa2c800282cca8a"
+    },
+    {
+      "path": "diagnostics.cjs",
+      "sha256": "b951b08f8d8c192232ceff910f76b1888309a81975b64c4bca5283fff53d42f0"
+    },
+    {
+      "path": "electron-io.cjs",
+      "sha256": "8729694872d36c5230a5c18380b1e1399faafce5c1579cb2adad79e37f8f80b6"
+    },
+    {
+      "path": "electron-main.cjs",
+      "sha256": "41aa59c52ec09933d91c086258a3874fee9a245c7ddf132f157347fe2cfa6b94"
+    },
+    {
+      "path": "external-header-fixture.cjs",
+      "sha256": "328d2939b1a6abf7950380164286ce77f57cc36b23ff7e54aeb73f2cfd931c42"
+    },
+    {
+      "path": "external-header-probe.cjs",
+      "sha256": "b0a2f532f95e25fe90e50c9e82b25fe28c8cbd62f298717ecb8160b5432c258c"
+    },
+    {
+      "path": "external-media-check.cjs",
+      "sha256": "076e68245b05c89de7256272df73e57e7137eef8aec1ec1ab8159a3f55085b3f"
+    },
+    {
+      "path": "fixture.cjs",
+      "sha256": "5258241a394d2b2fb2fab3c99b45e564152f69c967e476eb70f02ca640d96be0"
+    },
+    {
+      "path": "media-check.cjs",
+      "sha256": "7c536edaef69c3e7a5d2bbc00a67b297203450708253c20b3b35cd6395b0fc01"
+    },
+    {
+      "path": "panel.css",
+      "sha256": "2a0352201e40833990ac087b8836804439f2cfc9665802ede133b297a6fb4e69"
+    },
+    {
+      "path": "panel.html",
+      "sha256": "b3cd2e6e7c9c5f594c94296d26039f8fd6b98a94c0bfda8deb68a86ec383a897"
+    },
+    {
+      "path": "panel.js",
+      "sha256": "acaeaee32d323b575846f86a0eebcd8942def7325bcf4709911879e29c553552"
+    },
+    {
+      "path": "policy.cjs",
+      "sha256": "9897bb1df8922f723cde8955da185d00b4b7c5089362027ee7552c710712250e"
+    },
+    {
+      "path": "preload.cjs",
+      "sha256": "b085569b7146d665fb3774a2ca2619cb292d6271416db35569c82a01a96145ad"
+    },
+    {
+      "path": "profile-store.cjs",
+      "sha256": "89b6e872e99f4814fbaf4f3158256a4a3f9fe73a9d3229738137dd7aad0eed26"
+    },
+    {
+      "path": "read-runtime-evidence.ps1",
+      "sha256": "895134a2c69abff9ffca161c71bfe47073b639e98c54bda520c112bee72a5b40"
+    },
+    {
+      "path": "run-startup-isolation.ps1",
+      "sha256": "8a85c01e038e5e1845fc625f8f7171908ab6be340bb9fb10da7068e0140a4cb7"
+    },
+    {
+      "path": "startup-check.ps1",
+      "sha256": "d2962914598823538375371f69fbc3134d8e8dfdf7fd561732d78854800b04a9"
+    },
+    {
+      "path": "startup-isolation.cjs",
+      "sha256": "3e432f3281410ef3bd722f1f07461b9585cf50426052bfd82fb9cee10443ddd6"
+    }
+  ],
+  "originalGitCommitObjectRecovered": false,
+  "completeOriginalTestsAndDocumentsRecovered": false,
+  "testFiles": "Historical archive tests; not claimed to match every later source revision",
+  "checks": {
+    "nodeVersion": "24.22.1",
+    "javascriptSyntax": {
+      "passed": 32,
+      "failed": 0
+    },
+    "focusedArchivedTests": {
+      "passed": 131,
+      "failed": 1,
+      "failure": "Missing archived dependency prototypes/fn-connect/desktop-check/spa-safe-protocol.cjs"
+    },
+    "realFNAuthentication": "NOT_TESTED",
+    "realMediaPlayback": "NOT_TESTED",
+    "WindowsStartup": "NOT_TESTED"
+  },
+  "scope": "Source-only recovery. No installer, production integration, or release.",
+  "recoverySourceCommit": "3dbaee062cd9c2245741bd4b8b4452b4ea9e77e5",
+  "supportingModulesSourceCommit": "0049b341b71e58ad892a81859c669e5025107de5",
+  "supportingPaths": [
+    "prototypes/fn-connect/companion/README.md",
+    "prototypes/fn-connect/companion/bridge-mock.cjs",
+    "prototypes/fn-connect/companion/config.mock.json",
+    "prototypes/fn-connect/companion/fpk-templates/main.sh.in",
+    "prototypes/fn-connect/companion/fpk-templates/manifest.in",
+    "prototypes/fn-connect/companion/fpk-templates/privilege.json.in",
+    "prototypes/fn-connect/companion/fpk-templates/ui-config.json.in",
+    "prototypes/fn-connect/companion/local-unix-harness.cjs",
+    "prototypes/fn-connect/companion/prepare-review.cjs",
+    "prototypes/fn-connect/desktop-check/README.md",
+    "prototypes/fn-connect/desktop-check/profile.example.json",
+    "prototypes/fn-connect/mapped-emby-probe.js",
+    "prototypes/fn-connect/transport-contract.cjs"
+  ]
+}

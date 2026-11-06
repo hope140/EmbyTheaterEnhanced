@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'">
+<title>FN 认证独立实验</title><link rel="stylesheet" href="panel.css"></head>
+<body><main><h1>FN 认证独立实验</h1>
+<p>这是独立客户端原型，不代表真实 FNConnect 已通过。NAS 转发与 Emby 登录保持原样。</p>
+<form id="add"><label>NAS 正常登录入口<input id="bootstrap" type="url" required autocomplete="off"></label>
+<label>已映射的 Emby 地址<input id="emby" type="url" required autocomplete="off"></label>
+<label>Emby 公开信息路径（相对地址）<input id="probe" value="System/Info/Public" autocomplete="off"></label>
+<label><input id="remember" type="checkbox">记住此连接登录（仅本机 Windows 用户）</label>
+<label>本机登录分区<select id="saved"><option value="">新建隔离登录分区</option></select></label>
+<button>添加连接并打开认证窗口</button></form>
+<p>记住登录会在专用本机目录保留该分区的飞牛及 Emby 网页登录存储，不保存输入密码、不导出认证值；不能保证全部磁盘数据加密。不同服务器或账号请新建分区；复用时勾选记住登录并选择原分区。关闭程序保留已记住的登录，“退出并忘记”才清理相应分区；目录不会冒称已删除。服务端会话到期仍可能要求登录。</p>
+<p>请在认证窗口内自行完成正常登录。然后点“进入 Emby 网页”，再点“验证连接”。本页不收取账号、密码或 Cookie。</p>
+<div id="profiles"></div><p id="status" role="status"></p>
+<p>媒体响应头检查需连接ready后主动开启：新请求只允许该Emby源，其他源阻止。3分钟内仅取一次媒体响应头并取消，随后冻结请求；不读正文、不证明完整播放或seek。拦截诊断不是终态。终态后可保持登录，先点“准备下一次检查”退休旧页面及请求，再明确点“重新打开并检查”；准备本身不导航，来源门禁不解除，首终态按轮次保留。关闭网络连接不代表登录存储已清理。</p>
+<p>当前仅支持公开信息验证及受控请求层。HLS/DASH、Native Helper 播放和真实 NAS 会话仍待验收。</p>
+</main><script src="panel.js"></script></body></html>
