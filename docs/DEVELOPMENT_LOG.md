@@ -1792,3 +1792,5 @@ runner 与缓存合成回归 47／47：真实本地小字节锁定／复制／�
 旧来源 `da544ee` 的完整 Windows serial 回归报告 2904 项，2884 pass／12 fail／8 skip。6 项 provenance 在 generatorHashes 缺少 `tools/patch-fn-connect.cjs` 时退出；这次修正只影响测试夹具复制合同，原有历史输入、来源、LF／CRLF、重定向与防篡改断言全部保留。夹具从 WEB_OVERLAY_CONTRACT 提取生成器输入，不以手工补一个假生成器代替来源；新增 FN Web 输出与提交 generator 哈希核对、生成前 missing／dirty 拒绝及 runtime 输出篡改失败且不改写证据的负例。Node 24.18.1 下 9／9 定向通过，静态独立审查无新增阻断。
 
 5 项历史对象缺失由正常补取原指定提交处理，不改测试基线；另 1 项 fetch failed 在删除确认前发生，尚未证明取消传播错误，不用重复成功覆盖原失败。没有修改产品、版本、main、网络或登录态。新提交的 Host 绑定需在新来源重新生成／实体验证，旧回执不外推；公开普通回归完成后追加结果。
+
+修正源码提交 `4ad90bb8f3ee73476ca06c325e64a0aac58e85f1` 的公开普通回归为 **2799 项：2767 pass／0 fail／32 平台 skip**，固定 6 份材料文件排除保留。runtime provenance 独立夹具 9／9、overlay／build-input／FN entry 相关 37／37，JS 622 文件语法通过，有限凭据模式 722 份维护文本及新增行私人目标检查无发现；后续只补结果文档。没有运行新的完整 Windows 材料回归或 Host 实体验证，不能以本地夹具通过替代这些证据。
