@@ -1018,3 +1018,50 @@ test('renderer connection result refreshes every rule card and uses connection-o
     assert.doesNotMatch(settingsSource, /未连接服务/);
     assert.doesNotMatch(settingsSource, /前缀映射格式有效[^。\n]*连接/);
 });
+
+for (const [strategy, order] of [
+    ['cloud-first', ['direct-url', 'cd2-http', 'mount', 'native']],
+    ['mount-first', ['mount', 'direct-url', 'cd2-http', 'native']],
+    ['custom', ['native', 'cd2-http', 'mount', 'direct-url']]
+]) test(`startup cursor consumes each ${strategy} route once and freezes rule order`, async () => {
+    const config = baseConfig({strategy, order});
+    const seen = [], deadlines = [];
+    let now = 1000;
+    const cursor = strmResolver.createSequence(playbackContext('/media/115/Movies/Dune.mkv'), {
+        config, requestId: 'cursor-order', now: () => now,
+        fs: {existsSync: value => value === 'X:\\115\\Movies\\Dune.mkv'},
+        cd2Transport: {resolve: async request => {
+            deadlines.push(request.deadlineAt);
+            return {status: 'hit', type: 'url', source: 'https://synthetic.invalid/video',
+                sourceKind: request.mode === 'direct' ? 'direct-url' : 'cd2-url'};
+        }}
+    });
+    config.enabled = false; config.rules[0].order.reverse();
+    for (let result; (result = await cursor.next()); now += 2000) seen.push(strmResolver.routeForResult(result));
+    assert.deepEqual(seen, strategy === 'custom' ? ['native', 'cd2-http', 'mount', 'direct-url'] :
+        strategy === 'cloud-first' ? ['direct-url', 'cd2-http', 'mount', 'native'] : ['mount', 'direct-url', 'cd2-http', 'native']);
+    assert.ok(deadlines.every(value => value > 1000));
+    assert.equal(await cursor.next(), null);
+});
+
+test('startup cursor skips resolver misses permanently and abort does not return native', async () => {
+    const modes = [], abort = new AbortController();
+    const cursor = strmResolver.createSequence(playbackContext('/media/115/Movies/Dune.mkv'), {
+        config: baseConfig(), requestId: 'cursor-miss', signal: abort.signal,
+        fs: {existsSync: () => false}, cd2Transport: {resolve: async request => {
+            modes.push(request.mode);
+            return request.mode === 'direct' ? {status: 'miss'} :
+                {status: 'hit', type: 'url', source: 'https://synthetic.invalid/video', sourceKind: 'cd2-url'};
+        }}
+    });
+    assert.equal(strmResolver.routeForResult(await cursor.next()), 'cd2-http');
+    assert.equal(strmResolver.routeForResult(await cursor.next()), 'native');
+    assert.equal(await cursor.next(), null);
+    assert.deepEqual(modes, ['direct', 'same-origin']);
+    const cancelled = strmResolver.createSequence(playbackContext('/media/115/Movies/Dune.mkv'), {
+        config: baseConfig(), signal: abort.signal
+    });
+    abort.abort();
+    await assert.rejects(cancelled.next(), {name: 'AbortError'});
+    assert.equal(strmResolver.createSequence({...playbackContext('/media/115/Movies/Dune.mkv'), playMethod: 'Transcode'}, {config: baseConfig()}), null);
+});

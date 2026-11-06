@@ -334,3 +334,19 @@ test('preview owner is read-only and retires synchronously with generation autho
   endpoint.retireGeneration('next'); assert.equal(endpoint.getPreviewOwner(),null);
   await endpoint.destroy(); assert.equal(endpoint.getPreviewOwner(),null);
 });
+
+test('media-load error carries its exact generation and stale errors are dropped', async () => {
+  const ipc = new FakeIpc(), {endpoint} = await clientModule.create({ipc});
+  const messages = [];
+  endpoint.addEventListener('message', event => messages.push(event));
+  const old = await endpoint.beginGeneration('old');
+  const current = await endpoint.beginGeneration('current');
+  for (const generationId of [old.generationId, current.generationId]) {
+    ipc.emit(clientModule.EVENT_CHANNEL, {}, {type: 'bridge_error', generationId,
+      reason: 'load-failed', failureKind: 'media-load', endReason: 4, mpvErrorCode: -13});
+  }
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].generationId, current.generationId);
+  assert.equal(messages[0].data.data.failureKind, 'media-load');
+  await endpoint.destroy();
+});

@@ -2348,3 +2348,37 @@ for (const expire of [false, true]) {
         assert.equal(timers.size, 0);
     });
 }
+
+test('production generated manager keeps one request/session across real adapter startup route rotation', async () => {
+    const native = require('./helpers/startup-route-fixture.cjs').startupFixture();
+    let streamInfo;
+    const fixture = makeFixture({decoratePlayer(player) {
+        player.play = info => {streamInfo = info; return native.player.play(info);};
+    }});
+    fixture.apiClient.getCurrentUser = async () => ({Configuration: {}});
+    const item = makeItem('startup-route'); item.Path = 'C:\\Library\\fixture.mkv.strm';
+    const playing = fixture.manager.play({items: [item], fullscreen: false, startPositionTicks: 2460000000});
+    await waitFor(() => fixture.calls.metadata.length === 1);
+    const source = makeMediaSource(item.Id, 'startup-session');
+    delete source.StreamUrl;
+    Object.assign(source, {SupportsDirectPlay: false, SupportsDirectStream: true, SupportsTranscoding: false, Path: '/fixture/movie.mkv', Container: 'strm'});
+    fixture.calls.metadata[0].pending.resolve({MediaSources: [source], PlaySessionId: 'startup-session'});
+    await waitFor(() => native.ipc.loadCalls.length === 1);
+    const requestId = streamInfo._etePlayRequestId;
+    native.failure();
+    await waitFor(() => native.ipc.loadCalls.length === 2);
+    assert.equal(fixture.calls.metadata.length, 1);
+    assert.equal(fixture.calls.playbackStarts.length, 0);
+    assert.equal(fixture.calls.alerts.length, 0);
+    native.property('core-idle', false);
+    await playing;
+    await settle();
+    assert.equal(fixture.calls.playbackStarts.length, 1);
+    assert.equal(streamInfo._etePlayRequestId, requestId);
+    assert.equal(streamInfo.playSessionId, 'startup-session');
+    assert.equal(streamInfo.mediaSource.Id, source.Id);
+    assert.equal(streamInfo.item.Id, item.Id);
+    assert.equal(fixture.calls.metadata.length, 1);
+    await native.player.stop(true);
+    await fixture.manager.stop();
+});

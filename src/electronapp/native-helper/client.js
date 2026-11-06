@@ -59,10 +59,12 @@
                     (currentGenerationId == null || message.generationId !== currentGenerationId)) return;
                 emit({type: 'property_change', data: {name: message.data.name, value: message.data.value}}, message.generationId);
             } else if (message.type === 'bridge_error') {
+                if (message.generationId != null && message.generationId !== currentGenerationId) return;
                 emit({type: 'bridge_error', data: {reason: message.reason || 'helper-terminated',
+                    failureKind: message.failureKind === 'media-load' && Number.isSafeInteger(message.generationId) && message.generationId > 0 ? 'media-load' : 'bridge-operation',
                     endReason: message.endReason === 4 ? 4 : null,
                     mpvErrorCode: Number.isInteger(message.mpvErrorCode) && message.mpvErrorCode >= -2147483648 &&
-                        message.mpvErrorCode <= 2147483647 ? message.mpvErrorCode : null}});
+                        message.mpvErrorCode <= 2147483647 ? message.mpvErrorCode : null}}, message.generationId);
             }
         };
         ipc.on(EVENT_CHANNEL, this._onIpcEvent);
