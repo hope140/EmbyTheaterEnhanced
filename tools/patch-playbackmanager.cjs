@@ -714,7 +714,7 @@ replaceOnce('queue decision diagnostic',
           var diagnosticPending = window.ipc.send("enhanced-diagnostics-log", {category:"playback", event:"queue-decision", details:{
             control: diagnosticStopControl, playRequestId: streamInfo && streamInfo._etePlayRequestId || null,
             hasError: !!playerStopInfo.errorCode, autoNextEnabled: !!self._playNextAfterEnded,
-            nextAllowed: playerStopInfo.playNext !== false, hasNextItem: !!playerData,
+            nextAllowed: !playerStopInfo.errorCode && playerStopInfo.playNext !== false, hasNextItem: !!playerData,
             returnErrorPromise: !!playerStopInfo.returnPromise}});
           if (diagnosticPending && diagnosticPending.catch) diagnosticPending.catch(function () {});
         } catch (_) {}
@@ -760,5 +760,34 @@ replaceOnce('public play diagnostic operation',
 replaceOnce('intro admission retains diagnostic operation',
   '          }, options._etePlayRequestId)',
   '          }, options._etePlayRequestId, options._eteDiagnosticControl)');
+
+// Terminal failures use the existing stop/queue cleanup, never successful-end
+// advancement. Keep onPlaybackError's same-item compatibility attempts intact.
+replaceOnce('terminal error cannot select next item',
+    '            self._playNextAfterEnded && !1 !== playerStopInfo.playNext',
+    '            !playerStopInfo.errorCode && self._playNextAfterEnded && !1 !== playerStopInfo.playNext');
+replaceOnce('outer playback failure exits without advancing',
+    '        "intercept-cancel" !== errorCode && showPlaybackInfoErrorMessage(self, errorCode, !0, err.skipToNextItem),',
+    `        "intercept-cancel" !== errorCode && (function () {
+          var player = self._currentPlayer;
+          if (player && enableLocalPlaylistManagement(player) && getPlayerData(player).streamInfo &&
+              isCurrentEnhancedPlayRequest(getPlayerData(player).streamInfo)) {
+            return onPlaybackStopped.call(player, null, {errorCode: errorCode, playNext: false});
+          }
+          if (!player || !getPlayerData(player).streamInfo) self._playQueueManager.reset();
+          return showPlaybackInfoErrorMessage(self, errorCode, !0, false);
+        })(),`);
+// No active stream remains after terminal cleanup. Ignore duplicate terminal
+// events; native/request ownership guards continue to reject superseded events.
+replaceOnce('stopped without active stream is already settled',
+    '      if (!playerData.isChangingStream) {\n        if (playerData.streamInfo && playerData.streamInfo._eteStopHandled) return;',
+    '      if (!playerData.isChangingStream) {\n        if (!playerData.streamInfo || playerData.streamInfo._eteStopHandled) return;');
+replaceOnce('error without active stream is already settled',
+    '      error = error || {};\n      if (error.unexpectedEof',
+    '      error = error || {};\n      if (!getPlayerData(this).streamInfo) return;\n      if (error.unexpectedEof');
+// A dialog cancellation is a terminal UI result, not a new playback failure.
+replaceOnce('error dialog rejection settles without advancing',
+    '        return finish();\n      });',
+    '        return finish();\n      }, function () {});');
 
 fs.writeFileSync(file, source, 'utf8');
