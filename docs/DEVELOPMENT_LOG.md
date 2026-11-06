@@ -1710,3 +1710,7 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 较早原型的公开集合在锁定依赖安装后为 2618 pass／0 fail／32 skip，不作为这轮正式接线的验收。新全公开集合、语法、有限凭据检查及提交保存结果待本轮追加。固定 Electron 为产品 44.5.0；Windows fixture、产品 UI／Native 解码、真实 FN／CDN／seek 均未运行。历史 0x80000003 启动问题根因未知，历史外源请求次数不完整；不以新合成测试或版本对齐宣称修复。下一步仅干净提交的无凭据回环 fixture，不启动真实登录或取流。
 
 产品切片保存为 `c75a31d58164785fb6cb3dcde1bab67e72fd3afc` 后，首轮完整公开集合为 2701 项：2665 pass／4 fail／32 平台 skip。4 个失败位于原有 main 退出片段夹具，夹具未提供新增的 `unregisterFnConnect` 依赖，因关键清理未确认而不退出；没有改生产安全退出逻辑。补齐两份旧夹具的依赖，并断言新 owner 确实被调用一次；原退出屏障和失败断言保留。另行 Web 覆盖层合同 4／4 通过。修复后将以新准确提交重跑公开集合。
+
+修正提交 `e0c3ee5a56cfc5728b140937c9ecd6311cf58f12` 的完整公开复验：**2701 项，2669 pass／0 fail／32 平台 skip**，耗时约 125 秒；固定排除 6 份材料文件不计入通过，其中受本轮覆盖层修改影响的 `web-overlay-preparation.test.cjs` 已单独 4／4 通过。退出相关修正另有 45／45 定向通过。JS 618 个维护文件及 26 个原型文件、PowerShell 53 个维护文件语法通过；有限凭据模式扫描 715 个维护文本文件无发现，另核本轮 58 个变更文件及新增行未加入个人目标、登录态或私有日志。此为有限模式／人工范围检查，不称完整秘密扫描。除旧公共项目链接和历史固定 CDN 常量外未新增个人环境信息。
+
+Windows 后续只使用准确干净提交、Node 24.18.1、PowerShell 7，执行 `pwsh -NoProfile -File prototypes/fn-connect/client/run-windows-smoke.ps1`。归档 Electron 44.5.0 及 EXE 摘要由 `electron-input.json` 与产品 manifest 双重核对；输出为 `test-output/fn-connect-fixture/result.json`，拒绝覆盖旧结果。只读当前源码和新建合成 profile、监听 127.0.0.1，不接真实 NAS／CDN，不启动产品试用模式；下载官方固定 runtime 是唯一必要外网材料获取。仅由支持的正常执行入口运行；启动或输出回执失败保留一次结果，不改 sandbox、证书或权限、不换入口规避。此项尚未执行，且不等同真实产品包或播放验收。
