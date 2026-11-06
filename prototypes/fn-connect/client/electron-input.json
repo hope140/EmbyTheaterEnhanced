@@ -1,8 +1,9 @@
 {
-  "version": "44.4.2",
+  "version": "44.5.0",
   "platform": "win32-x64",
-  "asset": "electron-v44.4.2-win32-x64.zip",
-  "url": "https://github.com/electron/electron/releases/download/v44.4.2/electron-v44.4.2-win32-x64.zip",
-  "sha256": "6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03",
-  "checksumSource": "https://github.com/electron/electron/releases/download/v44.4.2/SHASUMS256.txt"
+  "asset": "electron-v44.5.0-win32-x64.zip",
+  "url": "https://github.com/electron/electron/releases/download/v44.5.0/electron-v44.5.0-win32-x64.zip",
+  "sha256": "b3405d8847bc5054cd16272f538d22ba5b73032945e85cef26241f7135035278",
+  "checksumSource": "https://github.com/electron/electron/releases/download/v44.5.0/SHASUMS256.txt",
+  "executableSha256": "3e76fb616aa60a850b7f64800dd81b21e06ddee3f1919650183b047f03e7cb9f"
 }

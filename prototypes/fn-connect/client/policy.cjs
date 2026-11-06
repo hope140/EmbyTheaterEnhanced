@@ -22,6 +22,9 @@ function config(input, mode) {
         'authOrigins', 'externalMediaOrigins'].includes(key))) throw fail('INVALID_PROFILE');
     const bootstrap = url(input.bootstrapUrl, mode), emby = url(input.embyUrl, mode);
     if (bootstrap.search || emby.search || /%(?:2f|5c|2e)/i.test(emby.pathname)) throw fail('INVALID_ADDRESS');
+    // An Emby Web page is not evidence for its API mount. Do not turn
+    // /web/index.html into /web/index.html/System/Info/Public or guess a root.
+    if (/\.html?\/?$/i.test(emby.pathname)) throw fail('API_BASE_REQUIRES_REVIEW');
     if (!emby.pathname.endsWith('/')) emby.pathname += '/';
     const authOrigins = new Set([bootstrap.origin, emby.origin]);
     for (const item of input.authOrigins || []) {
@@ -32,7 +35,7 @@ function config(input, mode) {
     const externalMediaOrigins = new Set();
     for (const item of input.externalMediaOrigins || []) {
         const parsed = url(item, mode);
-        if (parsed.pathname !== '/' || parsed.search || parsed.origin === emby.origin ||
+        if (parsed.pathname !== '/' || parsed.search || authOrigins.has(parsed.origin) ||
             mode !== 'fixture' && (isIP(parsed.hostname.replace(/^\[|\]$/g, '')) ||
                 !parsed.hostname.includes('.') || /\.(?:local|internal|localhost)$/i.test(parsed.hostname))) {
             throw fail('INVALID_MEDIA_ORIGIN');

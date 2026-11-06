@@ -66,7 +66,9 @@ if (!process.argv.includes('--fn-connect-prototype')) {
     const fixtureMode = process.argv.includes('--fixture') || process.argv.includes('--fixture-smoke');
     const smoke = process.argv.includes('--fixture-smoke');
     const externalCheckAvailable = process.argv.includes('--single-external-header-check');
+    const relayExternalMedia = fixtureMode || process.argv.includes('--anonymous-media-relay');
     if (externalCheckAvailable && fixtureMode) throw new Error('EXTERNAL_CHECK_LIVE_ONLY');
+    if (externalCheckAvailable && relayExternalMedia) throw new Error('EXTERNAL_TRIAL_MODE_CONFLICT');
     const persistenceRequested = process.argv.includes('--remember-login');
     if (persistenceRequested && (fixtureMode || process.platform !== 'win32')) throw new Error('REMEMBER_LOGIN_UNAVAILABLE');
     let profileStore, persistentControl, releaseControl;
@@ -207,8 +209,9 @@ if (!process.argv.includes('--fn-connect-prototype')) {
             }
         }
         if (stopping) return;
-        controller = createController({enabled: true, mode: fixtureMode ? 'fixture' : 'live',
+        controller = createController({enabled: true, mode: fixtureMode ? 'fixture' : 'live', relayExternalMedia,
             io: createElectronIO(electron, {onStatus: reason => publish({state: 'notice', reason}),
+                anonymousMediaEnabled: relayExternalMedia, mode: fixtureMode ? 'fixture' : 'live',
                 externalHeaderOrigin: externalCheckAvailable ? 'https://cdnfhnfile.115cdn.net' : undefined,
                 onDiagnostic: value => { if (smoke) report('diagnostic', value); }})});
         bridge = await createBridge(controller, {enabled: true});

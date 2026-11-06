@@ -24,6 +24,18 @@ async function createFixture() {
     const bytes = Buffer.from('ETE-FN-SYNTHETIC-MEDIA\n'.repeat(8192));
     const externalServer = http.createServer((req, res) => {
         state.externalRequests.push({...req.headers});
+        if (req.headers.range) {
+            const match = /^bytes=(\d{1,16})-(\d{0,16})$/.exec(req.headers.range);
+            const start = match ? Number(match[1]) : -1;
+            const end = match && match[2] ? Math.min(Number(match[2]), bytes.length - 1) : bytes.length - 1;
+            if (!Number.isSafeInteger(start) || start < 0 || start >= bytes.length || end < start) {
+                res.writeHead(416, {'Content-Range': 'bytes */' + bytes.length, 'Content-Length': 0}); res.end(); return;
+            }
+            const part = bytes.subarray(start, end + 1);
+            res.writeHead(206, {'Content-Type': 'application/octet-stream', 'Content-Length': part.length,
+                'Content-Range': 'bytes ' + start + '-' + end + '/' + bytes.length, 'Accept-Ranges': 'bytes'});
+            res.end(part); return;
+        }
         res.writeHead(200, {'Content-Type': 'application/octet-stream', 'Content-Length': bytes.length});
         res.end(bytes);
     });

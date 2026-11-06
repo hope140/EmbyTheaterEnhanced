@@ -44,8 +44,12 @@ async function createBridge(controller, {enabled = false} = {}) {
             res.once('close', abort);
             const forwarded = {...lease.headers};
             for (const key of ['range', 'if-range', 'accept']) if (typeof req.headers[key] === 'string') forwarded[key] = req.headers[key];
-            response = await controller.request(lease.id, {path: lease.path, headers: forwarded, signal: active.signal, kind: 'media'});
+            response = await controller.request(lease.id, {path: lease.path, headers: forwarded, signal: active.signal, kind: 'media', method: req.method});
             if (active.signal.aborted) throw fail('CANCELLED');
+            // A native player may follow further redirects using its own header
+            // policy. Keep all external Location handling inside the main-owned
+            // anonymous consumer; never hand the player a partially checked URL.
+            if (response.external) throw fail('EXTERNAL_MEDIA_CONSUMER_REQUIRED');
             const encoding = header(response, 'content-encoding');
             if (encoding && encoding !== 'identity') throw fail('ENCODING_UNVERIFIED');
             // HLS URL rewriting belongs to a later, separately verified phase.
@@ -53,7 +57,6 @@ async function createBridge(controller, {enabled = false} = {}) {
             if (/mpegurl|dash\+xml/i.test(header(response, 'content-type'))) throw fail('PLAYLIST_NOT_SUPPORTED');
             const headers = {};
             for (const [key, value] of Object.entries(response.headers || {})) if (responseHeaders.has(key.toLowerCase())) headers[key] = value;
-            if (response.external) headers.location = response.headers.location;
             res.writeHead(response.statusCode, headers);
             if (req.method === 'HEAD') { response.dispose?.(); response.body.destroy(); res.end(); }
             else {

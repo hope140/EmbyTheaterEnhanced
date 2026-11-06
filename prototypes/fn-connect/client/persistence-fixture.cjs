@@ -17,7 +17,7 @@ try {
         !/^ete-fn-persist-fixture-[a-f0-9]{32}$/.test(path.basename(root)) ||
         fs.lstatSync(root).isSymbolicLink() || !fs.lstatSync(root).isDirectory() ||
         fs.readFileSync(path.join(root, '.fixture-owner'), 'utf8') !== 'ETE_FN_SYNTHETIC_PERSISTENCE_V1\n' ||
-        process.versions.electron !== '44.4.2') throw new Error('FIXTURE_INPUT_INVALID');
+        process.versions.electron !== require('./electron-input.json').version) throw new Error('FIXTURE_INPUT_INVALID');
     for (const name of ['control', 'session']) {
         const directory = path.join(root, name);
         if (!fs.existsSync(directory)) fs.mkdirSync(directory);

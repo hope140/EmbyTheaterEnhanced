@@ -84,12 +84,12 @@ async function runElectronSmoke({controller, bridge, fixture, addProfile, author
         const invalidRange = await fetch(media.url, {headers: {Range: 'bytes=9999999-'}});
         assert.equal(invalidRange.status, 416); await invalidRange.arrayBuffer();
         stage('REDIRECT_SEPARATION');
-        const direct = lease(first.id, {path: 'direct', headers: {'X-Emby-Token': 'synthetic-electron-canary'}});
+        const direct = lease(first.id, {path: 'direct', headers: {'X-Emby-Token': 'synthetic-electron-canary', 'User-Agent': 'SyntheticMedia/1.0'}});
         assert.deepEqual(Buffer.from(await (await fetch(direct.url)).arrayBuffer()), fixture.bytes);
         assert.equal(fixture.state.externalRequests.length, 1);
         for (const key of ['cookie', 'authorization', 'x-emby-token', 'referer']) assert.equal(fixture.state.externalRequests[0][key], undefined);
         fixture.state.redirectSecret = fixture.cookie;
-        await assert.rejects(controller.request(first.id, {path: 'direct', kind: 'media'}), error => error.code === 'CREDENTIAL_REDIRECT_BLOCKED');
+        await assert.rejects(controller.request(first.id, {path: 'direct', kind: 'media', headers: {'User-Agent': 'SyntheticMedia/1.0'}}), error => error.code === 'CREDENTIAL_REDIRECT_BLOCKED');
         fixture.state.redirectSecret = null;
         assert.equal(fixture.state.externalRequests.length, 1);
         stage('WEBSOCKET_SESSION');

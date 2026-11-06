@@ -26,14 +26,19 @@ $rawOutput = ''
 try {
     $sourceCommit = (& git -C $sourceRoot rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch '^[a-f0-9]{40}$') { throw 'FN_FIXTURE_SOURCE_UNKNOWN' }
+    $sourceState = & git -C $sourceRoot status --porcelain=v1 --untracked-files=normal
+    if ($LASTEXITCODE -ne 0 -or $sourceState) { throw 'FN_FIXTURE_SOURCE_DIRTY' }
     if ($env:GITHUB_SHA -and $sourceCommit -ne $env:GITHUB_SHA) { throw 'FN_FIXTURE_SOURCE_MISMATCH' }
     if (-not $IsWindows) { $launchState = 'PLATFORM_UNSUPPORTED'; throw 'FN_FIXTURE_WINDOWS_REQUIRED' }
     $null = New-Item -ItemType Directory -Path $profilesRoot
     $electronInput = Get-Content -LiteralPath (Join-Path $prototypeRoot 'electron-input.json') -Raw | ConvertFrom-Json
-    if ($electronInput.version -ne '44.4.2' -or $electronInput.platform -ne 'win32-x64' -or
-        $electronInput.asset -ne 'electron-v44.4.2-win32-x64.zip' -or
-        $electronInput.url -ne 'https://github.com/electron/electron/releases/download/v44.4.2/electron-v44.4.2-win32-x64.zip' -or
-        $electronInput.sha256 -ne '6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03') { throw 'FN_FIXTURE_INPUT_MISMATCH' }
+    & node (Join-Path $sourceRoot 'tools/electron-runtime-input.cjs') validate-manifest $sourceRoot | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'FN_FIXTURE_INPUT_MISMATCH' }
+    $product = Get-Content -LiteralPath (Join-Path $sourceRoot 'vendor/electron-runtime-manifest.json') -Raw | ConvertFrom-Json
+    if ($electronInput.version -cne $product.version -or $electronInput.platform -cne 'win32-x64' -or
+        $electronInput.asset -cne $product.archive.name -or $electronInput.url -cne $product.archive.sourceUrl -or
+        $electronInput.sha256 -cne $product.archive.sha256 -or
+        $electronInput.executableSha256 -cne $product.runtime.electronExeSha256) { throw 'FN_FIXTURE_INPUT_MISMATCH' }
     $archive = Join-Path $temporaryRoot $electronInput.asset
     $launchState = 'DOWNLOAD_FAILED'
     Invoke-WebRequest -Uri $electronInput.url -OutFile $archive -TimeoutSec 90
@@ -42,6 +47,7 @@ try {
     $launchState = 'EXTRACT_FAILED'
     $runtimeRoot = Join-Path $temporaryRoot 'electron'
     Expand-Archive -LiteralPath $archive -DestinationPath $runtimeRoot
+    if ((Get-FileHash -LiteralPath (Join-Path $runtimeRoot 'electron.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $electronInput.executableSha256) { throw 'FN_FIXTURE_EXE_MISMATCH' }
     $launchState = 'PROCESS_START_FAILED'
     $start = [Diagnostics.ProcessStartInfo]::new()
     $start.FileName = Join-Path $runtimeRoot 'electron.exe'

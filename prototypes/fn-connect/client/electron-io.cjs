@@ -7,7 +7,7 @@ const {fail} = require('./policy.cjs');
 const {errorCode, normalizeDiagnostic} = require('./diagnostics.cjs');
 
 function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, onDiagnostic = () => {}, environment = process.env,
-    externalHeaderOrigin} = {}) {
+    externalHeaderOrigin, anonymousMediaEnabled = false, mode = 'live'} = {}) {
     let requestSequence = 0;
     let externalTrialUsed = false;
     let reservedExternalSession, externalTrialStarted = false;
@@ -24,6 +24,11 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
     }
     const diagnostic = value => { try { onDiagnostic(normalizeDiagnostic(value)); } catch { /* Diagnostics cannot change transport ownership. */ } };
     return {
+        openAnonymousMedia(ses, input) {
+            const {createAnonymousMedia} = require('./anonymous-media.cjs');
+            return createAnonymousMedia({enabled: anonymousMediaEnabled, mode, environment,
+                resolveProxy: address => ses.resolveProxy(address)}).open(input);
+        },
         createSession(id, storage) {
             // Only a main-owned store descriptor can select this dedicated path.
             const ses = storage?.persistent ? session.fromPath(storage.path, {cache: false}) :

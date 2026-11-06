@@ -19,8 +19,10 @@ function abortable(promise, signal) {
     });
 }
 
-function createController({enabled = false, mode = 'live', io, headerTimeoutMs = 10000, verificationTimeoutMs = 10000} = {}) {
+function createController({enabled = false, mode = 'live', io, headerTimeoutMs = 10000, verificationTimeoutMs = 10000,
+    relayExternalMedia = false} = {}) {
     if (!['live', 'fixture'].includes(mode)) throw policy.fail('INVALID_MODE');
+    if (typeof relayExternalMedia !== 'boolean' || relayExternalMedia && typeof io?.openAnonymousMedia !== 'function') throw policy.fail('ANONYMOUS_MEDIA_UNAVAILABLE');
     const profiles = new Map(), listeners = new Set();
     const lifecycleEvents = new Set(['WINDOW_CREATED', 'BOOTSTRAP_LOAD_STARTED', 'BOOTSTRAP_LOAD_FAILED', 'TARGET_LOAD_STARTED',
         'TARGET_LOAD_FAILED', 'NATIVE_CLOSE_REQUEST', 'CONTENT_CLOSE_REQUEST', 'MAIN_HANDLE_CLOSE', 'LIFETIME_ABORT',
@@ -88,7 +90,11 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
         if (!p || p.state === 'closed') throw policy.fail('PROFILE_CLOSED');
         return p;
     }
-    function ready(id) { const p = get(id); if (p.state !== 'ready') throw policy.fail('FN_AUTH_NOT_READY'); return p; }
+    function ready(id) {
+        const p = get(id);
+        if (p.transportDrainFailed) throw policy.fail('ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED');
+        if (p.state !== 'ready') throw policy.fail('FN_AUTH_NOT_READY'); return p;
+    }
     function transition(p, run) {
         if (p.transition) throw policy.fail('PROFILE_OPERATION_PENDING');
         const generation = p.generation, authEpoch = p.authEpoch;
@@ -125,9 +131,31 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
             if (owner.signal.aborted || p.generation !== generation || p.authEpoch !== authEpoch || p.state === 'closed') throw policy.fail('CANCELLED');
         }};
     }
-    async function exchange(p, address, inputHeaders, signal, kind) {
+    async function exchange(p, address, inputHeaders, signal, kind, method = 'GET') {
         const requestHeaders = policy.headers(inputHeaders), scope = owned(p, signal);
         let response, timer, earlyBodyFailed = false, releaseEarlyBody = () => {};
+        function ownBody(value) {
+            let retiring;
+            const cleanup = () => {
+                if (retiring) return retiring;
+                if (typeof value.drain !== 'function') { scope.cleanup(); return; }
+                retiring = Promise.resolve().then(() => value.drain()).then(scope.cleanup, () => {
+                    p.transportDrainFailed = true; scope.cleanup();
+                });
+                return retiring;
+            };
+            const abortBody = () => value.body.destroy(policy.fail('CANCELLED'));
+            scope.signal.addEventListener('abort', abortBody, {once: true});
+            value.body.once('close', () => scope.signal.removeEventListener('abort', abortBody));
+            value.body.once('end', cleanup);
+            value.body.once('close', cleanup);
+            value.body.once('error', cleanup);
+            releaseEarlyBody();
+            if (value.body.readableEnded || value.body.destroyed) cleanup();
+            const dispose = value.dispose;
+            value.dispose = () => { dispose?.(); value.body.destroy(); scope.abort(); return cleanup(); };
+            return value;
+        }
         try {
             let current = address;
             const seen = new Set();
@@ -146,7 +174,7 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
                 let timedOut = false;
                 timer = setTimeout(() => { timedOut = true; scope.abort(); }, headerTimeoutMs);
                 try {
-                    response = await io.request(p.session, {url: current.href, method: 'GET',
+                    response = await io.request(p.session, {url: current.href, method,
                         headers: requestHeaders, credentials: 'include', signal: scope.signal});
                 } catch {
                     if (timedOut) throw policy.fail('NETWORK_TIMEOUT');
@@ -184,16 +212,7 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
                     throw policy.fail(challenge);
                 }
                 if (response.statusCode < 300 || response.statusCode >= 400) {
-                    const abortBody = () => response.body.destroy(policy.fail('CANCELLED'));
-                    scope.signal.addEventListener('abort', abortBody, {once: true});
-                    response.body.once('close', () => scope.signal.removeEventListener('abort', abortBody));
-                    response.body.once('end', scope.cleanup);
-                    response.body.once('close', scope.cleanup);
-                    response.body.once('error', scope.cleanup);
-                    releaseEarlyBody();
-                    if (response.body.readableEnded || response.body.destroyed) scope.cleanup();
-                    response.dispose = () => { response.body.destroy(); scope.abort(); scope.cleanup(); };
-                    return response;
+                    return ownBody(response);
                 }
                 const location = policy.header(response, 'location');
                 releaseEarlyBody();
@@ -208,20 +227,34 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
                 secrets.push(...await abortable(io.cookieValues(p.session, current.href), scope.signal));
                 scope.check();
                 policy.rejectCredentialRedirect(next, secrets);
+                if (relayExternalMedia) {
+                    response = await io.openAnonymousMedia(p.session, {url: next.href, method,
+                        allowedOrigins: [...p.config.externalMediaOrigins], forbiddenOrigins: [...p.config.authOrigins],
+                        headers: requestHeaders, knownSecrets: secrets, signal: scope.signal});
+                    scope.check();
+                    return ownBody(response);
+                }
                 scope.cleanup();
-                // The player follows this location without receiving any NAS or
-                // Emby header. This process never fetches the external origin.
+                // Main-only review metadata. The player bridge refuses to pass
+                // this Location to a consumer without per-hop authorization.
                 return policy.externalRedirect(next);
             }
             throw policy.fail('REDIRECT_REJECTED');
         } catch (error) {
             releaseEarlyBody();
             response?.body?.destroy();
+            if (response?.drain) {
+                try { await response.drain(); } catch { p.transportDrainFailed = true; error = policy.fail('ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED'); }
+            }
+            if (error?.code === 'ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED') p.transportDrainFailed = true;
             scope.cleanup();
             if (earlyBodyFailed) throw policy.fail('UPSTREAM_STREAM_FAILED');
             if (error?.code && ['CANCELLED', 'NETWORK_TIMEOUT', 'NETWORK_ERROR', 'FN_AUTH_REQUIRED', 'ACCESS_CODE_REQUIRED',
                 'REDIRECT_LOOP', 'REDIRECT_REJECTED', 'EXTERNAL_REDIRECT_REVIEW_REQUIRED', 'CREDENTIAL_REDIRECT_BLOCKED',
-                'TARGET_OUT_OF_SCOPE', 'HTTPS_REQUIRED', 'INVALID_ADDRESS'].includes(error.code)) throw error;
+                'TARGET_OUT_OF_SCOPE', 'HTTPS_REQUIRED', 'INVALID_ADDRESS', 'ANONYMOUS_MEDIA_UA_UNCONFIRMED',
+                'ANONYMOUS_MEDIA_IF_RANGE_UNSUPPORTED', 'ANONYMOUS_MEDIA_RANGE_INVALID', 'ANONYMOUS_MEDIA_SCOPE_INVALID',
+                'ANONYMOUS_MEDIA_PROXY_UNSUPPORTED', 'ANONYMOUS_MEDIA_TIMEOUT', 'ANONYMOUS_MEDIA_NETWORK_ERROR', 'ANONYMOUS_MEDIA_FAILED',
+                'ANONYMOUS_MEDIA_STREAM_FAILED', 'ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED'].includes(error.code)) throw error;
             throw policy.fail('REQUEST_FAILED');
         }
     }
@@ -300,10 +333,11 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
                 throw policy.fail('INFO_STREAM_FAILED');
             } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); response?.dispose?.(); }
         },
-        request(id, {path, headers = {}, signal, kind = 'api'} = {}) {
+        request(id, {path, headers = {}, signal, kind = 'api', method = 'GET'} = {}) {
             const p = ready(id);
             if (!['api', 'media'].includes(kind)) throw policy.fail('INVALID_REQUEST_KIND');
-            return exchange(p, policy.target(p.config, path, mode), headers, signal, kind);
+            if (method !== 'GET' && !(kind === 'media' && method === 'HEAD')) throw policy.fail('METHOD_REJECTED');
+            return exchange(p, policy.target(p.config, path, mode), headers, signal, kind, method);
         },
         showTarget(id) {
             const p = get(id);
@@ -446,6 +480,7 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
             p.closing = Promise.resolve().then(async () => {
                 await Promise.all([...draining, transitioning?.catch(() => {}), closingWindow]);
                 await p.externalBudgetDrain;
+                if (p.transportDrainFailed) throw policy.fail('ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED');
                 try {
                     if (p.storage?.persistent && !forget) await io.preserveSession(p.session);
                     else await io.clearSession(p.session);

@@ -201,13 +201,13 @@ test('real loopback native lease streams exact 206 bytes and content-range with 
     assert.equal((await fetch(lease.url)).status, 410);
 });
 
-test('external 302 is followed by the player without NAS/Emby cookies, authorization or referrer', async t => {
+test('bridge refuses to delegate an external redirect to an unverified player consumer', async t => {
     const x = await setup(t); await x.login();
     const lease = x.bridge.lease(x.id, {path: 'direct', headers: {Authorization: 'Bearer synthetic-emby-canary'}});
     const response = await fetch(lease.url);
-    assert.deepEqual(Buffer.from(await response.arrayBuffer()), x.fixture.bytes);
-    assert.equal(x.fixture.state.externalRequests.length, 1);
-    for (const key of ['cookie', 'authorization', 'x-emby-token', 'referer']) assert.equal(x.fixture.state.externalRequests[0][key], undefined);
+    assert.equal(response.status, 502); assert.equal(response.headers.get('location'), null);
+    await response.arrayBuffer();
+    assert.equal(x.fixture.state.externalRequests.length, 0);
 });
 
 test('an approved synthetic media signature survives while an independent consumer sends only its file-local UA and Range', async t => {
@@ -217,10 +217,11 @@ test('an approved synthetic media signature survives while an independent consum
     x.fixture.state.redirectSecret = 'synthetic-media-signature-canary';
     const headers = {Authorization: 'Bearer synthetic-emby-canary', 'X-Emby-Token': 'another-emby-canary'};
     const lease = x.bridge.lease(x.id, {path: 'direct', headers});
-    const redirect = await fetch(lease.url, {redirect: 'manual'});
-    assert.equal(redirect.status, 302);
-    assert.equal(redirect.headers.get('set-cookie'), null);
-    const source = new URL(redirect.headers.get('location'));
+    // Location remains main-only review metadata; the bridge does not expose it.
+    const redirect = await x.controller.request(x.id, {path: 'direct', headers, kind: 'media'});
+    assert.equal(redirect.statusCode, 302);
+    assert.equal(redirect.headers['set-cookie'], undefined);
+    const source = new URL(redirect.headers.location);
     assert.equal(source.origin, x.fixture.profile.externalMediaOrigins[0]);
     assert.equal(source.searchParams.get('opaque'), 'synthetic-media-signature-canary');
     assert.equal(x.fixture.state.externalRequests.length, 0);

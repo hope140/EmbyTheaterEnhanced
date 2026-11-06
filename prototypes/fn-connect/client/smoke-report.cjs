@@ -2,8 +2,9 @@
 
 const fs = require('node:fs');
 const {normalizeDiagnostic} = require('./diagnostics.cjs');
-const expectedVersion = '44.4.2';
-const expectedHash = '6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03';
+const input = require('./electron-input.json');
+const expectedVersion = input.version;
+const expectedHash = input.sha256;
 const stages = ['APP_CODE_STARTED', 'APP_READY', 'PANEL_READY', 'BOOTSTRAP',
     'PRIMARY_PAGE_AUTHORIZED', 'PRIMARY_API_VERIFIED', 'ISOLATED_API_DENIED', 'HTTP_SESSION',
     'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY', 'DRAINED'];
@@ -41,7 +42,7 @@ function normalize(raw, {sourceCommit, archiveHash, launchState, exitCode, proce
         last?.test === 'electron-synthetic-session' && last.result === 'PASSED' && cleaned &&
         Object.values(safeChecks).every(Boolean) && declaredScope;
     return {schemaVersion: 1, test: 'fn-connect-electron-loopback', sourceCommit: commit,
-        electron: {version: expectedVersion, asset: 'electron-v44.4.2-win32-x64.zip', sha256: expectedHash, hashVerified, versionMatches},
+        electron: {version: expectedVersion, asset: input.asset, sha256: expectedHash, hashVerified, versionMatches},
         launchState: safeState, exitCode: Number.isInteger(exitCode) ? exitCode : null,
         stages: foundStages.filter(value => stages.includes(value)), result: passed ? 'PASSED' : 'FAILED',
         reason: passed ? null : safeState !== 'COMPLETED' ? safeState : safeReasons.has(last?.reason) ? last.reason : 'EVIDENCE_INCOMPLETE',

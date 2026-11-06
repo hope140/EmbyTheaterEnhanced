@@ -32,7 +32,7 @@ async function listen(handle) {
 function requireCheck(name, value) { checks[name] = value === true; if (!checks[name]) throw new Error('CHECK_FAILED'); }
 try {
     if (!process.argv.includes('--fn-external-fixture') || !['redirect', 'direct', 'same-body'].includes(caseName) ||
-        process.platform !== 'win32' || process.versions.electron !== '44.4.2' ||
+        process.platform !== 'win32' || process.versions.electron !== require('./electron-input.json').version ||
         typeof root !== 'string' || !path.isAbsolute(root) || !/^ete-fn-external-fixture-[a-f0-9]{32}$/.test(path.basename(root)) ||
         fs.lstatSync(root).isSymbolicLink() || !fs.lstatSync(root).isDirectory()) throw new Error('INVALID');
     const marker = path.join(root, '.fixture-owner');

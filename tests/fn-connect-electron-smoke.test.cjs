@@ -9,7 +9,10 @@ const {runElectronSmoke} = require('../prototypes/fn-connect/client/electron-smo
 
 test('Windows smoke scenario completes against actual local I/O with a synthetic session adapter (not Chromium)', {timeout: 15000}, async t => {
     const fixture = await createFixture(), io = createFixtureIO();
-    const controller = createController({enabled: true, mode: 'fixture', io});
+    const {createAnonymousMedia} = require('../prototypes/fn-connect/client/anonymous-media.cjs');
+    io.openAnonymousMedia = (_session, input) => createAnonymousMedia({enabled: true, mode: 'fixture',
+        environment: {}, resolveProxy: async () => 'DIRECT'}).open(input);
+    const controller = createController({enabled: true, mode: 'fixture', io, relayExternalMedia: true});
     const bridge = await createBridge(controller, {enabled: true});
     t.after(async () => { await bridge.close(); await controller.closeAll(); await fixture.close(); });
     const windows = new Map(), stages = [];
