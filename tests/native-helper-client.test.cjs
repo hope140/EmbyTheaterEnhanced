@@ -252,7 +252,7 @@ test('retire during begin advances request epoch, notifies with null generation,
 
   const retirement = ipc.notifications.at(-1);
   assert.equal(retirement.request.operation, 'retire-generation');
-  assert.deepEqual(retirement.request.payload, {reason: 'superseded', generationId: null, requestEpoch: 2});
+  assert.deepEqual(retirement.request.payload, {control: null, reason: 'superseded', generationId: null, requestEpoch: 2});
   assert.deepEqual(operationCalls(ipc, 'begin-generation')[0].request.payload, {label: 'B', requestEpoch: 1});
   pendingBegin.resolve({status: 'ok', generationId: 41});
   await assert.rejects(pending, /generation-superseded/);

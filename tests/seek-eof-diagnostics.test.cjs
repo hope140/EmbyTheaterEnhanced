@@ -281,7 +281,8 @@ test('cache observations are bounded, include only current playable numbers, and
     const logger = diagnostics.createLogger(root);
     for (const record of f.records.filter(row => row.event === 'cache-observation')) await logger(record);
     const persisted = await logger.readRecords();
-    assert.equal(persisted.records.length, 3);
+    assert.equal(persisted.records.length, 4);
+    assert.equal(persisted.records.at(-1).details.cause, 'terminal');
     assert.doesNotMatch(JSON.stringify(persisted), /PRIVATE_CANARY|token=/);
     assert.doesNotMatch(await logger.exportReport({}), /PRIVATE_CANARY|token=/);
 });
@@ -353,3 +354,58 @@ for (const [index, expected] of [[0, 1], [null, null], [undefined, null], [3, 2]
         });
     }
 }
+
+test('explicit stop snapshots the last observed owner before invalidation and carries the cause to destroy IPC', async t => {
+    const f = fixture(); await f.play();
+    f.property('duration', 120); f.property('time-pos', 23);
+    f.property('demuxer-cache-state', {'cache-end': 113, 'cache-duration': 90, underrun: false});
+    const generation = f.generation(), before = f.operations.length;
+    f.advance(9538);
+    const control = {operationId: 'manager-17', controlOrigin: 'remote-playstate', controlReason: 'stop', callSite: 'manager-stop'};
+    const stopping = f.player.stop(true, true, control);
+    const snapshot = clean(f.log('stop-requested').details);
+    assert.equal(snapshot.snapshotMeaning, 'latest-known-at-stop-request');
+    assert.equal(snapshot.snapshotAt, 19538);
+    assert.equal(snapshot.observedAt.cache, 10000);
+    assert.equal(snapshot.cached.positionCurrentGeneration, true);
+    assert.equal(snapshot.cached.cacheCurrentGeneration, true);
+    assert.equal(snapshot.cached.remainingSeconds, 97);
+    assert.equal(snapshot.cached.cacheAheadSeconds, 90);
+    assert.equal(snapshot.nativeGenerationId, generation);
+    assert.equal(snapshot.control.operationId, 'manager-17');
+    assert.equal(snapshot.control.controlOrigin, 'remote-playstate');
+    assert.equal(f.log('invalidation-requested').details.cached.cacheCurrentGeneration, true);
+    await stopping;
+    assert.deepEqual(f.operations.slice(before).map(row => row.operation), ['destroy'], 'no diagnostic native query');
+    const payload = clean(f.operations.at(-1).payload.diagnostic);
+    assert.deepEqual(payload, snapshot);
+    assert.deepEqual(clean(f.log('stop').details.requestedState), snapshot);
+    assert.equal(f.eventNames.filter(name => name === 'stopped').length, 1);
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-stop-diagnostic-'));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const logger = diagnostics.createLogger(root);
+    for (const row of f.records) await logger(row);
+    const report = await logger.exportReport({});
+    assert.match(report, /manager-17/);
+    assert.match(report, /remote-playstate/);
+    assert.match(report, /latest-known-at-stop-request/);
+    assert.doesNotMatch(report, /PRIVATE_CANARY/);
+});
+
+test('reentrant destroy retains the first physical teardown snapshot and old observations never claim the new owner', async () => {
+    const f = fixture(); await f.play();
+    const a = f.generation(); f.property('time-pos', 31, a);
+    await f.play(); const b = f.generation();
+    f.property('demuxer-cache-state', {'cache-end': 90}, a);
+    const one = f.player.destroy({operationId: 'manager-1', controlOrigin: 'osd-route', controlReason: 'destroy'});
+    const first = f.log('destroy-requested').details;
+    assert.equal(first.nativeGenerationId, b);
+    assert.equal(first.cached.cacheCurrentGeneration, false);
+    assert.equal(first.cached.cacheAheadSeconds, null);
+    const two = f.player.destroy({operationId: 'manager-2', controlOrigin: 'unknown'});
+    await Promise.all([one, two]);
+    const destroys = f.operations.filter(row => row.operation === 'destroy');
+    assert.equal(destroys.length, 1);
+    assert.equal(destroys[0].payload.diagnostic.control.operationId, 'manager-1');
+    assert.equal(f.log('destroy-completed').details.control.operationId, 'manager-1');
+});

@@ -167,6 +167,7 @@ function makeFixture(options = {}) {
         play: [],
         stop: [],
         playbackStarts: [],
+        diagnostics: [],
         playbackStops: [],
         playbackCancelled: [],
         reports: []
@@ -303,6 +304,7 @@ function makeFixture(options = {}) {
         queueMicrotask,
         console: {log() {}, warn() {}, error() {}},
         window: {
+            ipc: {send(_channel, record) { calls.diagnostics.push(record); }},
             localStorage: {
                 getItem() { return null; },
                 setItem() {}
@@ -2348,3 +2350,35 @@ for (const expire of [false, true]) {
         assert.equal(timers.size, 0);
     });
 }
+
+test('diagnostic-capable terminal Stop carries one operation while legacy players keep their original arguments', async () => {
+    const f = makeFixture(); await startQueueItem(f, [makeItem('stop-A')], 'session-stop-A');
+    f.player.supportsControlDiagnostics = true;
+    await f.manager.stop(null, {controlOrigin: 'remote-playstate'});
+    const control = f.calls.stop.at(-1)[2];
+    assert.equal(control.controlOrigin, 'remote-playstate');
+    assert.equal(control.controlReason, 'stop');
+    assert.equal(control.callSite, 'manager-stop');
+    const record = f.calls.diagnostics.find(row => row.details.control.operationId === control.operationId);
+    assert.equal(record.details.playbackRequestId, 1);
+    assert.deepEqual(f.calls.stop.at(-1).slice(0, 2), [true, true]);
+    assert.equal(reportsFor(f.calls, 'reportPlaybackStopped').length, 1);
+});
+
+test('ordinary error still advances after the dialog and records the exact queue decision and causal operation', async () => {
+    const close = deferred(), f = makeFixture({alertResult: close.promise});
+    await startQueueItem(f, [makeItem('error-A'), makeItem('next-B')], 'session-error-A');
+    f.events.trigger(f.player, 'stopped', [null, {errorCode: 'NoCompatibleStream'}]);
+    await settle();
+    assert.equal(f.calls.metadata.length, 1);
+    const decision = f.calls.diagnostics.find(row => row.event === 'queue-decision');
+    assert.equal(decision.details.hasError, true);
+    assert.equal(decision.details.hasNextItem, true);
+    assert.equal(decision.details.nextAllowed, true);
+    assert.equal(decision.details.playRequestId, 1);
+    close.resolve(); await settle();
+    assert.equal(f.calls.metadata.length, 2, 'diagnostics must preserve existing automatic next after error');
+    const next = f.calls.diagnostics.find(row => row.details.control.controlReason === 'error-auto-next');
+    assert.equal(next.details.control.operationId, decision.details.control.operationId);
+    f.resolveMetadata(1, 'session-next-B'); await settle();
+});

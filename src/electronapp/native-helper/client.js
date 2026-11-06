@@ -100,14 +100,14 @@
                 return result;
             });
         };
-        this.retireGeneration = function (reason) {
+        this.retireGeneration = function (reason, control) {
             if (destroyed) return;
             var requestEpoch = ++generationEpoch;
             var generationId = currentGenerationId;
             currentGenerationId = null;
             if (!ipc || typeof ipc.send !== 'function') return;
             ipc.send(NOTIFY_CHANNEL, {operation: 'retire-generation', payload: {
-                reason: reason || 'retired', generationId: generationId, requestEpoch: requestEpoch
+                control: control || null, reason: reason || 'retired', generationId: generationId, requestEpoch: requestEpoch
             }, endpointId: endpointId});
         };
         this.preparePresentation = function (token) {
@@ -181,7 +181,7 @@
                 pending.catch(function (error) { emit({type: 'bridge_error', data: {reason: error && error.message || 'bridge-call-failed'}}); });
             }
         };
-        this.destroy = function () {
+        this.destroy = function (diagnostic) {
             if (destroyPromise) return destroyPromise;
             destroyed = true;
             generationEpoch++;
@@ -189,7 +189,7 @@
             try { ipc.removeListener(EVENT_CHANNEL, self._onIpcEvent); } catch (_) { }
             listeners = [];
             currentGenerationId = null;
-            destroyPromise = Promise.resolve().then(function () { return invoke(ipc, 'destroy', {}, endpointId); });
+            destroyPromise = Promise.resolve().then(function () { return invoke(ipc, 'destroy', {diagnostic: diagnostic || null}, endpointId); });
             return destroyPromise;
         };
     }

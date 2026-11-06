@@ -22,10 +22,29 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
     function requestDiagnosticDetails(request) {
         return {
             requestId: request && request.requestId,
+            control: request && request.diagnosticControl || null,
             playRequestId: request && request.playbackRequestId ? request.playbackRequestId : null,
             nativeGenerationId: request && request.nativeGenerationId || null,
             playbackPhase: request ? request.corePlayingLogged ? 'playing' : 'loading' : 'UNAVAILABLE'
         };
+    }
+
+    function projectControl(value) {
+        try {
+            if (!value || typeof value !== 'object') return null;
+            var output = {};
+            var allowed = {
+                "controlOrigin": ["unknown", "osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "manager", "queue"],
+                "controlReason": ["stop", "next", "replacement", "error-cleanup", "error-auto-next", "ended-auto-next", "queue-empty", "destroy", "new-play"],
+                "callSite": ["manager-stop", "manager-next", "manager-replacement", "manager-ended", "adapter-stop", "adapter-destroy", "adapter-new-play"]};
+            for (var name in allowed) {
+                var descriptor = Object.getOwnPropertyDescriptor(value, name);
+                output[name] = descriptor && allowed[name].indexOf(descriptor.value) >= 0 ? descriptor.value : 'unknown';
+            }
+            var operation = Object.getOwnPropertyDescriptor(value, 'operationId');
+            output.operationId = operation && typeof operation.value === 'string' && /^(?:manager|adapter)-[1-9][0-9]{0,12}$/.test(operation.value) ? operation.value : null;
+            return output;
+        } catch (_) { return null; }
     }
 
     function diagnosticNumber(value) {
@@ -227,6 +246,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var playGeneration = 0;
         var highestPlaybackRequestId = 0;
         var activePlayRequest;
+        var diagnosticControlSequence = 0;
+        var diagnosticObservationTimes = {};
         var diagnosticObservationOwners = {position: null, duration: null, cache: null, cacheTime: null};
         var diagnosticObservationPlays = {position: null, duration: null, cache: null, cacheTime: null};
         var subtitleSelectionSequence = 0;
@@ -266,7 +287,27 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
         }
 
-        function invalidatePlayRequest() {
+        function controlContext(value, reason, site) {
+            var control = projectControl(value) || {};
+            if (!control.operationId) control.operationId = 'adapter-' + (++diagnosticControlSequence);
+            if (!control.controlOrigin) control.controlOrigin = 'unknown';
+            if (!control.controlReason || control.controlReason === 'unknown') control.controlReason = reason;
+            control.callSite = site;
+            return control;
+        }
+        function stopSnapshot(control) {
+            try {
+                return Object.assign(requestDiagnosticDetails(activePlayRequest), {
+                    control: control, generationId: activePlayRequest && activePlayRequest.nativeGenerationId,
+                    snapshotMeaning: 'latest-known-at-stop-request', snapshotAt: Date.now(),
+                    observedAt: Object.assign({}, diagnosticObservationTimes),
+                    cached: cachedPlaybackDiagnostic(activePlayRequest),
+                    latestSubmittedSeek: latestSeekDiagnostic(activePlayRequest), seekAssociation: 'latest-submission-only'
+                });
+            } catch (_) { return {control: control}; }
+        }
+        function invalidatePlayRequest(control, snapshot) {
+            if (activePlayRequest) emitClientDiagnostic('info', 'playback', 'invalidation-requested', snapshot || stopSnapshot(control));
             playGeneration++;
             retireFpsDisplayWork();
             if (enhancedRouteState) enhancedRouteState.clear();
@@ -277,7 +318,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 cleanupCorePlaying(previous);
             }
             if (libmpv && typeof libmpv.retireGeneration === 'function') {
-                libmpv.retireGeneration('upper-play-invalidated');
+                libmpv.retireGeneration('upper-play-invalidated', control);
             }
         }
 
@@ -286,10 +327,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var request;
 
             if (playbackRequestId && playbackRequestId < highestPlaybackRequestId) return null;
+            var retiringSnapshot = stopSnapshot(controlContext(options && options._eteDiagnosticControl, 'new-play', 'adapter-new-play'));
             if (playbackRequestId) highestPlaybackRequestId = playbackRequestId;
-            invalidatePlayRequest();
+            invalidatePlayRequest(retiringSnapshot.control, retiringSnapshot);
             request = {
                 generation: playGeneration,
+                diagnosticControl: projectControl(options && options._eteDiagnosticControl),
                 previewItem: options && options.item ? {Id: options.item.Id, ServerId: options.item.ServerId} : null,
                 playbackRequestId: playbackRequestId,
                 requestId: 'play-' + (playbackRequestId || 'local') + '-' + playGeneration,
@@ -339,6 +382,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
 
         function noteDiagnosticObservation(name, generationId) {
             var owner = diagnosticGeneration(generationId);
+            diagnosticObservationTimes[name] = Date.now();
             diagnosticObservationOwners[name] = owner;
             diagnosticObservationPlays[name] = diagnosticOwnerMatches(activePlayRequest, owner) === true ? activePlayRequest.generation : null;
         }
@@ -357,7 +401,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var positionSeconds = diagnosticNumber(playerState.positionTicks) === null ? null : playerState.positionTicks / 10000000;
             var durationSeconds = diagnosticNumber(playerState.durationTicks) === null ? null : playerState.durationTicks / 10000000;
             var cacheEndSeconds = diagnosticNumber(diagnosticField(cache, 'cache-end'));
-            var positionCurrent = diagnosticCachedOwnerMatches(request, 'position') === true && !request.cacheDiagnosticSeekPending;
+            var positionCurrent = diagnosticCachedOwnerMatches(request, 'position') === true && !(request && request.cacheDiagnosticSeekPending);
             var durationCurrent = diagnosticCachedOwnerMatches(request, 'duration') === true;
             var cacheCurrent = diagnosticCachedOwnerMatches(request, 'cache') === true;
             return {
@@ -397,11 +441,11 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (cached.cacheCurrentGeneration !== true) return;
                 var state = [cached.cacheEof, cached.cacheReaderEof, cached.cacheUnderrun];
                 var changed = previous && state.some(function (value, index) { return value !== previous[index]; });
-                if (previous && !changed && now - request.cacheDiagnosticAt < 30000) return;
+                if (previous && !atStop && !changed && now - request.cacheDiagnosticAt < 30000) return;
                 request.cacheDiagnosticAt = now;
                 request.cacheDiagnosticState = state;
                 emitClientDiagnostic('info', 'playback', 'cache-observation', Object.assign(requestDiagnosticDetails(request), {
-                    cause: !previous ? 'initial' : changed ? 'state-change' : 'periodic',
+                    cause: atStop ? 'terminal' : !previous ? 'initial' : changed ? 'state-change' : 'periodic',
                     positionSeconds: cached.positionCurrentGeneration === true && !request.cacheDiagnosticSeekPending ? cached.positionSeconds : null,
                     cacheEndSeconds: cached.cacheEndSeconds,
                     cacheDurationSeconds: cached.cacheDurationSeconds,
@@ -1477,11 +1521,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             nextTransition.playbackFailed(requestId);
         };
 
-        self.stop = async function (destroyPlayer) {
+        self.supportsControlDiagnostics = true;
+        self.stop = async function (destroyPlayer, unused, diagnosticControl) {
             var request = activePlayRequest;
+            var control = controlContext(diagnosticControl, 'stop', 'adapter-stop');
+            var snapshot = stopSnapshot(control);
+            emitClientDiagnostic('info', 'playback', 'stop-requested', snapshot);
             var presentationToken = null;
             if (destroyPlayer) nextTransition.cancel();
-            invalidatePlayRequest();
+            invalidatePlayRequest(control);
             if (!destroyPlayer && nextTransition.isActive()) {
                 var generationAtStop = playGeneration;
                 try { presentationToken = await nextTransition.beforeTeardown(); }
@@ -1489,7 +1537,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (generationAtStop !== playGeneration) return;
             }
             if (destroyPlayer) {
-                await destroyInternal()
+                await destroyInternal(snapshot)
             } else {
                 appSettings.set('mpv-volume', playerState.volume);
                 if (presentationToken && libmpv && typeof libmpv.stopForPresentation === 'function') {
@@ -1499,14 +1547,16 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
             }
             emitClientDiagnostic('info', 'playback', 'stop', Object.assign(requestDiagnosticDetails(request), {
-                stopSource: destroyPlayer ? 'adapter-stop-destroy' : 'adapter-stop'
+                stopSource: destroyPlayer ? 'adapter-stop-destroy' : 'adapter-stop',
+                control: control, phase: 'completed', requestedState: snapshot
             }));
             self._onStopped(true)
         };
 
-        self.destroy = function () {
+        self.destroy = function (diagnosticControl) {
+            var snapshot = stopSnapshot(controlContext(diagnosticControl, 'destroy', 'adapter-destroy'));
             nextTransition.cancel();
-            return destroyInternal()
+            return destroyInternal(snapshot)
         };
 
         function recordPauseIntent(paused) {
@@ -1952,9 +2002,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
         }
 
-        async function destroyInternal() {
+        async function destroyInternal(snapshot) {
 
-            invalidatePlayRequest();
+            emitClientDiagnostic('info', 'playback', 'destroy-requested', snapshot || {});
+            invalidatePlayRequest(snapshot && snapshot.control);
             if (mediaElementDestroyPromise) return mediaElementDestroyPromise;
             mediaElementEpoch++;
             var pendingCreation = mediaElementPromise;
@@ -1980,13 +2031,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var completion = Promise.resolve().then(async function () {
                 try {
                     if (ownedEndpoint && typeof ownedEndpoint.destroy === 'function') {
-                        try { await ownedEndpoint.destroy(); } catch (_) { }
+                        try { await ownedEndpoint.destroy(snapshot); } catch (_) { }
                     }
                     if (pendingCreation) {
                         try { await pendingCreation; } catch (_) { }
                     }
                 } finally {
                     if (mediaElementDestroyPromise === completion) mediaElementDestroyPromise = null;
+                    emitClientDiagnostic('info', 'playback', 'destroy-completed', snapshot || {});
                 }
             });
             mediaElementDestroyPromise = completion;

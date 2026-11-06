@@ -76,11 +76,19 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         generatorPaths: Object.freeze([GENERATOR_PATH, SUBTITLE_LANGUAGE_GENERATOR_PATH])
     }),
     Object.freeze({
+        id: 'playback-input-manager-diagnostics', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/modules/common/inputmanager.js', inputPath: null,
+        runtimePath: 'electronapp/www/modules/common/inputmanager.js',
+        expectedBaseSha256: 'AEDC007222D868585D4C4B4AFE729A17CDA34B97FEA54E67353BD29EADA84CB5', expectedInputSha256: null,
+        expectedOutputSha256: '8481007B61FA951C9C5A508E9B26EBD5877F6BD103B2DA3A68234B5395BE6B76',
+        generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-playback-input-diagnostics.cjs'])
+    }),
+    Object.freeze({
         id: 'playback-input-diagnostics', mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/modules/common/input/api.js', inputPath: null,
         runtimePath: 'electronapp/www/modules/common/input/api.js',
         expectedBaseSha256: 'F6B2C1D59CFF4B7F9C9FA30E28E74D162A627CEE53F4CDFB179602EAD6776888', expectedInputSha256: null,
-        expectedOutputSha256: '8CD92155ABAAE1F0A024383C4308E439E0F677BD8D76623ED8F8632C3CD8BCA7',
+        expectedOutputSha256: '9F2CB81EFB2894859322F9F3367AF5129ED75AF51C31A9904E0D58EBDCFED076',
         generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-playback-input-diagnostics.cjs'])
     }),
     Object.freeze({
@@ -140,7 +148,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/videoosd/videoosd.js',
         expectedBaseSha256: '86AB60C897E827B5152435350FE7B3801D8AFD6B8889EEF96E9996E71BB5EEAB',
         expectedInputSha256: null,
-        expectedOutputSha256: 'F6B2FB605A7A12F9BB974C7847242769D796BA40B31F8C17BC5E88EED60AD626',
+        expectedOutputSha256: '8861539CF9A1A03B8AF1C53C1098FC72955622F9EF72639973930E491688339B',
         generatorPaths: Object.freeze([GENERATOR_PATH, OSD_LIFECYCLE_GENERATOR_PATH, SUBTITLE_APPEARANCE_GENERATOR_PATH])
     }),
     Object.freeze({
@@ -429,6 +437,7 @@ function outputFor(root, contract) {
     if (contract.id === 'advance-download-command') return {base, input: Buffer.from(advanceDownload.patchCommandProcessor(base.toString('utf8')), 'utf8')};
     if (contract.id === 'connectionmanager-transport') return {base, input: Buffer.from(connectionManagerTransport.patchConnectionManager(base.toString('utf8')), 'utf8')};
     if (contract.id === 'videoosd-lifecycle') return {base, input: Buffer.from(subtitleAppearance.patchVideoOsd(videoOsdLifecycle.patchVideoOsd(base.toString('utf8'))), 'utf8')};
+    if (contract.id === 'playback-input-manager-diagnostics') return {base, input: Buffer.from(playbackInputDiagnostics.patchInputManager(base.toString('utf8')), 'utf8')};
     if (contract.id === 'playback-input-diagnostics') return {base, input: Buffer.from(playbackInputDiagnostics.patchInputApi(base.toString('utf8')), 'utf8')};
     if (contract.id === 'startup-index') return {base, input: base};
     if (contract.id === 'actionsheet-layout') return {base, input: Buffer.from(actionSheetLayout.patchActionSheetCss(base.toString('utf8')), 'utf8')};

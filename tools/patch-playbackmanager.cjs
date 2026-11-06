@@ -644,4 +644,113 @@ replaceOnce('error payload defaults and premature EOF',
       }
       var errorType = error.type,`);
 
+// Diagnostic context follows existing arguments/closures, never a mutable global
+// current intent across asynchronous work. No queue/session decisions change.
+replaceOnce('control diagnostic helpers', '  function afterPlaybackErrorMessage', `  var enhancedControlSequence = 0;
+  function enhancedControl(manager, context, reason, site) {
+    var input = context || {}, control = {
+      operationId: typeof input.operationId === "string" && /^manager-[1-9][0-9]{0,12}$/.test(input.operationId)
+        ? input.operationId : "manager-" + (++enhancedControlSequence),
+      controlOrigin: ["osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "manager", "queue"].indexOf(input.controlOrigin) >= 0 ? input.controlOrigin : "unknown",
+      controlReason: reason, callSite: site
+    };
+    try {
+      var player = manager._currentPlayer, stream = player && player.streamInfo;
+      var pending = window.ipc.send("enhanced-diagnostics-log", {category: "playback", event: "control-requested",
+        details: {control: control, playbackRequestId: stream && stream._etePlayRequestId || null}});
+      if (pending && pending.catch) pending.catch(function () {});
+    } catch (_) {}
+    return control;
+  }
+  function enhancedDiagnosticStop(player, destroy, terminal, control) {
+    return player.supportsControlDiagnostics === true ? player.stop(destroy, terminal, control)
+      : terminal === undefined ? player.stop(destroy) : player.stop(destroy, terminal);
+  }
+  function enhancedDiagnosticDestroy(player, control) {
+    return player.supportsControlDiagnostics === true ? player.destroy(control) : player.destroy();
+  }
+  function afterPlaybackErrorMessage`);
+replaceOnce('error followup diagnostic',
+  '"RateLimitExceeded" === errorCode ? instance.stop() : playNextTrack && instance.nextTrack();',
+  '"RateLimitExceeded" === errorCode ? instance.stop(null, {controlOrigin:"manager", controlReason:"error-cleanup"}) : playNextTrack && instance.nextTrack(null, {controlOrigin:"manager", controlReason:"error-auto-next"});');
+replaceOnce('stop control argument', '(PlaybackManager.prototype.stop = function (player) {',
+  '(PlaybackManager.prototype.stop = function (player, diagnosticControl) {\n      diagnosticControl = enhancedControl(this, diagnosticControl, diagnosticControl && ["error-cleanup", "queue-empty"].indexOf(diagnosticControl.controlReason) >= 0 ? diagnosticControl.controlReason : "stop", "manager-stop");');
+replaceOnce('terminal stop physical control',
+  '? player._eteReplacementStop.enqueue(true, true) : player.stop(!0, !0),',
+  '? player._eteReplacementStop.enqueue(true, true, null, null, null, diagnosticControl) : enhancedDiagnosticStop(player, !0, !0, diagnosticControl),');
+replaceOnce('replacement enqueue control',
+  'owner.enqueue = function (destroyPlayer, terminal, requestOptions, replacementPlayer, replacementMediaType) {',
+  'owner.enqueue = function (destroyPlayer, terminal, requestOptions, replacementPlayer, replacementMediaType, diagnosticControl) {');
+replaceOnce('replacement physical control',
+  'return (terminal ? activePlayer.stop(!0, !0) : activePlayer.stop(destroyPlayer)).then(function () {',
+  'var control = diagnosticControl || enhancedControl(self, requestOptions && requestOptions._eteDiagnosticControl, "replacement", "manager-replacement");\n            return (terminal ? enhancedDiagnosticStop(activePlayer, !0, !0, control) : enhancedDiagnosticStop(activePlayer, destroyPlayer, undefined, control)).then(function () {');
+replaceOnce('next control argument', '(self.nextTrack = function (player) {',
+  '(self.nextTrack = function (player, diagnosticControl) {\n        diagnosticControl = enhancedControl(self, diagnosticControl, diagnosticControl && ["error-auto-next", "ended-auto-next"].indexOf(diagnosticControl.controlReason) >= 0 ? diagnosticControl.controlReason : "next", "manager-next");');
+replaceOnce('next control capture',
+  'setPlaylistState(newItemInfo.item.PlaylistItemId, newItemInfo.index);\n            }))',
+  'setPlaylistState(newItemInfo.item.PlaylistItemId, newItemInfo.index);\n            }, null, diagnosticControl))');
+replaceOnce('play internal control argument',
+  'function playInternal(item, playOptions, onPlaybackStartedFn, capturedRequestId) {',
+  'function playInternal(item, playOptions, onPlaybackStartedFn, capturedRequestId, diagnosticControl) {');
+replaceOnce('play internal control snapshot',
+  '      playOptions = Object.assign({}, playOptions);',
+  '      playOptions = Object.assign({}, playOptions);\n      playOptions._eteDiagnosticControl = diagnosticControl || playOptions._eteDiagnosticControl || null;');
+replaceOnce('queue empty stop control',
+  'if ("empty" === removeResult.result) return self.stop(player);',
+  'if ("empty" === removeResult.result) return self.stop(player, {controlOrigin:"queue", controlReason:"queue-empty"});');
+replaceOnce('local failure stop control', '_loading.default.hide(), self.stop(player);',
+  '_loading.default.hide(), self.stop(player, {controlOrigin:"manager", controlReason:"error-cleanup"});');
+replaceOnce('ended next control', '? self.nextTrack()\n',
+  '? self.nextTrack(null, {controlOrigin:"manager", controlReason:"ended-auto-next"})\n');
+replaceOnce('ended cleanup control', '(this.destroy(), removeCurrentPlayer(this)),',
+  '(enhancedDiagnosticDestroy(this, enhancedControl(self, {controlOrigin:"manager"}, playerStopInfo.errorCode ? "error-cleanup" : "destroy", "manager-ended")), removeCurrentPlayer(this)),');
+
+replaceOnce('stopped diagnostic owner before cleanup',
+  '        if (playerData.streamInfo && playerData.streamInfo._eteStopHandled) return;',
+  '        if (playerData.streamInfo && playerData.streamInfo._eteStopHandled) return;\n        var diagnosticStopControl = enhancedControl(self, {controlOrigin:"manager"}, playerStopInfo && playerStopInfo.errorCode ? "error-cleanup" : "destroy", "manager-ended");');
+replaceOnce('queue decision diagnostic',
+  '        if (\n          ((playerData ? getPlayer(playerData.item, nextMediaType) : null) !== this &&',
+  `        try {
+          var diagnosticPending = window.ipc.send("enhanced-diagnostics-log", {category:"playback", event:"queue-decision", details:{
+            control: diagnosticStopControl, playRequestId: streamInfo && streamInfo._etePlayRequestId || null,
+            hasError: !!playerStopInfo.errorCode, autoNextEnabled: !!self._playNextAfterEnded,
+            nextAllowed: playerStopInfo.playNext !== false, hasNextItem: !!playerData,
+            returnErrorPromise: !!playerStopInfo.returnPromise}});
+          if (diagnosticPending && diagnosticPending.catch) diagnosticPending.catch(function () {});
+        } catch (_) {}
+        if (
+          ((playerData ? getPlayer(playerData.item, nextMediaType) : null) !== this &&`);
+replaceOnce('error message diagnostic argument',
+  'function showPlaybackInfoErrorMessage(instance, errorCode, fullscreen, playNextTrack) {',
+  'function showPlaybackInfoErrorMessage(instance, errorCode, fullscreen, playNextTrack, diagnosticControl) {');
+replaceOnce('error completion diagnostic argument',
+  'function afterPlaybackErrorMessage(instance, errorCode, playNextTrack) {',
+  'function afterPlaybackErrorMessage(instance, errorCode, playNextTrack, diagnosticControl) {');
+replaceOnce('error completion captured diagnostic',
+  'if (current()) return afterPlaybackErrorMessage(instance, errorCode, playNextTrack);',
+  'if (current()) return afterPlaybackErrorMessage(instance, errorCode, playNextTrack, diagnosticControl);');
+replaceOnce('error followup diagnostic inheritance',
+  '"RateLimitExceeded" === errorCode ? instance.stop(null, {controlOrigin:"manager", controlReason:"error-cleanup"}) : playNextTrack && instance.nextTrack(null, {controlOrigin:"manager", controlReason:"error-auto-next"});',
+  '"RateLimitExceeded" === errorCode ? instance.stop(null, Object.assign({}, diagnosticControl, {controlOrigin:"manager", controlReason:"error-cleanup"})) : playNextTrack && instance.nextTrack(null, Object.assign({}, diagnosticControl, {controlOrigin:"manager", controlReason:"error-auto-next"}));');
+replaceOnce('error dialog diagnostic capture',
+  '                !streamInfo || streamInfo.fullscreen,\n                playerData\n',
+  '                !streamInfo || streamInfo.fullscreen,\n                playerData, diagnosticStopControl\n');
+replaceOnce('ended next diagnostic inheritance',
+  '? self.nextTrack(null, {controlOrigin:"manager", controlReason:"ended-auto-next"})',
+  '? self.nextTrack(null, Object.assign({}, diagnosticStopControl, {controlOrigin:"manager", controlReason:"ended-auto-next"}))');
+replaceOnce('ended destroy diagnostic inheritance',
+  'enhancedDiagnosticDestroy(this, enhancedControl(self, {controlOrigin:"manager"}, playerStopInfo.errorCode ? "error-cleanup" : "destroy", "manager-ended"))',
+  'enhancedDiagnosticDestroy(this, diagnosticStopControl)');
+
+replaceOnce('queue selection diagnostic capture',
+  'setPlaylistState(newItem.PlaylistItemId, newItemIndex);\n            }))',
+  'setPlaylistState(newItem.PlaylistItemId, newItemIndex);\n            }, null, enhancedControl(self, {controlOrigin:"queue"}, "replacement", "manager-replacement")))');
+replaceOnce('previous selection diagnostic capture',
+  'setPlaylistState(newItem.PlaylistItemId, newIndex);\n              })',
+  'setPlaylistState(newItem.PlaylistItemId, newIndex);\n              }, null, enhancedControl(self, null, "replacement", "manager-replacement"))');
+
+replaceOnce('stream diagnostic context follows request options',
+  '        (prefix._etePlayRequestId = item.playOptions._etePlayRequestId);',
+  '        (prefix._etePlayRequestId = item.playOptions._etePlayRequestId);\n      prefix._eteDiagnosticControl = item && item.playOptions && item.playOptions._eteDiagnosticControl || null;');
+
 fs.writeFileSync(file, source, 'utf8');
