@@ -20,12 +20,14 @@ try {
         Write-FnAtomicJson $script:fnProgressFile ([ordered]@{schemaVersion=1;runId=$Round;sourceCommit=$Commit;stage=$Stage;phase=$Stage;archiveVerified=($Stage -eq 'PREPARED');exeVerified=($Stage -eq 'PREPARED')})
     }
     Publish-TestPhase 'DOWNLOAD'
+    if($Mode -in @('slow-cache','cache-shared')){Publish-TestPhase 'CACHE_COPY'}
+    if($Mode -eq 'cache-failed'){Write-FnAtomicJson $script:fnProgressFile ([ordered]@{schemaVersion=1;runId=$run;sourceCommit=$source;stage='FAILED';phase='CACHE_COPY';archiveVerified=$false;exeVerified=$false})}
     if($Mode -eq 'final-status-stall'){Publish-TestPhase 'PREPARED'}
     if($Mode -eq 'wrong-round'){Publish-TestPhase 'DOWNLOAD' ('b'*32)}
     if($Mode -eq 'wrong-source'){Publish-TestPhase 'DOWNLOAD' $run ('b'*40)}
     if($Mode -eq 'unknown-stage'){Publish-TestPhase 'PRIVATE_TOKEN_URL'}
     if($Mode -eq 'extra-field'){$v=Get-Content $progress -Raw|ConvertFrom-Json;$v|Add-Member secret 'PRIVATE_TOKEN_URL';Write-FnAtomicJson $progress $v}
-    if($Mode -in @('early-nonzero','incomplete-zero','status-stall','final-status-stall')){$script:fnExited=$true}
+    if($Mode -in @('early-nonzero','incomplete-zero','status-stall','final-status-stall','cache-failed')){$script:fnExited=$true}
     $watch=[pscustomobject]@{}; $watch|Add-Member ScriptProperty ElapsedMilliseconds {$script:fnClock}
     $child=[pscustomobject]@{ExitCode=$(if($Mode -eq 'early-nonzero'){1}else{0})}
     $child|Add-Member ScriptProperty HasExited {
@@ -37,7 +39,7 @@ try {
         param($ms)
         $script:fnWaits++;$script:fnClock+=250
         [IO.File]::AppendAllText($archive,'synthetic-download-progress')
-        if($Mode -eq 'shared' -and $script:fnClock -ge 500){Publish-TestPhase 'EXTRACT'}
+        if($Mode -in @('shared','cache-shared') -and $script:fnClock -ge 500){Publish-TestPhase 'EXTRACT'}
         if($Mode -eq 'source-changes' -and $script:fnClock -ge 250){Publish-TestPhase 'DOWNLOAD' $run ('b'*40)}
         if($Mode -eq 'alive-prepared'){Publish-TestPhase 'PREPARED'}
         if($Mode -eq 'success' -and $script:fnClock -ge 750){Publish-TestPhase 'PREPARED';$script:fnExited=$true}

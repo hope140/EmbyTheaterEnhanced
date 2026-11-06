@@ -1729,3 +1729,14 @@ Windows 后续只使用准确干净提交、Node 24.18.1、PowerShell 7，执行
 最终代码提交 `7054562c474bcefc75cdf305087703b0f5879945` 的公开复验为 **2722 项：2690 pass／0 fail／32 平台 skip**，固定 6 份材料排除保留。定向 runner 21／21；维护 PowerShell 54 文件及原型 runner 3 文件语法通过，8 个改动文件及新增行有限凭据／个人目标检查无发现。没有新增 runtime 下载或 Electron 启动，也没有用新代码重启旧实例。真实 Windows worker 监督、终止与完整 fixture 仍未验收。
 
 当前 runner 仍只从固定官方 URL 获取原始 ZIP，没有缓存输入开关。现有 `electron-runtime-input.cjs validate-archive` 和 `prepare-electron-runtime.ps1 -ArchiveRoot` 可验证／准备完整官方原始 ZIP，但这不使 runner 自动复用 prepared runtime。后续如需要离线缓存，应仅接受 manifest 的准确原始 ZIP 文件名，复制到本次独立目录后重新检查完整大小／SHA，再沿同一解压、EXE 和来源门禁；不得使用安装树、旧产品包或任意 URL／解压树替代。此路径尚未接入，不把材料验证入口称为新的 fixture 缓存能力。
+
+
+## 2026-11-06 — FN 测试 runner 受限原始 ZIP 缓存
+
+仅新增测试 runner 的显式 `-ArchiveRoot`，包含空值也固定选择缓存分支；无参数仍只进行原官方 URL 的有界单次获取。worker 额外钉死 Electron 44.5.0 原始 ZIP 名称、157966405 字节及既有 SHA，禁止任意 URL／文件名／解压树或安装 runtime。缓存输入要求本地 Fixed 盘的绝对物理目录，从根逐段拒 reparse，独占只读源文件；复制到本轮新目录，核源／目标完整大小与 SHA 及复制前后元信息，再走原解压、EXE、源码和退出门禁。缺失、错误、占用、复制变化均不自动联网或解除锁，不改／删缓存或旧材料，仍共用 15 分钟前置预算。
+
+runner 与缓存合成回归 47／47：真实本地小字节锁定／复制／哈希及错误材料测试，worker 缓存分支和实际 CLI 空值／缺失参数、共享剩余预算、固定失败回执、复制后再次核验；小字节只用于通用复制函数测试，生产 worker 必须满足完整官方归档合同，不接受小夹具。此前用于 SHA 失败的 3 字节 manifest 夹具现被更早的固定大小门禁拒绝，保留断言且明确验证零下载。独立只读审查发现映射网络盘及从叶向上探测可能先触达远端，已改为 drive 类型先行、根到叶门禁；对应替身验证网络盘零目录探测、链接父段零子段探测，限定静态复核无剩余阻断。
+
+这些是 Linux PowerShell／合成 I/O 证据，未验证真实 Windows 文件共享、映射盘行为或完整官方缓存成功路径。没有获取新 runtime、启动 Electron／Windows 验收或真实取流，不修改旧 checkout 和不完整 ZIP；完整公开回归及准确保存点另记。
+
+本轮 FN 集合在 Node 24.18.1／Linux PowerShell 下 289／289 通过。维护 JS 620 文件、维护 PowerShell 55 文件及原型 runner 3 文件语法通过；有限凭据模式 719 个维护文本文件与本轮 10 个改动文件／新增行检查无发现。实际 Windows 本地盘／文件共享和原始官方缓存成功路径仍未运行，不能以函数替身或小字节复制测试替代。准确提交的公开回归待追加。

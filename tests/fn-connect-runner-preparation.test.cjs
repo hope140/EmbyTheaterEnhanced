@@ -2,10 +2,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),cp=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),pwsh=process.platform==='win32'?'pwsh.exe':'pwsh';
 function supervision(mode){const r=cp.spawnSync(pwsh,['-NoProfile','-File','tests/helpers/fn-runner-supervision.ps1','-Mode',mode],{cwd:root,encoding:'utf8',timeout:15000});assert.equal(r.status,0,r.stderr);return JSON.parse(r.stdout.trim());}
-for(const mode of ['slow','shared','late-prepared','alive-prepared'])test('runner uses one absolute preparation deadline: '+mode,()=>{
+for(const mode of ['slow','shared','slow-cache','cache-shared','late-prepared','alive-prepared'])test('runner uses one absolute preparation deadline: '+mode,()=>{
     const r=supervision(mode);assert.equal(r.outcome.ready,false);assert.equal(r.outcome.reason,'PREPARATION_TIMEOUT');assert.equal(r.outcome.elapsedMs,1250);assert.equal(r.killCount,1);
     assert.equal(r.resultPresent,true);assert.equal(r.evidenceRetained,true);assert.equal(r.resultUnchanged,true);assert.equal(r.statusUnchanged,true);assert.equal(r.resultSafe,true);assert(r.archiveBytes>0);
-    if(mode==='shared')assert.equal(r.outcome.stage,'EXTRACT');
+    if(['shared','cache-shared'].includes(mode))assert.equal(r.outcome.stage,'EXTRACT');
 });
 for(const mode of ['wrong-round','wrong-source','source-changes','unknown-stage','extra-field'])test('runner rejects mismatched or excessive preparation evidence: '+mode,()=>{
     const r=supervision(mode);assert.equal(r.outcome.ready,false);assert.equal(r.outcome.reason,'PREPARATION_EVIDENCE_INVALID');assert.equal(r.killCount,1);assert.equal(r.resultSafe,true);
@@ -22,7 +22,7 @@ for(const size of [3,157966405])test('actual preparation worker refuses a synthe
     fs.mkdirSync(path.join(source,'vendor'));fs.writeFileSync(path.join(source,'vendor/electron-runtime-manifest.json'),JSON.stringify(manifest));
     for(const args of [['init'],['add','.'],['-c','user.name=Synthetic','-c','user.email=synthetic@example.invalid','commit','-m','fixture']]){const r=cp.spawnSync('git',args,{cwd:source,encoding:'utf8'});assert.equal(r.status,0,r.stderr);}
     const script=path.join(dir,'run.ps1');fs.writeFileSync(script,`param($Worker,$Source,$Temporary,$Progress)\n. $Worker\n$env:GITHUB_SHA=''\n$script:downloads=0;$script:extracts=0\nfunction Invoke-WebRequest { param($Uri,$OutFile,$TimeoutSec,$MaximumRetryCount) if($Uri -cne '${manifest.archive.sourceUrl}' -or $MaximumRetryCount -ne 0){throw 'BAD_TRANSFER'}; $script:downloads++;[IO.File]::WriteAllBytes($OutFile,[byte[]](1,2,3)) }\nfunction Expand-Archive { $script:extracts++;throw 'UNEXPECTED_EXTRACT' }\n$code=Invoke-FnPrepareWorker $Source $Temporary $Progress ('a'*32)\n[ordered]@{code=$code;downloads=$script:downloads;extracts=$script:extracts;progress=(Get-Content $Progress -Raw|ConvertFrom-Json)}|ConvertTo-Json -Depth 6 -Compress\n`);
-    const r=cp.spawnSync(pwsh,['-NoProfile','-File',script,'-Worker',path.join(root,'prototypes/fn-connect/client/prepare-runner-worker.ps1'),'-Source',source,'-Temporary',temporary,'-Progress',path.join(dir,'progress.json')],{encoding:'utf8',timeout:15000});assert.equal(r.status,0,r.stderr);const v=JSON.parse(r.stdout.trim());assert.equal(v.code,1);assert.equal(v.downloads,1);assert.equal(v.extracts,0);assert.equal(v.progress.stage,'FAILED');assert.equal(v.progress.phase,'ARCHIVE_VERIFY');assert.equal(v.progress.archiveVerified,false);
+    const r=cp.spawnSync(pwsh,['-NoProfile','-File',script,'-Worker',path.join(root,'prototypes/fn-connect/client/prepare-runner-worker.ps1'),'-Source',source,'-Temporary',temporary,'-Progress',path.join(dir,'progress.json')],{encoding:'utf8',timeout:15000});assert.equal(r.status,0,r.stderr);const v=JSON.parse(r.stdout.trim());assert.equal(v.code,1);assert.equal(v.downloads,size===157966405?1:0);assert.equal(v.extracts,0);assert.equal(v.progress.stage,'FAILED');assert.equal(v.progress.phase,size===157966405?'ARCHIVE_VERIFY':'MANIFEST_CHECK');assert.equal(v.progress.archiveVerified,false);
 });
 test('worker exit between receipt read and exit observation is reread before classification',()=>{const r=supervision('race-exit');assert.equal(r.outcome.ready,true);assert.equal(r.outcome.stage,'PREPARED');assert.equal(r.killCount,0);});
 test('a status write that consumes the remaining deadline cannot permit Electron',()=>{const r=supervision('status-stall');assert.equal(r.outcome.ready,false);assert.equal(r.outcome.reason,'PREPARATION_TIMEOUT');assert.equal(r.resultPresent,true);});
@@ -47,3 +47,5 @@ test('owned temporary-directory creation failure also receives an early result',
     const r=cp.spawnSync(pwsh,['-NoProfile','-File',path.join(client,'run-windows-smoke.ps1')],{encoding:'utf8',timeout:15000});assert.notEqual(r.status,0);assert.doesNotMatch(r.stderr,/PRIVATE_TOKEN_URL/);assert.equal(fs.readFileSync(marker,'utf8'),'synthetic');
     const result=JSON.parse(fs.readFileSync(path.join(dir,'test-output/fn-connect-fixture/result.json')));assert.equal(result.result,'FAILED');assert.equal(result.reason,'PREPARATION_FAILED');assert.equal(result.processExited,true);
 });
+
+test('cache worker failure receives the same fixed independent terminal receipt',()=>{const r=supervision('cache-failed');assert.equal(r.outcome.ready,false);assert.equal(r.outcome.reason,'PREPARATION_FAILED');assert.equal(r.outcome.stage,'CACHE_COPY');assert.equal(r.resultPresent,true);assert.equal(r.resultSafe,true);});

@@ -1,5 +1,6 @@
 [CmdletBinding()]
-param()
+param([AllowEmptyString()][string]$ArchiveRoot)
+$cacheRequested = $PSBoundParameters.ContainsKey('ArchiveRoot')
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -52,6 +53,7 @@ try {
         '-SourceRoot', $sourceRoot, '-TemporaryRoot', $temporaryRoot, '-ProgressPath', $progressPath, '-RunId', $runId)) {
         $prepareStart.ArgumentList.Add($argument)
     }
+    if ($cacheRequested) { $prepareStart.ArgumentList.Add('-ArchiveRoot'); $prepareStart.ArgumentList.Add($ArchiveRoot) }
     $preparationChild = [Diagnostics.Process]::new(); $preparationChild.StartInfo = $prepareStart
     if (-not $preparationChild.Start()) { throw 'FN_PREPARATION_START_FAILED' }
     $preparationStarted = $true

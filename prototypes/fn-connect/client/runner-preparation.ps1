@@ -1,6 +1,6 @@
 # Test-runner supervision only; no product or authentication settings.
 $FnPreparationBudgetMs = 900000
-$FnPreparationStages = @('SOURCE_CHECK','MANIFEST_CHECK','DOWNLOAD','ARCHIVE_VERIFY','EXTRACT','EXE_VERIFY','SOURCE_RECHECK','PREPARED','FAILED')
+$FnPreparationStages = @('SOURCE_CHECK','MANIFEST_CHECK','CACHE_COPY','DOWNLOAD','ARCHIVE_VERIFY','EXTRACT','EXE_VERIFY','SOURCE_RECHECK','PREPARED','FAILED')
 function Write-FnAtomicJson($Path, $Value, [switch]$Exclusive) {
     $bytes = [Text.Encoding]::UTF8.GetBytes(($Value | ConvertTo-Json -Depth 8 -Compress) + "`n")
     $temporary = $Path + '.' + [Guid]::NewGuid().ToString('N') + '.tmp'
@@ -18,6 +18,53 @@ function Read-FnPreparationProgress([string]$Path) {
         $reader = [IO.StreamReader]::new($stream, [Text.UTF8Encoding]::new($false, $true))
         try { return ($reader.ReadToEnd() | ConvertFrom-Json) } finally { $reader.Dispose() }
     } finally { $stream.Dispose() }
+}
+function Get-FnArchiveStamp([string]$Path) {
+    $attributes = [IO.File]::GetAttributes($Path)
+    if ($attributes -band ([IO.FileAttributes]::ReparsePoint -bor [IO.FileAttributes]::Directory)) { throw 'CACHE_INVALID' }
+    $info = [IO.FileInfo]::new($Path); $info.Refresh()
+    if (-not $info.Exists) { throw 'CACHE_INVALID' }
+    return @{length=$info.Length; created=$info.CreationTimeUtc.Ticks; written=$info.LastWriteTimeUtc.Ticks}
+}
+function Get-FnCacheDriveType([string]$Root) { return [IO.DriveInfo]::new($Root).DriveType }
+function Get-FnCacheDirectoryAttributes([string]$Path) { return [IO.File]::GetAttributes($Path) }
+function Copy-FnLockedArchive([string]$ArchiveRoot, [string]$Destination, [long]$ExpectedSize, [string]$ExpectedSha256) {
+    # The caller pins the original ZIP contract. There is no executable-tree or
+    # arbitrary filename/URL input, and no network fallback from this function.
+    if (-not [IO.Path]::IsPathFullyQualified($ArchiveRoot) -or $ArchiveRoot.StartsWith('\\') -or
+        $ArchiveRoot.StartsWith('//') -or $ArchiveRoot -match '[\r\n]') { throw 'CACHE_INVALID' }
+    $root = [IO.Path]::GetFullPath($ArchiveRoot)
+    $driveRoot = [IO.Path]::GetPathRoot($root)
+    if ((Get-FnCacheDriveType $driveRoot) -ne [IO.DriveType]::Fixed) { throw 'CACHE_INVALID' }
+    # Root-first: never query a child until its parent has passed the local
+    # directory/reparse gate. A mapped drive is rejected before any path probe.
+    $current = $driveRoot
+    $segments = @('') + @($root.Substring($driveRoot.Length).Split([char[]]@([IO.Path]::DirectorySeparatorChar,[IO.Path]::AltDirectorySeparatorChar), [StringSplitOptions]::RemoveEmptyEntries))
+    foreach ($segment in $segments) {
+        if ($segment) { $current = Join-Path $current $segment }
+        $attributes = Get-FnCacheDirectoryAttributes $current
+        if (-not ($attributes -band [IO.FileAttributes]::Directory) -or ($attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'CACHE_INVALID' }
+    }
+    $sourcePath = Join-Path $root 'electron-v44.5.0-win32-x64.zip'
+    $before = Get-FnArchiveStamp $sourcePath
+    if ($before.length -ne $ExpectedSize) { throw 'CACHE_INVALID' }
+    $source = $null; $target = $null; $algorithm = [Security.Cryptography.SHA256]::Create()
+    try {
+        # Windows denies existing readers/writers and replacement while held.
+        $source = [IO.FileStream]::new($sourcePath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+        if ($source.Length -ne $ExpectedSize) { throw 'CACHE_CHANGED' }
+        $hash = [Convert]::ToHexString($algorithm.ComputeHash($source)).ToLowerInvariant()
+        if ($hash -cne $ExpectedSha256) { throw 'CACHE_INVALID' }
+        $source.Position = 0
+        $target = [IO.FileStream]::new($Destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        $source.CopyTo($target); $target.Flush($true); $target.Position = 0
+        $copiedHash = [Convert]::ToHexString($algorithm.ComputeHash($target)).ToLowerInvariant()
+        $after = Get-FnArchiveStamp $sourcePath
+        if ($source.Length -ne $ExpectedSize -or $target.Length -ne $ExpectedSize -or $copiedHash -cne $ExpectedSha256 -or
+            $before.length -ne $after.length -or $before.created -ne $after.created -or $before.written -ne $after.written) { throw 'CACHE_CHANGED' }
+    } finally {
+        if ($target) { $target.Dispose() }; if ($source) { $source.Dispose() }; $algorithm.Dispose()
+    }
 }
 function Write-FnRunnerFailure($ResultPath, $Outcome) {
     # Written before any recursive cleanup; never replace an existing result.

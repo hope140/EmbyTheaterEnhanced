@@ -1,9 +1,10 @@
 [CmdletBinding()]
-param([string]$SourceRoot, [string]$TemporaryRoot, [string]$ProgressPath, [string]$RunId)
+param([string]$SourceRoot, [string]$TemporaryRoot, [string]$ProgressPath, [string]$RunId, [AllowEmptyString()][string]$ArchiveRoot)
+$cacheRequested = $PSBoundParameters.ContainsKey('ArchiveRoot')
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 . (Join-Path $PSScriptRoot 'runner-preparation.ps1')
-function Invoke-FnPrepareWorker([string]$SourceRoot, [string]$TemporaryRoot, [string]$ProgressPath, [string]$RunId) {
+function Invoke-FnPrepareWorker([string]$SourceRoot, [string]$TemporaryRoot, [string]$ProgressPath, [string]$RunId, [bool]$UseCache = $false, [string]$ArchiveRoot = '') {
     $sourceCommit = 'UNKNOWN'; $archiveVerified = $false; $exeVerified = $false; $workerState = @{phase='SOURCE_CHECK'}
     function Publish-Phase([string]$Stage) {
         if ($Stage -ne 'FAILED') { $workerState.phase = $Stage }
@@ -27,12 +28,19 @@ function Invoke-FnPrepareWorker([string]$SourceRoot, [string]$TemporaryRoot, [st
         $product = Get-Content -LiteralPath (Join-Path $SourceRoot 'vendor/electron-runtime-manifest.json') -Raw | ConvertFrom-Json
         if ($input.version -cne $product.version -or $input.platform -cne 'win32-x64' -or
             $input.asset -cne $product.archive.name -or $input.url -cne $product.archive.sourceUrl -or
-            $input.sha256 -cne $product.archive.sha256 -or $input.executableSha256 -cne $product.runtime.electronExeSha256) { throw 'INVALID' }
+            $input.sha256 -cne $product.archive.sha256 -or $input.executableSha256 -cne $product.runtime.electronExeSha256 -or
+            $product.archive.size -ne 157966405 -or $input.asset -cne 'electron-v44.5.0-win32-x64.zip' -or
+            $input.sha256 -cne 'b3405d8847bc5054cd16272f538d22ba5b73032945e85cef26241f7135035278') { throw 'INVALID' }
         $archive = Join-Path $TemporaryRoot $input.asset
-        Publish-Phase 'DOWNLOAD'
-        # One fixed official transfer. The supervisor owns the shared wall-clock
-        # deadline; these cmdlet timeouts are not treated as the total budget.
-        Invoke-WebRequest -Uri $input.url -OutFile $archive -TimeoutSec 90 -MaximumRetryCount 0
+        if ($UseCache) {
+            Publish-Phase 'CACHE_COPY'
+            Copy-FnLockedArchive -ArchiveRoot $ArchiveRoot -Destination $archive -ExpectedSize $product.archive.size -ExpectedSha256 $input.sha256
+        } else {
+            Publish-Phase 'DOWNLOAD'
+            # No retry or fallback between material sources. Preparation keeps
+            # the same shared deadline, including copy and verification.
+            Invoke-WebRequest -Uri $input.url -OutFile $archive -TimeoutSec 90 -MaximumRetryCount 0
+        }
         Publish-Phase 'ARCHIVE_VERIFY'
         if ((Get-Item -LiteralPath $archive).Length -ne $product.archive.size -or
             (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $input.sha256) { throw 'INVALID' }
@@ -49,6 +57,6 @@ function Invoke-FnPrepareWorker([string]$SourceRoot, [string]$TemporaryRoot, [st
     } catch { Publish-Phase 'FAILED'; return 1 }
 }
 if ($MyInvocation.InvocationName -ne '.') {
-    $code = Invoke-FnPrepareWorker $SourceRoot $TemporaryRoot $ProgressPath $RunId
+    $code = Invoke-FnPrepareWorker $SourceRoot $TemporaryRoot $ProgressPath $RunId -UseCache $cacheRequested -ArchiveRoot $ArchiveRoot
     exit $code
 }
