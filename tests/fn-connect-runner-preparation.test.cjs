@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..'),pwsh=process.platform==='win32'?'pwsh.ex
 function supervision(mode){const r=cp.spawnSync(pwsh,['-NoProfile','-File','tests/helpers/fn-runner-supervision.ps1','-Mode',mode],{cwd:root,encoding:'utf8',timeout:15000});assert.equal(r.status,0,r.stderr);return JSON.parse(r.stdout.trim());}
 for(const mode of ['slow','shared','slow-cache','cache-shared','late-prepared','alive-prepared'])test('runner uses one absolute preparation deadline: '+mode,()=>{
     const r=supervision(mode);assert.equal(r.outcome.ready,false);assert.equal(r.outcome.reason,'PREPARATION_TIMEOUT');assert.equal(r.outcome.elapsedMs,1250);assert.equal(r.killCount,1);
-    assert.equal(r.resultPresent,true);assert.equal(r.evidenceRetained,true);assert.equal(r.resultUnchanged,true);assert.equal(r.statusUnchanged,true);assert.equal(r.resultSafe,true);assert(r.archiveBytes>0);
+    assert.equal(r.resultPresent,true);assert.equal(r.receiptOwnerMatches,true);assert.equal(r.evidenceRetained,true);assert.equal(r.resultUnchanged,true);assert.equal(r.statusUnchanged,true);assert.equal(r.resultSafe,true);assert(r.archiveBytes>0);
     if(['shared','cache-shared'].includes(mode))assert.equal(r.outcome.stage,'EXTRACT');
 });
 for(const mode of ['wrong-round','wrong-source','source-changes','unknown-stage','extra-field'])test('runner rejects mismatched or excessive preparation evidence: '+mode,()=>{

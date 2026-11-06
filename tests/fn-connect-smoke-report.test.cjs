@@ -3,10 +3,10 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const {normalize, stages, checks, expectedVersion, expectedHash} = require('../prototypes/fn-connect/client/smoke-report.cjs');
-const meta = {sourceCommit: 'a'.repeat(40), archiveHash: expectedHash, launchState: 'COMPLETED', exitCode: 0, processExited: true, profileCleanupVerified: true};
+const meta = {runId: 'a'.repeat(32), sourceCommit: 'a'.repeat(40), archiveHash: expectedHash, launchState: 'COMPLETED', exitCode: 0, processExited: true, profileCleanupVerified: true};
 const event = value => 'ETE_FN_FIXTURE ' + JSON.stringify(value);
 function evidence() {
-    return [{kind: 'runtime', electronVersion: expectedVersion}, ...stages.map(stage => ({kind: 'stage', stage})),
+    return [{kind: 'binding', runId: meta.runId, sourceCommit: meta.sourceCommit}, {kind: 'runtime', electronVersion: expectedVersion}, ...stages.map(stage => ({kind: 'stage', stage})),
         {kind: 'result', test: 'electron-synthetic-session', result: 'PASSED', profileCleanupOwner: 'runner', temporaryProfileRemoved: false,
             checks: {...Object.fromEntries(checks.map(key => [key, true])), realFNConnect: 'NOT_TESTED', nativeHelperPlayback: 'NOT_TESTED', hlsDash: 'NOT_SUPPORTED'}}];
 }
@@ -17,7 +17,7 @@ test('only complete hash-bound, version-bound, drained synthetic evidence passes
     assert.equal(result.result, 'PASSED');
     assert.equal(result.realFNConnect, 'NOT_TESTED');
     assert.equal(result.electron.hashVerified, true);
-    for (const change of [{archiveHash: '0'.repeat(64)}, {launchState: 'TIMEOUT'}, {exitCode: 3}, {sourceCommit: 'unknown'},
+    for (const change of [{archiveHash: '0'.repeat(64)}, {launchState: 'TIMEOUT'}, {exitCode: 3}, {sourceCommit: 'unknown'}, {runId: 'unknown'}, {runId: 'b'.repeat(32)},
         {processExited: false}, {profileCleanupVerified: false}]) {
         assert.equal(normalize(raw(evidence()), {...meta, ...change}).result, 'FAILED');
     }

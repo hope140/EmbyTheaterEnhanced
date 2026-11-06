@@ -19,13 +19,14 @@ const safeReasons = new Set(['FIXTURE_DEADLINE', 'STARTUP_FAILED', 'TEMP_PROFILE
     'INCOMPLETE', 'PROTOTYPE_ACTION_FAILED', 'NETWORK_TIMEOUT', 'NETWORK_ERROR', 'WS_PROXY_UNSUPPORTED',
     'INFO_STREAM_FAILED', 'CANCELLED', 'SESSION_CLEAR_FAILED']);
 
-function normalize(raw, {sourceCommit, archiveHash, launchState, exitCode, processExited, profileCleanupVerified}) {
+function normalize(raw, {sourceCommit, runId, archiveHash, launchState, exitCode, processExited, profileCleanupVerified}) {
     const events = [];
     for (const line of String(raw).split(/\r?\n/)) {
         if (!line.startsWith('ETE_FN_FIXTURE ') || line.length > 16384) continue;
         try { events.push(JSON.parse(line.slice('ETE_FN_FIXTURE '.length))); } catch { /* No raw diagnostics copied. */ }
     }
     const foundStages = events.filter(e => e?.kind === 'stage').map(e => e.stage);
+    const bindings = events.filter(e => e?.kind === 'binding');
     const runtimes = events.filter(e => e?.kind === 'runtime');
     const results = events.filter(e => e?.kind === 'result');
     const diagnostics = events.filter(e => e?.kind === 'diagnostic').map(normalizeDiagnostic).filter(Boolean).slice(-128);
@@ -35,13 +36,15 @@ function normalize(raw, {sourceCommit, archiveHash, launchState, exitCode, proce
     const versionMatches = runtimes.length === 1 && runtimes[0].electronVersion === expectedVersion;
     const hashVerified = archiveHash === expectedHash;
     const commit = /^[a-f0-9]{40}$/.test(sourceCommit || '') ? sourceCommit : 'UNKNOWN';
+    const round = /^[a-f0-9]{32}$/.test(runId || '') ? runId : 'UNKNOWN';
+    const bindingVerified = round !== 'UNKNOWN' && commit !== 'UNKNOWN' && bindings.length === 1 && bindings[0].runId === round && bindings[0].sourceCommit === commit;
     const safeChecks = Object.fromEntries(checks.map(key => [key, last?.checks?.[key] === true]));
     const declaredScope = last?.checks?.realFNConnect === 'NOT_TESTED' && last?.checks?.nativeHelperPlayback === 'NOT_TESTED' && last?.checks?.hlsDash === 'NOT_SUPPORTED';
     const cleaned = processExited === true && profileCleanupVerified === true && last?.profileCleanupOwner === 'runner';
-    const passed = safeState === 'COMPLETED' && exitCode === 0 && commit !== 'UNKNOWN' && hashVerified && versionMatches && exactStages &&
+    const passed = bindingVerified && safeState === 'COMPLETED' && exitCode === 0 && commit !== 'UNKNOWN' && hashVerified && versionMatches && exactStages &&
         last?.test === 'electron-synthetic-session' && last.result === 'PASSED' && cleaned &&
         Object.values(safeChecks).every(Boolean) && declaredScope;
-    return {schemaVersion: 1, test: 'fn-connect-electron-loopback', sourceCommit: commit,
+    return {schemaVersion: 1, test: 'fn-connect-electron-loopback', sourceCommit: commit, runId: round, bindingVerified,
         electron: {version: expectedVersion, asset: input.asset, sha256: expectedHash, hashVerified, versionMatches},
         launchState: safeState, exitCode: Number.isInteger(exitCode) ? exitCode : null,
         stages: foundStages.filter(value => stages.includes(value)), result: passed ? 'PASSED' : 'FAILED',
@@ -49,15 +52,53 @@ function normalize(raw, {sourceCommit, archiveHash, launchState, exitCode, proce
         checks: safeChecks, diagnostics, processExited: processExited === true, temporaryProfileRemoved: cleaned,
         realFNConnect: 'NOT_TESTED', nativeHelperPlayback: 'NOT_TESTED', hlsDash: 'NOT_SUPPORTED'};
 }
-if (require.main === module) {
-    const [input, output, sourceCommit, archiveHash, launchState, exitText, processExited, profileCleanupVerified] = process.argv.slice(2);
-    const raw = fs.existsSync(input) ? fs.readFileSync(input, 'utf8') : '';
-    const result = normalize(raw, {sourceCommit, archiveHash, launchState, exitCode: /^-?\d+$/.test(exitText || '') ? Number(exitText) : null,
-        processExited: processExited === 'true', profileCleanupVerified: profileCleanupVerified === 'true'});
-    fs.writeFileSync(output, JSON.stringify(result, null, 2) + '\n', {flag: 'wx'});
-    for (const value of result.stages) process.stdout.write('FN_FIXTURE_STAGE ' + value + '\n');
-    for (const value of result.diagnostics) process.stdout.write('FN_FIXTURE_DIAGNOSTIC ' + JSON.stringify(value) + '\n');
-    process.stdout.write('FN_FIXTURE_RESULT ' + result.result + (result.reason ? ' ' + result.reason : '') + '\n');
-    process.exitCode = result.result === 'PASSED' ? 0 : 1;
+// A permanent per-output claim makes the first finalization authoritative,
+// including failures. Late/concurrent calls never rewrite an earlier receipt.
+function finalize(raw, meta, {resultPath, statusPath}, io = fs) {
+    const fixed = reason => ({passed: false, reason});
+    const validOwner = value => value?.schemaVersion === 1 && value.runId === meta.runId && value.sourceCommit === meta.sourceCommit &&
+        /^[a-f0-9]{32}$/.test(meta.runId || '') && /^[a-f0-9]{40}$/.test(meta.sourceCommit || '');
+    let current;
+    try { current = JSON.parse(io.readFileSync(statusPath, 'utf8')); } catch { return fixed('STATUS_BINDING_INVALID'); }
+    if (!validOwner(current)) return fixed('STATUS_BINDING_INVALID');
+    if (current.terminal === true) return fixed('FINAL_RECEIPT_ALREADY_TERMINAL');
+    if (current.terminal !== false || current.stage !== 'ELECTRON_START') return fixed('STATUS_BINDING_INVALID');
+    const ownerPath = statusPath + '.final-owner';
+    try { io.writeFileSync(ownerPath, JSON.stringify({runId: meta.runId, sourceCommit: meta.sourceCommit}) + '\n', {flag: 'wx'}); }
+    catch (error) { return fixed(error?.code === 'EEXIST' ? 'FINAL_RECEIPT_ALREADY_CLAIMED' : 'FINAL_RECEIPT_CLAIM_FAILED'); }
+    const result = normalize(raw, meta);
+    let receiptWritten = false, reason = result.reason;
+    try { io.writeFileSync(resultPath, JSON.stringify(result, null, 2) + '\n', {flag: 'wx'}); receiptWritten = true; }
+    catch { reason = 'RESULT_WRITE_FAILED'; }
+    const elapsedMs = Number.isSafeInteger(meta.elapsedMs) && meta.elapsedMs >= 0 ? meta.elapsedMs : 0;
+    const terminal = {schemaVersion: 1, runId: meta.runId, sourceCommit: meta.sourceCommit, stage: 'FINISHED', elapsedMs,
+        terminal: true, result: receiptWritten ? result.result : 'FAILED', reason, receiptWritten,
+        bindingVerified: result.bindingVerified, processExited: result.processExited, temporaryProfileRemoved: result.temporaryProfileRemoved};
+    const pending = statusPath + '.final-' + meta.runId + '.tmp';
+    try {
+        const latest = JSON.parse(io.readFileSync(statusPath, 'utf8'));
+        if (!validOwner(latest) || latest.terminal === true) return fixed('STATUS_BINDING_INVALID');
+        io.writeFileSync(pending, JSON.stringify(terminal, null, 2) + '\n', {flag: 'wx'});
+        io.renameSync(pending, statusPath);
+    } catch { return fixed('STATUS_WRITE_FAILED'); }
+    return {passed: receiptWritten && result.result === 'PASSED', reason, result};
 }
-module.exports = {normalize, stages, checks, expectedVersion, expectedHash};
+if (require.main === module) {
+    const [inputPath, output, sourceCommit, archiveHash, launchInput, exitText, processExited, profileCleanupVerified, runId, statusPath, elapsedText] = process.argv.slice(2);
+    let launchState = launchInput;
+    let outcome;
+    try {
+        let raw = '';
+        try { raw = fs.readFileSync(inputPath, 'utf8'); } catch { launchState = 'HARNESS_FAILED'; }
+        outcome = finalize(raw, {sourceCommit, runId, archiveHash, launchState, exitCode: /^-?\d+$/.test(exitText || '') ? Number(exitText) : null,
+            processExited: processExited === 'true', profileCleanupVerified: profileCleanupVerified === 'true', elapsedMs: Number(elapsedText)},
+            {resultPath: output, statusPath});
+    } catch { outcome = {passed: false, reason: 'REPORT_FAILED'}; }
+    if (outcome.result) {
+        for (const value of outcome.result.stages) process.stdout.write('FN_FIXTURE_STAGE ' + value + '\n');
+        for (const value of outcome.result.diagnostics) process.stdout.write('FN_FIXTURE_DIAGNOSTIC ' + JSON.stringify(value) + '\n');
+    }
+    process.stdout.write('FN_FIXTURE_RESULT ' + (outcome.passed ? 'PASSED' : 'FAILED ' + (outcome.reason || 'REPORT_FAILED')) + '\n');
+    process.exitCode = outcome.passed ? 0 : 1;
+}
+module.exports = {normalize, finalize, stages, checks, expectedVersion, expectedHash};

@@ -54,11 +54,12 @@ try {
     }
     $outcome=Wait-FnPreparation -Child $child -Watch $watch -RunId $run -ExpectedCommit $source -ProgressPath $progress -StatusPath $status -ResultPath $result -ArchivePath $archive -BudgetMs 1000
     $before=if(Test-Path $result){Get-Content $result -Raw}else{''}
+    $receiptOwnerMatches=if($before){$receipt=$before|ConvertFrom-Json;$receipt.runId -ceq $run -and $receipt.sourceCommit -ceq $outcome.sourceCommit}else{$true}
     $statusBefore=if(Test-Path $status -PathType Leaf){Get-Content $status -Raw}else{''}
     Publish-TestPhase 'PREPARED'
     $after=if(Test-Path $result){Get-Content $result -Raw}else{''}
     [ordered]@{outcome=$outcome;killCount=$script:fnKilled;waitCount=$script:fnWaits;
-        resultPresent=(Test-Path $result);resultUnchanged=($before -ceq $after);statusUnchanged=($statusBefore -ceq $(if(Test-Path $status -PathType Leaf){Get-Content $status -Raw}else{''}));
+        receiptOwnerMatches=$receiptOwnerMatches;resultPresent=(Test-Path $result);resultUnchanged=($before -ceq $after);statusUnchanged=($statusBefore -ceq $(if(Test-Path $status -PathType Leaf){Get-Content $status -Raw}else{''}));
         evidenceRetained=(Test-Path $root);resultSafe=($before -notmatch 'PRIVATE_TOKEN_URL|https?://|\\Users\\');
         archiveBytes=$(if(Test-Path $archive){(Get-Item $archive).Length}else{0})}|ConvertTo-Json -Depth 8 -Compress
 }finally{Remove-Item $root -Recurse -Force}

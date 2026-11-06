@@ -98,6 +98,10 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         if (smoke) fs.writeSync(1, 'ETE_FN_FIXTURE ' + JSON.stringify({kind, ...value}) + '\n');
     }
     function stage(value) { startupReceipt.stage(value); report('stage', {stage: value}); }
+    if (smoke) report('binding', {
+        runId: /^[a-f0-9]{32}$/.test(process.env.ETE_FN_FIXTURE_RUN_ID || '') ? process.env.ETE_FN_FIXTURE_RUN_ID : 'UNKNOWN',
+        sourceCommit: /^[a-f0-9]{40}$/.test(process.env.ETE_FN_FIXTURE_SOURCE_COMMIT || '') ? process.env.ETE_FN_FIXTURE_SOURCE_COMMIT : 'UNKNOWN'
+    });
     stage('APP_CODE_STARTED');
     report('runtime', {electronVersion: process.versions?.electron || 'UNKNOWN'});
     let fixture, controller, bridge, panel, closing;

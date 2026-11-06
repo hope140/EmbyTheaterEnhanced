@@ -1742,3 +1742,14 @@ runner 与缓存合成回归 47／47：真实本地小字节锁定／复制／�
 本轮 FN 集合在 Node 24.18.1／Linux PowerShell 下 289／289 通过。维护 JS 620 文件、维护 PowerShell 55 文件及原型 runner 3 文件语法通过；有限凭据模式 719 个维护文本文件与本轮 10 个改动文件／新增行检查无发现。实际 Windows 本地盘／文件共享和原始官方缓存成功路径仍未运行，不能以函数替身或小字节复制测试替代。准确提交的公开回归待追加。
 
 代码提交 `9ec266383f4d528f5a5ccbbd0c0e7282682afa56` 在 Node 24.18.1／Linux PowerShell 7.4.13 的公开复验为 **2748 项：2716 pass／0 fail／32 平台 skip**，固定 6 份材料排除保留；同轮 runner 定向 47／47、FN 集合 289／289。后续保存仅补文档，不把它描述为已验证 Windows 官方归档缓存或完整 fixture。没有新增下载、启动 Windows／Electron、读取登录态或真实取流。
+
+
+## 2026-11-06 — FN fixture 最终回执绑定及终态
+
+协调的 Windows 环境报告：源码 `fa1776e`、Node 24.18.1／PowerShell 7.6.9／真实 Electron 44.5.0，使用已验证原始 ZIP 缓存，15 阶段和 19 checks 通过、进程退出和合成 profile 清理确认、缓存额外下载为零。但当时 status 仍为 ELECTRON_START／terminal:false，result 缺 runId，故只证明 fixture 行为，完整回执合同未通过；旧原样材料不改，不追溯补写。
+
+本轮仅修 standalone runner：Electron 合成进程回显经过格式约束的 runId／源码 SHA，normalizer 要求唯一匹配的 binding；result 与终态 status 都携带该绑定。独占 final-owner 固定首次终态，报告器以 FINISHED／terminal:true 结束；结果写失败独立写失败状态，状态写失败不可宣称整轮通过。PS 兜底处理报告器启动失败／认领前退出，遵守同一独占协议，不覆盖已认领、已终结或外轮材料。只有报告 exit0 且进程／profile 确认收尾才移除剩余临时目录；写入失败保留证据，不对旧实例重跑或修补。
+
+49 项报告／前置定向合成回归通过，覆盖成功与运行失败、双向绑定错误、结果／状态不可写、首次终态、并发／迟到尝试、实际 PS 尾部片段的报告异常与相邻文件保留。独立审查指出报告器自身失败仍会留下运行态，已补兜底和终态断言，复核无新增阻断。此为 Node 与 Linux PowerShell／I/O 替身证据，新修订尚未实机复验。真实 FN／CDN、Native 解码／seek 仍未验证；不以这次历史 Windows fixture 报告替代它们。
+
+当前 FN 集合在 Node 24.18.1／Linux PowerShell 7.4.13 为 311／311；维护 JS 621 文件、维护 PowerShell 56 文件、原型 JS 2 文件及原型 PowerShell 3 文件语法通过。有限凭据模式 721 个维护文本及本轮 12 个改动文件／新增行无发现。仅为有限检查和合成 I/O 证据；修订后的真实 Windows 双回执合同仍待复验，未启动真实认证或取流。准确提交的完整公开回归待追加。

@@ -81,6 +81,8 @@ try {
     $start.ArgumentList.Add('--fn-connect-prototype')
     $start.ArgumentList.Add('--fixture-smoke')
     $start.Environment['ETE_FN_FIXTURE_PROFILE_ROOT'] = $profilesRoot
+    $start.Environment['ETE_FN_FIXTURE_RUN_ID'] = $runId
+    $start.Environment['ETE_FN_FIXTURE_SOURCE_COMMIT'] = $sourceCommit
     # Normal sandbox. No proxy, certificate, port or system permission changes.
     $child = [Diagnostics.Process]::new()
     $child.StartInfo = $start
@@ -149,11 +151,17 @@ if ($processExited) {
         $profileCleanupVerified = -not (Test-Path -LiteralPath $profilesRoot)
     } catch { $profileCleanupVerified = $false }
 }
-[IO.File]::WriteAllText($stdoutFile, $rawOutput, [Text.UTF8Encoding]::new($false))
+$reportExit = 1
 try {
-    & node (Join-Path $prototypeRoot 'smoke-report.cjs') $stdoutFile $resultFile $sourceCommit $archiveHash $launchState ([string]$runtimeExit) ([string]$processExited).ToLowerInvariant() ([string]$profileCleanupVerified).ToLowerInvariant()
+    try { [IO.File]::WriteAllText($stdoutFile, $rawOutput, [Text.UTF8Encoding]::new($false)) }
+    catch { $launchState = 'HARNESS_FAILED' }
+    & node (Join-Path $prototypeRoot 'smoke-report.cjs') $stdoutFile $resultFile $sourceCommit $archiveHash $launchState ([string]$runtimeExit) ([string]$processExited).ToLowerInvariant() ([string]$profileCleanupVerified).ToLowerInvariant() $runId $statusPath ([string]$watch.ElapsedMilliseconds)
     $reportExit = $LASTEXITCODE
-} finally {
-    if ($processExited -and $profileCleanupVerified) { Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue }
+} catch { $reportExit = 1 } finally {
+    if ($reportExit -ne 0) {
+        try { $null = Fail-FnRunnerReport $resultFile $statusPath $runId $sourceCommit $watch.ElapsedMilliseconds $processExited $profileCleanupVerified } catch {}
+    }
+    # Receipt failure retains owned evidence; fixture PASSED alone is insufficient.
+    if ($reportExit -eq 0 -and $processExited -and $profileCleanupVerified) { Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue }
 }
 if ($reportExit -ne 0) { throw 'FN_FIXTURE_VALIDATION_FAILED' }

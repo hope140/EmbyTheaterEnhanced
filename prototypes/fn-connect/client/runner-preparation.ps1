@@ -69,12 +69,39 @@ function Copy-FnLockedArchive([string]$ArchiveRoot, [string]$Destination, [long]
 function Write-FnRunnerFailure($ResultPath, $Outcome) {
     # Written before any recursive cleanup; never replace an existing result.
     Write-FnAtomicJson $ResultPath ([ordered]@{
-        schemaVersion=1; test='fn-connect-electron-loopback'; sourceCommit=$Outcome.sourceCommit
+        schemaVersion=1; test='fn-connect-electron-loopback'; sourceCommit=$Outcome.sourceCommit; runId=$Outcome.runId; bindingVerified=$false
         result='FAILED'; reason=$Outcome.reason; launchState=$Outcome.reason
         preparation=[ordered]@{runId=$Outcome.runId; stage=$Outcome.stage; elapsedMs=$Outcome.elapsedMs; processExited=$Outcome.processExited}
         processExited=$Outcome.processExited; temporaryProfileRemoved=$false
         realFNConnect='NOT_TESTED'; nativeHelperPlayback='NOT_TESTED'; hlsDash='NOT_SUPPORTED'
     }) -Exclusive
+}
+function Fail-FnRunnerReport([string]$ResultPath, [string]$StatusPath, [string]$RunId, [string]$SourceCommit,
+    [long]$ElapsedMs, [bool]$ProcessExited, [bool]$ProfileRemoved) {
+    # Use exactly the Node finalizer's one-shot ownership protocol. A reporter
+    # that already claimed the output (even if interrupted) is never replaced.
+    if ($RunId -cnotmatch '^[a-f0-9]{32}$' -or $SourceCommit -cnotmatch '^[a-f0-9]{40}$') { return $false }
+    try {
+        $current = Read-FnPreparationProgress $StatusPath
+        if ($current.schemaVersion -ne 1 -or $current.runId -cne $RunId -or $current.sourceCommit -cne $SourceCommit -or
+            $current.terminal -isnot [bool] -or $current.terminal -ne $false -or $current.stage -cne 'ELECTRON_START') { return $false }
+        Write-FnAtomicJson ($StatusPath + '.final-owner') ([ordered]@{runId=$RunId;sourceCommit=$SourceCommit}) -Exclusive
+    } catch { return $false }
+    $written = $false
+    try {
+        Write-FnAtomicJson $ResultPath ([ordered]@{schemaVersion=1;test='fn-connect-electron-loopback';runId=$RunId;sourceCommit=$SourceCommit;
+            bindingVerified=$false;result='FAILED';reason='REPORT_FAILED';processExited=$ProcessExited;temporaryProfileRemoved=$ProfileRemoved;
+            realFNConnect='NOT_TESTED';nativeHelperPlayback='NOT_TESTED';hlsDash='NOT_SUPPORTED'}) -Exclusive
+        $written = $true
+    } catch {} # Failure status must not depend on a writable result target.
+    try {
+        $latest = Read-FnPreparationProgress $StatusPath
+        if ($latest.runId -cne $RunId -or $latest.sourceCommit -cne $SourceCommit -or $latest.terminal -ne $false) { return $false }
+        Write-FnAtomicJson $StatusPath ([ordered]@{schemaVersion=1;runId=$RunId;sourceCommit=$SourceCommit;stage='FINISHED';
+            elapsedMs=[Math]::Max(0,$ElapsedMs);terminal=$true;result='FAILED';reason='REPORT_FAILED';receiptWritten=$written;
+            bindingVerified=$false;processExited=$ProcessExited;temporaryProfileRemoved=$ProfileRemoved})
+        return $true
+    } catch { return $false }
 }
 function Wait-FnPreparation {
     param($Child, $Watch, [string]$RunId, [string]$ProgressPath, [string]$StatusPath,

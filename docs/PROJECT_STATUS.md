@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-06 — FN 最终回执绑定修正
+
+协调环境在 `fa1776e` 的真实 Windows／Electron 回环已报告 15 阶段和 19 checks 通过，但 runId 缺失和 status 未终结使完整回执验收未通过。现仅修 runner 的双回执 runId／源码绑定、一次终态与报告失败兜底，49 项定向合成回归及限定静态复核通过；新修订 Windows 复验仍待协调，旧回执不改写。联合验收条件见 [runner 说明](../prototypes/fn-connect/client/README.md)，不声称真实 FN 或 Native 播放通过。
+
 ## 2026-11-06 — FN 回环 runner 受限原始 ZIP 缓存
 
 新增显式缓存根：只接受固定官方原始 ZIP，独占读取并复制到本轮目录后复核；本地 Fixed 盘、根到叶非 reparse 门禁先行。缓存错误不回退联网，未指定缓存仍走原有单次官方获取。47 项 runner 定向及 289 项 FN 回归通过，代码 `9ec2663` 公开集合为 2716 pass／0 fail／32 平台 skip（固定 6 份材料排除保留）；静态审查问题已闭合，不改产品、版本或真实认证边界。新入口及完整官方 ZIP 缓存尚未在 Windows 实机验证，旧材料保持不变；命令和边界见 [runner 说明](../prototypes/fn-connect/client/README.md)。
