@@ -10,8 +10,11 @@ function request(request, signal) {
     if (signal?.aborted) return Promise.reject(abortError());
     const controller = new AbortController();
     const abort = () => controller.abort();
+    const failure = () => controller.signal.reason?.name === 'TimeoutError'
+        ? controller.signal.reason : abortError();
     signal?.addEventListener('abort', abort, { once: true });
-    const timer = request.timeout ? setTimeout(abort, request.timeout) : null;
+    const timer = request.timeout ? setTimeout(() => controller.abort(request.timeoutError
+        ? new DOMException('The request deadline was exceeded.', 'TimeoutError') : undefined), request.timeout) : null;
     const headers = { ...request.headers };
     if (request.dataType === 'json') headers.accept = 'application/json';
     let body = request.data;
@@ -28,15 +31,16 @@ function request(request, signal) {
     };
     // Keep the bridge alive through response-body consumption as well as headers.
     return Promise.resolve().then(() => {
-        if (controller.signal.aborted) throw abortError();
+        if (controller.signal.aborted) throw failure();
         const address = typeof window !== 'undefined' && window.__eteFnTransport ? window.__eteFnTransport.mapUrl(request.url) : request.url;
         return fetch(address, { headers, method: request.type, credentials: 'same-origin',
             ...(body ? { body } : {}), signal: controller.signal });
     }).then(response => {
-        if (controller.signal.aborted) { cleanup(); throw abortError(); }
-        return { response, cleanup, signal: controller.signal };
+        if (controller.signal.aborted) { cleanup(); throw failure(); }
+        return { response, cleanup, signal: controller.signal, failure };
     }, error => {
         cleanup();
+        if (controller.signal.aborted) error = failure();
         if (error && typeof error === 'object') networkErrors.add(error);
         throw error;
     });
@@ -55,11 +59,13 @@ function decode(request, response) {
 }
 
 function send(requestOptions, signal) {
-    return request(requestOptions, signal).then(async ({ response, cleanup, signal: activeSignal }) => {
+    return request(requestOptions, signal).then(async ({ response, cleanup, signal: activeSignal, failure }) => {
         try {
             const value = await decode(requestOptions, response);
-            if (activeSignal.aborted) throw abortError();
+            if (activeSignal.aborted) throw failure();
             return value;
+        } catch (error) {
+            throw activeSignal.aborted ? failure() : error;
         } finally { cleanup(); }
     });
 }

@@ -2295,3 +2295,56 @@ for (const retirement of ['new-play', 'stop', 'none']) {
         });
     }
 }
+
+test('maintained API stopped-body deadline releases replacement barrier with old session snapshot', async () => {
+    const {harness, storage} = require('./helpers/api-client-amd.cjs');
+    let deadline;
+    const h = harness((_url, {signal}) => ({status: 200, text: () => new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), {once: true});
+    })}), {setTimeout(fn, ms) { assert.equal(ms, 10000); deadline = fn; return 1; }, clearTimeout() {}});
+    const Api = h.load('apiclient.js');
+    const api = new Api(storage(), null, 'http://127.0.0.1', 'test', '1', 'test', 'test', 1);
+    const fixture = makeFixture();
+    await startQueueItem(fixture, [makeItem('A'), makeItem('B')], 'session-A');
+    fixture.apiClient.reportPlaybackStopped = info => api.reportPlaybackStopped(info);
+    const replacement = fixture.manager.nextTrack();
+    await waitFor(() => h.requests.length === 1);
+    await settle();
+    assert.equal(fixture.calls.metadata.length, 1, 'replacement waits for old report settlement');
+    const snapshot = JSON.parse(h.requests[0].options.body);
+    assert.equal(snapshot.ItemId, 'A'); assert.equal(snapshot.PlaySessionId, 'session-A');
+    deadline();
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    fixture.resolveMetadata(1, 'session-B');
+    await replacement; await settle();
+    assert.equal(fixture.player.streamInfo.item.Id, 'B');
+    assert.equal(h.requests.length, 1, 'failed stop is neither retried nor reassigned to B');
+});
+
+for (const expire of [false, true]) {
+    test(`maintained PlaybackInfo late response after ${expire ? 'deadline' : 'switch cancellation'} cannot start retired A`, async () => {
+        const {harness, storage} = require('./helpers/api-client-amd.cjs');
+        const timers = new Map(); let timerId = 0;
+        const responses = [];
+        const h = harness(() => { const gate = deferred(); responses.push(gate); return gate.promise; }, {
+            setTimeout(fn, ms) { assert.equal(ms, 30000); timers.set(++timerId, fn); return timerId; },
+            clearTimeout(id) { timers.delete(id); }
+        });
+        const Api = h.load('apiclient.js');
+        const api = new Api(storage(), null, 'http://127.0.0.1', 'test', '1', 'test', 'test', 1);
+        const fixture = makeStopBoundaryFixture();
+        fixture.apiClient.getPlaybackInfo = (...args) => api.getPlaybackInfo(...args);
+        const first = fixture.manager.play({items: [makeItem('A')]}).catch(error => error);
+        await waitFor(() => responses.length === 1);
+        if (expire) [...timers.values()][0]();
+        const second = fixture.manager.play({items: [makeItem('B')]});
+        await waitFor(() => responses.length === 2);
+        responses[1].resolve({status: 200, json: async () => ({MediaSources: [makeMediaSource('B')], PlaySessionId: 'session-B'})});
+        await second;
+        responses[0].resolve({status: 200, json: async () => ({MediaSources: [makeMediaSource('A')], PlaySessionId: 'session-A'})});
+        await first; await settle();
+        assert.deepEqual(fixture.calls.play.map(stream => stream.item.Id), ['B']);
+        assert.equal(fixture.player.streamInfo.item.Id, 'B');
+        assert.equal(timers.size, 0);
+    });
+}

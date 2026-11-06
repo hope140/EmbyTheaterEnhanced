@@ -1,6 +1,6 @@
 # FN Connect 独立实验接线（目标 0.4.18）
 
-本分支包含默认关闭的 ETE 实验接线，尚未完成 Windows 或真实播放验收。工作分支名保留 `feature/fn-connect-v0417`，目标版本顺延至 0.4.18，不改产品版本或创建发行。产品基线为 main `09147a3f0c5b643596f79dc7e9fe9ec37c6fab5e`；保留 0.4.16 更新、下载及播放修复，不加入预载或播放暂存。
+本分支包含默认关闭的 ETE 实验接线，尚未完成 Windows 或真实播放验收。工作分支名保留 `feature/fn-connect-v0417`，目标版本顺延至 0.4.18，不改产品版本或创建发行。原始产品基线为 main `09147a3f0c5b643596f79dc7e9fe9ec37c6fab5e`，现整合 main `ddaa6835dda5ec7fb587620c7448708e1d8dda02`；仅继承其已有 0.4.17 版本元数据，保留 0.4.16 更新、下载及播放修复，不加入预载或播放暂存。
 
 ## 来源与认证归属
 
@@ -64,3 +64,5 @@ Windows 回环 fixture 使用产品固定 Electron **44.5.0**，核 archive／EX
 当前仅接手动服务器及原 Emby AuthenticateByName 登录，未声明覆盖全部 Emby Connect／QuickConnect 路径。来自 JSON 的未经认证链路证明的外部直链、外部 HLS／DASH、外部 If-Range 均不支持。API 桥拒绝媒体路径和媒体响应，不作为任意媒体代理；按响应 MIME 拒绝不等于上游完全没读取正文。
 
 先以干净提交运行无凭据 Windows 回环 fixture，再核隔离产品包启动和交互。真实认证由用户在正规窗口进行，不复制旧 Cookie/token；真实取流前另行确认准确目的地、正文消费、次数／逐跳预算和停止条件。一个播放器请求可含多次重定向，完整播放不具备单 GET 总预算；旧响应头检查批准不能代替完整播放批准。未批准的后续 origin 必须停止，禁止将 FN／Emby 认证转发给第三方。
+
+隔离产品目录的材料、Host 绑定和分层验收顺序见 [产品验证准备](FN_PRODUCT_VALIDATION.md)。

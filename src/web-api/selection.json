@@ -47,8 +47,8 @@
     },
     {
       "path": "src/web-api/src/apiclient.js",
-      "size": 27749,
-      "sha256": "3884ce724547accb1453c5e031f4693f7861fd49702fa94b039ef9dfa95fd20e"
+      "size": 28486,
+      "sha256": "7ec105618e9d58c571a044d76930df21ede6d6f7a4ac881444707b3ffaf85a81"
     },
     {
       "path": "src/web-api/src/connectionmanager.js",
@@ -72,8 +72,8 @@
     },
     {
       "path": "src/web-api/src/transport.js",
-      "size": 6269,
-      "sha256": "1b1b1bb0dd5c38e3b68d301b6b057273e240a0f12013fbebcd303e627bf63bc8"
+      "size": 6681,
+      "sha256": "924af67d12afb6c86daac68d2fb828d9291650f36de5778de621e9a7794e4e70"
     },
     {
       "path": "src/web-api/tools/build-amd.mjs",
@@ -89,8 +89,8 @@
   "outputs": [
     {
       "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
-      "size": 28071,
-      "sha256": "ce59ddfac1125b5320250f380708268d7e677b4b94a170598b3bb1252d1e5ab0"
+      "size": 28808,
+      "sha256": "86c2e19dcb7abe0f33d7edaeb8abd7fb879967b5088687281095b147e8e19a76"
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/mit-apiclient.js",
@@ -99,8 +99,8 @@
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/transport.js",
-      "size": 6450,
-      "sha256": "710d99a2e3b1d61c08e50d389e2807f9754e1bb4746211d17407adb664113ded"
+      "size": 6862,
+      "sha256": "3e03a9caaa6622aa5657924f82c3c2f2f2d7f62b94f4eea145819874e449d6e3"
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/events.js",

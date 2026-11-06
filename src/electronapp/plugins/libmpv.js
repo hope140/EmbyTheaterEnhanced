@@ -1363,7 +1363,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 : ['loadfile', url])
             assertCurrentPlayRequest(request);
 
-            if (mediaSource.DefaultAudioStreamIndex && playMethod != 'Transcode') {
+            if (mediaSource.DefaultAudioStreamIndex != null && playMethod != 'Transcode') {
                 await setAudioStream(mediaSource.DefaultAudioStreamIndex);
                 assertCurrentPlayRequest(request);
             }
