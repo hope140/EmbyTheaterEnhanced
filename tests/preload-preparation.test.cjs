@@ -55,6 +55,7 @@ test('media binding captures preload modules before access is revoked and is ide
         ipcRenderer: {send() {}, on(_channel, listener) {receiveCommand=listener;}, invoke() { return Promise.resolve({token: 'fixture'}); }},
         require(name) {
             if (!preloadOpen) throw Error('require access revoked');
+            if (name === './enhanced/navigation-diagnostics') return require('../src/electronapp/enhanced/navigation-diagnostics');
             if (name === './enhanced/diagnostics') return {hashPath() {}};
             if (name === './enhanced/renderer-errors') return {install() {}};
             if (name === './enhanced/windows-media-renderer') return {install(target, send, options) {
@@ -72,6 +73,7 @@ test('media binding captures preload modules before access is revoked and is ide
         }};
     vm.runInNewContext(preparation.DIAGNOSTICS_BLOCK, context, {timeout: 1000});
     preloadOpen = false;
+    assert.equal(window.__eteNavigationDiagnostics.stopContext(null).controlOrigin, 'unknown');
     window.__eteBindWindowsMedia(playbackManager, events, rendererWindow);
     window.__eteBindWindowsMedia(playbackManager, events, rendererWindow);
     assert.equal(installs, 1);

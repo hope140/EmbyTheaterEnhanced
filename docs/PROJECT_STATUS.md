@@ -2,6 +2,8 @@
 
 ## 2026-11-06 — 导航停止来源的有限因果诊断
 
+隔离 Home 验证入口同步新增诊断模块的源码清单与生成路由精确哈希，预加载测试使用真实诊断模块；固定材料门禁保持。首轮完整测试发现旧替身缺模块及旧路由哈希合同，均已补齐。
+
 输入 Back/Home 的有限来源按当前播放器与 stream 对象快照记录，参数、调用次数及取消路径不变。Home 的同步 route context 经 WeakMap 传递到异步 view request，仅在实际 viewbeforehide 的同步作用域内读取；请求取消、替换播放、stream 变化或已消费上下文一律 unknown。Stop 的 navigationId 与输入请求记录相连，有限字段经 manager、adapter、native 投影及真实 logger/export 保留；无路径、用户信息或命令原文落盘。
 
 原生 history.back() 到 popstate 没有命令身份，无法可靠证明某次退栈由某个远端/本地命令发起。保留 navigation-requested（input-request-only）区分远端 GeneralCommand 与本地 Back；异步退栈的 Stop 明确 unknown，不用全局最后命令、时间接近、目的 URL 或 pending 队列伪造归属。正常 EOF 自动离开不新增主动 Stop。不改变历史状态、路由参数、播放/停止/取消顺序或版本；仍为 0.4.18。生成运行时测试覆盖取消、无退栈、多导航、晚到、A→B、EOF 及真实落盘/导出。此补足不声称查明历史提前停止的根因。
