@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -51,6 +52,16 @@ int main(int argc, char** argv) {
         std::cout << "projection-and-budget-passed\n"; return 0;
     }
     if (argc != 3 || !isolateNetworkStderr()) return 2;
+    if (std::strcmp(argv[2], "--local-loader-check") == 0) {
+        SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
+        // Use production search flags. A local invalid dependency must win
+        // over an ambient system loader; the pinned colocated copy then loads.
+        if(GetModuleHandleA("vulkan-1.dll"))return 8;
+        HMODULE module=LoadLibraryExA(argv[1],nullptr,LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+        const DWORD error=module?0:GetLastError();
+        std::cout<<"{\"loaded\":"<<(module?"true":"false")<<",\"win32Error\":"<<error<<"}\n";
+        if(module)FreeLibrary(module);return 0;
+    }
     std::fputs("STDERR_GUARD_CANARY", stderr);
     DWORD written = 0; WriteFile(GetStdHandle(STD_ERROR_HANDLE), "STDERR_GUARD_CANARY", 19, &written, nullptr);
     HMODULE dll=LoadLibraryExA(argv[1],nullptr,LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|LOAD_LIBRARY_SEARCH_DEFAULT_DIRS); if(!dll)return 3;

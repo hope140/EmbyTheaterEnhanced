@@ -1,4 +1,4 @@
-# v0.4.17 测试版
+# v0.4.16 测试版
 
 Windows x64 **Pre-release 测试版**。可手动下载，或在“关于 Enhanced”选择测试通道后主动检查更新。当前正式版仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)。
 
@@ -11,7 +11,7 @@ Windows x64 **Pre-release 测试版**。可手动下载，或在“关于 Enhanc
 
 ## 已知问题
 
-播放异常属于偶发问题，尚不能根据用户使用情况确认全部修复；未知直链失败的根因仍未确定。网络日志缺少请求 ID，匿名观察不能强行归到当前媒体；最终 host、重定向链及无法实际观察的状态保留未知。完整本地文件首次使用需要异步读取全文件校验哈希，较大文件可能等待；不新增服务器完全离线时的下载列表入口。详细验证边界见[本版准备记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V0417_REPAIR_TESTING.md)。
+播放异常属于偶发问题，尚不能根据用户使用情况确认全部修复；未知直链失败的根因仍未确定。网络日志缺少请求 ID，匿名观察不能强行归到当前媒体；最终 host、重定向链及无法实际观察的状态保留未知。完整本地文件首次使用需要异步读取全文件校验哈希，较大文件可能等待；不新增服务器完全离线时的下载列表入口。详细验证边界见[本版准备记录](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/V0416_REPAIR_TESTING.md)。
 
 本版保留提前下载、mpv 正常缓存、共享和配置快照生命周期，不包含已取消的下一集预载或播放暂存。
 
@@ -19,7 +19,7 @@ Windows x64 **Pre-release 测试版**。可手动下载，或在“关于 Enhanc
 
 发布后从本 Release 的实际附件区下载 Windows x64 安装包、同名 `.sha256` 与来源记录；`SHA256SUMS.txt` 列出发行文件摘要。勿将 Source code 压缩包当作客户端安装包。安装器未签名；手动安装前核对 SHA-256 并正常退出客户端。操作说明见[用户指南](https://github.com/hope140/EmbyTheaterEnhanced/blob/main/docs/USER_GUIDE.md)。
 
-本版使用 0.4.17，以区分此前仅本地提供的 0.4.16 验收包。新版本来源和校验以本 Release 实际附件为准，不复用旧验收包文件名或哈希。
+此前已安装本地 0.4.16 验收包时，请正常关闭客户端后手动覆盖安装；同版本不会由更新检查提供新候选。来源与校验以本 Release 实际附件为准，不复用旧验收包哈希。
 
 ## 项目说明
 
