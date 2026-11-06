@@ -46,6 +46,18 @@ test('a trusted original-button request supplies only credential and media ident
     assert.equal((await f.invoke('START', {context, itemId: '../escape'})).reason, 'invalid-request');
     await f.unregister();
 });
+
+test('lookup miss reasons cross the real IPC boundary as fixed fields without private file or error text', async () => {
+    let report = {reason: 'file-changed', stage: 'file-identity', path: 'PRIVATE_CANARY'};
+    const f = fixture({manager: {async localSource(_context, _signal, diagnostic) {diagnostic(report); return null;}}});
+    const request = {context, itemId: 'item', mediaSourceId: 'edition', requestId: 'lookup-1'};
+    assert.deepEqual(await f.invoke('LOOKUP', request), {status: 'miss', diagnostic: {reason: 'file-changed', stage: 'file-identity'}});
+    report = {reason: 'PRIVATE_CANARY', stage: 'file-identity'};
+    assert.deepEqual(await f.invoke('LOOKUP', {...request, requestId: 'lookup-2'}), {status: 'miss', diagnostic: {reason: 'unavailable', stage: 'record'}});
+    report = {reason: 'local-verified', stage: 'verified', changedCopySkipped: true, raw: 'PRIVATE_CANARY'};
+    assert.deepEqual((await f.invoke('LOOKUP', {...request, requestId: 'lookup-3'})).diagnostic, {reason: 'local-verified', stage: 'verified', changedCopySkipped: true});
+    await f.unregister();
+});
 test('parent download accepts only its identity and native batch confirmation defaults to cancel', async () => {
     let shown;
     const f = fixture({confirm: async (_window, value) => {shown = value; return {response: 1, checkboxChecked: true};}});

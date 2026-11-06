@@ -1161,15 +1161,24 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 var downloaded = null;
                 var downloadLookup = 'not-attempted';
+                var downloadDiagnostic = {reason: 'unavailable', stage: 'unavailable'};
                 if (advanceDownload && typeof advanceDownload.localSource === 'function' && String(options.playMethod || '').toLowerCase() !== 'transcode') {
                     try {
-                        downloaded = await advanceDownload.localSource(connectionManager.getApiClient(item.ServerId), item, mediaSource, request.controller.signal);
+                        downloaded = await advanceDownload.localSource(connectionManager.getApiClient(item.ServerId), item, mediaSource, request.controller.signal, function (value) {
+                            downloadDiagnostic = {
+                                reason: diagnosticEnum(diagnosticField(value, 'reason'), ['cancelled', 'context-unavailable', 'context-changed', 'version-mismatch', 'no-record', 'not-complete',
+                                    'directory-changed', 'file-missing', 'file-unavailable', 'file-changed', 'record-changed', 'integrity-mismatch', 'local-verified'], 'unavailable'),
+                                stage: diagnosticEnum(diagnosticField(value, 'stage'), ['context', 'record', 'file-identity', 'file-hash', 'verified'], 'unavailable'),
+                                changedCopySkipped: diagnosticField(value, 'changedCopySkipped') === true
+                            };
+                        });
                         downloadLookup = downloaded ? 'hit' : 'miss';
                     }
                     catch (_) { downloadLookup = 'failed'; /* Original playback remains available if lookup fails. */ }
                     assertCurrentPlayRequest(request);
                 }
-                emitClientDiagnostic('info', 'playback', 'download-lookup', Object.assign(requestDiagnosticDetails(request), {result: downloadLookup}));
+                emitClientDiagnostic('info', 'playback', 'download-lookup', Object.assign(requestDiagnosticDetails(request), {result: downloadLookup,
+                    reason: downloadDiagnostic.reason, stage: downloadDiagnostic.stage, changedCopySkipped: downloadDiagnostic.changedCopySkipped === true}));
                 if (!downloaded && isStrmRequest && !request.playbackConfig) throw Error('resolver-config-unavailable');
                 resolverResult = downloaded ? {type: 'local', source: downloaded.source, sourceKind: 'downloaded-file',
                     reason: 'download_hit', isStrm: isStrmRequest, localExists: true, fallback: false} : await strmResolver.resolveAsync(resolverContext, {

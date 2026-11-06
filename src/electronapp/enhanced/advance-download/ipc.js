@@ -148,7 +148,13 @@ function register(options) {
         const current = {...context(request.context), ...media(request)};
         if (typeof request.requestId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(request.requestId) || lookups.has(request.requestId) || lookups.size >= 8) throw probe.failure('invalid-request');
         const record = {controller: new AbortController()}; lookups.set(request.requestId, record);
-        record.done = manager.localSource(current, record.controller.signal).then(value => value || {status: 'miss'}).finally(() => {
+        let diagnostic = {reason: 'unavailable', stage: 'record'};
+        record.done = manager.localSource(current, record.controller.signal, value => {
+            const reasons = ['cancelled', 'context-unavailable', 'context-changed', 'version-mismatch', 'no-record', 'not-complete',
+                'directory-changed', 'file-missing', 'file-unavailable', 'file-changed', 'record-changed', 'integrity-mismatch', 'local-verified'];
+            if (value && reasons.includes(value.reason) && ['context', 'record', 'file-identity', 'file-hash', 'verified'].includes(value.stage)) diagnostic = {
+                reason: value.reason, stage: value.stage, ...(value.changedCopySkipped === true ? {changedCopySkipped: true} : {})};
+        }).then(value => value ? {...value, diagnostic} : {status: 'miss', diagnostic}).finally(() => {
             if (lookups.get(request.requestId) === record) lookups.delete(request.requestId);
         });
         return record.done;

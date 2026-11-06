@@ -50,7 +50,9 @@ test('shutdown checkpoints owned bytes and a new manager reauthorizes then resum
     assert.ok(f.calls.some(call => call.headers.range === 'bytes=1024-'));
     assert.equal((await next.localSource(f.context)).source, path.join(f.directory, task.file.name));
     f.state.etag = '"another-version"';
-    assert.equal(await next.localSource(f.context), null);
+    const beforeLocal = f.calls.length;
+    assert.equal((await next.localSource(f.context)).source, path.join(f.directory, task.file.name));
+    assert.equal(f.calls.length, beforeLocal, 'a complete verified receipt needs no remote source or permission probe');
     assert.ok(fs.existsSync(path.join(f.directory, task.file.name)), 'a server change does not delete the completed user file');
     const newer = await next.enqueue(f.context); await next.idle();
     assert.equal(newer.status, 'queued');
@@ -104,14 +106,17 @@ test('another account cannot resume or discover this task through the manager', 
     assert.equal(await next.localSource({...f.context, accountId: 'other'}), null);
 });
 
-test('a completed local copy still requires current permission, and denied lookup leaves the user file intact', async t => {
+test('a completed local copy plays without remote permission recheck while a new download still requires permission', async t => {
     const f = await paused(t), next = f.reopen(); next.attach(f.context); await next.idle();
     const task = f.store.get(f.task.id), file = path.join(f.directory, task.file.name);
     f.state.downloadAllowed = false;
-    const count = f.calls.filter(call => call.url.startsWith('/direct')).length;
-    assert.equal(await next.localSource(f.context), null);
+    const count = f.calls.length;
+    assert.equal((await next.localSource(f.context)).source, file);
     assert.deepEqual(fs.readFileSync(file), media);
-    assert.equal(f.calls.filter(call => call.url.startsWith('/direct')).length, count, 'denied permission is checked before remote video probes');
+    assert.equal(f.calls.length, count, 'local verification makes no remote request');
+    assert.equal((await next.enqueue(f.context)).status, 'error');
+    assert.ok(f.calls.length > count, 'new downloads retain the online authorization path');
+    assert.deepEqual(fs.readFileSync(file), media);
 });
 
 test('replacing or removing a completed file causes immediate local miss without adopting or modifying the replacement', async t => {

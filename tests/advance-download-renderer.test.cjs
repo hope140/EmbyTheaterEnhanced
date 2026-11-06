@@ -65,6 +65,42 @@ test('settings discard a previous account response after switching accounts', as
     f.changeAccount(); resolve({status: 'ok', tasks: [{title: 'previous account'}]});
     assert.equal((await pending).status, 'cancelled');
 });
+
+test('changed local files show a fixed preservation notice and expose only enumerated lookup diagnostics', async () => {
+    const f = fixture(() => ({status: 'miss', diagnostic: {reason: 'file-changed', stage: 'file-identity', raw: 'PRIVATE_CANARY'}}));
+    const diagnostics = [];
+    assert.equal(await f.result.localSource(f.api, {Id: 'item', ServerId: 'server', MediaType: 'Video'}, {Id: 'edition'}, null, d => diagnostics.push(d)), null);
+    assert.deepEqual(JSON.parse(JSON.stringify(diagnostics)), [{reason: 'file-changed', stage: 'file-identity'}]);
+    assert.equal(f.messages.length, 1);
+    assert.match(f.messages[0], /文件和记录未自动删除/);
+    assert.match(f.messages[0], /在线来源/);
+    assert.ok(!JSON.stringify([diagnostics, f.messages]).includes('PRIVATE_CANARY'));
+});
+
+test('logout or cancellation cannot emit a late changed-file notice, and a stale api cannot start lookup', async () => {
+    for (const action of ['logout', 'abort']) {
+        let resolve;
+        const f = fixture(() => new Promise(r => {resolve = r;})), controller = new AbortController();
+        const pending = f.result.localSource(f.api, {Id: 'item', MediaType: 'Video'}, {Id: 'edition'}, controller.signal);
+        if (action === 'logout') f.logout(); else controller.abort();
+        resolve({status: 'miss', diagnostic: {reason: 'file-changed', stage: 'file-identity'}});
+        assert.equal(await pending, null); assert.equal(f.messages.length, 0);
+        if (action === 'logout') {
+            const count = f.calls.length;
+            assert.equal(await f.result.localSource(f.api, {Id: 'item', MediaType: 'Video'}, {Id: 'edition'}), null);
+            assert.equal(f.calls.length, count);
+        }
+    }
+});
+
+test('a valid alternate local copy reports preservation without claiming an online fallback', async () => {
+    const f = fixture(() => ({status: 'hit', source: 'C:\\synthetic\\movie.mkv', diagnostic: {reason: 'local-verified', stage: 'verified', changedCopySkipped: true}}));
+    const diagnostics = [];
+    assert.equal((await f.result.localSource(f.api, {Id: 'item', MediaType: 'Video'}, {Id: 'edition'}, null, d => diagnostics.push(d))).status, 'hit');
+    assert.equal(diagnostics[0].changedCopySkipped, true);
+    assert.match(f.messages[0], /另一份有效本地副本/); assert.match(f.messages[0], /未自动删除/);
+    assert.ok(!f.messages[0].includes('在线来源'));
+});
 test('the pinned command overlay routes video only and preserves original audio, logs and subtitle download branches', async () => {
     const base = fs.readFileSync(path.join(__dirname, '../vendor/web-snapshot/www/modules/commandprocessor.js'), 'utf8');
     const output = patch.patchCommandProcessor(base), exports = {}, downloads = [], collections = [], browser = [];

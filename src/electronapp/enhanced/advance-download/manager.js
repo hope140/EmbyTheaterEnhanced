@@ -42,6 +42,8 @@ function createManager(options) {
     // Preflight failures have no verified source/receipt and never grant playback authority.
     // Keep bounded UI diagnostics for this process, without credentials or source URLs.
     const attempts = new Map();
+    const localLookups = new Set(), verifiedLocal = new Map();
+    let lookupEpoch = 0;
     const changedRestarts = new Map();
     let credentials, credentialHash, active, closing = false, closingPromise;
     for (const task of allTasks()) if (['queued', 'checking', 'downloading'].includes(task.state)) tasks.set(task.id, store.save({...task, state: 'paused', reason: 'app-closed'}));
@@ -105,6 +107,7 @@ function createManager(options) {
         if (!value.serverId || !value.accountId || !value.token) return;
         const signature = createHash('sha256').update(JSON.stringify(value)).digest('hex');
         if (signature === credentialHash) return;
+        lookupEpoch++;
         for (const operation of preparations) operation.controller.abort();
         for (const operation of pendingControls) operation.controller.abort();
         if (active) {if (active.pauseReason !== 'user-paused') active.pauseReason = credentials && owner(value) === owner(credentials) ? 'credentials-changed' : 'account-changed'; active.controller.abort();}
@@ -261,35 +264,83 @@ function createManager(options) {
         } else if (active?.id !== id) update(id, {state: 'queued', reason: null, diagnostic: null});
         kick(); return {status: 'queued'};
     }
-    async function localSource(context, signal) {
-        const candidates = allTasks().filter(value => sameMedia(value, context) && completedFile(value));
-        if (!candidates.length) return null;
-        let session, handle;
-        try {
-            signal = signal ? AbortSignal.any([signal, AbortSignal.timeout(5000)]) : AbortSignal.timeout(5000);
-            session = makeSession(context);
-            const source = await session.acquire(signal);
-            const task = candidates.find(value => source.identity === value.source.identity && (!value.source.etag || source.etag === value.source.etag) &&
-                (!value.source.prefixSha256 || value.source.prefixBytes !== source.prefixBytes || value.source.prefixSha256 === source.prefixSha256));
-            if (signal?.aborted || !task) return null;
-            const file = completedFile(task);
-            if (!file) return null;
-            handle = await fs.promises.open(file, 'r');
-            if (!records.sameId(await handle.stat({bigint: true}), task.file.fileId)) return null;
-            const prefix = Buffer.alloc(source.prefixBytes || Math.min(65536, source.total));
-            let offset = 0;
-            while (offset < prefix.length) {
-                if (signal?.aborted) return null;
-                const part = await handle.read(prefix, offset, prefix.length - offset, offset);
-                if (!part.bytesRead) return null;
-                offset += part.bytesRead;
-            }
-            if (source.prefixSha256 && createHash('sha256').update(prefix).digest('hex') !== source.prefixSha256 || !completedFile(task) || signal?.aborted) return null;
-            return {status: 'hit', source: file, sourceKind: 'downloaded-file'};
-        } catch (_) {return null;}
-        finally {if (handle) await handle.close(); session?.close();}
+    async function localSource(context, signal, onDiagnostic) {
+        let changedCopySkipped = false;
+        const report = (reason, stage) => {
+            if (['directory-changed', 'file-missing', 'file-unavailable', 'file-changed', 'integrity-mismatch'].includes(reason)) changedCopySkipped = true;
+            try {onDiagnostic?.({reason, stage, ...(reason === 'local-verified' && changedCopySkipped ? {changedCopySkipped: true} : {})});} catch (_) {}
+            return null;
+        };
+        if (closing || signal?.aborted) return report('cancelled', 'context');
+        if (!context?.serverId || !context.accountId || !context.token || !context.serverAddress || !context.itemId || !context.mediaSourceId) return report('context-unavailable', 'context');
+        if (credentials && !current(context)) return report('context-changed', 'context');
+        const epoch = lookupEpoch;
+        signal = signal ? AbortSignal.any([signal, lifetime.signal]) : lifetime.signal;
+        const activeContext = () => !closing && !signal.aborted && lookupEpoch === epoch && (!credentials || current(context));
+        const owned = allTasks().filter(task => task.serverId === context.serverId && task.accountId === context.accountId &&
+            task.serverAddress === context.serverAddress && task.itemId === context.itemId);
+        const matching = owned.filter(task => task.mediaSourceId === context.mediaSourceId);
+        if (!matching.length) return report(owned.length ? 'version-mismatch' : 'no-record', 'record');
+        const candidates = matching.filter(task => task.state === 'complete' && task.file)
+            .sort((a, b) => BigInt(a.file.mtimeNs) > BigInt(b.file.mtimeNs) ? -1 : BigInt(a.file.mtimeNs) < BigInt(b.file.mtimeNs) ? 1 : 0);
+        if (!candidates.length) return report('not-complete', 'record');
+        for (const task of candidates) {
+            if (!activeContext()) return report('cancelled', 'context');
+            const hit = await verify(task);
+            if (hit) return hit;
+            if (!activeContext()) return null;
+        }
+        return null;
+        async function verify(task) {
+            let handle, finish, localHit;
+            const job = {done: new Promise(resolve => {finish = resolve;})}; localLookups.add(job);
+            const ownedRecord = () => tasks.get(task.id) === task && task.state === 'complete';
+            try {
+                let root;
+                try {root = records.physical(task.directory);} catch (_) {return report('directory-changed', 'file-identity');}
+                if (!records.sameId(fs.lstatSync(root, {bigint: true}), task.file.rootId)) return report('directory-changed', 'file-identity');
+                const file = completedFile(task);
+                if (!file) {
+                    try {fs.lstatSync(path.join(root, task.file.name));} catch (error) {return report(error.code === 'ENOENT' ? 'file-missing' : 'file-unavailable', 'file-identity');}
+                    return report('file-changed', 'file-identity');
+                }
+                handle = await fs.promises.open(file, 'r');
+                const stat = await handle.stat({bigint: true});
+                const matches = value => value.isFile() && records.sameId(value, task.file.fileId) &&
+                    Number(value.size) === task.file.size && String(value.mtimeNs) === task.file.mtimeNs;
+                if (!matches(stat)) return report('file-changed', 'file-identity');
+                const cacheKey = JSON.stringify([task.id, task.file, String(stat.ctimeNs)]);
+                if (!verifiedLocal.has(cacheKey)) {
+                    const buffer = Buffer.alloc(1024 * 1024), digest = createHash('sha256');
+                    let offset = 0;
+                    while (offset < task.file.size) {
+                        if (!activeContext()) return report('cancelled', 'file-hash');
+                        if (!ownedRecord()) return report('record-changed', 'record');
+                        const part = await handle.read(buffer, 0, Math.min(buffer.length, task.file.size - offset), offset);
+                        if (!part.bytesRead) return report('integrity-mismatch', 'file-hash');
+                        digest.update(buffer.subarray(0, part.bytesRead)); offset += part.bytesRead;
+                    }
+                    if (digest.digest('hex') !== task.file.sha256) return report('integrity-mismatch', 'file-hash');
+                }
+                if (!activeContext()) return report('cancelled', 'context');
+                if (!ownedRecord()) return report('record-changed', 'record');
+                const after = await handle.stat({bigint: true});
+                if (!matches(after) || String(after.ctimeNs) !== String(stat.ctimeNs) || !completedFile(task)) return report('file-changed', 'file-identity');
+                if (!activeContext()) return report('cancelled', 'context');
+                if (!ownedRecord()) return report('record-changed', 'record');
+                verifiedLocal.set(cacheKey, true);
+                if (verifiedLocal.size > 64) verifiedLocal.delete(verifiedLocal.keys().next().value);
+                localHit = {status: 'hit', source: file, sourceKind: 'downloaded-file'};
+            } catch (error) {return report(signal.aborted ? 'cancelled' : error.code === 'ENOENT' ? 'file-missing' : 'file-unavailable', 'file-identity');}
+            finally {try {if (handle) await handle.close();} finally {localLookups.delete(job); finish();}}
+            if (!activeContext()) return report('cancelled', 'context');
+            if (!ownedRecord()) return report('record-changed', 'record');
+            report('local-verified', 'verified');
+            return localHit;
+        }
     }
     async function pauseAll() {
+        lookupEpoch++;
         credentials = credentialHash = null;
         for (const operation of pendingControls) operation.controller.abort();
         for (const operation of preparations) operation.controller.abort();
@@ -365,7 +416,7 @@ function createManager(options) {
         return list(context).map(task => ({...task, fileState: states.get(task.id) || null}));
     }
     function close() {
-        if (!closingPromise) {closing = true; lifetime.abort(); inspector.close(); closingPromise = pauseAll().then(() => controlTail);}
+        if (!closingPromise) {closing = true; lifetime.abort(); inspector.close(); verifiedLocal.clear(); closingPromise = pauseAll().then(() => Promise.allSettled([...localLookups].map(job => job.done))).then(() => controlTail);}
         return closingPromise;
     }
     return Object.freeze({attach, enqueue, enqueueCollection, list, retry, localSource, pauseAll, close, current, targets, control, status,
