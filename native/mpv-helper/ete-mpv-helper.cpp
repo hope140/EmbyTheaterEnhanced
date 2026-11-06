@@ -24,6 +24,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <utility>
@@ -303,6 +304,14 @@ public:
         if (!isCritical && !key.empty()) { auto found = coalesced.find(key); if (found != coalesced.end()) existingBytes = found->second.size() + 4; }
         size_t frames = critical.size() + coalesced.size() - (existingBytes ? 1 : 0);
         size_t newBytes = pendingBytes - existingBytes + payload.size() + 4;
+        if (isCritical && (frames + 1 > MAX_PENDING_FRAMES || newBytes > MAX_PENDING_BYTES)) {
+            // Optional network telemetry never makes an authoritative frame fail.
+            auto diagnostic = coalesced.find("media-network-diagnostics");
+            if (diagnostic != coalesced.end()) {
+                pendingBytes -= diagnostic->second.size() + 4; coalesced.erase(diagnostic); ++coalescedDropped;
+                frames = critical.size() + coalesced.size(); newBytes = pendingBytes + payload.size() + 4;
+            }
+        }
         if (frames + 1 > MAX_PENDING_FRAMES || newBytes > MAX_PENDING_BYTES) {
             if (!isCritical) { ++coalescedDropped; return true; }
             failed = true; stopping = true; available.notify_all(); return false;
@@ -422,6 +431,103 @@ struct LoadCommand {
 struct AsyncCommand { uint64_t generationId; uint64_t requestId; std::string method; };
 struct NativeRecord { int eventId; std::string eventName; int64_t mediaIdentity; std::string name; std::string valueJson; uint64_t replyUserdata; uint64_t timestamp; };
 
+// BEGIN NETWORK_LOG_CORE (same bytes compiled by the projection/real-libmpv tests)
+// libmpv log messages have no media identity. Never assign them to a generation.
+bool isolateNetworkStderr() {
+    HANDLE errors = CreateFileW(L"NUL", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    return errors != INVALID_HANDLE_VALUE && SetStdHandle(STD_ERROR_HANDLE, errors) && std::freopen("NUL", "w", stderr);
+}
+struct NetworkLogProjection {
+    const char* kind = "error";
+    const char* stage = "unavailable";
+    const char* networkError = "unknown";
+    int httpStatus = 0;
+};
+bool networkLogView(const char* text, size_t maximum, std::string_view& view) {
+    if (!text) return false;
+    size_t length = 0;
+    while (length <= maximum && text[length]) ++length;
+    if (length > maximum) return false;
+    view = std::string_view(text, length); return true;
+}
+bool networkDigits(std::string_view text) {
+    if (text.empty() || text.size() > 20) return false;
+    for (char c : text) if (c < '0' || c > '9') return false;
+    return true;
+}
+bool projectNetworkLog(const char* prefix, const char* text, NetworkLogProjection& out) {
+    std::string_view module, line;
+    if (!networkLogView(prefix, 64, module) || !networkLogView(text, 4096, line)) return false;
+    if (module == "overflow") {out = {"overflow", "unavailable", "unknown", 0}; return true;}
+    if (module != "curl") return false;
+    if (!line.empty() && line.back() == '\n') line.remove_suffix(1);
+    if (!line.empty() && line.back() == '\r') line.remove_suffix(1);
+    if (line.find_first_of("\r\n") != std::string_view::npos) return false;
+    for (const char* start : {"proto=http ok=0 code=", "proto=http ok=1 code=", "proto=https ok=0 code=", "proto=https ok=1 code="}) {
+        const std::string_view head(start);
+        if (line.substr(0, head.size()) != head) continue;
+        const size_t end = line.find(' ', head.size());
+        if (end == std::string_view::npos) return false;
+        const auto number = line.substr(head.size(), end - head.size());
+        if (number.size() != 3 || !networkDigits(number)) return false;
+        const int code = (number[0]-'0')*100+(number[1]-'0')*10+number[2]-'0';
+        if (code < 100 || code > 599 || line.substr(end, 6) != " size=") return false;
+        out = {"response", "response", code >= 400 ? "http-status" : "none", code}; return true;
+    }
+    const std::string_view http("HTTP error ");
+    if (line.substr(0, http.size()) == http) {
+        const auto number = line.substr(http.size());
+        if (number.size() != 3 || !networkDigits(number)) return false;
+        const int code = (number[0]-'0')*100+(number[1]-'0')*10+number[2]-'0';
+        if (code < 400 || code > 599) return false;
+        out = {"http-error", "response", "http-status", code}; return true;
+    }
+    const std::string_view range("Server ignored range request at offset ");
+    if (line.substr(0, range.size()) == range && networkDigits(line.substr(range.size()))) {
+        out = {"range", "response", "range-not-honored", 0}; return true;
+    }
+    struct Error {const char* text; const char* category;};
+    // curl_easy_strerror constants only. No URL, OS detail, header or arbitrary suffix.
+    const Error errors[] = {
+        {"Could not resolve hostname", "name-resolution"}, {"Couldn't resolve host name", "name-resolution"},
+        {"Could not resolve proxy name", "name-resolution"}, {"Couldn't resolve proxy name", "name-resolution"},
+        {"Could not connect to server", "connect"}, {"Couldn't connect to server", "connect"},
+        {"SSL connect error", "tls-handshake"}, {"SSL peer certificate or SSH remote key was not OK", "tls-verification"},
+        {"Problem with the SSL CA cert (path? access rights?)", "tls-verification"},
+        {"Timeout was reached", "timeout"}, {"Failed sending data to the peer", "send"},
+        {"Failure when receiving data from the peer", "receive"}, {"Transferred a partial file", "partial-file"},
+        {"Server returned nothing (no headers, no data)", "empty-response"},
+        {"Error in the HTTP2 framing layer", "http2"}, {"Stream error in the HTTP/2 framing layer", "http2"}
+    };
+    for (const auto& error : errors) {
+        const std::string_view phrase(error.text);
+        for (const char* start : {"error: ", "transfer failed: "}) {
+            const std::string_view head(start);
+            if (line.substr(0, head.size()) == head && line.substr(head.size()) == phrase) {
+                out = {"error", head == "error: " ? "pre-response" : "transfer", error.category, 0}; return true;
+            }
+        }
+        const std::string_view retry(", retrying (#");
+        if (line.substr(0, phrase.size()) == phrase && line.substr(phrase.size(), retry.size()) == retry) {
+            const size_t at = phrase.size() + retry.size(), sep = line.find(") from ", at);
+            if (sep != std::string_view::npos && networkDigits(line.substr(at, sep-at)) &&
+                networkDigits(line.substr(sep+7))) {out = {"retry", "transfer", error.category, 0}; return true;}
+        }
+    }
+    if (line == "TLS certificate verification failed.") {out = {"error", "pre-response", "tls-verification", 0}; return true;}
+    return false;
+}
+struct NetworkLogBudget {
+    uint64_t window = 0; unsigned count = 0; bool initialized = false;
+    bool admit(uint64_t now, NetworkLogProjection& out) {
+        if (!initialized || now < window || now-window >= 60000000) {window = now; count = 0; initialized = true;}
+        if (count > 64) return false;
+        if (count++ == 64) out = {"suppressed", "unavailable", "unknown", 0};
+        return true;
+    }
+};
+// END NETWORK_LOG_CORE
+
 // BEGIN PREVIEW_OWNER_CORE (compiled independently by the portable regression)
 class PreviewOwner {
     uint64_t current = 0;
@@ -456,6 +562,34 @@ class Helper {
     std::string helperId; HMODULE library = nullptr; mpv_handle* mpv = nullptr; WriterQueue& writer;
 #define FIELD(name) decltype(&name) p_##name = nullptr;
     MPV_FUNCTIONS(FIELD)
+    decltype(&mpv_create_client) p_network_create_client = nullptr;
+    decltype(&mpv_request_log_messages) p_network_request_logs = nullptr;
+    decltype(&mpv_destroy) p_network_destroy = nullptr;
+    mpv_handle* networkLogClient = nullptr;
+    NetworkLogBudget networkLogBudget;
+    uint64_t networkLogSequence = 0;
+    void emitNetworkLog(NetworkLogProjection projected) {
+        if (!networkLogBudget.admit(monotonicMicros(), projected)) return;
+        if (networkLogSequence >= 2147483647) return;
+        writer.enqueue(base("lifecycle") + ",\"scope\":\"helper\",\"name\":\"media-network\",\"detail\":{\"kind\":" + quote(projected.kind) + ",\"stage\":" + quote(projected.stage) +
+            ",\"networkError\":" + quote(projected.networkError) + ",\"httpStatus\":" +
+            (projected.httpStatus ? std::to_string(projected.httpStatus) : "null") +
+            ",\"sequence\":" + std::to_string(++networkLogSequence) + "}}", false, "media-network-diagnostics");
+    }
+    void pollNetworkLogs() {
+        if (!networkLogClient) return;
+        // Separate libmpv client queue: verbose diagnostic events cannot occupy
+        // the authoritative media event queue. No raw log is copied or retained.
+        for (int i = 0; i < 64; ++i) {
+            const auto* event = p_mpv_wait_event(networkLogClient, 0);
+            if (!event || event->event_id == MPV_EVENT_NONE) break;
+            if (event->event_id == MPV_EVENT_QUEUE_OVERFLOW) {emitNetworkLog({"overflow", "unavailable", "unknown", 0}); continue;}
+            if (event->event_id != MPV_EVENT_LOG_MESSAGE || !event->data) continue;
+            const auto* log = static_cast<const mpv_event_log_message*>(event->data);
+            NetworkLogProjection projected;
+            if (projectNetworkLog(log->prefix, log->text, projected)) emitNetworkLog(projected);
+        }
+    }
 #undef FIELD
     std::deque<LoadCommand> loadQueue; bool loadInFlight = false; uint64_t nextReplyUserdata = 1;
     std::map<uint64_t, LoadCommand> loadReplies; std::map<uint64_t, AsyncCommand> commandReplies;
@@ -1519,6 +1653,16 @@ public:
         std::string windowId = std::to_string(reinterpret_cast<uintptr_t>(attachedSurface));
         option("wid", windowId.c_str());
         if (p_mpv_initialize(mpv) < 0) throw std::runtime_error("mpv-initialize-failed");
+        p_network_create_client = reinterpret_cast<decltype(p_network_create_client)>(GetProcAddress(library, "mpv_create_client"));
+        p_network_request_logs = reinterpret_cast<decltype(p_network_request_logs)>(GetProcAddress(library, "mpv_request_log_messages"));
+        p_network_destroy = reinterpret_cast<decltype(p_network_destroy)>(GetProcAddress(library, "mpv_destroy"));
+        if (p_network_create_client && p_network_request_logs && p_network_destroy) {
+            networkLogClient = p_network_create_client(mpv, "ete-network-diagnostics");
+            if (networkLogClient && p_network_request_logs(networkLogClient, "debug") < 0) {
+                p_network_destroy(networkLogClient); networkLogClient = nullptr;
+            }
+        }
+        emitNetworkLog({networkLogClient ? "ready" : "unavailable", "unavailable", "unknown", 0});
         uint64_t api = p_mpv_client_api_version();
         char* version = p_mpv_get_property_string(mpv, "mpv-version");
         std::string versionJson = version ? quote(version) : "null";
@@ -1527,6 +1671,7 @@ public:
             ",\"helperVersion\":" + quote(HELPER_VERSION) + ",\"libmpvVersion\":" + versionJson +
             ",\"surfaceAttached\":true,\"capabilities\":[\"private-inherited-pipe\",\"native-child-hwnd\",\"gpu-next\",\"d3d11\",\"generation-attribution\",\"preview-snapshot-v1\"],\"queueLimits\":" + writer.metricsJson() + '}');
         } catch (...) {
+            if (networkLogClient) {p_network_destroy(networkLogClient); networkLogClient = nullptr;}
             if (mpv) { p_mpv_terminate_destroy(mpv); mpv = nullptr; }
             closing = true;
             if (surfaceThread.joinable()) surfaceThread.join();
@@ -1537,6 +1682,7 @@ public:
         }
     }
     ~Helper() {
+        if (networkLogClient) {p_network_destroy(networkLogClient); networkLogClient = nullptr;}
         if (mpv) { p_mpv_terminate_destroy(mpv); mpv = nullptr; }
         closing = true;
         if (surfaceThread.joinable()) surfaceThread.join();
@@ -1922,6 +2068,7 @@ public:
         if (previewCapture.userdata && !previewCapture.finished && monotonicMicros() >= previewCapture.deadline) finishPreview("preview-deadline");
         submitNextLoad();
         for (int index = 0; index < 256; ++index) { mpv_event* event = p_mpv_wait_event(mpv, 0); if (!event || event->event_id == MPV_EVENT_NONE) break; handleEvent(event); }
+        pollNetworkLogs();
         AutoStage stage = autoStage.load();
         if (autoDeadlineMicros && (stage == AutoStage::Armed || stage == AutoStage::CapturePending ||
             stage == AutoStage::ReleasePending) && monotonicMicros() >= autoDeadlineMicros) {
@@ -1945,6 +2092,9 @@ int wmain(int argc, wchar_t** argv) {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     if (argc == 4 && std::wcscmp(argv[1], L"--place-window-behind") == 0) return placeWindowBehind(argv[2], argv[3]);
     if (argc != 4) return 2;
+    // Third-party shutdown callbacks can bypass mpv's logger. Raw stderr must
+    // never reach the parent pipe. Fail before creating mpv if this guard fails.
+    if (!isolateNetworkStderr()) return 24;
     HANDLE input = GetStdHandle(STD_INPUT_HANDLE), output = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!input || input == INVALID_HANDLE_VALUE || !output || output == INVALID_HANDLE_VALUE) return 3;
     WriterQueue writer(output); int exitCode = 0;
@@ -1954,9 +2104,9 @@ int wmain(int argc, wchar_t** argv) {
             InboundMessage message;
             while (reader.pop(message)) {
                 try { helper.process(message.json); }
-                catch (const std::exception& error) {
+                catch (const std::exception&) {
                     writer.enqueue("{\"protocolVersion\":1,\"type\":\"lifecycle\",\"scope\":\"helper\",\"helperInstanceId\":" + quote(wideToUtf8(argv[2])) +
-                        ",\"name\":\"protocol-error\",\"reason\":" + quote(error.what()) + '}', true);
+                        ",\"name\":\"protocol-error\",\"reason\":\"helper-command-rejected\"}", true);
                     exitCode = 20; goto done;
                 }
             }
@@ -1969,6 +2119,6 @@ int wmain(int argc, wchar_t** argv) {
         }
 done:
         if (reader.hasFailed()) std::cerr << "protocol-input-failure:" << reader.failureReason() << std::endl;
-    } catch (const std::exception& error) { std::cerr << "helper-fatal:" << error.what() << std::endl; exitCode = 23; }
+    } catch (const std::exception&) { exitCode = 23; }
     writer.close(); return exitCode;
 }

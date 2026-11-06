@@ -290,7 +290,7 @@ class NativeHelperClient {
   }
 
   diagnose(name, generationId, disposition, details = {}) {
-    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file'].includes(name)) return;
+    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file', 'media-network'].includes(name)) return;
     try {
       const pending = this.onDiagnostic({name, generationId, disposition, currentGenerationId: this.currentGenerationId, ...details});
       if (pending && typeof pending.catch === 'function') pending.catch(() => {});
@@ -307,6 +307,13 @@ class NativeHelperClient {
   }
 
   dispatch(message) {
+    if (message.name === 'media-network') {
+      if (message.type !== 'lifecycle' || message.scope !== 'helper') return;
+      const projected = require('../enhanced/media-network-diagnostics').projectLog(message.detail);
+      if (!projected) return; // Before timeline, callbacks, IPC or persistent logs.
+      message = {type: 'lifecycle', scope: 'helper', name: 'media-network',
+        helperInstanceId: message.helperInstanceId, detail: projected};
+    }
     const endDetails = message.name === 'end-file' && message.value ? {
       endReason: message.value.reason, mpvErrorCode: message.value.error
     } : {};
@@ -349,6 +356,7 @@ class NativeHelperClient {
       this.recordTimeline({ ...base, action, reason: message.reason || null, detail: message.detail || null });
       if (message.name === 'unattributed-native-event') this.diagnose(message.rawEventName, null, 'DROP_UNATTRIBUTED');
       if (message.name === 'ready') { this.readyReceived = true; this.handshake = message.detail || null; }
+      if (message.name === 'media-network') this.diagnose('media-network', null, 'ACCEPT_HELPER_GLOBAL', {network: message.detail});
       return;
     }
     if (message.type === 'event') {

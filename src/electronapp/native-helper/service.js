@@ -179,6 +179,7 @@ function createService(options) {
   const fixedSettingLogged = new Set();
   const boundWindowEvents = [];
   const diagnostic = createNativeDiagnostics(logger);
+  const networkInputReference = require('../enhanced/media-network-diagnostics').createInputReference();
   const helperRuns = new WeakMap();
   let helperRunSequence = 0;
 
@@ -795,6 +796,9 @@ function createService(options) {
       }
       requireGeneration(active, payload);
       if (args[0] === 'loadfile') {
+        diagnostic({name: 'media-network-input', disposition: 'ACCEPT', helperRun: helperRuns.get(active),
+          generationId: active.currentGenerationId, currentGenerationId: active.currentGenerationId,
+          network: networkInputReference(args[1])});
         const load = active.load(args);
         load.promise.catch(function (error) {
           if (client !== active || endpointId !== activeEndpointId || load.generationId !== active.currentGenerationId ||

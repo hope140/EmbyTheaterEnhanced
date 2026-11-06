@@ -2,8 +2,9 @@
 
 const {createRecorder} = require('./bounded-diagnostics');
 const crypto = require('node:crypto');
+const networkDiagnostics = require('./media-network-diagnostics');
 const EVENTS = new Set(['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file',
-    'presentation-prepare', 'presentation-arm', 'presentation-clear', 'surface-hidden']);
+    'presentation-prepare', 'presentation-arm', 'presentation-clear', 'surface-hidden', 'media-network-input']);
 const DISPOSITIONS = new Set(['BEGIN_GENERATION', 'RETIRE_GENERATION', 'ACCEPT', 'DROP_STALE_GENERATION',
     'DROP_STALE_HELPER', 'DROP_TRANSPORT_TERMINAL', 'DROP_UNATTRIBUTED', 'requested', 'ready', 'unavailable', 'stale', 'cleared', 'hidden']);
 const REASONS = new Set(['superseded', 'stop', 'destroy', 'renderer-destroy', 'service-destroy', 'retired',
@@ -15,6 +16,7 @@ function mpvErrorCode(value) { return Number.isInteger(value) && value >= -21474
 
 function createNativeDiagnostics(logger, options) {
     const emit = createRecorder(logger, 'native-helper', 120, options);
+    const emitNetwork = createRecorder(logger, 'media-network', 120, options);
     const requests = new Map();
     // Private, memory-only key: references are comparable only within this service
     // lifetime, never across users/restarts. Do not use the stable path/ID hashes.
@@ -33,6 +35,21 @@ function createNativeDiagnostics(logger, options) {
     }
     return function observe(input) {
         try {
+            if (input && input.name === 'media-network') {
+                if (input.disposition !== 'ACCEPT_HELPER_GLOBAL' || !id(input.helperRun)) return;
+                const projected = networkDiagnostics.projectLog(input.network);
+                if (!projected) return;
+                emitNetwork('engine-observation', {helperRun: id(input.helperRun), generationId: null,
+                    requestId: 'UNAVAILABLE', association: 'helper-only', resourceRole: 'unknown', backend: 'curl-log',
+                    evidenceSource: 'mpv-log', evidenceRule: {
+                        response: 'curl-final-probe-v1', 'http-error': 'curl-http-error-v1', error: 'curl-error-string-v1',
+                        range: 'curl-range-rejection-v1', retry: 'curl-existing-retry-v1',
+                        ready: 'observer-ready-v1', unavailable: 'observer-unavailable-v1',
+                        overflow: 'observer-overflow-v1', suppressed: 'observer-rate-limit-v1'
+                    }[projected.kind],
+                    finalEndpointRef: null, redirectChain: 'unavailable', ...projected});
+                return;
+            }
             if (!input || !EVENTS.has(input.name) || !DISPOSITIONS.has(input.disposition)) return;
             const helperRun = id(input.helperRun);
             const generationId = id(input.generationId);
@@ -56,6 +73,12 @@ function createNativeDiagnostics(logger, options) {
             if (input.name === 'end-file') {
                 details.endReason = Number.isInteger(input.endReason) && input.endReason >= 0 && input.endReason <= 5 ? input.endReason : null;
                 details.mpvErrorCode = mpvErrorCode(input.mpvErrorCode);
+            }
+            if (input.name === 'media-network-input') {
+                const projected = networkDiagnostics.projectInput(input.network);
+                if (!projected || input.disposition !== 'ACCEPT') return;
+                emitNetwork('load-input', {...details, ...projected});
+                return;
             }
             if (input.name.startsWith('presentation-')) {
                 details.transitionId = id(input.transitionId);
