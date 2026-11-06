@@ -1,0 +1,88 @@
+diff --git a/external-header-fixture.cjs b/external-header-fixture.cjs
+--- a/external-header-fixture.cjs
++++ b/external-header-fixture.cjs
+@@ -11,3 +11,5 @@
+ const root = index < 0 ? undefined : process.argv[index + 1];
+-const entryId = 'ETE_FN_EXTERNAL_HEADER_FIXTURE_V1';
++const caseIndex = process.argv.indexOf('--case');
++const caseName = caseIndex < 0 ? undefined : process.argv[caseIndex + 1];
++const entryId = 'ETE_FN_EXTERNAL_HEADER_FIXTURE_V2';
+ let trusted = false, sent = false, passed = false, stage = 'INPUT', timer, win, observer;
+@@ -18,3 +20,3 @@
+     if (fs.existsSync(file)) throw new Error('RECEIPT_EXISTS');
+-    fs.writeFileSync(file + '.tmp', JSON.stringify({entryId, runId: path.basename(root).slice('ete-fn-external-fixture-'.length), result, stage,
++    fs.writeFileSync(file + '.tmp', JSON.stringify({entryId, runId: path.basename(root).slice('ete-fn-external-fixture-'.length), caseName, result, stage,
+         sourceSha: createHash('sha256').update(fs.readFileSync(__filename)).digest('hex'),
+@@ -31,3 +33,4 @@
+ try {
+-    if (!process.argv.includes('--fn-external-fixture') || process.platform !== 'win32' || process.versions.electron !== '44.4.2' ||
++    if (!process.argv.includes('--fn-external-fixture') || !['redirect', 'direct', 'same-body'].includes(caseName) ||
++        process.platform !== 'win32' || process.versions.electron !== '44.4.2' ||
+         typeof root !== 'string' || !path.isAbsolute(root) || !/^ete-fn-external-fixture-[a-f0-9]{32}$/.test(path.basename(root)) ||
+@@ -45,3 +48,3 @@
+         stage = 'SERVERS';
+-        let externalCount = 0, browserExternalCount = 0, mediaCount = 0, embyCookie = false, expectedAgent;
++        let externalCount = 0, browserExternalCount = 0, browserBodyEvents = 0, linkCount = 0, mediaCount = 0, embyCookie = false, expectedAgent;
+         const external = await listen((req, res) => {
+@@ -58,9 +61,18 @@
+         const emby = await listen((req, res) => {
+-            if (req.url === '/stream') {
++            embyCookie ||= req.headers.cookie === 'ete_fixture_auth=synthetic-only';
++            if (req.url === '/Items/1/PlaybackInfo') {
++                linkCount++; res.writeHead(200, {'Content-Type': 'application/json'}); res.end('{}');
++            } else if (req.url === '/stream') {
+                 mediaCount++; observed.normalMediaCount = mediaCount;
+-                embyCookie = req.headers.cookie === 'ete_fixture_auth=synthetic-only';
+-                res.writeHead(302, {Location: external + '/signed?signature=synthetic-only'}); res.end();
++                if (caseName === 'same-body') res.writeHead(200, {'Content-Type': 'video/mp4', 'Content-Length': '65536'});
++                else res.writeHead(302, {Location: external + '/signed?signature=synthetic-only', 'Content-Type': 'video/mp4', 'Content-Length': '65536'});
++                res.end(Buffer.alloc(65536, 120));
+             } else {
+-                res.writeHead(200, {'Content-Type': 'text/html', 'Content-Security-Policy': "default-src 'none'; media-src http://127.0.0.1:*"});
+-                res.end('<!doctype html><video src="/stream" preload="metadata" autoplay muted></video>');
++                const source = caseName === 'direct' ? external + '/signed?signature=synthetic-only' : '/stream';
++                res.writeHead(200, {'Content-Type': 'text/html', 'Content-Security-Policy': "default-src 'none'; script-src 'nonce-fn-fixture'; connect-src 'self'; media-src http://127.0.0.1:*"});
++                res.end('<!doctype html><script nonce="fn-fixture">window.fixtureRetryAttempts=0;document.addEventListener("error",function(e){' +
++                    'if(!(e.target instanceof HTMLVideoElement)||window.fixtureRetryAttempts>=2)return;window.fixtureRetryAttempts++;' +
++                    'fetch("/Items/1/PlaybackInfo",{method:"POST"}).catch(function(){});var v=document.createElement("video");v.muted=true;v.preload="metadata";' +
++                    'v.src=e.target.src;document.body.appendChild(v);},true);</script>' +
++                    '<video src="' + source + '" preload="metadata" autoplay muted></video><video src="' + source + '" preload="metadata" muted></video>');
+             }
+@@ -75,2 +87,7 @@
+         ses.webRequest.onSendHeaders({urls: [external + '/*']}, () => { browserExternalCount++; observed.browserExternalHeaderCount = browserExternalCount; });
++        ses.webRequest.onResponseStarted({urls: ['<all_urls>']}, details => {
++            if (details.webContentsId === win?.webContents.id && details.resourceType === 'media') {
++                browserBodyEvents++; observed.browserMediaBodyEvents = browserBodyEvents;
++            }
++        });
+         const probe = createExternalHeaderProbe({enabled: true, mode: 'fixture', approvedOrigin: external,
+@@ -84,2 +101,3 @@
+             }});
++        await observer.ready;
+         stage = 'MEDIA'; win.loadURL(emby + '/').catch(() => {});
+@@ -89,10 +107,19 @@
+         if (Number.isInteger(outcome.external?.status)) observed.status = outcome.external.status;
+-        Object.assign(observed, {externalHttpRequestCount: externalCount, browserExternalHeaderCount: browserExternalCount, normalMediaCount: mediaCount});
+         await observer.drain();
+-        requireCheck('partialHeaders', outcome.result === 'MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED' && outcome.external?.status === 206 && outcome.bodyRead === false);
+-        requireCheck('oneIndependentRequest', externalCount === 1);
++        await new Promise(resolve => setTimeout(resolve, 200));
++        observed.retryAttempts = await win.webContents.executeJavaScript('window.fixtureRetryAttempts || 0');
++        Object.assign(observed, {externalHttpRequestCount: externalCount, browserExternalHeaderCount: browserExternalCount,
++            browserMediaBodyEvents: browserBodyEvents, normalMediaCount: mediaCount, extraLinkRequestCount: linkCount});
++        requireCheck('expectedHeaderResult', caseName === 'same-body' ? outcome.result === 'MEDIA_CHECK_HEADERS_ONLY' && outcome.status === 200 &&
++            outcome.externalResult === 'SAME_ORIGIN_MEDIA_STOPPED' && outcome.bodyRead === false :
++            outcome.result === 'MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED' && outcome.external?.status === 206 && outcome.bodyRead === false);
++        requireCheck('uaProvenance', caseName === 'same-body' || outcome.uaSource === (caseName === 'direct' ? 'DIRECT_REQUEST_HEADER' : 'EMBY_MEDIA_REQUEST'));
++        requireCheck('independentRequestBudget', externalCount === (caseName === 'same-body' ? 0 : 1));
+         requireCheck('noBrowserExternalHeaders', browserExternalCount === 0);
+-        requireCheck('oneNormalMediaSource', mediaCount === 1);
+-        requireCheck('authenticationOnlyAtEmby', embyCookie && checks.noAuthentication);
+-        for (const name of ['signedSourcePreserved', 'onlyBoundedRange', 'actualAgentPreserved']) requireCheck(name, checks[name]);
++        requireCheck('noBrowserMediaBodyEvent', browserBodyEvents === 0);
++        requireCheck('normalMediaBudget', mediaCount === (caseName === 'direct' ? 0 : 1));
++        requireCheck('recoveryWasExercised', observed.retryAttempts > 0 && observed.retryAttempts <= 2);
++        requireCheck('noExtraLinkRequest', linkCount === 0);
++        requireCheck('authenticationOnlyAtEmby', embyCookie && (caseName === 'same-body' || checks.noAuthentication));
++        if (caseName !== 'same-body') for (const name of ['signedSourcePreserved', 'onlyBoundedRange', 'actualAgentPreserved']) requireCheck(name, checks[name]);
+         stage = 'DRAIN'; observer.freeze();

@@ -1,0 +1,89 @@
+diff --git a/electron-main.cjs b/electron-main.cjs
+--- a/electron-main.cjs
++++ b/electron-main.cjs
+@@ -20,6 +20,8 @@
+ } else {
+     const fixtureMode = process.argv.includes('--fixture') || process.argv.includes('--fixture-smoke');
+     const smoke = process.argv.includes('--fixture-smoke');
++    const externalCheckAvailable = process.argv.includes('--single-external-header-check');
++    if (externalCheckAvailable && fixtureMode) throw new Error('EXTERNAL_CHECK_LIVE_ONLY');
+     const persistenceRequested = process.argv.includes('--remember-login');
+     if (persistenceRequested && (fixtureMode || process.platform !== 'win32')) throw new Error('REMEMBER_LOGIN_UNAVAILABLE');
+     let profileStore, persistentControl, releaseControl;
+@@ -68,7 +70,7 @@
+     function code(error) { return /^[A-Z_]{2,60}$/.test(error?.code || '') ? error.code : 'PROTOTYPE_ACTION_FAILED'; }
+     async function action(name, payload) {
+         if (stopping) throw new Error('SHUTTING_DOWN');
+-        if (name === 'defaults') return {fixture: fixtureMode, config: defaults, rememberAvailable};
++        if (name === 'defaults') return {fixture: fixtureMode, config: defaults, rememberAvailable, externalCheckAvailable};
+         if (name === 'saved') return {profiles: rememberAvailable ? store().list(validateConfig(payload, 'live')) : []};
+         if (name === 'add') {
+             const {rememberLogin, savedProfileId, ...input} = payload || {};
+@@ -86,6 +88,10 @@
+         if (name === 'target') { controller.showTarget(payload.id); return {id: payload.id, state: 'target-opened'}; }
+         if (name === 'verify') return controller.verify(payload.id);
+         if (name === 'media-check') return controller.armMediaCheck(payload.id, {onReport: publish});
++        if (name === 'external-header-once') {
++            if (!externalCheckAvailable) throw new Error('EXTERNAL_PROBE_DISABLED');
++            return controller.armExternalHeaderCheck(payload.id, {onReport: publish});
++        }
+         if (name === 'prepare-next-check') return controller.prepareNextCheck(payload.id);
+         if (name === 'reopen-check') return controller.reopenCheck(payload.id, {onReport: publish});
+         if (name === 'remove' || name === 'forget') {
+@@ -158,6 +164,7 @@
+         if (stopping) return;
+         controller = createController({enabled: true, mode: fixtureMode ? 'fixture' : 'live',
+             io: createElectronIO(electron, {onStatus: reason => publish({state: 'notice', reason}),
++                externalHeaderOrigin: externalCheckAvailable ? 'https://cdnfhnfile.115cdn.net' : undefined,
+                 onDiagnostic: value => { if (smoke) report('diagnostic', value); }})});
+         bridge = await createBridge(controller, {enabled: true});
+         if (stopping) return;
+diff --git a/panel.js b/panel.js
+--- a/panel.js
++++ b/panel.js
+@@ -3,6 +3,7 @@
+ let fixture = false;
+ let defaults = null;
+ let rememberAvailable = false, savedSequence = 0;
++let externalCheckAvailable = false;
+ const status = document.getElementById('status');
+ const mediaChecks = new Map();
+ const checkHistory = new Map();
+@@ -45,7 +46,8 @@
+     if (value.id && mediaChecks.has(value.id)) {
+         lastCheckId = value.id;
+         const check = mediaChecks.get(value.id);
+-        if (value.state === 'closed' && !check.outcome) check.ended = 'CONNECTION_REMOVED_BEFORE_TERMINAL';
++        if (value.state === 'needs-auth' && !check.outcome && !check.ended) check.ended = 'AUTH_REQUIRED_BEFORE_TERMINAL';
++        if (value.state === 'closed' && !check.outcome && !check.ended) check.ended = 'CONNECTION_REMOVED_BEFORE_TERMINAL';
+     }
+     const operation = value.error || value.reason || value.state || '';
+     const check = mediaChecks.get(lastCheckId);
+@@ -61,6 +63,7 @@
+     state.textContent = 'authorizing';
+     section.append(title, state);
+     for (const [name, label] of [['target', '进入 Emby 网页'], ['verify', '验证连接'], ['media-check', '单次媒体响应头检查（会中止播放）'],
++        ...(externalCheckAvailable ? [['external-header-once', '仅一次外源响应头（本进程一次，取消网页媒体）']] : []),
+         ['prepare-next-check', '准备下一次检查（保留登录）'], ['reopen-check', '重新打开并检查'],
+         ...(fixture ? [['fixture-media', '合成 Range 测试']] : []), ['remove', '关闭此连接（已记住登录则保留）'], ['forget', '退出并忘记此连接登录']]) {
+         const button = document.createElement('button');
+@@ -85,6 +88,7 @@
+     fixture = value.fixture;
+     defaults = value.config;
+     rememberAvailable = value.rememberAvailable === true;
++    externalCheckAvailable = value.externalCheckAvailable === true;
+     document.getElementById('remember').disabled = !rememberAvailable;
+     if (value.config) {
+         document.getElementById('bootstrap').value = value.config.bootstrapUrl;
+diff --git a/preload.cjs b/preload.cjs
+--- a/preload.cjs
++++ b/preload.cjs
+@@ -1,7 +1,7 @@
+ 'use strict';
+ const {contextBridge, ipcRenderer} = require('electron');
+ const actions = new Set(['defaults', 'saved', 'add', 'target', 'verify', 'remove', 'forget', 'fixture-media',
+-    'media-check', 'prepare-next-check', 'reopen-check']);
++    'media-check', 'prepare-next-check', 'reopen-check', 'external-header-once']);
+ contextBridge.exposeInMainWorld('fnExperiment', Object.freeze({
+     security: Object.freeze({sandboxed: process.sandboxed === true, contextIsolated: process.contextIsolated === true}),
+     action(name, payload) {

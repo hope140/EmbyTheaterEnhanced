@@ -1,0 +1,57 @@
+diff --git a/prototypes/fn-connect/client/electron-io.cjs b/prototypes/fn-connect/client/electron-io.cjs
+index 8b25fef..58cd4d6 100644
+--- a/prototypes/fn-connect/client/electron-io.cjs
++++ b/prototypes/fn-connect/client/electron-io.cjs
+@@ -42,2 +42,20 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+         async openLogin(ses, profile, {signal, onCancel, onLifecycle = () => {}, deferNavigation = false}) {
++            let preArmReports = 0;
++            const preArmBlocked = (d, stage, reason, type) => {
++                if (preArmReports >= 32) return;
++                preArmReports++;
++                let sourceClass = 'OTHER';
++                try {
++                    const origin = new URL(d.url).origin;
++                    sourceClass = origin === profile.emby.origin ? 'EMBY' : profile.authOrigins.has(origin) ? 'APPROVED_FN' : 'OTHER';
++                } catch {}
++                const resources = new Set(['mainFrame', 'subFrame', 'stylesheet', 'script', 'image', 'font', 'object', 'xhr', 'ping', 'cspReport', 'media', 'webSocket', 'other']);
++                const mimeClass = stage !== 'HEADERS_RECEIVED' ? 'NOT_OBSERVED' : typeof type !== 'string' ? 'OTHER' :
++                    /mpegurl|dash\+xml/i.test(type) ? 'PLAYLIST' : /^video\//i.test(type) ? 'VIDEO' : /^audio\//i.test(type) ? 'AUDIO' :
++                    /^application\/octet-stream/i.test(type) ? 'BYTES' : /^(?:application\/json|text\/json)/i.test(type) ? 'JSON' :
++                    /^text\/html/i.test(type) ? 'HTML' : /javascript/i.test(type) ? 'SCRIPT' : 'OTHER';
++                try { onLifecycle(Object.freeze({event: 'PREARM_BLOCKED', stage, reason, sourceClass,
++                    resourceType: resources.has(d.resourceType) ? d.resourceType : 'other', mimeClass,
++                    status: stage === 'HEADERS_RECEIVED' && Number.isInteger(d.statusCode) && d.statusCode >= 100 && d.statusCode <= 599 ? d.statusCode : null})); } catch {}
++            };
+             if (externalHeaderOrigin && !mediaChecks.has(ses) && !frozenSessions.has(ses)) {
+@@ -46,11 +64,17 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+                 const reject = details => {
+-                    if (details.resourceType === 'media') return true;
++                    if (details.resourceType === 'media') return 'MEDIA_RESOURCE';
+                     try {
+                         const u = new URL(details.url);
+-                        return u.origin === externalHeaderOrigin || u.origin === profile.emby.origin && /\/PlaybackInfo\/?$/i.test(u.pathname) ||
+-                            details.initiatorOrigin === profile.emby.origin && !profile.authOrigins.has(u.origin);
+-                    } catch { return true; }
++                        if (u.origin === externalHeaderOrigin) return 'APPROVED_CDN';
++                        if (u.origin === profile.emby.origin && /\/PlaybackInfo\/?$/i.test(u.pathname)) return 'PLAYBACK_INFO';
++                        if (details.initiatorOrigin === profile.emby.origin && !profile.authOrigins.has(u.origin)) return 'EMBY_EXTERNAL';
++                        return null;
++                    } catch { return 'INVALID_URL'; }
+                 };
+-                ses.webRequest.onBeforeRequest({urls: ['<all_urls>']}, (d, callback) => callback({cancel: reject(d)}));
+-                ses.webRequest.onBeforeSendHeaders({urls: ['<all_urls>']}, (d, callback) => callback({cancel: reject(d)}));
++                for (const [event, stage] of [['onBeforeRequest', 'BEFORE_REQUEST'], ['onBeforeSendHeaders', 'BEFORE_SEND_HEADERS']]) {
++                    ses.webRequest[event]({urls: ['<all_urls>']}, (d, callback) => {
++                        const reason = reject(d); callback({cancel: Boolean(reason)});
++                        if (reason) preArmBlocked(d, stage, reason);
++                    });
++                }
+                 ses.webRequest.onHeadersReceived({urls: ['<all_urls>']}, (d, callback) => {
+@@ -59,3 +83,6 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+                     const type = Array.isArray(value) ? value[0] : value;
+-                    callback({cancel: reject(d) || /^(?:video\/|audio\/|application\/octet-stream)|mpegurl|dash\+xml/i.test(type || '') || [206, 416].includes(d.statusCode)});
++                    const reason = reject(d) || (/^(?:video\/|audio\/|application\/octet-stream)|mpegurl|dash\+xml/i.test(type || '') ? 'MEDIA_MIME' :
++                        [206, 416].includes(d.statusCode) ? 'PARTIAL_STATUS' : null);
++                    callback({cancel: Boolean(reason)});
++                    if (reason) preArmBlocked(d, 'HEADERS_RECEIVED', reason, type);
+                 });

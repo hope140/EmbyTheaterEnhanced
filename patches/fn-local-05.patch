@@ -1,0 +1,168 @@
+diff --git a/external-media-check.cjs b/external-media-check.cjs
+--- a/external-media-check.cjs
++++ b/external-media-check.cjs
+@@ -14,7 +14,6 @@
+     let ended = false, disposed = false, terminal = false, active, timer, sourceId, externalId, linkRequests = 0;
+-    let closeWork, held = false;
++    let closeWork, initialCloseWork, sourceAgent, held = false, initializing = true;
+     const owned = d => d.webContentsId === ownerId;
+     const report = value => { if (!disposed) { try { onReport(Object.freeze(value)); } catch {} } };
+-    const close = () => {
+-        if (closeWork) return closeWork;
++    const boundedClose = phase => {
+         let work;
+@@ -22,15 +21,19 @@
+         let deadline;
+-        closeWork = Promise.race([work, new Promise((_, reject) => {
++        const pending = Promise.race([work, new Promise((_, reject) => {
+             deadline = setTimeout(() => reject(fail('EXTERNAL_BROWSER_CLOSE_UNCONFIRMED')), closeTimeoutMs);
+-        })]).then(() => report({event: 'cleanup', scope: 'BROWSER_SESSION', result: 'MEDIA_CHECK_CONNECTIONS_CLOSED'}), () => {
+-            report({event: 'cleanup', scope: 'BROWSER_SESSION', result: 'MEDIA_CHECK_CLOSE_UNCONFIRMED'});
++        })]).then(() => report({event: 'cleanup', scope: 'BROWSER_SESSION', phase, result: 'MEDIA_CHECK_CONNECTIONS_CLOSED'}), () => {
++            report({event: 'cleanup', scope: 'BROWSER_SESSION', phase, result: 'MEDIA_CHECK_CLOSE_UNCONFIRMED'});
+             throw fail('EXTERNAL_BROWSER_CLOSE_UNCONFIRMED');
+         }).finally(() => clearTimeout(deadline));
+-        closeWork.catch(() => {});
++        pending.catch(() => {});
++        return pending;
++    };
++    const close = () => {
++        if (!closeWork) closeWork = initializing && initialCloseWork ? initialCloseWork : boundedClose('HANDOFF');
+         return closeWork;
+     };
+-    async function waitClosed() {
++    async function waitClosed(work = close()) {
+         let cancel;
+         try {
+-            await Promise.race([close(), new Promise((_, reject) => {
++            await Promise.race([work, new Promise((_, reject) => {
+                 cancel = () => reject(fail('CANCELLED'));
+@@ -44,2 +47,3 @@
+         terminal = true; ended = true; unschedule(timer); abort.abort();
++        sourceAgent = undefined;
+         close(); report({event: 'terminal', source: 'EXTERNAL_ONCE', ...value});
+@@ -59,4 +63,31 @@
+     };
+-    session.webRequest.onBeforeRequest(filter, (d, callback) => {
+-        if (ended || disposed || !owned(d) || held) return callback({cancel: true});
++    const onceReply = callback => {
++        let sent = false;
++        return value => { if (!sent) { sent = true; callback(value); } };
++    };
++    function consume(sourceUrl, userAgent, uaSource) {
++        held = true; sourceAgent = undefined;
++        const input = {sourceUrl, userAgent, signal: abort.signal};
++        active = (async () => {
++            try {
++                await waitClosed();
++                if (abort.signal.aborted) throw fail('CANCELLED');
++                const result = await probe.run(input);
++                const partial = result.status === 206 && result.contentEncoding === 'IDENTITY' && ['VIDEO', 'AUDIO', 'BYTES'].includes(result.kind) &&
++                    result.contentRange !== null && result.contentRange.start === 0 && result.contentRange.end === 0 &&
++                    (result.contentLength === null || result.contentLength === 1);
++                finish({result: result.kind === 'PLAYLIST' ? 'MEDIA_CHECK_PLAYLIST_UNSUPPORTED' : partial ? 'MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED' : 'MEDIA_CHECK_HEADERS_ONLY',
++                    external: result, partial, uaSource, browserRequestCancelled: true, bodyRead: false, nativePlayback: 'NOT_TESTED', seek: 'NOT_PROVEN'});
++            } catch (error) {
++                const allowed = new Set(['CANCELLED', 'EXTERNAL_PROBE_UA_UNCONFIRMED', 'EXTERNAL_PROBE_UA_REJECTED', 'EXTERNAL_PROBE_SOURCE_EXPIRED',
++                    'CREDENTIAL_REDIRECT_BLOCKED', 'EXTERNAL_PROBE_PROXY_UNSUPPORTED', 'EXTERNAL_PROBE_PROXY_UNVERIFIED', 'EXTERNAL_PROBE_TIMEOUT',
++                    'EXTERNAL_PROBE_NETWORK_ERROR', 'EXTERNAL_PROBE_REQUEST_FAILED', 'EXTERNAL_PROBE_CLOSE_UNCONFIRMED', 'EXTERNAL_BROWSER_CLOSE_UNCONFIRMED']);
++                finish({result: 'MEDIA_CHECK_METADATA_INVALID', externalResult: allowed.has(error?.code) ? error.code : 'EXTERNAL_CHECK_FAILED',
++                    browserRequestCancelled: true, bodyRead: false});
++            } finally { input.sourceUrl = undefined; input.userAgent = undefined; }
++        })();
++    }
++    session.webRequest.onBeforeRequest(filter, (d, respond) => {
++        const callback = onceReply(respond);
++        if (initializing || ended || disposed || !owned(d) || held) return callback({cancel: true});
+         try {
+@@ -90,4 +121,5 @@
+     });
+-    session.webRequest.onBeforeSendHeaders(filter, (d, callback) => {
+-        if (ended || disposed || !owned(d) || held) return callback({cancel: true});
++    session.webRequest.onBeforeSendHeaders(filter, (d, respond) => {
++        const callback = onceReply(respond);
++        if (initializing || ended || disposed || !owned(d) || held) return callback({cancel: true});
+         try {
+@@ -95,3 +127,6 @@
+             if (externalId === undefined && trusted(u) && (sourceId === undefined || sourceId === d.id) &&
+-                (d.resourceType !== 'media' || sourceId === d.id)) return callback({cancel: false});
++                (d.resourceType !== 'media' || sourceId === d.id)) {
++                if (d.resourceType === 'media') sourceAgent = header(d.requestHeaders, 'user-agent');
++                return callback({cancel: false});
++            }
+             // Cancel BEFORE reading UA or starting any independent request.
+@@ -99,27 +134,8 @@
+             if (d.id !== externalId || u.origin !== approved.origin || d.resourceType !== 'media' || d.method !== 'GET') return;
+-            held = true;
+-            const input = {sourceUrl: d.url, userAgent: header(d.requestHeaders, 'user-agent'), signal: abort.signal};
+-            active = (async () => {
+-                try {
+-                    // Retire browser connections/recovery before the independent GET.
+-                    await waitClosed();
+-                    if (abort.signal.aborted) throw fail('CANCELLED');
+-                    const result = await probe.run(input);
+-                    const partial = result.status === 206 && result.contentEncoding === 'IDENTITY' && ['VIDEO', 'AUDIO', 'BYTES'].includes(result.kind) &&
+-                        result.contentRange !== null && result.contentRange.start === 0 && result.contentRange.end === 0 &&
+-                        (result.contentLength === null || result.contentLength === result.contentRange.end - result.contentRange.start + 1);
+-                    finish({result: result.kind === 'PLAYLIST' ? 'MEDIA_CHECK_PLAYLIST_UNSUPPORTED' : partial ? 'MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED' : 'MEDIA_CHECK_HEADERS_ONLY',
+-                        external: result, partial, browserRequestCancelled: true, bodyRead: false, nativePlayback: 'NOT_TESTED', seek: 'NOT_PROVEN'});
+-                } catch (error) {
+-                    const allowed = new Set(['CANCELLED', 'EXTERNAL_PROBE_UA_UNCONFIRMED', 'EXTERNAL_PROBE_UA_REJECTED', 'EXTERNAL_PROBE_SOURCE_EXPIRED',
+-                        'CREDENTIAL_REDIRECT_BLOCKED', 'EXTERNAL_PROBE_PROXY_UNSUPPORTED', 'EXTERNAL_PROBE_PROXY_UNVERIFIED', 'EXTERNAL_PROBE_TIMEOUT',
+-                        'EXTERNAL_PROBE_NETWORK_ERROR', 'EXTERNAL_PROBE_REQUEST_FAILED', 'EXTERNAL_PROBE_CLOSE_UNCONFIRMED', 'EXTERNAL_BROWSER_CLOSE_UNCONFIRMED']);
+-                    finish({result: 'MEDIA_CHECK_METADATA_INVALID', externalResult: allowed.has(error?.code) ? error.code : 'EXTERNAL_CHECK_FAILED',
+-                        browserRequestCancelled: true, bodyRead: false});
+-                } finally { input.sourceUrl = undefined; input.userAgent = undefined; }
+-            })();
+-        } catch { finish({result: 'MEDIA_CHECK_METADATA_INVALID', externalResult: 'EXTERNAL_CHECK_FAILED', bodyRead: false}); }
++            consume(d.url, header(d.requestHeaders, 'user-agent'), 'DIRECT_REQUEST_HEADER');
++        } catch { callback({cancel: true}); finish({result: 'MEDIA_CHECK_METADATA_INVALID', externalResult: 'EXTERNAL_CHECK_FAILED', bodyRead: false}); }
+     });
+-    session.webRequest.onHeadersReceived(filter, (d, callback) => {
+-        if (ended || disposed || !owned(d) || held || externalId !== undefined) return callback({cancel: true});
++    session.webRequest.onHeadersReceived(filter, (d, respond) => {
++        const callback = onceReply(respond);
++        if (initializing || ended || disposed || !owned(d) || held || externalId !== undefined) return callback({cancel: true});
+         try {
+@@ -133,4 +149,15 @@
+             if (sourceId === d.id && d.resourceType === 'media') {
+-                if ([301, 302, 303, 307, 308].includes(d.statusCode)) return callback({cancel: false});
+                 callback({cancel: true});
++                if ([301, 302, 303, 307, 308].includes(d.statusCode)) {
++                    held = true;
++                    const key = Object.keys(d.responseHeaders || {}).find(key => key.toLowerCase() === 'location');
++                    const raw = key === undefined ? undefined : d.responseHeaders[key];
++                    const location = Array.isArray(raw) ? raw[0] : raw;
++                    if (typeof location !== 'string' || !location) throw fail('INVALID_LOCATION');
++                    const destination = parseUrl(new URL(location, d.url).href, mode);
++                    if (destination.origin !== approved.origin) { blocked({url: destination.href, resourceType: 'media'}, 'REDIRECT_TARGET_UNAPPROVED'); return; }
++                    rejectCredentialRedirect(destination, []);
++                    consume(destination.href, sourceAgent, 'EMBY_MEDIA_REQUEST');
++                    return;
++                }
+                 finish({result: /mpegurl|dash\+xml/i.test(kind || '') ? 'MEDIA_CHECK_PLAYLIST_UNSUPPORTED' : 'MEDIA_CHECK_HEADERS_ONLY',
+@@ -140,8 +167,20 @@
+     });
+-    const freeze = () => { ended = true; held = true; abort.abort(); unschedule(timer); close(); };
++    const freeze = () => { ended = true; held = true; sourceAgent = undefined; abort.abort(); unschedule(timer); close(); };
+     signal?.addEventListener('abort', freeze, {once: true});
+-    timer = schedule(() => finish({result: 'MEDIA_CHECK_TIMEOUT', bodyRead: false}), timeoutMs); timer?.unref?.();
++    const ready = (async () => {
++        initialCloseWork = boundedClose('INITIAL');
++        try {
++            await waitClosed(initialCloseWork);
++            if (ended || disposed || abort.signal.aborted) throw fail('CANCELLED');
++            initializing = false;
++            timer = schedule(() => finish({result: 'MEDIA_CHECK_TIMEOUT', bodyRead: false}), timeoutMs); timer?.unref?.();
++        } catch (error) {
++            finish({result: 'MEDIA_CHECK_METADATA_INVALID', externalResult: error?.code === 'CANCELLED' ? 'CANCELLED' : 'EXTERNAL_BROWSER_CLOSE_UNCONFIRMED', bodyRead: false});
++            throw error;
++        }
++    })();
++    ready.catch(() => {});
+     return {
+-        freeze,
+-        async drain() { await active; await closeWork; },
++        ready, freeze,
++        async drain() { await ready.catch(() => {}); await active; await initialCloseWork; await closeWork; },
+         prepare() { throw fail('EXTERNAL_ONESHOT_RETIRED'); },

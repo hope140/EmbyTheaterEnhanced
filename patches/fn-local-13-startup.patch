@@ -1,0 +1,73 @@
+diff --git a/prototypes/fn-connect/client/electron-main.cjs b/prototypes/fn-connect/client/electron-main.cjs
+index 420e4b6..0a211e1 100644
+--- a/prototypes/fn-connect/client/electron-main.cjs
++++ b/prototypes/fn-connect/client/electron-main.cjs
+@@ -4,4 +4,2 @@
+ // runtime manifests, installers and release workflows.
+-const electron = require('electron');
+-const {app, BrowserWindow, ipcMain} = electron;
+ const fs = require('node:fs');
+@@ -9,2 +7,48 @@ const os = require('node:os');
+ const path = require('node:path');
++const startupReceipt = (() => {
++    const at = process.argv.indexOf('--startup-receipt-root');
++    if (at < 0) return {stage() {}, failed() {}};
++    const root = process.argv[at + 1], entryId = 'ETE_FN_STARTUP_RECEIPT_V1';
++    if (typeof root !== 'string' || !path.isAbsolute(root) || !/^ete-fn-startup-[a-f0-9]{32}$/.test(path.basename(root)) ||
++        fs.lstatSync(root).isSymbolicLink() || !fs.lstatSync(root).isDirectory() ||
++        fs.readdirSync(root).length !== 1) throw new Error('STARTUP_RECEIPT_ROOT_INVALID');
++    const marker = path.join(root, '.startup-owner');
++    if (fs.lstatSync(marker).isSymbolicLink() || !fs.lstatSync(marker).isFile() ||
++        fs.readFileSync(marker, 'utf8') !== entryId + '\n') throw new Error('STARTUP_RECEIPT_ROOT_INVALID');
++    const sourceSha = require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(__dirname, 'electron-main.cjs'))).digest('hex');
++    const state = {entryId, runId: path.basename(root).slice('ete-fn-startup-'.length), sourceSha,
++        pid: Number.isInteger(process.pid) ? process.pid : null,
++        electronVersion: /^\d+\.\d+\.\d+$/.test(process.versions?.electron || '') ? process.versions.electron : 'UNKNOWN',
++        sequence: 0, stage: 'ENTRY', status: 'ENTERED', readyReached: false, exitObserved: false, exitCode: null, errorCode: null};
++    const file = path.join(root, 'startup.json');
++    const write = () => {
++        state.sequence++;
++        fs.writeFileSync(file + '.next', JSON.stringify(state) + '\n', {flag: 'wx'});
++        fs.renameSync(file + '.next', file);
++    };
++    const observe = () => { try { write(); } catch { /* A missing/stale receipt must fail the caller's validation. */ } };
++    const failed = error => {
++        const codes = new Set(['PROFILE_APPLICATION_IN_USE', 'PROFILE_STORAGE_INVALID', 'PROFILE_ROOT_INVALID',
++            'PROFILE_REGISTRY_BUSY', 'PROFILE_IN_USE', 'INVALID_PROFILE', 'PROFILE_TOO_LARGE', 'FN_PROTOTYPE_DISABLED']);
++        state.status = 'FAILED';
++        state.errorCode = codes.has(error?.code) ? error.code : error?.code === 'MODULE_NOT_FOUND' ? 'MISSING_DEPENDENCY' :
++            ['SyntaxError', 'TypeError', 'ReferenceError'].includes(error?.name) ? error.name.toUpperCase() : 'STARTUP_FAILED';
++        observe();
++    };
++    write(); // Write the first entry before loading application dependencies; not an fsync guarantee.
++    process.on('uncaughtExceptionMonitor', failed);
++    process.on('exit', code => {
++        state.exitObserved = true;
++        state.exitCode = Number.isInteger(code) && code >= -2147483648 && code <= 4294967295 ? code : null;
++        if (state.status !== 'FAILED') state.status = state.readyReached ? 'CLOSED' : 'EARLY_EXIT';
++        observe();
++    });
++    return {failed, stage(value) {
++        if (!['APP_CODE_STARTED', 'APP_READY', 'PANEL_READY'].includes(value) || state.status === 'FAILED') return;
++        state.stage = value; state.readyReached ||= value === 'PANEL_READY';
++        state.status = state.readyReached ? 'READY' : 'STARTING'; observe();
++    }};
++})();
++const electron = require('electron');
++const {app, BrowserWindow, ipcMain} = electron;
+ const {pathToFileURL} = require('node:url');
+@@ -17,2 +61,3 @@ const {config: validateConfig} = require('./policy.cjs');
+ if (!process.argv.includes('--fn-connect-prototype')) {
++    startupReceipt.failed({code: 'FN_PROTOTYPE_DISABLED'});
+     process.stderr.write('FN_PROTOTYPE_DISABLED\n');
+@@ -52,3 +97,3 @@ if (!process.argv.includes('--fn-connect-prototype')) {
+     }
+-    function stage(value) { report('stage', {stage: value}); }
++    function stage(value) { startupReceipt.stage(value); report('stage', {stage: value}); }
+     stage('APP_CODE_STARTED');
+@@ -194,3 +239,4 @@ if (!process.argv.includes('--fn-connect-prototype')) {
+         }
+-    }).catch(async () => {
++    }).catch(async error => {
++        startupReceipt.failed(error);
+         startupDone();

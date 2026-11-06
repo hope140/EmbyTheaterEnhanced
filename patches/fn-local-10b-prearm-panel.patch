@@ -1,0 +1,58 @@
+diff --git a/prototypes/fn-connect/client/controller.cjs b/prototypes/fn-connect/client/controller.cjs
+index ff25961..8482d2a 100644
+--- a/prototypes/fn-connect/client/controller.cjs
++++ b/prototypes/fn-connect/client/controller.cjs
+@@ -35,2 +35,17 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+     function observeWindow(p, value, generation) {
++        if (value?.event === 'PREARM_BLOCKED') {
++            const inSet = (key, values) => values.includes(value[key]) ? value[key] : 'OTHER';
++            const entry = Object.freeze({generation,
++                stage: inSet('stage', ['BEFORE_REQUEST', 'BEFORE_SEND_HEADERS', 'HEADERS_RECEIVED']),
++                sourceClass: inSet('sourceClass', ['APPROVED_FN', 'EMBY', 'OTHER']),
++                resourceType: inSet('resourceType', ['mainFrame', 'subFrame', 'stylesheet', 'script', 'image', 'font', 'object', 'xhr', 'ping', 'cspReport', 'media', 'webSocket', 'other']),
++                mimeClass: inSet('mimeClass', ['NOT_OBSERVED', 'JSON', 'HTML', 'SCRIPT', 'BYTES', 'AUDIO', 'VIDEO', 'PLAYLIST', 'OTHER']),
++                reason: inSet('reason', ['MEDIA_RESOURCE', 'APPROVED_CDN', 'PLAYBACK_INFO', 'EMBY_EXTERNAL', 'INVALID_URL', 'MEDIA_MIME', 'PARTIAL_STATUS']),
++                status: Number.isInteger(value.status) && value.status >= 100 && value.status <= 599 ? value.status : null});
++            const count = Math.min((p.preArmBlocks?.count || 0) + 1, 32);
++            p.preArmBlocks = Object.freeze({count, capped: count === 32, first: p.preArmBlocks?.first || entry});
++            const event = Object.freeze({id: p.id, state: p.state, preArmBlocks: p.preArmBlocks});
++            for (const listener of listeners) { try { listener(event); } catch {} }
++            return;
++        }
+         if (!lifecycleEvents.has(value?.event)) return;
+@@ -41,3 +56,4 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+         p.lifecycleTrace = [...(p.lifecycleTrace || []), Object.freeze(entry)].slice(-16);
+-        const event = Object.freeze({id: p.id, state: p.state, windowLifecycleTrace: Object.freeze([...p.lifecycleTrace])});
++        const event = Object.freeze({id: p.id, state: p.state, windowLifecycleTrace: Object.freeze([...p.lifecycleTrace]),
++            preArmBlocks: p.preArmBlocks || Object.freeze({count: 0, capped: false, first: null})});
+         for (const listener of listeners) { try { listener(event); } catch {} }
+diff --git a/prototypes/fn-connect/client/panel.js b/prototypes/fn-connect/client/panel.js
+index a88422f..eaef733 100644
+--- a/prototypes/fn-connect/client/panel.js
++++ b/prototypes/fn-connect/client/panel.js
+@@ -12,2 +12,4 @@ const windowTraces = new Map();
+ let lastWindowId;
++const preArmBlocks = new Map();
++let lastPreArmId;
+ const mediaTerminals = new Set(['MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED', 'MEDIA_CHECK_HEADERS_ONLY',
+@@ -22,2 +24,3 @@ function show(value) {
+     connectionLabel(value.id);
++    if (value.id && value.preArmBlocks) { preArmBlocks.set(value.id, value.preArmBlocks); lastPreArmId = value.id; }
+     if (value.id && Array.isArray(value.windowLifecycleTrace)) {
+@@ -59,2 +62,5 @@ function show(value) {
+     const check = mediaChecks.get(lastCheckId);
++    const preArmId = preArmBlocks.has(value.id) ? value.id : lastPreArmId;
++    const preArm = preArmBlocks.has(preArmId) ? {connection: connectionLabel(preArmId), ...preArmBlocks.get(preArmId)} : undefined;
++    const preArmView = preArm ? {preArmBlocks: preArm} : {};
+     const windowLifecycle = windowTraces.has(value.id) ? {connection: connectionLabel(value.id), trace: windowTraces.get(value.id)} :
+@@ -63,6 +69,8 @@ function show(value) {
+         JSON.stringify({operation: {connection: connectionLabel(value.id), state: operation},
++            ...preArmView,
+             ...(windowLifecycle ? {windowLifecycle} : {}),
+             mediaCheck: {connection: connectionLabel(lastCheckId), ...check, previousRounds: checkHistory.get(lastCheckId) || [],
+-                awaitingTerminal: !check.outcome && !check.ended}}) : windowLifecycle ?
+-        JSON.stringify({operation: {connection: connectionLabel(value.id), state: operation}, windowLifecycle}) : operation;
++                awaitingTerminal: !check.outcome && !check.ended}}) : windowLifecycle || preArm ?
++        JSON.stringify({operation: {connection: connectionLabel(value.id), state: operation}, ...preArmView,
++            ...(windowLifecycle ? {windowLifecycle} : {})}) : operation;
+ }

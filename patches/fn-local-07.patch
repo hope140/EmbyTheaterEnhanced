@@ -1,0 +1,7 @@
+diff --git a/panel.js b/panel.js
+--- a/panel.js
++++ b/panel.js
+@@ -49,2 +49,3 @@
+         if (value.state === 'needs-auth' && !check.outcome && !check.ended) check.ended = 'AUTH_REQUIRED_BEFORE_TERMINAL';
++        if (value.state === 'media-check-aborted' && !check.outcome && !check.ended) check.ended = 'MEDIA_WINDOW_CLOSED_BEFORE_TERMINAL';
+         if (value.state === 'closed' && !check.outcome && !check.ended) check.ended = 'CONNECTION_REMOVED_BEFORE_TERMINAL';

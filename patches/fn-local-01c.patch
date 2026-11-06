@@ -1,0 +1,44 @@
+diff --git a/external-header-probe.cjs b/external-header-probe.cjs
+--- a/external-header-probe.cjs
++++ b/external-header-probe.cjs
+@@ -2,4 +2,4 @@
+ 
+-// Prepared transport only, deliberately not exposed by the live UI. One
+-// explicitly approved source, one HTTP request, no redirect/retry/body consumer.
++// Disabled by default. An explicit main-only trial supplies one approved source:
++// one HTTP request, no redirect/retry/body consumer or browser authentication.
+ const http = require('node:http');
+@@ -34,3 +34,3 @@
+         if (['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'].some(k => environment[k])) throw fail('EXTERNAL_PROBE_PROXY_UNSUPPORTED');
+-        let request, response, timer;
++        let request, response, timer, requestClosed;
+         const stop = () => { request?.destroy(); response?.destroy(); };
+@@ -69,2 +69,3 @@
+                         headers: {Range: range, 'User-Agent': userAgent, 'Accept-Encoding': 'identity'}});
++                    requestClosed = new Promise(resolve => request.once('close', resolve));
+                     request.once('response', incoming => {
+@@ -82,2 +83,3 @@
+                         const type = (incoming.headers['content-type'] || '').split(';', 1)[0].toLowerCase();
++                        const encoding = (incoming.headers['content-encoding'] || 'identity').trim().toLowerCase();
+                         const kind = /mpegurl|dash\+xml/.test(type) ? 'PLAYLIST' : type.startsWith('video/') ? 'VIDEO' :
+@@ -91,3 +93,4 @@
+                         finish(null, {result: status >= 300 && status < 400 ? 'EXTERNAL_PROBE_REDIRECT_STOPPED' : 'EXTERNAL_PROBE_HEADERS_ONLY',
+-                            origin: approved.origin, status, kind, contentLength: integer(incoming.headers['content-length']), contentRange,
++                            origin: approved.origin, status, kind, contentEncoding: encoding === 'identity' ? 'IDENTITY' : 'OTHER',
++                            contentLength: integer(incoming.headers['content-length']), contentRange,
+                             redirectOrigin, requestCount: 1, bodyRead: false, sourceExpiry: expiresAt === undefined ? 'UNKNOWN' : 'PROVIDED',
+@@ -99,3 +102,13 @@
+             });
+-        } finally { clearTimeout(timer); stop(); }
++        } finally {
++            clearTimeout(timer); stop();
++            if (requestClosed) {
++                let closeTimer;
++                try {
++                    await Promise.race([requestClosed, new Promise((_, reject) => {
++                        closeTimer = setTimeout(() => reject(fail('EXTERNAL_PROBE_CLOSE_UNCONFIRMED')), 1000);
++                    })]);
++                } finally { clearTimeout(closeTimer); }
++            }
++        }
+     }};

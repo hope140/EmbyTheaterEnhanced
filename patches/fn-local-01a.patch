@@ -1,0 +1,59 @@
+diff --git a/controller.cjs b/controller.cjs
+--- a/controller.cjs
++++ b/controller.cjs
+@@ -32,2 +32,3 @@
+         p.authEpoch++;
++        p.externalCheckAbort?.abort();
+         emit(p, 'needs-auth', reason);
+@@ -194,2 +195,3 @@
+             p.generation++;
++            p.externalCheckAbort?.abort();
+             for (const pending of p.pending) pending.abort();
+@@ -266,2 +268,43 @@
+             return {id, state: 'media-check-armed', roundId};
++        },
++        armExternalHeaderCheck(id, {onReport = () => {}} = {}) {
++            const p = ready(id), authEpoch = p.authEpoch, roundId = p.roundId + 1;
++            if (typeof io.armExternalHeaderCheck !== 'function' || typeof io.reserveExternalHeaderCheck !== 'function') throw policy.fail('EXTERNAL_PROBE_DISABLED');
++            if (p.transition) throw policy.fail('PROFILE_OPERATION_PENDING');
++            io.reserveExternalHeaderCheck(p.session);
++            const externalAbort = new AbortController();
++            p.externalCheckAbort = externalAbort;
++            return transition(p, async check => {
++                check();
++                const oldWindow = p.window;
++                const generation = ++p.generation;
++                const current = () => {
++                    if (p.state === 'closed' || p.generation !== generation || p.authEpoch !== authEpoch || externalAbort.signal.aborted) throw policy.fail('CANCELLED');
++                };
++                emit(p, 'external-check-preparing');
++                const pending = [...p.pending]; for (const owner of pending) owner.abort();
++                await Promise.all([Promise.resolve(oldWindow?.close()), ...pending.map(owner => owner.done)]);
++                if (p.window === oldWindow) p.window = null;
++                current();
++                let terminalObserved = false;
++                const window = await io.openLogin(p.session, p.config, {signal: p.lifetime.signal, deferNavigation: true,
++                    onCancel() {
++                        if (p.generation !== generation || p.state === 'closed' || terminalObserved) return;
++                        externalAbort.abort();
++                        if (p.state !== 'ready') void controller.close(id).catch(() => {});
++                        else onReport({id, state: 'media-check-aborted', roundId, reason: 'MEDIA_WINDOW_CLOSED'});
++                    }});
++                try { current(); } catch (error) { await window.close(); throw error; }
++                p.window = window;
++                await io.armExternalHeaderCheck(p.session, p.config, {webContentsId: window.webContentsId, signal: externalAbort.signal, onReport(value) {
++                    if (p.generation === generation && p.authEpoch === authEpoch && p.state !== 'closed') {
++                        if (value.event === 'terminal') terminalObserved = true;
++                        onReport({id, state: 'media-check', roundId, mediaCheck: value});
++                    }
++                }});
++                current(); p.roundId = roundId;
++                emit(p, 'ready');
++                window.showTarget();
++                return {id, state: 'media-check-armed', roundId};
++            });
+         },
+@@ -359,2 +402,3 @@
+             emit(p, 'closed');
++            p.externalCheckAbort?.abort();
+             p.lifetime.abort();

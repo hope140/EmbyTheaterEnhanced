@@ -1,0 +1,85 @@
+diff --git a/electron-io.cjs b/electron-io.cjs
+--- a/electron-io.cjs
++++ b/electron-io.cjs
+@@ -8,4 +8,7 @@
+ 
+-function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, onDiagnostic = () => {}, environment = process.env} = {}) {
++function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, onDiagnostic = () => {}, environment = process.env,
++    externalHeaderOrigin} = {}) {
+     let requestSequence = 0;
++    let externalTrialUsed = false;
++    let reservedExternalSession, externalTrialStarted = false;
+     const mediaChecks = new WeakMap();
+@@ -16,2 +19,3 @@
+             ses.webRequest.onBeforeRequest({urls: ['<all_urls>']}, (_details, callback) => callback({cancel: true}));
++            ses.webRequest.onBeforeSendHeaders?.({urls: ['<all_urls>']}, (_details, callback) => callback({cancel: true}));
+             ses.webRequest.onHeadersReceived({urls: ['<all_urls>']}, (_details, callback) => callback({cancel: true}));
+@@ -30,3 +34,3 @@
+             if (frozenSessions.has(ses)) {
+-                ses.webRequest.onBeforeRequest(null); ses.webRequest.onHeadersReceived(null); frozenSessions.delete(ses);
++                ses.webRequest.onBeforeRequest(null); ses.webRequest.onBeforeSendHeaders?.(null); ses.webRequest.onHeadersReceived(null); frozenSessions.delete(ses);
+             }
+@@ -38,2 +42,22 @@
+         async openLogin(ses, profile, {signal, onCancel, deferNavigation = false}) {
++            if (externalHeaderOrigin && !mediaChecks.has(ses) && !frozenSessions.has(ses)) {
++                // The header-only process never offers an unrestricted media
++                // window before or after its explicit one-shot gate.
++                const reject = details => {
++                    if (details.resourceType === 'media') return true;
++                    try {
++                        const u = new URL(details.url);
++                        return u.origin === externalHeaderOrigin || u.origin === profile.emby.origin && /\/PlaybackInfo\/?$/i.test(u.pathname) ||
++                            details.initiatorOrigin === profile.emby.origin && !profile.authOrigins.has(u.origin);
++                    } catch { return true; }
++                };
++                ses.webRequest.onBeforeRequest({urls: ['<all_urls>']}, (d, callback) => callback({cancel: reject(d)}));
++                ses.webRequest.onBeforeSendHeaders({urls: ['<all_urls>']}, (d, callback) => callback({cancel: reject(d)}));
++                ses.webRequest.onHeadersReceived({urls: ['<all_urls>']}, (d, callback) => {
++                    const key = Object.keys(d.responseHeaders || {}).find(name => name.toLowerCase() === 'content-type');
++                    const value = key === undefined ? '' : d.responseHeaders[key];
++                    const type = Array.isArray(value) ? value[0] : value;
++                    callback({cancel: reject(d) || /^(?:video\/|audio\/|application\/octet-stream)|mpegurl|dash\+xml/i.test(type || '') || [206, 416].includes(d.statusCode)});
++                });
++            }
+             const win = new BrowserWindow({width: 900, height: 720, title: 'FN transport experiment — normal NAS login',
+@@ -144,2 +168,3 @@
+         armMediaCheck(ses, profile, {onReport, webContentsId}) {
++            if (externalHeaderOrigin) throw fail('EXTERNAL_CHECK_MODE_ONLY');
+             if (mediaChecks.has(ses)) throw fail('MEDIA_CHECK_ALREADY_ARMED');
+@@ -149,2 +174,24 @@
+         },
++        reserveExternalHeaderCheck(ses) {
++            if (!externalHeaderOrigin) throw fail('EXTERNAL_PROBE_DISABLED');
++            if (externalTrialUsed) throw fail('EXTERNAL_PROBE_ALREADY_USED');
++            if (mediaChecks.has(ses)) throw fail('MEDIA_CHECK_ALREADY_ARMED');
++            externalTrialUsed = true;
++            reservedExternalSession = ses;
++            freeze(ses);
++        },
++        armExternalHeaderCheck(ses, profile, {onReport, webContentsId, signal}) {
++            if (!externalHeaderOrigin) throw fail('EXTERNAL_PROBE_DISABLED');
++            if (reservedExternalSession !== ses || externalTrialStarted) throw fail('EXTERNAL_PROBE_ALREADY_USED');
++            if (mediaChecks.has(ses)) throw fail('MEDIA_CHECK_ALREADY_ARMED');
++            externalTrialStarted = true;
++            const {createExternalHeaderProbe} = require('./external-header-probe.cjs');
++            const {installExternalMediaCheck} = require('./external-media-check.cjs');
++            const probe = createExternalHeaderProbe({enabled: true, approvedOrigin: externalHeaderOrigin,
++                resolveProxy: address => ses.resolveProxy(address), environment});
++            const observer = installExternalMediaCheck(ses, profile.emby.href, {approvedOrigin: externalHeaderOrigin,
++                ownerId: webContentsId, onReport, probe, signal});
++            mediaChecks.set(ses, observer);
++            return observer.ready;
++        },
+         prepareMediaCheck(ses) {
+@@ -154,2 +201,3 @@
+         rearmMediaCheck(ses, {onReport, webContentsId}) {
++            if (externalHeaderOrigin) throw fail('EXTERNAL_ONESHOT_RETIRED');
+             if (!mediaChecks.has(ses)) throw fail('MEDIA_CHECK_NOT_ARMED');
+@@ -171,2 +219,3 @@
+             freeze(ses);
++            await mediaChecks.get(ses)?.drain?.();
+             await ses.closeAllConnections();
+@@ -182,2 +231,3 @@
+             freeze(ses);
++            await mediaChecks.get(ses)?.drain?.();
+             await ses.closeAllConnections();

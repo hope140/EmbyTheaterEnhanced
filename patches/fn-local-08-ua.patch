@@ -1,0 +1,83 @@
+diff --git a/prototypes/fn-connect/client/external-header-fixture.cjs b/prototypes/fn-connect/client/external-header-fixture.cjs
+index c3da313..2dd9b70 100644
+--- a/prototypes/fn-connect/client/external-header-fixture.cjs
++++ b/prototypes/fn-connect/client/external-header-fixture.cjs
+@@ -98,2 +98,5 @@ try {
+             onReport(value) {
++                if (value.result === 'MEDIA_CHECK_UA_METADATA') {
++                    observed.uaSource = value.uaSource; observed.uaMetadata = value.uaMetadata;
++                }
+                 if (value.event === 'diagnostic' && /^[A-Z_]{2,60}$/.test(value.blockReason || '')) observed.lastBlockReason = value.blockReason;
+diff --git a/prototypes/fn-connect/client/external-header-probe.cjs b/prototypes/fn-connect/client/external-header-probe.cjs
+index 817c37e..b48df23 100644
+--- a/prototypes/fn-connect/client/external-header-probe.cjs
++++ b/prototypes/fn-connect/client/external-header-probe.cjs
+@@ -7,2 +7,27 @@ const https = require('node:https');
+ const {fail, url: parseUrl, rejectCredentialRedirect} = require('./policy.cjs');
++// Diagnostics contain no UA value. Keep the bounded printable-ASCII contract,
++// but accept commas inside balanced HTTP comments (e.g. Chromium's comment).
++function describeUserAgent(value) {
++    const type = value === undefined ? 'UNDEFINED' : value === null ? 'NULL' :
++        typeof value === 'string' ? 'STRING' : Array.isArray(value) ? 'ARRAY' : 'OTHER';
++    let validation = 'TYPE_INVALID', byteLength = null;
++    if (type === 'STRING') {
++        byteLength = Math.min(Buffer.byteLength(value), 1025);
++        validation = !value.trim() ? 'EMPTY' : byteLength > 1024 ? 'TOO_LONG' :
++            !/^[\x20-\x7e]+$/.test(value) ? 'NON_PRINTABLE' : value.includes('\\') ? 'BACKSLASH' : 'VALID';
++        if (validation === 'VALID') {
++            let depth = 0, commentComma = false;
++            for (const char of value) {
++                if (char === '(') depth++;
++                else if (char === ')' && --depth < 0) { validation = 'COMMENT_UNBALANCED'; break; }
++                else if (char === ',') {
++                    if (!depth) { validation = 'COMMA_OUTSIDE_COMMENT'; break; }
++                    commentComma = true;
++                }
++            }
++            if (validation === 'VALID') validation = depth ? 'COMMENT_UNBALANCED' : commentComma ? 'VALID_COMMENT_COMMA' : 'VALID';
++        }
++    }
++    return Object.freeze({present: value !== undefined, type, byteLength, validation});
++}
+ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'live', resolveProxy,
+@@ -20,6 +45,4 @@ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'liv
+         if (destination.origin !== approved.origin) throw fail('EXTERNAL_PROBE_ORIGIN_REJECTED');
+-        // Same printable, bounded single-file UA contract as CD2. The caller
+-        // must obtain it from the legitimate media chain, never guess an identity.
+-        if (typeof userAgent !== 'string' || !userAgent.trim() || Buffer.byteLength(userAgent) > 1024 ||
+-            !/^[\x20-\x7e]+$/.test(userAgent) || /[,\\]/.test(userAgent)) throw fail('EXTERNAL_PROBE_UA_UNCONFIRMED');
++        // The caller supplies the actual media request UA, never a fallback.
++        if (!['VALID', 'VALID_COMMENT_COMMA'].includes(describeUserAgent(userAgent).validation)) throw fail('EXTERNAL_PROBE_UA_UNCONFIRMED');
+         if (!/^bytes=\d{1,16}-\d{0,16}$/.test(range)) throw fail('EXTERNAL_PROBE_RANGE_INVALID');
+@@ -115,2 +138,2 @@ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'liv
+ }
+-module.exports = {createExternalHeaderProbe};
++module.exports = {createExternalHeaderProbe, describeUserAgent};
+diff --git a/prototypes/fn-connect/client/external-media-check.cjs b/prototypes/fn-connect/client/external-media-check.cjs
+index f7a70cf..4b4c6aa 100644
+--- a/prototypes/fn-connect/client/external-media-check.cjs
++++ b/prototypes/fn-connect/client/external-media-check.cjs
+@@ -4,2 +4,3 @@
+ const {url: parseUrl, rejectCredentialRedirect, fail} = require('./policy.cjs');
++const {describeUserAgent} = require('./external-header-probe.cjs');
+ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live', ownerId, probe,
+@@ -61,3 +62,3 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+         const keys = Object.keys(headers || {}).filter(key => key.toLowerCase() === name);
+-        return keys.length === 1 && typeof headers[keys[0]] === 'string' ? headers[keys[0]] : undefined;
++        return keys.length === 1 ? headers[keys[0]] : undefined;
+     };
+@@ -69,2 +70,4 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+         held = true; sourceAgent = undefined;
++        const uaMetadata = describeUserAgent(userAgent);
++        report({event: 'diagnostic', result: 'MEDIA_CHECK_UA_METADATA', resourceType: 'media', uaSource, uaMetadata});
+         const input = {sourceUrl, userAgent, signal: abort.signal};
+@@ -79,3 +82,3 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+                 finish({result: result.kind === 'PLAYLIST' ? 'MEDIA_CHECK_PLAYLIST_UNSUPPORTED' : partial ? 'MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED' : 'MEDIA_CHECK_HEADERS_ONLY',
+-                    external: result, partial, uaSource, browserRequestCancelled: true, bodyRead: false, nativePlayback: 'NOT_TESTED', seek: 'NOT_PROVEN'});
++                    external: result, partial, uaSource, uaMetadata, browserRequestCancelled: true, bodyRead: false, nativePlayback: 'NOT_TESTED', seek: 'NOT_PROVEN'});
+             } catch (error) {
+@@ -85,3 +88,3 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+                 finish({result: 'MEDIA_CHECK_METADATA_INVALID', externalResult: allowed.has(error?.code) ? error.code : 'EXTERNAL_CHECK_FAILED',
+-                    browserRequestCancelled: true, bodyRead: false});
++                    uaSource, uaMetadata, browserRequestCancelled: true, bodyRead: false});
+             } finally { input.sourceUrl = undefined; input.userAgent = undefined; }

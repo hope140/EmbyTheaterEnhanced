@@ -1,0 +1,790 @@
+{
+  "schemaVersion": 1,
+  "purpose": "PUBLIC_FN_SOURCE_RECOVERY_MATERIALS",
+  "status": "MATERIALS_ONLY_NOT_ASSEMBLED_PRODUCT",
+  "historicalTargetCommit": "c7a55b4a728871367fe0163dd7f663741c64eb55",
+  "originalGitCommitObjectRecovered": false,
+  "originalTestsAndDocumentsFullyRecovered": false,
+  "format": {
+    "finalNewlineCount": 1,
+    "encoding": "UTF-8_NO_BOM",
+    "newline": "LF"
+  },
+  "relativeBase": "prototypes/fn-connect/client",
+  "baseline": {
+    "count": 12,
+    "mustNotExist": [
+      "profile-store.cjs",
+      "external-header-probe.cjs",
+      "external-media-check.cjs",
+      "external-header-fixture.cjs"
+    ],
+    "historicalRevision": "94c298b",
+    "files": [
+      {
+        "path": "bridge.cjs",
+        "sha256": "cb679c569c00af7dc86ce51652857e762428d020fcb5d7634fca115dd81a2876",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "controller.cjs",
+        "sha256": "3c4b0fe647f3083fb69281169b463cf4140f52a26efbfb29e2ceee52124f2b25",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "diagnostics.cjs",
+        "sha256": "1c9d364456d7e6af3bb42172714709d57a7b4af004c65ed112fa8c4bfbf9dae3",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "electron-io.cjs",
+        "sha256": "1356f36cbcceab8652102771cd94f2d2aefde489b0e2ce3868ada1ae57f194d3",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "electron-main.cjs",
+        "sha256": "dc12fdbd784cea2b9461ec71314a720042c1374a7b040c84e3b6a7dbeaef6c9b",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "fixture.cjs",
+        "sha256": "5258241a394d2b2fb2fab3c99b45e564152f69c967e476eb70f02ca640d96be0",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "media-check.cjs",
+        "sha256": "e4f57c827d1d2312a5ffd1303b073afbf8aace7a1654c227901f6f1ad1a8a639",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "panel.css",
+        "sha256": "2a0352201e40833990ac087b8836804439f2cfc9665802ede133b297a6fb4e69",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "panel.html",
+        "sha256": "917c588acdad258931fe2a00bf62f5630a0fa0c58e1c40ab9f62d85e66b05196",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "panel.js",
+        "sha256": "e1d8e0b25103a7270553e7a0f5dd907c81eb1798d85880e4ced6afd7d2a809c7",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "policy.cjs",
+        "sha256": "9897bb1df8922f723cde8955da185d00b4b7c5089362027ee7552c710712250e",
+        "availability": "BASELINE_SOURCE_PENDING"
+      },
+      {
+        "path": "preload.cjs",
+        "sha256": "65dddc9239442d1fd66ae233d9a5cb280f2f5cf1923820f7bfd7bf2a3848e56e",
+        "availability": "BASELINE_SOURCE_PENDING"
+      }
+    ]
+  },
+  "patches": [
+    {
+      "step": 1,
+      "patch": "patches/fn-upgrade-01.patch",
+      "sha256": "a46df26801a55642f3863f86102258e62a9ff7725d1cbbe38882a160a3cf67be",
+      "bytes": 6198,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "profile-store.cjs",
+          "inputSha256": null,
+          "mustNotExist": true,
+          "outputSha256": "89b6e872e99f4814fbaf4f3158256a4a3f9fe73a9d3229738137dd7aad0eed26"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 2,
+      "patch": "patches/fn-upgrade-02.patch",
+      "sha256": "fc297b47fbf8f21a980cb1044dde6dac0671684ea9752fa9880ad95a0e42244e",
+      "bytes": 7875,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "controller.cjs",
+          "inputSha256": "3c4b0fe647f3083fb69281169b463cf4140f52a26efbfb29e2ceee52124f2b25",
+          "mustNotExist": false,
+          "outputSha256": "51a7cdb4c6cdddd9b81b53e4dad6a6ef59dccac5124d9ea3f6e11c51eb44ddad"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 3,
+      "patch": "patches/fn-upgrade-03.patch",
+      "sha256": "fc4326a80e63704ba4a4b5367d9352110bf3563844cc32c4d488c8a468059650",
+      "bytes": 7034,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "electron-io.cjs",
+          "inputSha256": "1356f36cbcceab8652102771cd94f2d2aefde489b0e2ce3868ada1ae57f194d3",
+          "mustNotExist": false,
+          "outputSha256": "8c1d8de51004914cd0670042b0cc27f7b605a0e6cb36e38fc6d7729dda635c4d"
+        },
+        {
+          "path": "diagnostics.cjs",
+          "inputSha256": "1c9d364456d7e6af3bb42172714709d57a7b4af004c65ed112fa8c4bfbf9dae3",
+          "mustNotExist": false,
+          "outputSha256": "b951b08f8d8c192232ceff910f76b1888309a81975b64c4bca5283fff53d42f0"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 4,
+      "patch": "patches/fn-upgrade-04.patch",
+      "sha256": "c2e67cb2b46e0898724939eecb6c047619629e0ec70b828ac8f37695c3d55f8e",
+      "bytes": 6013,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "media-check.cjs",
+          "inputSha256": "e4f57c827d1d2312a5ffd1303b073afbf8aace7a1654c227901f6f1ad1a8a639",
+          "mustNotExist": false,
+          "outputSha256": "7c536edaef69c3e7a5d2bbc00a67b297203450708253c20b3b35cd6395b0fc01"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 5,
+      "patch": "patches/fn-upgrade-05.patch",
+      "sha256": "50b3847728b9acc19e762f9326b0ac843362bd0b6e100b3d597488d39def3af7",
+      "bytes": 9954,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "panel.html",
+          "inputSha256": "917c588acdad258931fe2a00bf62f5630a0fa0c58e1c40ab9f62d85e66b05196",
+          "mustNotExist": false,
+          "outputSha256": "b3cd2e6e7c9c5f594c94296d26039f8fd6b98a94c0bfda8deb68a86ec383a897"
+        },
+        {
+          "path": "panel.js",
+          "inputSha256": "e1d8e0b25103a7270553e7a0f5dd907c81eb1798d85880e4ced6afd7d2a809c7",
+          "mustNotExist": false,
+          "outputSha256": "551e6b2019e996201a41945a62706de0b35f19ce3db46771d153c447903441d4"
+        },
+        {
+          "path": "preload.cjs",
+          "inputSha256": "65dddc9239442d1fd66ae233d9a5cb280f2f5cf1923820f7bfd7bf2a3848e56e",
+          "mustNotExist": false,
+          "outputSha256": "4d6f094f0120726d4c020bed17999163b1bb0b04c2f8f4d76f809277694647b7"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 6,
+      "patch": "patches/fn-upgrade-06.patch",
+      "sha256": "220aeb01f0fe4b8dbb2303c961b307652e952f6849ee7e5f22b75883d027eccb",
+      "bytes": 7014,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "electron-main.cjs",
+          "inputSha256": "dc12fdbd784cea2b9461ec71314a720042c1374a7b040c84e3b6a7dbeaef6c9b",
+          "mustNotExist": false,
+          "outputSha256": "326d1309a27f4ae151a42f39175045dfa5b6ea876d5f9e9f68e93e41ab904e01"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 7,
+      "patch": "patches/fn-upgrade-07.patch",
+      "sha256": "d810fa205717123dc338568efef3aea0493be412ed0d47ae8b481dbbdfb878cf",
+      "bytes": 8113,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "external-header-probe.cjs",
+          "inputSha256": null,
+          "mustNotExist": true,
+          "outputSha256": "cd3a48778768fb90c9663944b1cc9416f95b91621283d904837dbcba7ea48e91"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": false,
+      "applied": false
+    },
+    {
+      "step": 8,
+      "patch": "patches/fn-external-wire-02.patch",
+      "sha256": "d0531f3fc0d4c01c2ccb5373b60a64141fd5e751a5f504e2aed0b13183e58693",
+      "bytes": 5521,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "electron-main.cjs",
+          "inputSha256": "326d1309a27f4ae151a42f39175045dfa5b6ea876d5f9e9f68e93e41ab904e01",
+          "mustNotExist": false,
+          "outputSha256": "04ffd9b252cc890ab4e2c4154242314d62db3be3ea94fc09aba5cf54fded0edd"
+        },
+        {
+          "path": "panel.js",
+          "inputSha256": "551e6b2019e996201a41945a62706de0b35f19ce3db46771d153c447903441d4",
+          "mustNotExist": false,
+          "outputSha256": "be54360ea63271a995c55811fa0517eca1cad7052fbc70b2cfd575314e7100b1"
+        },
+        {
+          "path": "preload.cjs",
+          "inputSha256": "4d6f094f0120726d4c020bed17999163b1bb0b04c2f8f4d76f809277694647b7",
+          "mustNotExist": false,
+          "outputSha256": "b085569b7146d665fb3774a2ca2619cb292d6271416db35569c82a01a96145ad"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 9,
+      "patch": "patches/fn-external-wire-03.patch",
+      "sha256": "cdbe457ed88fa10d05158f2421586c9a387998918ed2ad46639cf96650367365",
+      "bytes": 11114,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "external-media-check.cjs",
+          "inputSha256": null,
+          "mustNotExist": true,
+          "outputSha256": "696aa71c5d324b35b1c6274a4ce54ce6b1926a74eb12104393250ffe897bbbfe"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 10,
+      "patch": "patches/fn-external-wire-04.patch",
+      "sha256": "fff5258bf8a3618f81bb2f395e8747614eae0980e6223bbe3ca014cabcf8ea95",
+      "bytes": 8170,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "external-header-fixture.cjs",
+          "inputSha256": null,
+          "mustNotExist": true,
+          "outputSha256": "84bac24eb85126c03c2c55ed779c4785c409183ac34675d5b50d155132d6809b"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 11,
+      "patch": "patches/fn-local-01a.patch",
+      "sha256": "71e4a76738af15dbe2da43ae67294c2be378613950449188b15c3cd3112c7954",
+      "bytes": 3328,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "controller.cjs",
+          "inputSha256": "51a7cdb4c6cdddd9b81b53e4dad6a6ef59dccac5124d9ea3f6e11c51eb44ddad",
+          "mustNotExist": false,
+          "outputSha256": "6c71ed8c2b0ebe4e85f990166873871896bb4872b25dfcb497c05f4c64ef32bf"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 12,
+      "patch": "patches/fn-local-01b.patch",
+      "sha256": "28dab18c55130429d1f3a9e9187a914b9f112b2ec0aea53e148f216291c97fe5",
+      "bytes": 5459,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "electron-io.cjs",
+          "inputSha256": "8c1d8de51004914cd0670042b0cc27f7b605a0e6cb36e38fc6d7729dda635c4d",
+          "mustNotExist": false,
+          "outputSha256": "3518854b882f93dce698a3a8f669ab0bfe4b6b0faf14dfe3a9e5a6709fe2abba"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 13,
+      "patch": "patches/fn-local-01c.patch",
+      "sha256": "a4c991acfbfb3d01ae3b6605aad4c15c280494fcdad4ea6e2d2ecaf574d50a22",
+      "bytes": 2754,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "external-header-probe.cjs",
+          "inputSha256": "cd3a48778768fb90c9663944b1cc9416f95b91621283d904837dbcba7ea48e91",
+          "mustNotExist": false,
+          "outputSha256": "3232cad4d5da8240ecf89a21bedece1321c71fb3fefe029bad7140036cbd4049"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 14,
+      "patch": "patches/fn-local-05.patch",
+      "sha256": "f5dee37dad1d8517bdda9adac91f3e2eb4f6d4beb7c6140e5e41c95fe344ac98",
+      "bytes": 11535,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "external-media-check.cjs",
+          "inputSha256": "696aa71c5d324b35b1c6274a4ce54ce6b1926a74eb12104393250ffe897bbbfe",
+          "mustNotExist": false,
+          "outputSha256": "14621918fadee3c5fdd0539a68d55d4f6061f85776a27eb2b2aa0acd49a53437"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 15,
+      "patch": "patches/fn-local-06.patch",
+      "sha256": "7254021c3738629099f6e9ef0a539530da24b84ccc70ab8f2cd52005bad5694a",
+      "bytes": 7559,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "external-header-fixture.cjs",
+          "inputSha256": "84bac24eb85126c03c2c55ed779c4785c409183ac34675d5b50d155132d6809b",
+          "mustNotExist": false,
+          "outputSha256": "b230cf6ccef4783e4951c173aaffac5b9557b7016df240457e031ab5701a340f"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 16,
+      "patch": "patches/fn-local-07.patch",
+      "sha256": "435342ddca79fd3ec5569907e0ad3b1b8f846efcf6d28b5d958ecd2990a5d1ed",
+      "bytes": 469,
+      "strip": 1,
+      "targets": [
+        {
+          "path": "panel.js",
+          "inputSha256": "be54360ea63271a995c55811fa0517eca1cad7052fbc70b2cfd575314e7100b1",
+          "mustNotExist": false,
+          "outputSha256": "1230a1f6e9960514c68ded840481555cfa8bbe7f48f8128c28edea3171ee390d"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 17,
+      "patch": "patches/fn-local-08-ua.patch",
+      "sha256": "c0bc286b32a54e630c72f26bc80083b274f619585446749afb2b7034764cc5de",
+      "bytes": 6166,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "external-header-probe.cjs",
+          "inputSha256": "3232cad4d5da8240ecf89a21bedece1321c71fb3fefe029bad7140036cbd4049",
+          "mustNotExist": false,
+          "outputSha256": "0284870dfc689d664a798af7d59ca4694e639454362758f5a9c651097bceb743"
+        },
+        {
+          "path": "external-media-check.cjs",
+          "inputSha256": "14621918fadee3c5fdd0539a68d55d4f6061f85776a27eb2b2aa0acd49a53437",
+          "mustNotExist": false,
+          "outputSha256": "557399831cdaeed01e17ea4403316ac5fda340befeda456f1653cf657b16fa4a"
+        },
+        {
+          "path": "external-header-fixture.cjs",
+          "inputSha256": "b230cf6ccef4783e4951c173aaffac5b9557b7016df240457e031ab5701a340f",
+          "mustNotExist": false,
+          "outputSha256": "328d2939b1a6abf7950380164286ce77f57cc36b23ff7e54aeb73f2cfd931c42"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 18,
+      "patch": "patches/fn-local-09a-window-io.patch",
+      "sha256": "048e08673c6af153791bfbabaf6014546e6b955c23f708a953842b534e77ccf1",
+      "bytes": 4413,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "electron-io.cjs",
+          "inputSha256": "3518854b882f93dce698a3a8f669ab0bfe4b6b0faf14dfe3a9e5a6709fe2abba",
+          "mustNotExist": false,
+          "outputSha256": "deb870d9cd22a322f1095fd7170b50084b5df258e83f2e53a2709f1c5a57136b"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 19,
+      "patch": "patches/fn-local-09b-window-panel.patch",
+      "sha256": "941b3085299f49502f937c293185f351a7e606f81b53e3bb39e1873a2e9b53a4",
+      "bytes": 6325,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "controller.cjs",
+          "inputSha256": "6c71ed8c2b0ebe4e85f990166873871896bb4872b25dfcb497c05f4c64ef32bf",
+          "mustNotExist": false,
+          "outputSha256": "563809355a2675d26f769481429cc6baa9cc8aff5aca5ec187ac34c45d3101f7"
+        },
+        {
+          "path": "panel.js",
+          "inputSha256": "1230a1f6e9960514c68ded840481555cfa8bbe7f48f8128c28edea3171ee390d",
+          "mustNotExist": false,
+          "outputSha256": "b98a36e3699021a1773f1cc315506fe4ee61192ae2e1972ca6da797a92c64f9b"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 20,
+      "patch": "patches/fn-local-10a-prearm-io.patch",
+      "sha256": "ba7e11f42ee8ebaaf8bd37225cb1e3f6b2066e64293802673830df18aee28b80",
+      "bytes": 4773,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "electron-io.cjs",
+          "inputSha256": "deb870d9cd22a322f1095fd7170b50084b5df258e83f2e53a2709f1c5a57136b",
+          "mustNotExist": false,
+          "outputSha256": "b41d5f793caf32b62c69164df7a8ffdd5da7ab0a30bd691687a36abbd1ba23bd"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 21,
+      "patch": "patches/fn-local-10b-prearm-panel.patch",
+      "sha256": "91c143a93c4df464641e2422dbfa0b72506b88f19a609d7f13ef5cacfaa0a06f",
+      "bytes": 4519,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "controller.cjs",
+          "inputSha256": "563809355a2675d26f769481429cc6baa9cc8aff5aca5ec187ac34c45d3101f7",
+          "mustNotExist": false,
+          "outputSha256": "55e77d19665515655e8206005b2770e3cfc84919251ffcbdd3d08a7d2d50ca7c"
+        },
+        {
+          "path": "panel.js",
+          "inputSha256": "b98a36e3699021a1773f1cc315506fe4ee61192ae2e1972ca6da797a92c64f9b",
+          "mustNotExist": false,
+          "outputSha256": "619bb9ba2d770dc93c3f66520467ba0ed1f4abcde27a300d282c8456caceb7e4"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 22,
+      "patch": "patches/fn-local-11-auth-bytes.patch",
+      "sha256": "be78be648b466aa983e48a166f856ceeb7702f3115ac8f19f6c9473271e39a30",
+      "bytes": 1604,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "electron-io.cjs",
+          "inputSha256": "b41d5f793caf32b62c69164df7a8ffdd5da7ab0a30bd691687a36abbd1ba23bd",
+          "mustNotExist": false,
+          "outputSha256": "520fc94de0fa017cd26e745686f78a95f99b89fcef8e2c269ec72c6852b1c3b4"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 23,
+      "patch": "patches/fn-local-12a-probe-budget.patch",
+      "sha256": "6a3306de83dcfbdd133653c4a09443432e9a1cdc0ef27f8c3e6ca91716d889ac",
+      "bytes": 5078,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "external-header-probe.cjs",
+          "inputSha256": "0284870dfc689d664a798af7d59ca4694e639454362758f5a9c651097bceb743",
+          "mustNotExist": false,
+          "outputSha256": "b0a2f532f95e25fe90e50c9e82b25fe28c8cbd62f298717ecb8160b5432c258c"
+        },
+        {
+          "path": "external-media-check.cjs",
+          "inputSha256": "557399831cdaeed01e17ea4403316ac5fda340befeda456f1653cf657b16fa4a",
+          "mustNotExist": false,
+          "outputSha256": "076e68245b05c89de7256272df73e57e7137eef8aec1ec1ab8159a3f55085b3f"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 24,
+      "patch": "patches/fn-local-12b-budget-stop.patch",
+      "sha256": "4685db8c6058565f5153c901a2b72ffdb486d99d7b752f075b10a9ecbbd9c8df",
+      "bytes": 4118,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "controller.cjs",
+          "inputSha256": "55e77d19665515655e8206005b2770e3cfc84919251ffcbdd3d08a7d2d50ca7c",
+          "mustNotExist": false,
+          "outputSha256": "f1a69428bb608ecb893e89aafa37306979e4a5590772d2d5caa2c800282cca8a"
+        },
+        {
+          "path": "electron-io.cjs",
+          "inputSha256": "520fc94de0fa017cd26e745686f78a95f99b89fcef8e2c269ec72c6852b1c3b4",
+          "mustNotExist": false,
+          "outputSha256": "8729694872d36c5230a5c18380b1e1399faafce5c1579cb2adad79e37f8f80b6"
+        },
+        {
+          "path": "panel.js",
+          "inputSha256": "619bb9ba2d770dc93c3f66520467ba0ed1f4abcde27a300d282c8456caceb7e4",
+          "mustNotExist": false,
+          "outputSha256": "acaeaee32d323b575846f86a0eebcd8942def7325bcf4709911879e29c553552"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 25,
+      "patch": "patches/fn-local-13-startup.patch",
+      "sha256": "4e1117fa64b5ec90da7cfab4c94ffd3570e3cf29af1a248bdf86d7992975c790",
+      "bytes": 4478,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "electron-main.cjs",
+          "inputSha256": "04ffd9b252cc890ab4e2c4154242314d62db3be3ea94fc09aba5cf54fded0edd",
+          "mustNotExist": false,
+          "outputSha256": "41aa59c52ec09933d91c086258a3874fee9a245c7ddf132f157347fe2cfa6b94"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    },
+    {
+      "step": 26,
+      "patch": "patches/fn-local-14-startup-location.patch",
+      "sha256": "66630f41c3f0c4c72d509643757fa9536f95921375e865c814fc53ac4d39f0db",
+      "bytes": 3555,
+      "strip": 4,
+      "targets": [
+        {
+          "path": "startup-check.ps1",
+          "inputSha256": "c70c5c263770009694f5af9cb82ae9181ae5ccd958680a5a8185a06959d9348e",
+          "mustNotExist": false,
+          "outputSha256": "d2962914598823538375371f69fbc3134d8e8dfdf7fd561732d78854800b04a9"
+        }
+      ],
+      "unmodifiedFilesMustRetainSha256": true,
+      "includedInSnapshot": true,
+      "applied": false
+    }
+  ],
+  "extraPreconditionBeforeStep26": {
+    "material": "scripts/startup-check.pre14.ps1",
+    "patch26Applied": false,
+    "inputSha256": "c70c5c263770009694f5af9cb82ae9181ae5ccd958680a5a8185a06959d9348e",
+    "path": "startup-check.ps1",
+    "renameTo": "startup-check.ps1"
+  },
+  "additionalFullFiles": [
+    {
+      "path": "startup-isolation.cjs",
+      "material": "scripts/startup-isolation.cjs",
+      "bytes": 6160,
+      "sha256": "3e432f3281410ef3bd722f1f07461b9585cf50426052bfd82fb9cee10443ddd6",
+      "verification": "EXACT_SIZE_AND_SHA_MATCH"
+    },
+    {
+      "path": "run-startup-isolation.ps1",
+      "material": "scripts/run-startup-isolation.ps1",
+      "bytes": 7888,
+      "sha256": "8a85c01e038e5e1845fc625f8f7171908ab6be340bb9fb10da7068e0140a4cb7",
+      "verification": "EXACT_SIZE_AND_SHA_MATCH"
+    },
+    {
+      "path": "read-runtime-evidence.ps1",
+      "material": "scripts/read-runtime-evidence.ps1",
+      "bytes": 9615,
+      "sha256": "895134a2c69abff9ffca161c71bfe47073b639e98c54bda520c112bee72a5b40",
+      "verification": "EXACT_SIZE_AND_SHA_MATCH"
+    }
+  ],
+  "finalScope": {
+    "count": 20,
+    "files": [
+      {
+        "path": "bridge.cjs",
+        "sha256": "cb679c569c00af7dc86ce51652857e762428d020fcb5d7634fca115dd81a2876",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "controller.cjs",
+        "sha256": "f1a69428bb608ecb893e89aafa37306979e4a5590772d2d5caa2c800282cca8a",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "diagnostics.cjs",
+        "sha256": "b951b08f8d8c192232ceff910f76b1888309a81975b64c4bca5283fff53d42f0",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "electron-io.cjs",
+        "sha256": "8729694872d36c5230a5c18380b1e1399faafce5c1579cb2adad79e37f8f80b6",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "electron-main.cjs",
+        "sha256": "41aa59c52ec09933d91c086258a3874fee9a245c7ddf132f157347fe2cfa6b94",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "external-header-fixture.cjs",
+        "sha256": "328d2939b1a6abf7950380164286ce77f57cc36b23ff7e54aeb73f2cfd931c42",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "external-header-probe.cjs",
+        "sha256": "b0a2f532f95e25fe90e50c9e82b25fe28c8cbd62f298717ecb8160b5432c258c",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "external-media-check.cjs",
+        "sha256": "076e68245b05c89de7256272df73e57e7137eef8aec1ec1ab8159a3f55085b3f",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "fixture.cjs",
+        "sha256": "5258241a394d2b2fb2fab3c99b45e564152f69c967e476eb70f02ca640d96be0",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "media-check.cjs",
+        "sha256": "7c536edaef69c3e7a5d2bbc00a67b297203450708253c20b3b35cd6395b0fc01",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "panel.css",
+        "sha256": "2a0352201e40833990ac087b8836804439f2cfc9665802ede133b297a6fb4e69",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "panel.html",
+        "sha256": "b3cd2e6e7c9c5f594c94296d26039f8fd6b98a94c0bfda8deb68a86ec383a897",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "panel.js",
+        "sha256": "acaeaee32d323b575846f86a0eebcd8942def7325bcf4709911879e29c553552",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "policy.cjs",
+        "sha256": "9897bb1df8922f723cde8955da185d00b4b7c5089362027ee7552c710712250e",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "preload.cjs",
+        "sha256": "b085569b7146d665fb3774a2ca2619cb292d6271416db35569c82a01a96145ad",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "profile-store.cjs",
+        "sha256": "89b6e872e99f4814fbaf4f3158256a4a3f9fe73a9d3229738137dd7aad0eed26",
+        "availability": "BASELINE_AND_PATCH_ASSEMBLY_PENDING"
+      },
+      {
+        "path": "read-runtime-evidence.ps1",
+        "sha256": "895134a2c69abff9ffca161c71bfe47073b639e98c54bda520c112bee72a5b40",
+        "availability": "EXACT_FULL_TEXT_RECOVERED"
+      },
+      {
+        "path": "run-startup-isolation.ps1",
+        "sha256": "8a85c01e038e5e1845fc625f8f7171908ab6be340bb9fb10da7068e0140a4cb7",
+        "availability": "EXACT_FULL_TEXT_RECOVERED"
+      },
+      {
+        "path": "startup-check.ps1",
+        "sha256": "d2962914598823538375371f69fbc3134d8e8dfdf7fd561732d78854800b04a9",
+        "availability": "OLD_FULL_FILE_RETAINED_PATCH26_PENDING"
+      },
+      {
+        "path": "startup-isolation.cjs",
+        "sha256": "3e432f3281410ef3bd722f1f07461b9585cf50426052bfd82fb9cee10443ddd6",
+        "availability": "EXACT_FULL_TEXT_RECOVERED"
+      }
+    ]
+  },
+  "missing": [
+    "TWELVE_EXACT_94C298B_BASELINE_SOURCE_FILES",
+    "ORIGINAL_GIT_COMMIT_OBJECT_AND_METADATA",
+    "NON_HANDED_OVER_TEST_SOURCES",
+    "LOST_DOCUMENTS"
+  ],
+  "rules": [
+    "VERIFY_BASELINE_ALL12_BEFORE_PATCHING",
+    "VERIFY_EACH_PATCH_SHA_AND_INPUT_OUTPUT_SHA",
+    "DO_NOT_USE_OBSOLETE_FN_EXTERNAL_WIRE_01",
+    "NO_FUZZ_OR_APPROXIMATE_BASELINE",
+    "KEEP_CORE_AUTOCRLF_FALSE_AND_CORE_EOL_LF_WHEN_LATER_APPLYING",
+    "NEW_PERSISTENT_RECOVERY_TARGET_ONLY",
+    "NO_INTERMEDIATE_VERSION_EXECUTION",
+    "DO_NOT_TOUCH_AUTHENTICATION_STORAGE",
+    "STOP_ON_MISMATCH_OR_PERMISSION_DENIAL"
+  ],
+  "snapshot": {
+    "runtimeOrLoginOrConfigurationOrReceiptsIncluded": false,
+    "recoveryScope": "SCATTERED_SOURCE_MATERIALS_ONLY_NOT_ORIGINAL_COMMIT_OR_RELEASE",
+    "totalTrackedFileCount": 24,
+    "originalManifestPreserved": true,
+    "firstIncludedPatchStep": 8,
+    "sourceFileCount": 23,
+    "metadataPolicy": "PUBLIC_SAFE_DERIVATIVE_RELATIVE_SOURCE_PATHS_ONLY",
+    "lastIncludedPatchStep": 26
+  }
+}

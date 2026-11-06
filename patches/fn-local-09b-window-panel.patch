@@ -1,0 +1,78 @@
+diff --git a/prototypes/fn-connect/client/controller.cjs b/prototypes/fn-connect/client/controller.cjs
+index 38be0bd..ff25961 100644
+--- a/prototypes/fn-connect/client/controller.cjs
++++ b/prototypes/fn-connect/client/controller.cjs
+@@ -24,2 +24,22 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+     const profiles = new Map(), listeners = new Set();
++    const lifecycleEvents = new Set(['WINDOW_CREATED', 'BOOTSTRAP_LOAD_STARTED', 'BOOTSTRAP_LOAD_FAILED', 'TARGET_LOAD_STARTED',
++        'TARGET_LOAD_FAILED', 'NATIVE_CLOSE_REQUEST', 'CONTENT_CLOSE_REQUEST', 'MAIN_HANDLE_CLOSE', 'LIFETIME_ABORT',
++        'RENDER_PROCESS_GONE', 'WINDOW_CLOSED', 'VERIFY_STARTED', 'VERIFY_READY', 'VERIFY_FAILED']);
++    const lifecycleCodes = new Set(['OTHER', 'ERR_ABORTED', 'ERR_FAILED', 'ERR_CONNECTION_REFUSED', 'ERR_CONNECTION_RESET',
++        'ERR_CONNECTION_CLOSED', 'ERR_CONNECTION_TIMED_OUT', 'ERR_TIMED_OUT', 'ERR_NAME_NOT_RESOLVED', 'ERR_PROXY_CONNECTION_FAILED',
++        'ERR_TUNNEL_CONNECTION_FAILED', 'ERR_INVALID_ARGUMENT', 'ERR_INVALID_ARG_TYPE', 'ERR_INVALID_ARG_VALUE',
++        'ERR_CERT_AUTHORITY_INVALID', 'ERR_CERT_COMMON_NAME_INVALID', 'ERR_CERT_DATE_INVALID', 'ERR_SSL_PROTOCOL_ERROR',
++        'CLEAN_EXIT', 'ABNORMAL_EXIT', 'KILLED', 'CRASHED', 'OOM', 'LAUNCH_FAILED', 'INTEGRITY_FAILURE',
++        'CANCELLED', 'NETWORK_ERROR', 'NETWORK_TIMEOUT', 'RATE_LIMITED', 'ACCESS_DENIED_UNCLASSIFIED', 'HTTP_ERROR',
++        'AUTH_UNVERIFIED', 'INFO_TOO_LARGE', 'INVALID_EMBY_INFO', 'SERVER_ID_MISMATCH', 'FN_AUTH_REQUIRED', 'ACCESS_CODE_REQUIRED']);
++    function observeWindow(p, value, generation) {
++        if (!lifecycleEvents.has(value?.event)) return;
++        const entry = {sequence: (p.lifecycleSequence || 0) + 1, generation, event: value.event};
++        p.lifecycleSequence = entry.sequence;
++        if (value.code !== undefined) entry.code = lifecycleCodes.has(value.code) ? value.code : 'OTHER';
++        if (['MAIN_HANDLE', 'LIFETIME_ABORT', 'NATIVE_REQUEST', 'CONTENT_REQUEST', 'UNATTRIBUTED'].includes(value.cause)) entry.cause = value.cause;
++        p.lifecycleTrace = [...(p.lifecycleTrace || []), Object.freeze(entry)].slice(-16);
++        const event = Object.freeze({id: p.id, state: p.state, windowLifecycleTrace: Object.freeze([...p.lifecycleTrace])});
++        for (const listener of listeners) { try { listener(event); } catch {} }
++    }
+     function emit(p, state, reason) {
+@@ -201,2 +221,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+             const window = await io.openLogin(p.session, p.config, {signal: p.lifetime.signal,
++                onLifecycle: value => observeWindow(p, value, generation),
+                 onCancel() { if (p.generation === generation && !['ready', 'closed'].includes(p.state)) void controller.close(id).catch(() => {}); }});
+@@ -210,2 +231,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+             const generation = p.generation, authEpoch = p.authEpoch, sequence = ++p.verifySequence;
++            observeWindow(p, {event: 'VERIFY_STARTED'}, generation);
+             const cancel = new AbortController();
+@@ -237,2 +259,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+                 if (p.config.expectedServerId && info.Id !== p.config.expectedServerId) throw policy.fail('SERVER_ID_MISMATCH');
++                observeWindow(p, {event: 'VERIFY_READY'}, generation);
+                 emit(p, 'ready');
+@@ -240,2 +263,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+             } catch (error) {
++                observeWindow(p, {event: 'VERIFY_FAILED', code: timedOut ? 'NETWORK_TIMEOUT' : error?.code}, generation);
+                 if (timedOut) throw policy.fail('NETWORK_TIMEOUT');
+@@ -290,2 +314,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+                 const window = await io.openLogin(p.session, p.config, {signal: p.lifetime.signal, deferNavigation: true,
++                    onLifecycle: value => observeWindow(p, value, generation),
+                     onCancel() {
+@@ -338,2 +363,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+                 const window = await io.openLogin(p.session, p.config, {signal: p.lifetime.signal,
++                    onLifecycle: value => observeWindow(p, value, generation),
+                     deferNavigation: true, onCancel() {
+diff --git a/prototypes/fn-connect/client/panel.js b/prototypes/fn-connect/client/panel.js
+index fa6629c..a88422f 100644
+--- a/prototypes/fn-connect/client/panel.js
++++ b/prototypes/fn-connect/client/panel.js
+@@ -10,2 +10,4 @@ const checkHistory = new Map();
+ const connectionLabels = new Map();
++const windowTraces = new Map();
++let lastWindowId;
+ const mediaTerminals = new Set(['MEDIA_CHECK_PARTIAL_HEADERS_OBSERVED', 'MEDIA_CHECK_HEADERS_ONLY',
+@@ -20,2 +22,5 @@ function show(value) {
+     connectionLabel(value.id);
++    if (value.id && Array.isArray(value.windowLifecycleTrace)) {
++        windowTraces.set(value.id, value.windowLifecycleTrace.slice(-16)); lastWindowId = value.id;
++    }
+     if (value.id && (value.mediaCheck || value.state === 'media-check-armed')) {
+@@ -54,6 +59,10 @@ function show(value) {
+     const check = mediaChecks.get(lastCheckId);
++    const windowLifecycle = windowTraces.has(value.id) ? {connection: connectionLabel(value.id), trace: windowTraces.get(value.id)} :
++        windowTraces.has(lastWindowId) ? {connection: connectionLabel(lastWindowId), trace: windowTraces.get(lastWindowId)} : undefined;
+     status.textContent = mediaChecks.has(lastCheckId) ?
+         JSON.stringify({operation: {connection: connectionLabel(value.id), state: operation},
++            ...(windowLifecycle ? {windowLifecycle} : {}),
+             mediaCheck: {connection: connectionLabel(lastCheckId), ...check, previousRounds: checkHistory.get(lastCheckId) || [],
+-                awaitingTerminal: !check.outcome && !check.ended}}) : operation;
++                awaitingTerminal: !check.outcome && !check.ended}}) : windowLifecycle ?
++        JSON.stringify({operation: {connection: connectionLabel(value.id), state: operation}, windowLifecycle}) : operation;
+ }

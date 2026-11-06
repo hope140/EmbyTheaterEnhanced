@@ -1,0 +1,69 @@
+diff --git a/prototypes/fn-connect/client/controller.cjs b/prototypes/fn-connect/client/controller.cjs
+index 8482d2a..1b93b21 100644
+--- a/prototypes/fn-connect/client/controller.cjs
++++ b/prototypes/fn-connect/client/controller.cjs
+@@ -68,3 +68,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+         p.authEpoch++;
+-        p.externalCheckAbort?.abort();
++        stopExternalCheck(p, 'AUTH_CHANGE');
+         emit(p, 'needs-auth', reason);
+@@ -72,2 +72,14 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+     }
++    function stopExternalCheck(p, reason) {
++        p.externalCheckAbort?.abort();
++        const round = p.externalCheckRound;
++        if (!round || round.stopping || typeof io.finalExternalHeaderBudget !== 'function') return;
++        round.stopping = true;
++        // This final observation retains the original round across retirement.
++        // It is deliberately independent of the live generation/epoch filter.
++        p.externalBudgetDrain = Promise.resolve().then(() => io.finalExternalHeaderBudget(p.session)).then(budget => {
++            if (budget) round.onReport({id: p.id, state: 'media-check', roundId: round.roundId,
++                mediaCheck: {event: 'cleanup', result: 'MEDIA_CHECK_BUDGET_STOPPED', stopReason: reason, budget}});
++        }).catch(() => {});
++    }
+     function get(id) {
+@@ -231,3 +243,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+             p.generation++;
+-            p.externalCheckAbort?.abort();
++            stopExternalCheck(p, 'LOGIN_RESTART');
+             for (const pending of p.pending) pending.abort();
+@@ -316,2 +328,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+             p.externalCheckAbort = externalAbort;
++            p.externalCheckRound = {roundId, onReport, stopping: false};
+             return transition(p, async check => {
+@@ -333,3 +346,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+                         if (p.generation !== generation || p.state === 'closed' || terminalObserved) return;
+-                        externalAbort.abort();
++                        stopExternalCheck(p, 'MEDIA_WINDOW_CLOSED');
+                         if (p.state !== 'ready') void controller.close(id).catch(() => {});
+@@ -434,2 +447,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+                 await Promise.all([...draining, transitioning?.catch(() => {}), closingWindow]);
++                await p.externalBudgetDrain;
+                 try {
+@@ -444,3 +458,3 @@ function createController({enabled = false, mode = 'live', io, headerTimeoutMs =
+             emit(p, 'closed');
+-            p.externalCheckAbort?.abort();
++            stopExternalCheck(p, 'CONNECTION_CLOSED');
+             p.lifetime.abort();
+diff --git a/prototypes/fn-connect/client/electron-io.cjs b/prototypes/fn-connect/client/electron-io.cjs
+index c85aa4e..ffa3423 100644
+--- a/prototypes/fn-connect/client/electron-io.cjs
++++ b/prototypes/fn-connect/client/electron-io.cjs
+@@ -262,2 +262,9 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+         },
++        async finalExternalHeaderBudget(ses) {
++            const observer = mediaChecks.get(ses);
++            if (typeof observer?.snapshotBudget !== 'function') return undefined;
++            let settled = true;
++            try { await observer.drain(); } catch { settled = false; }
++            return Object.freeze({...observer.snapshotBudget(), settled});
++        },
+         prepareMediaCheck(ses) {
+diff --git a/prototypes/fn-connect/client/panel.js b/prototypes/fn-connect/client/panel.js
+index eaef733..09bbf65 100644
+--- a/prototypes/fn-connect/client/panel.js
++++ b/prototypes/fn-connect/client/panel.js
+@@ -40,2 +40,3 @@ function show(value) {
+         const check = mediaChecks.get(value.id), event = value.mediaCheck;
++        if (event?.budget) check.budget = event.budget;
+         if (event?.event === 'diagnostic') {

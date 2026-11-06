@@ -1,0 +1,51 @@
+diff --git a/prototypes/fn-connect/client/startup-check.ps1 b/prototypes/fn-connect/client/startup-check.ps1
+index c3d8c4b..b6264e7 100644
+--- a/prototypes/fn-connect/client/startup-check.ps1
++++ b/prototypes/fn-connect/client/startup-check.ps1
+@@ -2,6 +2,7 @@ param(
+     [Parameter(Mandatory = $true)][string]$SourceDirectory,
+     [Parameter(Mandatory = $true)][string]$ElectronPath,
+     [Parameter(Mandatory = $true)][string]$PrivateConfigPath,
++    [Parameter(Mandatory = $true)][string]$DiagnosticBaseDirectory,
+     [Parameter(Mandatory = $true)][ValidatePattern('^[a-f0-9]{64}$')][string]$ExpectedMainSha256,
+     [switch]$PreviousInstanceResolved
+ )
+@@ -17,9 +18,28 @@ foreach ($fnPath in @($fnMain, $ElectronPath, $PrivateConfigPath)) {
+     if (-not $fnFullPath -or $fnPath -match '["\r\n]' -or
+         -not (Test-Path -LiteralPath $fnPath -PathType Leaf)) { throw 'STARTUP_INPUT_INVALID' }
+ }
++# Use an explicitly confirmed, normal-desktop-visible directory, never the
++# execution tool's TEMP. A missing receipt is not proof entry was not executed.
++$fnBaseValid = $false
++try {
++    $fnBaseValid = [IO.Path]::IsPathRooted($DiagnosticBaseDirectory) -and
++        [IO.Path]::GetFullPath($DiagnosticBaseDirectory).Equals($DiagnosticBaseDirectory, [StringComparison]::OrdinalIgnoreCase)
++} catch {}
++if (-not $fnBaseValid -or $DiagnosticBaseDirectory -match '^[\\/]{2}|["\r\n]' -or
++    -not (Test-Path -LiteralPath $DiagnosticBaseDirectory -PathType Container)) { throw 'STARTUP_DIAGNOSTIC_BASE_INVALID' }
++# GetFullPath is lexical: a junction in an ancestor could otherwise alias the
++# credential profile even when the leaf itself is an ordinary directory.
++$fnAncestor = Get-Item -LiteralPath $DiagnosticBaseDirectory
++while ($null -ne $fnAncestor) {
++    if ($fnAncestor.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'STARTUP_DIAGNOSTIC_BASE_INVALID' }
++    $fnAncestor = $fnAncestor.Parent
++}
++$fnProfileRoot = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'EmbyTheaterEnhanced-FN-Prototype'))
++if ($DiagnosticBaseDirectory.Equals($fnProfileRoot, [StringComparison]::OrdinalIgnoreCase) -or
++    $DiagnosticBaseDirectory.StartsWith($fnProfileRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'STARTUP_DIAGNOSTIC_BASE_INVALID' }
+ if ((Get-FileHash -LiteralPath $fnMain -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedMainSha256) { throw 'STARTUP_MAIN_SHA_MISMATCH' }
+ $fnRunId = [Guid]::NewGuid().ToString('N')
+-$fnRoot = Join-Path $env:TEMP ('ete-fn-startup-' + $fnRunId)
++$fnRoot = Join-Path $DiagnosticBaseDirectory ('ete-fn-startup-' + $fnRunId)
+ New-Item -ItemType Directory -Path $fnRoot -ErrorAction Stop | Out-Null
+ [IO.File]::WriteAllText((Join-Path $fnRoot '.startup-owner'), "ETE_FN_STARTUP_RECEIPT_V1`n", [Text.UTF8Encoding]::new($false))
+ $fnReceipt = Join-Path $fnRoot 'startup.json'
+@@ -47,7 +67,7 @@ $fnProcess = $null
+ try {
+     $fnArguments = @(('"' + $fnMain + '"'), '--fn-connect-prototype', '--remember-login', '--single-external-header-check',
+         '--profile-config', ('"' + $PrivateConfigPath + '"'), '--startup-receipt-root', ('"' + $fnRoot + '"'))
+-    $fnProcess = Start-Process -FilePath $ElectronPath -ArgumentList $fnArguments -PassThru
++    $fnProcess = Start-Process -FilePath $ElectronPath -ArgumentList $fnArguments -WorkingDirectory $SourceDirectory -PassThru
+     $null = $fnProcess.Handle; $fnRecord.processId = $fnProcess.Id
+     $fnDeadline = [DateTime]::UtcNow.AddSeconds(60)
+     while ([DateTime]::UtcNow -lt $fnDeadline) {

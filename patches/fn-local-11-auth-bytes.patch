@@ -1,0 +1,20 @@
+diff --git a/prototypes/fn-connect/client/electron-io.cjs b/prototypes/fn-connect/client/electron-io.cjs
+index 58cd4d6..c85aa4e 100644
+--- a/prototypes/fn-connect/client/electron-io.cjs
++++ b/prototypes/fn-connect/client/electron-io.cjs
+@@ -83,3 +83,14 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+                     const type = Array.isArray(value) ? value[0] : value;
+-                    const reason = reject(d) || (/^(?:video\/|audio\/|application\/octet-stream)|mpegurl|dash\+xml/i.test(type || '') ? 'MEDIA_MIME' :
++                    // Normal FN bootstrap uses an authenticated binary XHR.
++                    // This exception never applies to Emby, CDN, media or partial responses.
++                    let fnAuthBytes = false;
++                    if (d.resourceType === 'xhr' && d.statusCode === 200 && typeof type === 'string' &&
++                        type.split(';', 1)[0].trim().toLowerCase() === 'application/octet-stream') {
++                        try {
++                            const u = new URL(d.url);
++                            fnAuthBytes = !u.username && !u.password && profile.authOrigins.has(u.origin) &&
++                                u.origin !== profile.emby.origin && u.origin !== externalHeaderOrigin;
++                        } catch {}
++                    }
++                    const reason = reject(d) || (!fnAuthBytes && /^(?:video\/|audio\/|application\/octet-stream)|mpegurl|dash\+xml/i.test(type || '') ? 'MEDIA_MIME' :
+                         [206, 416].includes(d.statusCode) ? 'PARTIAL_STATUS' : null);

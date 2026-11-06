@@ -1,0 +1,73 @@
+diff --git a/prototypes/fn-connect/client/external-header-probe.cjs b/prototypes/fn-connect/client/external-header-probe.cjs
+index b48df23..ce29585 100644
+--- a/prototypes/fn-connect/client/external-header-probe.cjs
++++ b/prototypes/fn-connect/client/external-header-probe.cjs
+@@ -34,3 +34,5 @@ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'liv
+     environment = process.env, now = Date.now, timeoutMs = 10000} = {}) {
+-    if (!enabled) return {run: async () => { throw fail('EXTERNAL_PROBE_DISABLED'); }};
++    const counts = {probeStarted: 0, requestCreatedCount: 0, actualHttpRequestCount: 0, headersObserved: 0};
++    const snapshot = () => Object.freeze({...counts});
++    if (!enabled) return {snapshot, run: async () => { throw fail('EXTERNAL_PROBE_DISABLED'); }};
+     if (!['live', 'fixture'].includes(mode) || typeof resolveProxy !== 'function' ||
+@@ -40,5 +42,6 @@ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'liv
+     let used = false;
+-    return {async run({sourceUrl, userAgent, range = 'bytes=0-0', expiresAt, knownSecrets = [], signal} = {}) {
++    return {snapshot, async run({sourceUrl, userAgent, range = 'bytes=0-0', expiresAt, knownSecrets = [], signal} = {}) {
+         if (used) throw fail('EXTERNAL_PROBE_ALREADY_USED');
+         used = true; // Validation failures also require a new explicit trial.
++        counts.probeStarted = 1;
+         const destination = parseUrl(sourceUrl, mode);
+@@ -92,4 +95,6 @@ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'liv
+                         headers: {Range: range, 'User-Agent': userAgent, 'Accept-Encoding': 'identity'}});
++                    counts.requestCreatedCount = 1;
+                     requestClosed = new Promise(resolve => request.once('close', resolve));
+                     request.once('response', incoming => {
++                        counts.headersObserved = 1;
+                         response = incoming;
+@@ -122,3 +127,8 @@ function createExternalHeaderProbe({enabled = false, approvedOrigin, mode = 'liv
+                     request.once('error', () => finish(fail(signal?.aborted ? 'CANCELLED' : 'EXTERNAL_PROBE_NETWORK_ERROR')));
+-                    if (signal?.aborted) cancel(); else request.end();
++                    if (signal?.aborted) cancel(); else {
++                        // Count dispatch attempts, including a synchronous end error.
++                        // This does not claim server receipt or zero TCP bytes before end.
++                        counts.actualHttpRequestCount = 1;
++                        request.end();
++                    }
+                 } catch { finish(fail('EXTERNAL_PROBE_REQUEST_FAILED')); }
+diff --git a/prototypes/fn-connect/client/external-media-check.cjs b/prototypes/fn-connect/client/external-media-check.cjs
+index 4b4c6aa..9bf5aa6 100644
+--- a/prototypes/fn-connect/client/external-media-check.cjs
++++ b/prototypes/fn-connect/client/external-media-check.cjs
+@@ -16,4 +16,18 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+     let closeWork, initialCloseWork, sourceAgent, held = false, initializing = true;
++    let sourceCaptured = false, probeInvoked = 0;
++    const budgetSnapshot = () => {
++        let observed;
++        try { observed = probe.snapshot?.(); } catch {}
++        const count = name => {
++            let value;
++            try { value = observed?.[name]; } catch {}
++            return value === 0 || value === 1 ? value : probeInvoked === 0 ? 0 : null;
++        };
++        return Object.freeze({scope: 'INDEPENDENT_HEADER_PROBE', countBasis: 'REQUEST_END_ATTEMPT',
++            probeStarted: count('probeStarted') ?? probeInvoked,
++            requestCreatedCount: count('requestCreatedCount'), actualHttpRequestCount: count('actualHttpRequestCount'),
++            headersObserved: count('headersObserved'), sourceCaptured, terminal});
++    };
+     const owned = d => d.webContentsId === ownerId;
+-    const report = value => { if (!disposed) { try { onReport(Object.freeze(value)); } catch {} } };
++    const report = value => { if (!disposed) { try { onReport(Object.freeze({...value, budget: budgetSnapshot()})); } catch {} } };
+     const boundedClose = phase => {
+@@ -70,2 +84,3 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+         held = true; sourceAgent = undefined;
++        sourceCaptured = true;
+         const uaMetadata = describeUserAgent(userAgent);
+@@ -77,2 +92,3 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+                 if (abort.signal.aborted) throw fail('CANCELLED');
++                probeInvoked = 1;
+                 const result = await probe.run(input);
+@@ -186,3 +202,3 @@ function installExternalMediaCheck(session, base, {approvedOrigin, mode = 'live'
+     return {
+-        ready, freeze,
++        ready, freeze, snapshotBudget: budgetSnapshot,
+         async drain() { await ready.catch(() => {}); await active; await initialCloseWork; await closeWork; },

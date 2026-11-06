@@ -1,0 +1,61 @@
+diff --git a/prototypes/fn-connect/client/electron-io.cjs b/prototypes/fn-connect/client/electron-io.cjs
+index 1c5ba6f..8b25fef 100644
+--- a/prototypes/fn-connect/client/electron-io.cjs
++++ b/prototypes/fn-connect/client/electron-io.cjs
+@@ -41,3 +41,3 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+         },
+-        async openLogin(ses, profile, {signal, onCancel, deferNavigation = false}) {
++        async openLogin(ses, profile, {signal, onCancel, onLifecycle = () => {}, deferNavigation = false}) {
+             if (externalHeaderOrigin && !mediaChecks.has(ses) && !frozenSessions.has(ses)) {
+@@ -65,2 +65,13 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+                     webSecurity: true, allowRunningInsecureContent: false}});
++            let mainClose = false, lifetimeAbort = false, nativeClose = false, contentClose = false;
++            const lifecycle = (event, fields = {}) => { try { onLifecycle(Object.freeze({event, ...fields})); } catch {} };
++            lifecycle('WINDOW_CREATED');
++            win.on('close', () => { nativeClose = true; lifecycle('NATIVE_CLOSE_REQUEST'); });
++            // Observational only: v44.4.2 CloseContents emits this before Destroy.
++            // It is not an authorization signal or a supported cancellation hook.
++            win.webContents.on('close', () => { contentClose = true; lifecycle('CONTENT_CLOSE_REQUEST'); });
++            win.webContents.on('render-process-gone', (_event, details) => {
++                const reasons = new Set(['clean-exit', 'abnormal-exit', 'killed', 'crashed', 'oom', 'launch-failed', 'integrity-failure']);
++                lifecycle('RENDER_PROCESS_GONE', {code: reasons.has(details?.reason) ? details.reason.toUpperCase().replaceAll('-', '_') : 'OTHER'});
++            });
+             // Remote Emby Web must take its normal browser path, not request a
+@@ -91,7 +102,20 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+             // Do not inject username/password, OAuth interceptors or client IDs.
+-            win.on('closed', onCancel);
+-            const abort = () => { if (!win.isDestroyed()) win.destroy(); };
++            win.on('closed', () => {
++                lifecycle('WINDOW_CLOSED', {cause: mainClose ? 'MAIN_HANDLE' : lifetimeAbort ? 'LIFETIME_ABORT' :
++                    nativeClose ? 'NATIVE_REQUEST' : contentClose ? 'CONTENT_REQUEST' : 'UNATTRIBUTED'});
++                onCancel();
++            });
++            const abort = () => {
++                lifetimeAbort = true; lifecycle('LIFETIME_ABORT');
++                if (!win.isDestroyed()) win.destroy();
++            };
+             signal.addEventListener('abort', abort, {once: true});
+             win.once('closed', () => signal.removeEventListener('abort', abort));
+-            if (!deferNavigation) win.loadURL(profile.bootstrap.href).catch(() => { if (!blocked) onStatus('LOGIN_PAGE_LOAD_FAILED'); });
++            if (!deferNavigation) {
++                lifecycle('BOOTSTRAP_LOAD_STARTED');
++                win.loadURL(profile.bootstrap.href).catch(error => {
++                    lifecycle('BOOTSTRAP_LOAD_FAILED', {code: errorCode(error)});
++                    if (!blocked) onStatus('LOGIN_PAGE_LOAD_FAILED');
++                });
++            }
+             return {webContentsId: win.webContents.id, close() {
+@@ -99,3 +123,3 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+                     if (win.isDestroyed()) resolve();
+-                    else { win.once('closed', resolve); win.destroy(); }
++                    else { mainClose = true; lifecycle('MAIN_HANDLE_CLOSE'); win.once('closed', resolve); win.destroy(); }
+                 });
+@@ -105,3 +129,7 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
+                         blocked = false;
+-                        win.loadURL(profile.emby.href).catch(() => { if (!blocked) onStatus('TARGET_PAGE_LOAD_FAILED'); });
++                        lifecycle('TARGET_LOAD_STARTED');
++                        win.loadURL(profile.emby.href).catch(error => {
++                            lifecycle('TARGET_LOAD_FAILED', {code: errorCode(error)});
++                            if (!blocked) onStatus('TARGET_PAGE_LOAD_FAILED');
++                        });
+                     }
