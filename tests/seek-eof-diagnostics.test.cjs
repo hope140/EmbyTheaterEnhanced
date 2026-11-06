@@ -337,3 +337,19 @@ test('cache shortage and native error records omit unavailable transport facts a
     assert.equal(Object.hasOwn(error.details, 'reconnectOutcome'), false);
     assert.doesNotMatch(diagnostics.buildDiagnosticReport(f.records, {}), /PRIVATE_CANARY|token=/);
 });
+
+for (const [index, expected] of [[0, 1], [null, null], [undefined, null], [3, 2]]) {
+    for (const playMethod of ['DirectPlay', 'DirectStream', 'Transcode']) {
+        test(`audio preference ${index} preserves container mapping for ${playMethod}`, async () => {
+            const f = fixture();
+            await f.play({playMethod, mediaSource: {Id: 'synthetic', DefaultAudioStreamIndex: index,
+                MediaStreams: [{Type: 'Audio', Index: 0, IsDefault: false},
+                    {Type: 'Video', Index: 2}, {Type: 'Audio', Index: 3, IsDefault: true}]}});
+            const aids = f.operations.filter(row => row.operation === 'set-properties')
+                .flatMap(row => row.payload.entries).filter(entry => entry.name === 'aid');
+            assert.deepEqual(aids.map(entry => String(entry.value)),
+                playMethod === 'Transcode' || expected === null ? [] : [String(expected)]);
+            await f.player.stop();
+        });
+    }
+}
