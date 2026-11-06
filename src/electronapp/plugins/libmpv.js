@@ -2257,10 +2257,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             return '';
         }
 
-        function enableInternalSubtitleStream(stream, subIndex) {
+        function enableInternalSubtitleStream(stream, subIndex, ownsSelection) {
 
             return setProperty({ "sid": subIndex }).then(() => {
-                if (stream.Codec == "dvb_teletext") {
+                if (ownsSelection() && stream.Codec == "dvb_teletext") {
                     return setDvbTeletextPage(stream);
                 }
                 return Promise.resolve()
@@ -2272,6 +2272,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var selectionSequence = ++subtitleSelectionSequence;
             var ownerMediaSource = mediaSource;
             var ownerAttempt = ownerRequest && ownerRequest.routeAttempt;
+            var ownerGeneration = ownerRequest && ownerRequest.nativeGenerationId;
+            function ownsSelection() {
+                return isCurrentPlayRequest(ownerRequest) && !ownerRequest.attemptFailed &&
+                    !ownerRequest.startupExpired && !ownerRequest.terminalError &&
+                    ownerRequest.routeAttempt === ownerAttempt && ownerRequest.nativeGenerationId === ownerGeneration &&
+                    selectionSequence === subtitleSelectionSequence && mediaSource === ownerMediaSource;
+            }
+            if (!ownsSelection()) return Promise.resolve();
             setProperty({ "sub-delay": 0 })
             if (index === null || index < 0) {
                 return setProperty({ "sid": "no" });
@@ -2289,9 +2297,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                 setTimeout(() => { resolve() }, 700);
                                });
                                promise.then(() => {
-                                  if (isCurrentPlayRequest(ownerRequest) && !ownerRequest.attemptFailed && !ownerRequest.startupExpired &&
-                                      ownerRequest.routeAttempt === ownerAttempt &&
-                                      selectionSequence === subtitleSelectionSequence && mediaSource === ownerMediaSource) {
+                                  if (ownsSelection()) {
                                      var pendingSubtitle = sendCommand(["sub-add", stream.DeliveryUrl, "cached", stream.DisplayTitle || "", stream.Language || ""]);
                                      if (pendingSubtitle && typeof pendingSubtitle.catch === 'function') {
                                          pendingSubtitle.catch(function () {
@@ -2301,7 +2307,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                  }
                                });
                             }
-                            return enableInternalSubtitleStream(stream, subIndex);
+                            return enableInternalSubtitleStream(stream, subIndex, ownsSelection);
                         }
                     }
                 }

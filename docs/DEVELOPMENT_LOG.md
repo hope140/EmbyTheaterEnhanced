@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-06 — 内部字幕异步尾部归属补强
+
+独立审查复现旧 sid Promise 返回后 teletext-page 写入新 native generation 的竞态；基线已有无 guard 的尾部，新增路线期限使其更容易暴露。本次只在内部字幕 continuation 与外部延迟字幕共享请求、attempt、generation、选择序号和媒体来源检查，不改变合法选轨。回归覆盖 deadline 后替换、Stop、NewPlay、Next、选择字幕变化、同请求路线旋转及合法 teletext 页码设置。所有旧页码均不得进入后续 generation；完整最终回归以交付准确 head 为准。
+
 ## 2026-11-06 — v0.4.18 三项组合验证
 
 集成保留诊断 4ea1df0、终局退出 ea42be67 与起播路线 9920624 的独立历史，产品版本为 0.4.18；不含飞牛。冲突仅合并历史与追加测试，保留生成器的终局错误判定。新增组合测试贯通生产生成 PlaybackManager、真实 JS resolver/adapter：三条路线耗尽后进入同集 Transcode，覆盖成功和失败退出、队列清空、重复终止和旧 generation 事件；四次 native load 代次各异，路线内操作与请求编号一致。会话上报保持既有 manager 语义：初始失败也先上报 Start，再进入兼容流；最终 Stop 使用当前兼容流的服务端 session，不改变其顺序或归属策略。

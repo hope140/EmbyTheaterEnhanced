@@ -445,3 +445,55 @@ for (const action of ['stop', 'play', 'next', 'helper-error']) test(`${action} d
     assert.equal(f.ipc.loadCalls.length, loaded);
     await f.player.stop(true);
 });
+
+for (const action of ['deadline', 'stop', 'play', 'next', 'selection', 'route', 'valid']) {
+    test(`internal teletext sid continuation preserves selection and generation ownership: ${action}`, async () => {
+        let now = 10000;
+        const timers = [];
+        const f = startupFixture({Date: {now: () => now}, setTimeout(fn, ms) {
+            if (ms === 15000) {timers.push(fn); return 'startup-' + timers.length;}
+            return setTimeout(fn, ms);
+        }, clearTimeout(id) {if (typeof id !== 'string') clearTimeout(id);}});
+        f.options.mediaSource.MediaStreams.push({Type: 'Subtitle', Index: 1, Codec: 'dvb_teletext',
+            Extradata: '00000000000123', DeliveryMethod: 'Embed'});
+        f.options.mediaSource.DefaultSubtitleStreamIndex = 1;
+        const gate = makeDeferred(), invoke = f.ipc.invoke.bind(f.ipc);
+        let waiting = false;
+        f.ipc.invoke = (channel, request) => {
+            const result = invoke(channel, request);
+            if (!waiting && request.operation === 'set-properties' && request.payload.entries.some(e => e.name === 'sid' && e.value === 1)) {
+                waiting = true; return gate.promise.then(() => result);
+            }
+            return result;
+        };
+        const old = f.player.play(f.options); old.catch(() => {});
+        await waitFor(() => waiting);
+        const oldGeneration = f.ipc.generationId;
+        if (action === 'deadline') {
+            now += 15001; timers[0](); await assert.rejects(old, /startup-route-deadline/);
+        } else if (action === 'stop') await f.player.stop(true);
+        else if (action === 'selection') f.player.setSubtitleStreamIndex(-1);
+        else if (action === 'route') f.failure();
+        if (['deadline', 'play', 'next'].includes(action)) {
+            f.ipc.suppressCorePlaying = false;
+            await f.player.play({...f.options, _etePlayRequestId: 2, command: action === 'next' ? 'nextTrack' : undefined,
+                mediaSource: {...f.options.mediaSource, MediaStreams: [{Type: 'Audio', Index: 0}], DefaultSubtitleStreamIndex: -1}});
+            assert.notEqual(f.ipc.generationId, oldGeneration);
+        }
+        const before = f.ipc.calls.length;
+        gate.resolve();
+        if (action === 'route') {await waitFor(() => f.ipc.loadCalls.length === 2); f.property('core-idle', false); await old;}
+        else if (action === 'valid' || action === 'selection') {f.property('core-idle', false); await old;}
+        else await assert.rejects(old);
+        await new Promise(resolve => setImmediate(resolve));
+        const pages = f.ipc.calls.slice(before).filter(c => c.request.operation === 'set-properties' &&
+            c.request.payload.entries.some(e => e.name === 'teletext-page'));
+        assert.equal(pages.length, action === 'valid' || action === 'route' ? 1 : 0);
+        if (action === 'route') {assert.notEqual(pages[0].request.payload.generationId, oldGeneration); assert.equal(pages[0].request.payload.generationId, f.ipc.generationId);}
+        if (action === 'valid') {
+            assert.equal(pages[0].request.payload.generationId, oldGeneration);
+            assert.equal(pages[0].request.payload.entries.find(e => e.name === 'teletext-page').value, 123);
+        }
+        await f.player.stop(true);
+    });
+}
