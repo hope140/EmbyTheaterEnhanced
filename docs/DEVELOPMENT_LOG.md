@@ -1714,3 +1714,12 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 修正提交 `e0c3ee5a56cfc5728b140937c9ecd6311cf58f12` 的完整公开复验：**2701 项，2669 pass／0 fail／32 平台 skip**，耗时约 125 秒；固定排除 6 份材料文件不计入通过，其中受本轮覆盖层修改影响的 `web-overlay-preparation.test.cjs` 已单独 4／4 通过。退出相关修正另有 45／45 定向通过。JS 618 个维护文件及 26 个原型文件、PowerShell 53 个维护文件语法通过；有限凭据模式扫描 715 个维护文本文件无发现，另核本轮 58 个变更文件及新增行未加入个人目标、登录态或私有日志。此为有限模式／人工范围检查，不称完整秘密扫描。除旧公共项目链接和历史固定 CDN 常量外未新增个人环境信息。
 
 Windows 后续只使用准确干净提交、Node 24.18.1、PowerShell 7，执行 `pwsh -NoProfile -File prototypes/fn-connect/client/run-windows-smoke.ps1`。归档 Electron 44.5.0 及 EXE 摘要由 `electron-input.json` 与产品 manifest 双重核对；输出为 `test-output/fn-connect-fixture/result.json`，拒绝覆盖旧结果。只读当前源码和新建合成 profile、监听 127.0.0.1，不接真实 NAS／CDN，不启动产品试用模式；下载官方固定 runtime 是唯一必要外网材料获取。仅由支持的正常执行入口运行；启动或输出回执失败保留一次结果，不改 sandbox、证书或权限、不换入口规避。此项尚未执行，且不等同真实产品包或播放验收。
+
+
+## 2026-11-06 — FN 回环 runner 前置期限与失败回执
+
+仅调整独立测试 runner，不改产品、固定 Electron URL／SHA、sandbox 或凭据边界。源码检查、manifest、单次下载、完整大小与 SHA 校验、解压、EXE 校验和源码复查共用固定 15 分钟 StopWatch 预算；父进程监督其拥有的 worker，慢流不续期。启动即写脱敏阶段状态，前置失败在递归清理前独立写终态；只有来源／轮次一致、校验完成且 worker 已退出才允许 Electron。失败材料保留，退出未确认不继续；正常 OS 文件 I/O 或进程树终止不承诺硬实时上限。
+
+新增 20 项 PowerShell 合成回归通过：持续进度、共享剩余时间、卡住／非完整退出、大小／SHA 错误零解压、来源／轮次不符、迟到终态、未确认退出、阶段／回执字段脱敏、退出读取竞态以及 status 写失败仍有 result。大小／SHA 两项运行真实 worker 逻辑，但以函数替身写入 3 字节自建材料，未下载 runtime 或启动 Electron。首次 15 项中的 8 项失败包含 PowerShell 条件分组错误与测试动态作用域冲突，修正后通过；独立只读审查随后发现退出读取竞态和 status 异常阻断 result，补充回归并修复后限定审查无剩余阻断。当前 Windows 运行结论待独立协调，既有运行实例未修改或重启；不以合成通过代替实机。
+
+本轮 FN 集合在 Node 24.18.1／Linux PowerShell 下 262／262 通过，包括上述 20 项 runner 回归。维护 PowerShell 54 文件及原型 runner 3 文件语法通过；有限凭据模式 717 个维护文本文件与本轮 8 文件检查无发现，新增行无个人目标或私有路径。此为有限检查；未读取真实 profile，未下载 runtime，未启动 Electron。完整公开集合将在独立提交后核对。
