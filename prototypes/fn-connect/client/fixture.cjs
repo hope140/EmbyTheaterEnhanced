@@ -16,7 +16,7 @@ async function listen(server) {
         await new Promise(resolve => server.close(resolve));
     }};
 }
-async function createFixture() {
+async function createFixture({distinctOrigins = false} = {}) {
     const state = {expired: false, ambiguous: false, networkError: false, slowClosed: false,
         seen: [], externalRequests: [], redirectSecret: null, wsClosed: 0,
         streamSequence: 0, closedStreams: new Set(), wsSequence: 0, closedWebSockets: new Set(), endedWebSockets: new Set(),
@@ -40,7 +40,7 @@ async function createFixture() {
         res.end(bytes);
     });
     const external = await listen(externalServer);
-    let nas;
+    let nas, bootstrap;
     const cookie = 'fixture-session-canary-not-a-real-NAS-token';
     const authorized = req => !state.expired && (req.headers.cookie || '').split(';').some(item => item.trim() === 'FNFixture=' + cookie);
     const server = http.createServer((req, res) => {
@@ -74,7 +74,15 @@ async function createFixture() {
             res.end(JSON.stringify({Id: 'synthetic-emby', Version: '4.10.0.0'})); return;
         }
         if (path === '/emby/deny') { res.writeHead(403); res.end(); return; }
-        if (path === '/emby/relogin') { res.writeHead(302, {location: nas.origin + '/nas/'}); res.end(); return; }
+        if (path === '/emby/fixture-write') {
+            const chunks = []; req.on('data', chunk => chunks.push(chunk)); req.on('end', () => {
+                state.lastWrite = {method: req.method, body: Buffer.concat(chunks).toString('utf8'), cookie: req.headers.cookie};
+                res.writeHead(200, {'Content-Type': 'application/json'}); res.end('{"fixtureWrite":true}');
+            }); return;
+        }
+        if (path === '/emby/fixture-write-redirect') { res.writeHead(307, {location: '/emby/fixture-write'}); res.end(); return; }
+        if (path === '/emby/fixture-image') { res.writeHead(200, {'Content-Type': 'image/png', 'Set-Cookie': 'IMAGE_FIXTURE=private-fixture-value'}); res.end('synthetic-image'); return; }
+        if (path === '/emby/relogin') { res.writeHead(302, {location: bootstrap.origin + '/nas/'}); res.end(); return; }
         if (path === '/emby/loop') { res.writeHead(302, {location: '/emby/loop'}); res.end(); return; }
         if (path === '/emby/strip') { res.writeHead(302, {location: '/emby/direct'}); res.end(); return; }
         if (path === '/emby/path-cookie') {
@@ -134,7 +142,18 @@ async function createFixture() {
         socket.on('error', () => {});
     });
     nas = await listen(server);
-    return {state, bytes, cookie, profile: {bootstrapUrl: nas.origin + '/nas/', embyUrl: nas.origin + '/emby/',
+    bootstrap = distinctOrigins ? await listen(http.createServer((req, res) => {
+        const path = new URL(req.url, 'http://fixture.invalid').pathname;
+        if (path === '/nas/authorize') {
+            state.authorizationHits++; state.expired = false;
+            res.writeHead(302, {'Set-Cookie': 'FNFixture=' + cookie + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=60', location: '/nas/'});
+            res.end(); return;
+        }
+        if (path !== '/nas/') { res.writeHead(404); res.end(); return; }
+        state.nasPageHits++; res.writeHead(200, {'Content-Type': 'text/html'});
+        res.end('<!doctype html><title>Synthetic NAS</title><form action="/nas/authorize"><button>Authorize synthetic session</button></form>');
+    })) : nas;
+    return {state, bytes, cookie, profile: {bootstrapUrl: bootstrap.origin + '/nas/', embyUrl: nas.origin + '/emby/',
         expectedServerId: 'synthetic-emby', externalMediaOrigins: [external.origin]},
         diagnostics() {
             const address = server.address();
@@ -142,7 +161,7 @@ async function createFixture() {
                 loopback: address?.address === '127.0.0.1', listening: server.listening && externalServer.listening,
                 ...Object.fromEntries(['nasPageHits', 'authorizationHits', 'publicInfoHits', 'publicInfoSuccess', 'publicInfoDenied'].map(key => [key, state[key]]))};
         },
-        async close() { await Promise.all([nas.close(), external.close()]); }};
+        async close() { await Promise.all([nas.close(), external.close(), ...(bootstrap !== nas ? [bootstrap.close()] : [])]); }};
 }
 
 function createFixtureIO() {
@@ -166,7 +185,7 @@ function createFixtureIO() {
             response.body.resume();
             return {close() { onCancel(); }, showTarget() { ses.visits.push(profile.emby.href); }};
         },
-        request(ses, {url, method = 'GET', headers = {}, signal}) {
+        request(ses, {url, method = 'GET', headers = {}, signal, body}) {
             const target = check(url);
             return new Promise((resolve, reject) => {
                 if (signal.aborted) return reject(fail('CANCELLED'));
@@ -184,7 +203,7 @@ function createFixtureIO() {
                 const abort = () => req.destroy();
                 signal.addEventListener('abort', abort, {once: true});
                 req.once('error', () => { signal.removeEventListener('abort', abort); reject(fail('NETWORK_ERROR')); });
-                req.end();
+                req.end(body);
             });
         },
         async authorize(id, profile) {

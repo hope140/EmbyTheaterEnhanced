@@ -23,6 +23,7 @@ const trackedFileHash = require('./tracked-file-hash.cjs');
 const advanceDownload = require('./patch-advance-download.cjs');
 const playbackInputDiagnostics = require('./patch-playback-input-diagnostics.cjs');
 const subtitleLanguagePreference = require('./patch-subtitle-language-preference.cjs');
+const fnConnect = require('./patch-fn-connect.cjs');
 
 const GENERATOR_PATH = 'tools/prepare-web-overlays.cjs';
 const APP_GENERATOR_PATH = 'tools/patch-external-player-registration.cjs';
@@ -43,6 +44,14 @@ const SUBTITLE_APPEARANCE_GENERATOR_PATH = 'tools/patch-subtitle-appearance.cjs'
 const SUBTITLE_LANGUAGE_GENERATOR_PATH = 'tools/patch-subtitle-language-preference.cjs';
 
 const WEB_OVERLAY_CONTRACT = Object.freeze([
+    Object.freeze({
+        id: 'fn-connect-manual-server', mode: 'tracked-canonical-transform',
+        basePath: 'vendor/web-snapshot/www/startup/manualserver.js', inputPath: null,
+        runtimePath: 'electronapp/www/startup/manualserver.js',
+        expectedBaseSha256: '08F70E05191C68940A769C3C61AE779CC4C6AD9970D87971198E520C0A67E871', expectedInputSha256: null,
+        expectedOutputSha256: 'EC1E2B76013F82E415FA9939F949F2E37B5F6E8092B1DD75D9F8DADFFBF1ECD4',
+        generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-fn-connect.cjs'])
+    }),
     Object.freeze({
         id: 'audio-language-preference-script', mode: 'tracked-canonical-transform',
         basePath: 'vendor/web-snapshot/www/settings/playback.js', inputPath: null,
@@ -118,7 +127,7 @@ const WEB_OVERLAY_CONTRACT = Object.freeze([
         runtimePath: 'electronapp/www/modules/emby-apiclient/connectionmanager.js',
         expectedBaseSha256: 'BEAE6AD4A2D386FB6D3553974C0AA3BA7C7E1BC25C1098944F508FE497A08F09',
         expectedInputSha256: null,
-        expectedOutputSha256: '383559B6AA874180A2250E02DB46D9ABFEEB185BEFB2B87D79753DED0F1AD632',
+        expectedOutputSha256: '282F2609FD2AD587ED01C6B8125ACB10BF65A9238279934F94B0811BE89D75AC',
         generatorPaths: Object.freeze([GENERATOR_PATH, 'tools/patch-connectionmanager-transport.cjs'])
     }),
     Object.freeze({
@@ -420,6 +429,7 @@ function retireCustomCssJs(text) {
 
 function outputFor(root, contract) {
     const base = readChecked(root, contract.basePath, contract.expectedBaseSha256, 'Web overlay base');
+    if (contract.id === 'fn-connect-manual-server') return {base, input: Buffer.from(fnConnect.patchManualServer(base.toString('utf8')), 'utf8')};
     if (contract.id === 'subtitle-language-preference-script') return {base, input: Buffer.from(subtitleLanguagePreference.patchScript(base.toString('utf8')), 'utf8')};
     if (contract.id === 'subtitle-language-preference-template') return {base, input: Buffer.from(subtitleLanguagePreference.patchHtml(base.toString('utf8')), 'utf8')};
     if (contract.id === 'audio-language-preference-script') return {base, input: Buffer.from(subtitleLanguagePreference.patchPlaybackScript(base.toString('utf8')), 'utf8')};

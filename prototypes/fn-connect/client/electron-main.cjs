@@ -198,7 +198,7 @@ if (!process.argv.includes('--fn-connect-prototype')) {
         try {
         if (stopping) return;
         stage('APP_READY');
-        if (fixtureMode) { fixture = await createFixture(); defaults = fixture.profile; }
+        if (fixtureMode) { fixture = await createFixture({distinctOrigins: smoke}); defaults = fixture.profile; }
         else {
             const at = process.argv.indexOf('--profile-config');
             if (at >= 0) {
@@ -209,9 +209,10 @@ if (!process.argv.includes('--fn-connect-prototype')) {
             }
         }
         if (stopping) return;
-        controller = createController({enabled: true, mode: fixtureMode ? 'fixture' : 'live', relayExternalMedia,
+        controller = createController({enabled: true, mode: fixtureMode ? 'fixture' : 'live', relayExternalMedia, allowApiWrites: fixtureMode,
             io: createElectronIO(electron, {onStatus: reason => publish({state: 'notice', reason}),
                 anonymousMediaEnabled: relayExternalMedia, mode: fixtureMode ? 'fixture' : 'live',
+                authenticationOnly: smoke,
                 externalHeaderOrigin: externalCheckAvailable ? 'https://cdnfhnfile.115cdn.net' : undefined,
                 onDiagnostic: value => { if (smoke) report('diagnostic', value); }})});
         bridge = await createBridge(controller, {enabled: true});

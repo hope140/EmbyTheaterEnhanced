@@ -1,6 +1,6 @@
 # Standalone FN transport experiment
 
-This directory is excluded from production runtime assembly and installers. It is not a completed FN feature. See the [current contract](../../../docs/FN_CONNECT_V0417.md) for source recovery, authentication ownership, unsupported modes and acceptance gaps.
+This CLI directory is excluded from production runtime assembly and installers. Its transport modules now reference the shared production source under `src/electronapp/enhanced/fn-connect/core/`; the default-off product experiment is separate. This is not a completed FN feature. See the [current contract](../../../docs/FN_CONNECT_V0417.md) for source recovery, authentication ownership, unsupported modes and acceptance gaps.
 
 Run local Node regressions from the repository root:
 
@@ -18,6 +18,6 @@ This runner obtains the official Electron archive pinned by the current product 
 
 The current pin is Electron 44.5.0, inherited from the product inputs. The three recovered historical runtime/startup diagnostic PowerShell scripts still describe 44.4.2 and should not be used for current acceptance. No Windows run has yet verified this revision, and the historical early-exit cause is unresolved.
 
-For source review only: `electron-main.cjs` requires `--fn-connect-prototype`; `--remember-login` uses the existing Windows-only dedicated profile store. The external streaming consumer is off in live mode unless `--anonymous-media-relay` is supplied, and cannot coexist with `--single-external-header-check`. Full streaming is a different network scope from the old header-only trial. There is no new user-facing live-media action or production Native integration in this revision; these flags do not establish authorization to contact a server or consume a real media body.
+For source review only: `electron-main.cjs` requires `--fn-connect-prototype`; `--remember-login` uses the existing Windows-only dedicated profile store. The external streaming consumer is off in live mode unless `--anonymous-media-relay` is supplied, and cannot coexist with `--single-external-header-check`. Full streaming is a different network scope from the old header-only trial. These CLI flags do not enable the separate product experiment or establish authorization to contact a server or consume a real media body. Product Native/CM integration remains unverified on Windows and real services. The current synthetic smoke includes authenticated API POST in addition to CookieJar/WS/media lifecycle stages; it does not start the product UI or libmpv.
 
 Do not copy browser cookies, use real credentials in fixtures, disable sandbox/TLS checks, relax exact-origin gates, or treat a web page URL as an Emby API base. Any real verification needs a separately agreed target, flow and request budget.

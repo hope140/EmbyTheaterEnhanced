@@ -47,8 +47,8 @@
     },
     {
       "path": "src/web-api/src/apiclient.js",
-      "size": 27314,
-      "sha256": "1bea40f939efea761460a5dec11c759dd2b25f237c28fea0999077f8a3a2e0e9"
+      "size": 27749,
+      "sha256": "3884ce724547accb1453c5e031f4693f7861fd49702fa94b039ef9dfa95fd20e"
     },
     {
       "path": "src/web-api/src/connectionmanager.js",
@@ -62,8 +62,8 @@
     },
     {
       "path": "src/web-api/src/mit-apiclient.js",
-      "size": 104892,
-      "sha256": "877ef8232c336561f4eece1d3df1519ee383871aeec1becd3115f33438e532f4"
+      "size": 104876,
+      "sha256": "606f4bf2fcd695eaa3a9bbd3ebdf4cf94501dea70a6e23943c826b0bdf7e7b68"
     },
     {
       "path": "src/web-api/src/mit-connectionmanager.js",
@@ -72,8 +72,8 @@
     },
     {
       "path": "src/web-api/src/transport.js",
-      "size": 5777,
-      "sha256": "beb8627e5134118c7ad20375abe6a824248cd61a317fd476c631cd0e2d42bf16"
+      "size": 6269,
+      "sha256": "1b1b1bb0dd5c38e3b68d301b6b057273e240a0f12013fbebcd303e627bf63bc8"
     },
     {
       "path": "src/web-api/tools/build-amd.mjs",
@@ -89,18 +89,18 @@
   "outputs": [
     {
       "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
-      "size": 27636,
-      "sha256": "1581f870f8c93988afe067d1b36193f8cd1aa4ed08e690f410df0f663f9ef938"
+      "size": 28071,
+      "sha256": "ce59ddfac1125b5320250f380708268d7e677b4b94a170598b3bb1252d1e5ab0"
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/mit-apiclient.js",
-      "size": 105167,
-      "sha256": "a0c63654081723be24a9baed406c4d0ea1f6bc4ef409cd1aabfe758948899526"
+      "size": 105150,
+      "sha256": "ca1bbb5fcc1ab78143269071dad681e549c2571f94c49e4a1a072b5c5565f86e"
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/transport.js",
-      "size": 5958,
-      "sha256": "78b9f7ee229b78a27ca1c8175c8a47105b2867dc72ee94d201f6442043b638d9"
+      "size": 6450,
+      "sha256": "710d99a2e3b1d61c08e50d389e2807f9754e1bb4746211d17407adb664113ded"
     },
     {
       "path": "src/electronapp/www/modules/emby-apiclient/events.js",

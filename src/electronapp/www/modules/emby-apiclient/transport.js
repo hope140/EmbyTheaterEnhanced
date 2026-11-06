@@ -32,7 +32,8 @@ function request(request, signal) {
     // Keep the bridge alive through response-body consumption as well as headers.
     return Promise.resolve().then(() => {
         if (controller.signal.aborted) throw abortError();
-        return fetch(request.url, { headers, method: request.type, credentials: 'same-origin',
+        const address = typeof window !== 'undefined' && window.__eteFnTransport ? window.__eteFnTransport.mapUrl(request.url) : request.url;
+        return fetch(address, { headers, method: request.type, credentials: 'same-origin',
             ...(body ? { body } : {}), signal: controller.signal });
     }).then(response => {
         if (controller.signal.aborted) { cleanup(); throw abortError(); }
@@ -46,7 +47,11 @@ function request(request, signal) {
 
 function decode(request, response) {
     if (response.status >= 400) return Promise.reject(response);
-    if (request.dataType === 'json' || request.headers?.accept === 'application/json') return response.json();
+    if (request.dataType === 'json' || request.headers?.accept === 'application/json') return response.json().then(async value => {
+        const fn = typeof window !== 'undefined' && window.__eteFnTransport;
+        if (typeof fn?.authenticated === 'function') await fn.authenticated(request.url, value);
+        return value;
+    });
     if (response.status === 204 || request.dataType === 'text' ||
         (response.headers.get('Content-Type') || '').toLowerCase().startsWith('text/')) return response.text();
     return response;
@@ -66,7 +71,8 @@ function addresses(server, rejectInsecure) {
     const manual = server.ManualAddress;
     let localManual = false;
     try { localManual = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(manual).hostname.toLowerCase()); } catch {}
-    const choices = server.ManualAddressOnly || server.manualAddressOnly ? [[manual, 2]] :
+    const fnOwned = typeof window !== 'undefined' && window.__eteFnTransport && window.__eteFnTransport.owns(manual);
+    const choices = server.ManualAddressOnly || server.manualAddressOnly || fnOwned ? [[manual, 2]] :
         (localManual ? [[manual, 2], [server.LocalAddress, 0], [server.RemoteAddress, 1]] :
             [[server.LocalAddress, 0], [manual, 2], [server.RemoteAddress, 1]]);
     const seen = new Set();

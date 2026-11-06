@@ -30,7 +30,7 @@ function eventTarget() {
         dispatchEvent(event) { emitter.emit(event.type, event); }
     };
 }
-function fixture({deferStart = false, deferKill = false} = {}) {
+function fixture({deferStart = false, deferKill = false, fnConnect, getApiClient = () => ({synthetic: true})} = {}) {
     const ipc = new EventEmitter();
     const calls = [], clients = [], kills = [];
     class Window extends EventEmitter {
@@ -101,9 +101,9 @@ function fixture({deferStart = false, deferKill = false} = {}) {
     vm.runInNewContext(source, context, {filename: 'libmpv.js'});
     const amdRequire = (_deps, callback) => callback();
     const Player = factory({}, {getSubtitleUrl() {return '';}}, {mapPath(_player, value) {return value;}}, {trigger() {}},
-        {setTransparency() {}, showVideoOsd() {return Promise.resolve();}}, {get() {}, set() {}}, {getSubtitleAppearanceSettings() {return {};}}, amdRequire, {},
+        {setTransparency() {}, showVideoOsd() {return Promise.resolve();}}, {get() {}, set() {}}, {getSubtitleAppearanceSettings() {return {};}}, amdRequire, {getApiClient},
         {isStrm: () => false, resolveAsync: info => Promise.resolve({type: 'native', source: info.nativeSource})}, undefined, undefined, undefined,
-        require('../src/electronapp/enhanced/nexttrack-transition'), clientModule);
+        require('../src/electronapp/enhanced/nexttrack-transition'), clientModule, undefined, fnConnect);
     const player = {}; Player.call(player);
     return {player, service, clients, calls, kills, body};
 }
@@ -111,6 +111,38 @@ function playOptions(id) {
     return {_etePlayRequestId: id, url: 'fixture-' + id + '.mkv', mediaType: 'Video', playMethod: 'DirectPlay', fullscreen: false,
         item: {MediaType: 'Video', Type: 'Movie', Path: '/fixture/media.mkv'}, mediaSource: {Path: '/fixture/media.mkv', MediaStreams: [], RunTimeTicks: 5000000000}, playerStartPositionTicks: 0};
 }
+
+test('FN replaces only the final source in the actual Native adapter and retires it on Stop', async () => {
+    let released = 0; const received = [];
+    const f = fixture({fnConnect: {async source(api, source, signal) {
+        received.push({api, source, signal}); return {url: 'http://127.0.0.1:12345/r/' + 'a'.repeat(48), release() { released++; }};
+    }}});
+    try {
+        const options = playOptions(1), originalItem = options.item, originalMedia = options.mediaSource;
+        await f.player.play(options);
+        assert.equal(received.length, 1); assert.equal(received[0].source, options.url); assert.equal(received[0].api.synthetic, true);
+        assert.equal(f.clients[0].loads[0][1], 'http://127.0.0.1:12345/r/' + 'a'.repeat(48));
+        assert.equal(options.item, originalItem); assert.equal(options.mediaSource, originalMedia);
+        await f.player.stop(true); assert.equal(received[0].signal.aborted, true); assert.equal(released, 1);
+    } finally { await f.service.destroy(); }
+});
+test('late FN source cannot load after the owning Native play is stopped', async () => {
+    const gate = deferred(); let entered = false, released = 0;
+    const f = fixture({fnConnect: {async source() { entered = true; return gate.promise; }}});
+    try {
+        const pending = f.player.play(playOptions(1)); pending.catch(() => {});
+        await waitFor(() => entered); await f.player.stop(true);
+        gate.resolve({url: 'http://127.0.0.1:12345/r/' + 'a'.repeat(48), release() { released++; }});
+        await assert.rejects(pending, error => error.playbackSuperseded === true);
+        assert.equal(released, 1); assert.equal(f.clients[0].loads.length, 0);
+    } finally { await f.service.destroy(); }
+});
+test('disabled FN does not query account identity or replace an ordinary Native source', async () => {
+    const f = fixture({getApiClient() { throw new Error('UNEXPECTED_ACCOUNT_READ'); },
+        fnConnect: {available: async () => false, source() { throw new Error('UNEXPECTED_FN_SOURCE'); }}});
+    try { await f.player.play(playOptions(1)); assert.equal(f.clients[0].loads[0][1], 'fixture-1.mkv'); await f.player.stop(true); }
+    finally { await f.service.destroy(); }
+});
 
 for (const action of ['stop', 'destroy']) {
     test('pending create ' + action + ' retires only its helper before a new Play', async () => {

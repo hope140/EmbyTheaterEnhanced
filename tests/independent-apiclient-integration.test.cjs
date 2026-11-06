@@ -6,6 +6,24 @@ const selection=JSON.parse(read('src/web-api/selection.json'));
 const cmSource=()=>patch(read('vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js').toString());
 const {harness,storage}=require('./helpers/api-client-amd.cjs');
 
+test('canonical FN login omits an old account token and waits for the owning Session retirement barrier',async()=>{
+    let release,observed=false;const gate=new Promise(done=>{release=done;});
+    const local='http://127.0.0.1:12345/a/'+'a'.repeat(48)+'/',remote='https://media.example.test/';
+    const owner={serverId:'synthetic-server',accountId:'old-user',serverAddress:remote,token:'synthetic-old-token'};
+    const fn={mapUrl(url,value){if(value)assert.deepEqual(JSON.parse(JSON.stringify(value)),owner);return url.startsWith(remote)?local+url.slice(remote.length):url;},
+        isAuthentication:url=>url.startsWith(local)&&new URL(url).pathname.toLowerCase().endsWith('/users/authenticatebyname'),
+        async authenticated(url,value){assert(url.startsWith(local));assert.equal(value.AccessToken,'synthetic-new-token');observed=true;await gate;}};
+    const h=harness(()=>({status:200,headers:{get:()=> 'application/json'},json:async()=>({ServerId:'synthetic-server',User:{Id:'new-user'},AccessToken:'synthetic-new-token'})}),{__eteFnTransport:fn});
+    const Ex=h.load('apiclientex.js').default,store=storage();
+    const api=new Ex(store,()=>Promise.resolve(),remote,'ETE','test','Synthetic device','synthetic-id',1);
+    api.serverInfo({Id:owner.serverId,UserId:owner.accountId,AccessToken:owner.token});api.setSystemInfo({Version:'4.8.0.0'});
+    let done=false;const pending=api.fetch({type:'POST',url:api.getUrl('Users/AuthenticateByName'),dataType:'json',data:{Username:'synthetic-user',Pw:'synthetic-password'}},true).then(value=>{done=true;return value;});
+    await new Promise(resolve=>setImmediate(resolve));assert.equal(observed,true);assert.equal(done,false);
+    assert.equal(h.requests.length,1);assert.doesNotMatch(h.requests[0].url, /synthetic-old-token/);
+    assert.doesNotMatch(JSON.stringify(h.requests[0].options.headers), /synthetic-old-token/);
+    release();assert.equal((await pending).User.Id,'new-user');assert.equal(done,true);assert.equal(h.timers.size,0);
+});
+
 test('four maintained AMD outputs and MIT notice reproduce from fixed licensed inputs and source recipe',t=>{
     const input=JSON.parse(read('src/web-api/INPUT_MANIFEST.json'));
     for(const row of input.files){const b=read('src/web-api/'+row.path);assert.equal(b.length,row.bytes);assert.equal(sha(b),row.sha256);assert.equal(crypto.createHash('sha1').update(Buffer.concat([Buffer.from('blob '+b.length+'\0'),b])).digest('hex'),row.git_blob_sha1);}

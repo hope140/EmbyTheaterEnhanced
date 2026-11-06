@@ -7,8 +7,8 @@ const expectedVersion = input.version;
 const expectedHash = input.sha256;
 const stages = ['APP_CODE_STARTED', 'APP_READY', 'PANEL_READY', 'BOOTSTRAP',
     'PRIMARY_PAGE_AUTHORIZED', 'PRIMARY_API_VERIFIED', 'ISOLATED_API_DENIED', 'HTTP_SESSION',
-    'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY', 'DRAINED'];
-const checks = ['bootstrap', 'isolatedSessions', 'httpSessionCookie', 'range206', 'range416',
+    'API_SESSION_POST', 'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY', 'DRAINED'];
+const checks = ['bootstrap', 'isolatedSessions', 'httpSessionCookie', 'authenticatedApiPost', 'range206', 'range416',
     'externalRedirectCredentialSeparation', 'credentialLocationRejected', 'websocketSessionCookie',
     'websocketRawBytes', 'pendingWebSocketCancelled', 'pendingHeadersCancelled', 'streamCancelled',
     'profileCloseClearsCookies', 'profileCloseRetiresSockets', 'profileCloseRetiresStreams', 'expiryRetiresLeases',

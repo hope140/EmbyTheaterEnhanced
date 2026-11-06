@@ -28,6 +28,10 @@
     var windowsNativeMedia = null;
     var disposeWindowsNativeMedia = function () { return Promise.resolve(); };
     var bundledVersions = require('./enhanced/bundled-versions');
+    var fnConnectTrial = require('./enhanced/fn-connect/startup.cjs').prepare({
+        app: app, argv: process.argv, execPath: process.execPath, runtimeRoot: path.resolve(__dirname, '..'),
+        platform: process.platform, environment: process.env
+    });
 
     // Explicit trial CLI is validated and isolated before bootstrap/identity/log writes.
     var pageCacheTest = require('./enhanced/page-cache/test-session').prepare({
@@ -1016,7 +1020,7 @@
 
     var commandLineOptions = parseCommandLine();
 
-    var userDataPath = pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
+    var userDataPath = fnConnectTrial ? fnConnectTrial.userDataPath : pageCacheTest ? pageCacheTest.userDataPath : commandLineOptions.userDataPath;
     if (userDataPath) {
         app.setPath('userData', userDataPath);
     }
@@ -1034,6 +1038,12 @@
     });
     var strmPlaybackConfig = require('./enhanced/strm-playback-config').create({store: strmConfigStore,
         createService: function (config) {return cd2ServiceModule.createService({config: config, onDiagnostic: enhancedLog});}});
+    // Development opt-in only. No session, auth window or request is created by
+    // the ordinary application path, including existing update/download flows.
+    var unregisterFnConnect = require('./enhanced/fn-connect/ipc.cjs').register({
+        ipcMain: ipcMain, getWebContents: getWebContents, electron: electron,
+        enabled: Boolean(fnConnectTrial)
+    });
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,
         playback: strmPlaybackConfig,
@@ -1182,6 +1192,7 @@
                 'maintenance': function () { return unregisterMaintenanceIpc(); },
                 'http-cache': function () { return unregisterCacheManagementIpc(); },
                 'downloads': function () { return typeof unregisterDownloadIpc === 'function' ? unregisterDownloadIpc() : undefined; },
+                'fn-connect': function () { return unregisterFnConnect(); },
                 'strm-config': function () { return unregisterStrmConfigIpc(); },
                 'cd2': function () { return unregisterCd2Ipc(); },
                 'refresh-rate': function () { return unregisterRefreshRate(); },

@@ -16,6 +16,16 @@ function patchConnectionManager(source) {
     const first = 'define(["exports", "./events.js"], function (_exports, _events) {';
     if (!source.startsWith(first)) throw Error('ConnectionManager module boundary mismatch.');
     source = source.replace(first, 'define(["exports", "./events.js", "./transport.js"], function (_exports, _events, _transport) {');
+    const signedIn = '      instance._getOrAddApiClient(server, serverUrl),';
+    if (source.split(signedIn).length !== 2) throw Error('ConnectionManager sign-in boundary mismatch.');
+    const begin = source.indexOf('  function onLocalUserSignIn('), end = source.indexOf('  function tryReconnectToUrl(', begin);
+    if (begin < 0 || end < 0) throw Error('ConnectionManager sign-in span mismatch.');
+    let span = source.slice(begin, end);
+    span = span.replace('    return (', '    return Promise.resolve(typeof window !== "undefined" && window.__eteFnTransport && window.__eteFnTransport.beforeIdentityChange({serverId:server.Id,accountId:server.UserId,token:server.AccessToken,serverAddress:serverUrl})).then(function () { return (');
+    const tail = '    );' + newline + '  }';
+    if (span.split(tail).length !== 2) throw Error('ConnectionManager sign-in completion mismatch.');
+    span = span.replace(tail, '    ); });' + newline + '  }');
+    source = source.slice(0, begin) + span + source.slice(end);
     replaceSpan('  function getFetchPromise(', '  function sortServers(', '');
     replaceSpan('  function ajax(', '  function getConnectUrl(', `  function ajax(request, signal) {
     if (!request) throw new Error("Request cannot be null");

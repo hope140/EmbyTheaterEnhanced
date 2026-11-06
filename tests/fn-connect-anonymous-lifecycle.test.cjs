@@ -9,7 +9,7 @@ const {EventEmitter} = require('node:events');
 const {PassThrough} = require('node:stream');
 const {createController} = require('../prototypes/fn-connect/client/controller.cjs');
 const {createFixture, createFixtureIO} = require('../prototypes/fn-connect/client/fixture.cjs');
-const source = path.join(__dirname, '../prototypes/fn-connect/client/anonymous-media.cjs');
+const source = path.join(__dirname, '../src/electronapp/enhanced/fn-connect/core/anonymous-media.cjs');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const deferred = () => { let resolve; const promise = new Promise(value => { resolve = value; }); return {promise, resolve}; };
 function transportFixture({earlyError = false, redirect = false, holdClose = false, requestFailure = false} = {}) {

@@ -8,11 +8,11 @@ const {createFixture, createFixtureIO} = require('../prototypes/fn-connect/clien
 const {runElectronSmoke} = require('../prototypes/fn-connect/client/electron-smoke.cjs');
 
 test('Windows smoke scenario completes against actual local I/O with a synthetic session adapter (not Chromium)', {timeout: 15000}, async t => {
-    const fixture = await createFixture(), io = createFixtureIO();
+    const fixture = await createFixture({distinctOrigins: true}), io = createFixtureIO();
     const {createAnonymousMedia} = require('../prototypes/fn-connect/client/anonymous-media.cjs');
     io.openAnonymousMedia = (_session, input) => createAnonymousMedia({enabled: true, mode: 'fixture',
         environment: {}, resolveProxy: async () => 'DIRECT'}).open(input);
-    const controller = createController({enabled: true, mode: 'fixture', io, relayExternalMedia: true});
+    const controller = createController({enabled: true, mode: 'fixture', io, relayExternalMedia: true, allowApiWrites: true});
     const bridge = await createBridge(controller, {enabled: true});
     t.after(async () => { await bridge.close(); await controller.closeAll(); await fixture.close(); });
     const windows = new Map(), stages = [];
@@ -33,5 +33,5 @@ test('Windows smoke scenario completes against actual local I/O with a synthetic
     assert.equal(outcome.profileCloseClearsCookies, true);
     assert.equal(outcome.websocketSessionCookie, true);
     assert.deepEqual(stages, ['BOOTSTRAP', 'PRIMARY_PAGE_AUTHORIZED', 'PRIMARY_API_VERIFIED', 'ISOLATED_API_DENIED',
-        'HTTP_SESSION', 'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY']);
+        'HTTP_SESSION', 'API_SESSION_POST', 'REDIRECT_SEPARATION', 'WEBSOCKET_SESSION', 'CANCELLATION', 'PROFILE_CLOSE', 'EXPIRY']);
 });

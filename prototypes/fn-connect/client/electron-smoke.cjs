@@ -70,6 +70,17 @@ async function runElectronSmoke({controller, bridge, fixture, addProfile, author
         assert.equal((await isolated.session.cookies.get({url: fixture.profile.embyUrl})).length, 0);
         stage('ISOLATED_API_DENIED');
         stage('HTTP_SESSION');
+        const {createApiBridge} = require('../../../src/electronapp/enhanced/fn-connect/api-bridge.cjs');
+        const config = require('./policy.cjs').config(fixture.profile, 'fixture');
+        const apiBridge = await createApiBridge(controller, {id: first.id, config, mode: 'fixture', authorize: () => true});
+        try {
+            const response = await fetch(apiBridge.base + 'fixture-write', {method: 'POST', headers: {'content-type': 'application/json'},
+                body: '{"syntheticUpload":true}'});
+            assert.equal(response.status, 200); assert.equal((await response.json()).fixtureWrite, true);
+            assert.equal(fixture.state.lastWrite.body, '{"syntheticUpload":true}');
+            assert.equal(fixture.state.lastWrite.method, 'POST'); assert.match(fixture.state.lastWrite.cookie, /FNFixture=/);
+        } finally { await apiBridge.close(); }
+        stage('API_SESSION_POST');
         const api = await controller.request(first.id, {path: 'api', headers: {'X-Emby-Token': 'synthetic-electron-canary'}});
         assert.deepEqual(JSON.parse((await read(api)).toString()), {fixture: true});
         const apiSeen = fixture.state.seen.at(-1).headers;
@@ -152,7 +163,7 @@ async function runElectronSmoke({controller, bridge, fixture, addProfile, author
         const denied = await fetch(expiredLease.url); assert.equal(denied.status, 410); await denied.arrayBuffer();
         await removeProfile(isolated.id);
         assert.equal((await isolated.session.cookies.get({url: fixture.profile.embyUrl})).length, 0);
-        return {bootstrap: true, isolatedSessions: true, httpSessionCookie: true, range206: true, range416: true,
+        return {bootstrap: true, isolatedSessions: true, httpSessionCookie: true, authenticatedApiPost: true, range206: true, range416: true,
             externalRedirectCredentialSeparation: true, credentialLocationRejected: true,
             websocketSessionCookie: true, websocketRawBytes: true, pendingWebSocketCancelled: true,
             pendingHeadersCancelled: true, streamCancelled: true, profileCloseClearsCookies: true,

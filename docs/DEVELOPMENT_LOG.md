@@ -1698,3 +1698,13 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 同一源码的新普通验收包[41041631953](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953)已完成success，manual-windows-test-package耗时22m37s，Host编译／验证、整包构建与上传全部通过，无重复派发。API确认产物`12970779372`、名称`ete-test-win-x64-b4f858a06bb6da712d6bf73f9e40c5ee4cefbabb-41041631953-1`、164696855字节、expired=false，所属workflow源码与完整b4f858a一致；[临时下载页](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953/artifacts/12970779372)保留至`2026-10-31T10:56:11Z`。API给出ZIP摘要`sha256:89eca833a9c6228cd05ed80261a556a411be951bf2444c30dcbe6115120258d2`，不是独立计算的安装器SHA。
 
 新产物正常GET `actions/artifacts/12970779372/zip`仅一次，返回Forbidden、0字节，已停止；没有重试该目标、先前受拒的旧目标或换通道。不是自动审批拒绝，构建／上传本身成功。源码根package.json仍为0.4.6，按构建规则预期文件名为`EmbyTheaterEnhanced-0.4.6-test-b4f858a06bb6-41041631953-1-win-x64-setup.exe`；由于包内字节未回读，实际安装器名／PE版本／SHA和内部模块清单未独立核验。真实来源HTTP错误根因、原生确认／文件夹打开／界面布局及真实应用重开仍待使用者验收。未操作Work前台、删除用户文件、合main或发布。
+
+## 2026-11-06 — FN Connect 默认关闭的 ETE 实验切片
+
+基于 main `09147a3` 及已保存恢复原型 `9d43209`，目标版本按协调顺延 0.4.18，工作分支名不改，不改包版本或发布。共享核心只保留一套实现；以受校验且新建隔离目录的实验启动接入手动服务器、官方 FN 认证窗口、原 Emby AuthenticateByName、API／图片／WebSocket 和 Native 最终 source。保持原 CM／PlaybackManager 身份和生命周期，逐跳精确 origin 与第三方无认证消费者不放宽；默认启动不启用。本轮不修改 NAS、现用安装或历史 profile，不恢复预载／播放暂存。
+
+定向回归固定 Node 24.18.1：`node --test tests/fn-connect-*.test.cjs tests/native-helper-create-owner.test.cjs tests/app-shutdown-drain.test.cjs tests/independent-apiclient-integration.test.cjs` 为 **285 pass／0 fail／0 skip**。覆盖 API 写入／图片归属、WebSocket 二进制与 FIN 半关闭、首次绑定前文档失效、账号／服务器切换及同地址多 profile 路由。新原 ApiClient 登录用例首次因夹具未按 ApiClientEx 构造合同传参失败；修正合成夹具后通过，没有放宽门禁。
+
+独立只读审查提出的认证载体、原登录事件时序、绑定前退役三组问题已补测试；末轮另发现同 token 的旧 provisional route 可复活及 WS FIN 未退休，分别增加不可再绑定标记和取消／销毁。新增合成回归通过，限定静态复核无剩余阻断。原 Emby 返回身份先等待旧请求退休，再绑定选中的 FN profile，避免同账号同 token 无新身份事件时漏绑定。
+
+较早原型的公开集合在锁定依赖安装后为 2618 pass／0 fail／32 skip，不作为这轮正式接线的验收。新全公开集合、语法、有限凭据检查及提交保存结果待本轮追加。固定 Electron 为产品 44.5.0；Windows fixture、产品 UI／Native 解码、真实 FN／CDN／seek 均未运行。历史 0x80000003 启动问题根因未知，历史外源请求次数不完整；不以新合成测试或版本对齐宣称修复。下一步仅干净提交的无凭据回环 fixture，不启动真实登录或取流。

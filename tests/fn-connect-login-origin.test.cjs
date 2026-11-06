@@ -5,12 +5,13 @@ const test = require('node:test');
 const {EventEmitter} = require('node:events');
 const {createElectronIO} = require('../prototypes/fn-connect/client/electron-io.cjs');
 
-async function setup(load = () => Promise.resolve(), agent = 'Mozilla/5.0 Chrome/144.0.0.0 Electron/44.4.2 Safari/537.36') {
+async function setup(load = () => Promise.resolve(), agent = 'Mozilla/5.0 Chrome/144.0.0.0 Electron/44.4.2 Safari/537.36', options = {}) {
     let window;
     class Window extends EventEmitter {
         constructor() {
             super(); window = this;
             this.webContents = new EventEmitter();
+            this.webContents.id = 7;
             this.agents = [];
             this.webContents.getUserAgent = () => agent;
             this.webContents.setUserAgent = value => this.agents.push(value);
@@ -21,11 +22,21 @@ async function setup(load = () => Promise.resolve(), agent = 'Mozilla/5.0 Chrome
         destroy() { this.emit('closed'); }
     }
     const messages = [], authOrigins = new Set(['https://nas.example.test', 'https://media.example.test']);
-    const io = createElectronIO({BrowserWindow: Window}, {onStatus: value => messages.push(value)});
-    const handle = await io.openLogin({}, {bootstrap: new URL('https://nas.example.test/'),
+    const io = createElectronIO({BrowserWindow: Window}, {onStatus: value => messages.push(value), ...options});
+    let gate;
+    const handle = await io.openLogin({webRequest: {onBeforeRequest(_filter, fn) { gate = fn; }}}, {bootstrap: new URL('https://nas.example.test/'),
         emby: new URL('https://media.example.test/'), authOrigins}, {signal: new AbortController().signal, onCancel() {}});
-    return {window, messages, authOrigins, handle};
+    return {window, messages, authOrigins, handle, gate};
 }
+test('production auth-only window cannot become an Emby login or load its subresources; main API requests stay separate', async () => {
+    const x = await setup(undefined, undefined, {authenticationOnly: true}); let prevented = false;
+    x.window.webContents.emit('will-navigate', {preventDefault() { prevented = true; }}, 'https://media.example.test/web/index.html');
+    assert.equal(prevented, true);
+    for (const [webContentsId, url, expected] of [[7, 'https://media.example.test/api', true],
+        [-1, 'https://media.example.test/api', false], [7, 'https://nas.example.test/api', false]]) {
+        x.gate({webContentsId, url}, value => assert.equal(value.cancel, expected));
+    }
+});
 
 for (const event of ['will-navigate', 'will-redirect']) test(event + ' remains denied and reports only a sanitized origin', async () => {
     const x = await setup(); let prevented = false;

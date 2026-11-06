@@ -1,4 +1,4 @@
-define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/advance-download/renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, advanceDownload) {
+define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter', 'appSettings', 'userSettings', 'require', 'connectionManager', '../resolvers/strm-resolver.js', '../resolvers/strm-config-client.js', '../resolvers/strm-identity-recovery.js', '../enhanced/playback-route-stats.js', '../enhanced/nexttrack-transition.js', '../native-helper/client.js', '../enhanced/advance-download/renderer.js', '../enhanced/fn-connect/renderer.js'], function (globalize, playbackManager, pluginManager, events, embyRouter, appSettings, userSettings, require, connectionManager, strmResolver, strmConfigClient, strmIdentityRecovery, playbackRouteStats, nextTrackTransition, nativeHelperClient, advanceDownload, fnConnect) {
     'use strict';
 
     function getTextTrackUrl(subtitleStream, serverId) {
@@ -274,6 +274,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 var previous = activePlayRequest;
                 activePlayRequest = null;
                 previous.controller.abort();
+                if (previous.fnSource) previous.fnSource.release();
                 cleanupCorePlaying(previous);
             }
             if (libmpv && typeof libmpv.retireGeneration === 'function') {
@@ -1076,6 +1077,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 nextTransition.playbackReady(request.playbackRequestId);
                 if (window.enhancedDiagnostics) window.enhancedDiagnostics(libmpv, 'playing');
             } catch (error) {
+                if (request.fnSource) request.fnSource.release();
                 if (request.playbackConfig) request.playbackConfig.release();
                 cleanupCorePlaying(request);
                 nextTransition.playbackFailed(request.playbackRequestId);
@@ -1246,6 +1248,17 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }));
 
             assertCurrentPlayRequest(request);
+            // Change only the final native source. Downloaded files and CD2 /
+            // mount results keep their existing resolver ownership and headers.
+            if (resolverResult && resolverResult.type === 'native' && url === nativeSource && fnConnect && typeof fnConnect.source === 'function') {
+                var fnAvailable = typeof fnConnect.available !== 'function' || await fnConnect.available();
+                assertCurrentPlayRequest(request);
+                if (fnAvailable) {
+                    request.fnSource = await fnConnect.source(connectionManager.getApiClient(item.ServerId), url, request.controller.signal);
+                    assertCurrentPlayRequest(request);
+                    if (request.fnSource) { url = request.fnSource.url; fileLocalLoadOptions = []; }
+                }
+            }
             currentSrc = url;
             currentAspectRatio = 'auto'
 

@@ -19,7 +19,9 @@ class ApiClient extends BaseApiClient {
     getCurrentLocale() { return this._currentLocale; }
     setCurrentLocale(value) { this._currentLocale = value; }
     getUrl(name, params, serverAddress) {
-        return super.getUrl(name, params, (serverAddress || this.serverAddress()).replace(/\/+$/, ''));
+        const value = super.getUrl(name, params, (serverAddress || this.serverAddress()).replace(/\/+$/, ''));
+        return typeof window !== 'undefined' && window.__eteFnTransport ? window.__eteFnTransport.mapUrl(value,
+            {serverId: this.serverId(), accountId: this.getCurrentUserId(), serverAddress: this.serverAddress(), token: this.accessToken()}) : value;
     }
 
     setSystemInfo(info) {
@@ -45,7 +47,8 @@ class ApiClient extends BaseApiClient {
             request.contentType = 'text/plain';
             request.url += `${request.url.includes('?') ? '&' : '?'}reqformat=json`;
         }
-        this.setAuthorizationInfoIntoRequest(request, includeAccessToken);
+        const fn = typeof window !== 'undefined' && window.__eteFnTransport;
+        this.setAuthorizationInfoIntoRequest(request, typeof fn?.isAuthentication === 'function' && fn.isAuthentication(request.url) ? false : includeAccessToken);
         if (this.enableAutomaticNetworking === false || request.type !== 'GET') return transport.send(request, signal);
         return this.fetchWithFailover(request, true, signal);
     }

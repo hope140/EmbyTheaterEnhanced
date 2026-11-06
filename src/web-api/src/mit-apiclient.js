@@ -1064,7 +1064,7 @@ class ApiClient {
         url += `?api_key=${accessToken}`;
         url += `&deviceId=${this.deviceId()}`;
 
-        console.log(`opening web socket with url: ${url}`);
+        console.log('opening web socket');
 
         const webSocket = new WebSocket(url);
 
