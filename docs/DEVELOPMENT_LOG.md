@@ -1753,3 +1753,5 @@ runner 与缓存合成回归 47／47：真实本地小字节锁定／复制／�
 49 项报告／前置定向合成回归通过，覆盖成功与运行失败、双向绑定错误、结果／状态不可写、首次终态、并发／迟到尝试、实际 PS 尾部片段的报告异常与相邻文件保留。独立审查指出报告器自身失败仍会留下运行态，已补兜底和终态断言，复核无新增阻断。此为 Node 与 Linux PowerShell／I/O 替身证据，新修订尚未实机复验。真实 FN／CDN、Native 解码／seek 仍未验证；不以这次历史 Windows fixture 报告替代它们。
 
 当前 FN 集合在 Node 24.18.1／Linux PowerShell 7.4.13 为 311／311；维护 JS 621 文件、维护 PowerShell 56 文件、原型 JS 2 文件及原型 PowerShell 3 文件语法通过。有限凭据模式 721 个维护文本及本轮 12 个改动文件／新增行无发现。仅为有限检查和合成 I/O 证据；修订后的真实 Windows 双回执合同仍待复验，未启动真实认证或取流。准确提交的完整公开回归待追加。
+
+代码提交 `d7c5e132e3837db59bff0e48324b5b1b7e59eb39` 的完整公开复验为 **2770 项：2738 pass／0 fail／32 平台 skip**，固定 6 份材料排除保留；报告／前置定向 49／49，FN 集合 311／311。后续保存仅补文档。新修订的 Windows 联合回执仍未实测，不对旧原样回执补写；下一次只能在新的干净准确 checkout 复用已核验官方 ZIP，以绑定一致的 result、FINISHED／terminal:true／receiptWritten:true 的 status 及 runner exit0 联合判断。无需新下载，不涉及真实 FN、CDN、Native 解码或 seek。

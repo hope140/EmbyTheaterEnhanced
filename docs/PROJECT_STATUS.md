@@ -2,7 +2,7 @@
 
 ## 2026-11-06 — FN 最终回执绑定修正
 
-协调环境在 `fa1776e` 的真实 Windows／Electron 回环已报告 15 阶段和 19 checks 通过，但 runId 缺失和 status 未终结使完整回执验收未通过。现仅修 runner 的双回执 runId／源码绑定、一次终态与报告失败兜底，49 项定向合成回归及限定静态复核通过；新修订 Windows 复验仍待协调，旧回执不改写。联合验收条件见 [runner 说明](../prototypes/fn-connect/client/README.md)，不声称真实 FN 或 Native 播放通过。
+协调环境在 `fa1776e` 的真实 Windows／Electron 回环已报告 15 阶段和 19 checks 通过，但 runId 缺失和 status 未终结使完整回执验收未通过。现仅修 runner 的双回执 runId／源码绑定、一次终态与报告失败兜底，49 项定向和 311 项 FN 合成回归及限定静态复核通过，代码 `d7c5e13` 公开复验为 2738 pass／0 fail／32 平台 skip（固定 6 份材料排除保留）；新修订 Windows 复验仍待协调，旧回执不改写。联合验收条件见 [runner 说明](../prototypes/fn-connect/client/README.md)，不声称真实 FN 或 Native 播放通过。
 
 ## 2026-11-06 — FN 回环 runner 受限原始 ZIP 缓存
 
