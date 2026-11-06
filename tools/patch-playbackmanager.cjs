@@ -651,7 +651,10 @@ replaceOnce('control diagnostic helpers', '  function afterPlaybackErrorMessage'
     var input = context || {}, control = {
       operationId: typeof input.operationId === "string" && /^manager-[1-9][0-9]{0,12}$/.test(input.operationId)
         ? input.operationId : "manager-" + (++enhancedControlSequence),
-      controlOrigin: ["osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "manager", "queue"].indexOf(input.controlOrigin) >= 0 ? input.controlOrigin : "unknown",
+      controlOrigin: ["osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "remote-general", "manager", "queue"].indexOf(input.controlOrigin) >= 0 ? input.controlOrigin : "unknown",
+      navigationId: typeof input.navigationId === "string" && /^navigation-[1-9][0-9]{0,12}$/.test(input.navigationId) ? input.navigationId : null,
+      navigationCommand: ["back", "home", "route"].indexOf(input.navigationCommand) >= 0 ? input.navigationCommand : "unknown",
+      navigationAssociation: input.navigationAssociation === "route-context" ? "route-context" : "unknown",
       controlReason: reason, callSite: site
     };
     try {

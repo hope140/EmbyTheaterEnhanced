@@ -130,3 +130,15 @@ test('JSONL and exported report preserve numeric evidence without raw media, sec
         }
     } finally { fs.rmSync(root, {recursive: true, force: true}); }
 });
+
+
+test('finite navigation fields survive native control projection while arbitrary values do not', () => {
+    const {projectControl} = require('../src/electronapp/enhanced/native-diagnostics');
+    const control = projectControl({controlOrigin: 'remote-general', controlReason: 'stop', callSite: 'manager-stop',
+        operationId: 'manager-2', navigationId: 'navigation-3', navigationCommand: 'home', navigationAssociation: 'route-context'});
+    assert.equal(control.navigationId, 'navigation-3');
+    assert.equal(control.controlOrigin, 'remote-general');
+    assert.equal(control.navigationAssociation, 'route-context');
+    const invalid = projectControl({navigationId: 'PRIVATE_CANARY', navigationCommand: 'PRIVATE_CANARY', navigationAssociation: 'PRIVATE_CANARY'});
+    assert.doesNotMatch(JSON.stringify(invalid), /PRIVATE_CANARY/);
+});

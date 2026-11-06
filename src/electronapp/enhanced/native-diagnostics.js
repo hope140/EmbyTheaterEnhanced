@@ -16,7 +16,9 @@ function projectControl(value) {
         if (!value || typeof value !== 'object') return null;
         var output = {};
         var allowed = {
-            "controlOrigin": ["unknown", "osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "manager", "queue"],
+            "controlOrigin": ["unknown", "osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "remote-general", "manager", "queue"],
+            "navigationCommand": ["back", "home", "route"],
+            "navigationAssociation": ["route-context", "unknown"],
             "controlReason": ["stop", "next", "replacement", "error-cleanup", "error-auto-next", "ended-auto-next", "queue-empty", "destroy", "new-play"],
             "callSite": ["manager-play", "manager-stop", "manager-next", "manager-replacement", "manager-ended", "adapter-stop", "adapter-destroy", "adapter-new-play"]};
         for (var name in allowed) {
@@ -25,6 +27,8 @@ function projectControl(value) {
         }
         var operation = Object.getOwnPropertyDescriptor(value, 'operationId');
         output.operationId = operation && typeof operation.value === 'string' && /^(?:manager|adapter)-[1-9][0-9]{0,12}$/.test(operation.value) ? operation.value : null;
+        var navigation = Object.getOwnPropertyDescriptor(value, 'navigationId');
+        output.navigationId = navigation && typeof navigation.value === 'string' && /^navigation-[1-9][0-9]{0,12}$/.test(navigation.value) ? navigation.value : null;
         return output;
     } catch (_) { return null; }
 }

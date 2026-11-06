@@ -19,6 +19,7 @@ const DIAGNOSTICS_BLOCK = [
     "if (process.argv && process.argv.some(arg => arg.startsWith('--ete-page-cache-renderer='))) require('./enhanced/page-cache/test-options').install(window, process.argv);",
     "const diagnostics = require('./enhanced/diagnostics');",
     "require('./enhanced/renderer-errors').install(window, function (record) { ipcRenderer.send('enhanced-diagnostics-log', record); });",
+    "window.__eteNavigationDiagnostics = require('./enhanced/navigation-diagnostics').create(function (record) { ipcRenderer.send('enhanced-diagnostics-log', record); });",
     'let eteWindowsMediaState = null;',
     "const eteWindowsMediaRenderer = require('./enhanced/windows-media-renderer');",
     "const eteWindowsNativeEnabled = process.platform === 'win32';",

@@ -361,7 +361,7 @@ test('explicit stop snapshots the last observed owner before invalidation and ca
     f.property('demuxer-cache-state', {'cache-end': 113, 'cache-duration': 90, underrun: false});
     const generation = f.generation(), before = f.operations.length;
     f.advance(9538);
-    const control = {operationId: 'manager-17', controlOrigin: 'remote-playstate', controlReason: 'stop', callSite: 'manager-stop'};
+    const control = {operationId: 'manager-17', controlOrigin: 'remote-playstate', controlReason: 'stop', callSite: 'manager-stop', navigationId: 'navigation-17', navigationCommand: 'home', navigationAssociation: 'route-context'};
     const stopping = f.player.stop(true, true, control);
     const snapshot = clean(f.log('stop-requested').details);
     assert.equal(snapshot.snapshotMeaning, 'latest-known-at-stop-request');
@@ -379,6 +379,8 @@ test('explicit stop snapshots the last observed owner before invalidation and ca
     assert.deepEqual(f.operations.slice(before).map(row => row.operation), ['destroy'], 'no diagnostic native query');
     const payload = clean(f.operations.at(-1).payload.diagnostic);
     assert.deepEqual(payload, snapshot);
+    assert.equal(payload.control.navigationId, 'navigation-17');
+    assert.equal(payload.control.navigationAssociation, 'route-context');
     assert.deepEqual(clean(f.log('stop').details.requestedState), snapshot);
     assert.equal(f.eventNames.filter(name => name === 'stopped').length, 1);
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-stop-diagnostic-'));

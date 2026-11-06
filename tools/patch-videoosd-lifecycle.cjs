@@ -312,7 +312,7 @@ function patchVideoOsd(source) {
     output = once(output, '_playbackmanager.default.nextTrack(self.currentPlayer);',
         '_playbackmanager.default.nextTrack(self.currentPlayer, {controlOrigin:"osd"});');
     output = once(output, '_playbackmanager.default.stop(statsOverlay)),',
-        '_playbackmanager.default.stop(statsOverlay, {controlOrigin:"osd-route"})),');
+        '_playbackmanager.default.stop(statsOverlay, (window.__eteNavigationDiagnostics ? window.__eteNavigationDiagnostics.stopContext(statsOverlay) : {controlOrigin:"unknown"}))),');
     return patchIntroSkip(patchThumbnailPreview(output));
 }
 

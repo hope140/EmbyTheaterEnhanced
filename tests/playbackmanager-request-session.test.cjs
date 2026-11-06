@@ -2640,3 +2640,17 @@ for (const succeeds of [true, false]) test(`integrated STRM exhaustion then actu
     assert.equal(reportsFor(f.calls, 'reportPlaybackStopped').length, stopCount);
     assert.equal(f.calls.metadata.length, 2);
 });
+
+
+test('navigation correlation passes through the generated manager without changing Stop arguments', async () => {
+    const f = makeFixture(); await startQueueItem(f, [makeItem('navigation-A')], 'session-navigation');
+    f.player.supportsControlDiagnostics = true;
+    await f.manager.stop(null, {controlOrigin: 'remote-general', navigationId: 'navigation-7', navigationCommand: 'home', navigationAssociation: 'route-context'});
+    const control = f.calls.stop.at(-1)[2];
+    assert.equal(control.controlOrigin, 'remote-general');
+    assert.equal(control.navigationId, 'navigation-7');
+    assert.equal(control.navigationCommand, 'home');
+    assert.equal(control.navigationAssociation, 'route-context');
+    assert.deepEqual(f.calls.stop.at(-1).slice(0, 2), [true, true]);
+    assert.equal(reportsFor(f.calls, 'reportPlaybackStopped').length, 1);
+});
