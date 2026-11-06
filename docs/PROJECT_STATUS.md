@@ -1,5 +1,14 @@
 # 项目状态
 
+## 2026-11-06 — v0.4.18 三项组合验证
+
+集成保留诊断 4ea1df0、终局退出 ea42be67 与起播路线 9920624 的独立历史，产品版本为 0.4.18；不含飞牛。冲突仅合并历史与追加测试，保留生成器的终局错误判定。新增组合测试贯通生产生成 PlaybackManager、真实 JS resolver/adapter：三条路线耗尽后进入同集 Transcode，覆盖成功和失败退出、队列清空、重复终止和旧 generation 事件；四次 native load 代次各异，路线内操作与请求编号一致。会话上报保持既有 manager 语义：初始失败也先上报 Start，再进入兼容流；最终 Stop 使用当前兼容流的服务端 session，不改变其顺序或归属策略。
+
+进入有效 STRM 路线序列后开始共享 15 秒期限，覆盖首次 next 到 core-playing；不含 PlaybackInfo、配置、OSD/displaySync、helper 创建、身份恢复及下载检查，后续 Transcode 兼容流不受此新增期限限制。同步文件检查阻塞时恢复执行后才检查期限。日志增加预算起点、已用与剩余毫秒及终止原因；保留路线退休的控制操作，并允许有限退休原因穿过 native 诊断投影。HTTP 仍为 helper-only，不能关联具体资源或当前请求。
+
+组合定向 264/264；新增断言首轮发现测试误读报告字段大小写与既有 Start/Stop session 切换语义，已按生产契约修正，未更改会话行为。最终准确提交的完整回归结果以交付回执为准。Windows 固定 DLL、完整客户端、可见窗口、真实媒体及安装门禁仍未执行；不合 main、不打 tag、不发布。
+
+
 ## 2026-11-06 — v0.4.18 三项异常修复版本准备
 
 产品与根锁文件三处版本统一为 0.4.18，渠道 testing，发行标题为 v0.4.18 测试版，正式 Latest 保持 v0.4.0。发行说明限定于停止定位日志、终局失败退出及起播前有界后续路线回退，不宣称历史提前停止未知根因已修复，不将合成测试作为真实播放验收。说明使用实际 Release 附件区，不猜测安装器文件名或哈希。
@@ -27,6 +36,13 @@ HTTP 响应继续 helper-only；本次没有新增 Windows 固定 DLL 实验、�
 保留同集原有兼容流尝试、正常 EOF 连播与主动 Next；不全局关闭播放结束推进，不新增直链重取、来源路线回退、队列保留或重试入口。不声称解决上层停止原因未知或原生提前普通 EOF。独立诊断与起播路线回退变更需后续整合，尤其注意共享 `tools/patch-playbackmanager.cjs`，本候选不自行合入其他分支。
 
 生成运行时回归覆盖初始 reject、播放中 error、四阶段兼容流耗尽及成功恢复、外层失败、全屏提示 resolve/reject、后台播放、提前 EOF、正常结束、主动 Next/PlayNow、重复终止、队列清理、停止上报及旧弹窗/请求退休。Linux 最终 `npm test` 为 2571 pass / 32 skip / 0 fail，生成 manager 定向 97 pass；公开集合 2446 pass / 32 skip / 0 fail（固定排除 6 份材料用例）。JS/PowerShell 语法、有限凭据模式及空白检查通过。显式材料集合 132 pass / 3 fail / 1 skip；3 项失败与材料门禁均因缺少固定 Windows Host 输入。云端缺少 `vendor/windows-host`，不能宣称完整固定材料或 Windows 播放验收通过。版本不变，未合并或发布。
+
+
+## 2026-11-06 — 起播前 STRM 后续路线独立候选
+
+在已核实 main 基线上增加请求内路线游标、逐次 native generation 及 进入 STRM 路线序列后的 15 秒期限；只有当前代次的主媒体加载错误可在 core-playing 前继续尚未尝试的后续路线。保留原请求、配置 lease、起始位置、选轨与同集兼容处理；普通媒体、转码、下载优先和播放中途不扩范围。设计与验证入口见 [STRM Resolver](STRM_RESOLVER.md#起播阶段的同请求后续路线)。
+
+候选定向测试使用生产 patcher 生成 PlaybackManager，并连接真实 JS resolver/adapter 与 fake IPC；Windows 固定 DLL、真实用户媒体和三个独立工作包的最终组合尚待验证。独立日志包的 request/native owner 接口已核对，本候选不合入其业务改动，也不修改版本、现用客户端或服务器。
 
 ## 2026-11-06 — 关于页移除缓存迁移提示
 

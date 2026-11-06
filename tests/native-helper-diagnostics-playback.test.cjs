@@ -1,285 +1,13 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const {EventEmitter} = require('node:events');
 const http = require('node:http');
-const fs = require('node:fs');
-const path = require('node:path');
 const test = require('node:test');
-const vm = require('node:vm');
 
-const libmpvSource = fs.readFileSync(path.join(__dirname, '../src/electronapp/plugins/libmpv.js'), 'utf8');
 const diagnostics = require('../src/electronapp/enhanced/diagnostics');
 const nativeHelperClient = require('../src/electronapp/native-helper/client');
 
-function makeDeferred() {
-    let resolve;
-    let reject;
-    const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
-    return {promise, resolve, reject};
-}
-
-function waitFor(predicate, timeoutMs = 1000) {
-    const started = Date.now();
-    return new Promise((resolve, reject) => {
-        function poll() {
-            if (predicate()) return resolve();
-            if (Date.now() - started >= timeoutMs) return reject(new Error('condition-timeout'));
-            setImmediate(poll);
-        }
-        poll();
-    });
-}
-
-function makeEventTarget() {
-    const listeners = new Map();
-    return {
-        addEventListener(name, listener, options) {
-            const rows = listeners.get(name) || [];
-            rows.push({listener, once: !!(options && options.once)});
-            listeners.set(name, rows);
-        },
-        removeEventListener(name, listener) {
-            const rows = listeners.get(name) || [];
-            listeners.set(name, rows.filter(row => row.listener !== listener));
-        },
-        dispatchEvent(event) {
-            const rows = (listeners.get(event.type) || []).slice();
-            for (const row of rows) {
-                row.listener.call(this, event);
-                if (row.once) this.removeEventListener(event.type, row.listener);
-            }
-            return true;
-        }
-    };
-}
-
-function makeDom() {
-    const body = {
-        children: [],
-        get firstChild() { return this.children[0] || null; },
-        insertBefore(node) {
-            node.parentNode = this;
-            node.isConnected = true;
-            this.children.unshift(node);
-        },
-        removeChild(node) {
-            this.children = this.children.filter(child => child !== node);
-            node.parentNode = null;
-            node.isConnected = false;
-        }
-    };
-    let dialog = null;
-    const document = {
-        body,
-        querySelector(selector) {
-            return selector === '.mpv-videoPlayerContainer' && dialog && dialog.parentNode ? dialog : null;
-        },
-        createElement() {
-            const node = {
-                classList: {add() {}, remove() {}},
-                style: {},
-                parentNode: null,
-                children: [],
-                get firstChild() { return this.children[0] || null; },
-                insertBefore(child) {
-                    child.parentNode = this;
-                    child.isConnected = true;
-                    this.children.unshift(child);
-                },
-                removeChild(child) {
-                    this.children = this.children.filter(item => item !== child);
-                    child.parentNode = null;
-                    child.isConnected = false;
-                }
-            };
-            dialog = node;
-            return node;
-        }
-    };
-    return {document, body};
-}
-
-class FakeIpc extends EventEmitter {
-    constructor() {
-        super();
-        this.calls = [];
-        this.notifications = [];
-        this.generationId = null;
-        this.nextGenerationId = 163;
-        this.bridgeErrors = [];
-        this.generationRequiredErrors = [];
-        this.mutationsBeforeGeneration = [];
-        this.loadCalls = [];
-        this.corePlayingEvents = [];
-        this.destroyCalls = [];
-    }
-
-    invoke(channel, request) {
-        this.calls.push({channel, request});
-        const operation = request && request.operation;
-        const payload = request && request.payload || {};
-        if (operation === 'create') {
-            return Promise.resolve({
-                status: 'ok',
-                mode: 'native-helper',
-                endpointId: 'diagnostics-regression-endpoint',
-                protocolVersion: 1,
-                helperVersion: 'fixture-helper',
-                libmpvVersion: 'fixture-mpv'
-            });
-        }
-        if (operation === 'observe') return Promise.resolve({status: 'ok'});
-        if (operation === 'begin-generation') {
-            this.generationId = ++this.nextGenerationId;
-            return Promise.resolve({status: 'ok', generationId: this.generationId});
-        }
-        if (operation === 'set-properties' || operation === 'command') {
-            const generationId = payload.generationId;
-            if (generationId == null) {
-                const error = 'generation-required';
-                this.generationRequiredErrors.push({operation, payload});
-                this.mutationsBeforeGeneration.push({operation, payload});
-                return Promise.resolve({status: 'error', reason: error});
-            }
-            if (generationId !== this.generationId) return Promise.resolve({status: 'error', reason: 'stale-generation'});
-            if (operation === 'command' && Array.isArray(payload.data) && payload.data[0] === 'loadfile') {
-                const entry = {generationId, data: payload.data.slice(), emitted: false};
-                this.loadCalls.push(entry);
-                if (!this.suppressCorePlaying) setImmediate(() => {
-                    entry.emitted = true;
-                    this.corePlayingEvents.push({generationId, name: 'core-idle', value: false});
-                    this.emit(nativeHelperClient.EVENT_CHANNEL, {}, {
-                        type: 'property_change',
-                        generationId,
-                        data: {name: 'core-idle', value: false}
-                    });
-                });
-            }
-            return Promise.resolve({status: operation === 'command' ? 'accepted' : 'ok'});
-        }
-        if (operation === 'get-property') {
-            const generationId = payload.generationId;
-            if (generationId != null && generationId !== this.generationId) {
-                return Promise.resolve({status: 'error', reason: 'stale-generation'});
-            }
-            return Promise.resolve({status: 'ok', value: null});
-        }
-        if (operation === 'destroy') {
-            this.destroyCalls.push(payload);
-            return Promise.resolve({status: 'ok'});
-        }
-        return Promise.resolve({status: 'ok'});
-    }
-
-    send(channel, request) {
-        this.notifications.push({channel, request});
-    }
-}
-
-function makeContext(windowTarget, dom, nativeClient, resolver, downloads, configClient) {
-    let moduleFactory;
-    const amdRequire = function (dependencies, callback, errback) {
-        if (dependencies && dependencies[0] === 'css!./libmpv') {
-            if (typeof callback === 'function') callback();
-            return Promise.resolve();
-        }
-        if (typeof callback === 'function') callback();
-        if (typeof errback === 'function') void errback;
-        return Promise.resolve();
-    };
-    const context = {
-        window: windowTarget,
-        addEventListener: windowTarget.addEventListener.bind(windowTarget),
-        removeEventListener: windowTarget.removeEventListener.bind(windowTarget),
-        dispatchEvent: windowTarget.dispatchEvent.bind(windowTarget),
-        document: dom.document,
-        XMLHttpRequest: class {
-            open(_method, url) { this.url = url; }
-            send() {
-                this.response = this.url.includes('list_possible') ? '30;60' : 'Current Refresh Rate -: 60';
-                if (this.onload) this.onload();
-            }
-        },
-        Event: class { constructor(type) { this.type = type; } },
-        CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init && init.detail; } },
-        AbortController,
-        Promise,
-        Date,
-        Math,
-        Array,
-        Object,
-        String,
-        Number,
-        RegExp,
-        JSON,
-        setTimeout,
-        clearTimeout,
-        console: {log() { }},
-        define(_dependencies, factory) { moduleFactory = factory; }
-    };
-    vm.createContext(context);
-    vm.runInContext(libmpvSource, context, {filename: 'libmpv.js'});
-
-    const globalize = {translate(value) { return value; }};
-    const playbackManager = {getSubtitleUrl() { return ''; }};
-    const pluginManager = {mapPath(_player, value) { return value; }};
-    const eventCalls = [];
-    const events = {trigger(...args) { eventCalls.push(args); }};
-    const embyRouter = {showVideoOsd() { return Promise.resolve(); }, setTransparency() { }};
-    const appSettings = {get() { return undefined; }, set() { }};
-    const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
-    const connectionManager = {getApiClient() {return {};}};
-    const Player = moduleFactory(
-        globalize,
-        playbackManager,
-        pluginManager,
-        events,
-        embyRouter,
-        appSettings,
-        userSettings,
-        amdRequire,
-        connectionManager,
-        resolver,
-        configClient || {begin: async () => ({config: {version: 1, enabled: true, cd2: {enabled: true}, rules: []},
-            lease: 'synthetic-playback-config', release() {}})},
-        undefined,
-        undefined,
-        require('../src/electronapp/enhanced/nexttrack-transition'),
-        nativeClient,
-        downloads
-    );
-    const player = {};
-    Player.call(player);
-    return {player, context, eventCalls};
-}
-
-function makePlayOptions(url) {
-    return {
-        _etePlayRequestId: 1,
-        url,
-        item: {MediaType: 'Video', Type: 'Movie', Path: '/fixture/diagnostics-delayed.strm'},
-        mediaSource: {
-            Path: '/fixture/diagnostics-delayed.strm',
-            MediaStreams: [],
-            RunTimeTicks: 5000000000
-        },
-        mediaType: 'Video',
-        playMethod: 'DirectPlay',
-        playerStartPositionTicks: 0,
-        fullscreen: false
-    };
-}
-
-function getHttp(url) {
-    return new Promise((resolve, reject) => {
-        const request = http.get(url, response => {
-            response.resume();
-            response.on('end', resolve);
-        });
-        request.on('error', reject);
-    });
-}
+const {makeDeferred, waitFor, makeEventTarget, makeDom, FakeIpc, makeContext, makePlayOptions, getHttp, startupFixture} = require('./helpers/startup-route-fixture.cjs');
 
 test('loading EOF rejects without normal stopped and start is owned before loadfile', async () => {
     const ipc = new FakeIpc();
@@ -532,4 +260,184 @@ test('a superseded download lookup cannot load an old file into the replacement 
     assert.equal(ipc.loadCalls.length, 1);
     assert.equal(ipc.loadCalls[0].data[1], next.url);
     await player.stop(true);
+});
+
+
+test('real resolver and renderer advance only after media failure; same Play resolves once with original offset and tracks', async () => {
+    const f = startupFixture();
+    const play = f.player.play(f.options);
+    await waitFor(() => f.ipc.loadCalls.length === 1);
+    const old = f.ipc.generationId;
+    assert.match(f.ipc.loadCalls[0].data.join(','), /user-agent=Synthetic-Agent/);
+    f.failure();
+    await waitFor(() => f.ipc.loadCalls.length === 2);
+    f.failure(old); f.property('core-idle', false, old); f.property('eof-reached', true, old);
+    assert.equal(f.counts().started, 0);
+    assert.equal(f.ipc.loadCalls.length, 2);
+    assert.equal(f.ipc.loadCalls[1].data.length, 2, 'same-origin must not inherit direct UA');
+    f.property('core-idle', false);
+    await play;
+    assert.deepEqual(f.counts(), {released: 0, started: 1});
+    assert.equal(f.cancellations.length, 0, 'media rotation must not cancel the configuration lease');
+    assert.equal(new Set(f.resolves.map(r => r.requestId)).size, 1);
+    assert.equal(new Set(f.resolves.map(r => r.configLease)).size, 1);
+    const writes = f.ipc.calls.filter(c => c.request.operation === 'set-properties');
+    for (const generation of f.ipc.loadCalls.map(c => c.generationId)) {
+        const entries = writes.filter(c => c.request.payload.generationId === generation).flatMap(c => c.request.payload.entries);
+        assert.ok(entries.some(e => e.name === 'start' && e.value === '246'));
+        assert.ok(entries.some(e => e.name === 'aid' && e.value === 1));
+        assert.ok(entries.some(e => e.name === 'sid' && e.value === 'no'));
+    }
+    assert.equal(f.eventCalls.filter(c => c[1] === 'error' || c[1] === 'stopped').length, 0);
+    f.failure();
+    assert.equal(f.eventCalls.filter(c => c[1] === 'error').length, 1, 'failure after core-playing is terminal');
+    assert.equal(f.ipc.loadCalls.length, 2);
+    await f.player.stop(true);
+});
+
+test('exhausted startup returns one failure to original manager promise and never emits stopped', async () => {
+    const f = startupFixture();
+    const play = f.player.play(f.options); play.catch(() => {});
+    for (let count = 1; count <= 3; count++) {
+        await waitFor(() => f.ipc.loadCalls.length === count);
+        f.failure();
+    }
+    await assert.rejects(play, {name: 'NativeHelperError'});
+    assert.equal(f.ipc.loadCalls.length, 3);
+    assert.deepEqual(f.counts(), {released: 1, started: 0});
+    assert.equal(f.eventCalls.filter(c => c[1] === 'error' || c[1] === 'stopped').length, 0);
+    await f.player.stop(true);
+});
+
+for (const kind of ['bridge-operation', 'helper-terminal']) test(`startup does not rotate for ${kind}`, async () => {
+    const f = startupFixture();
+    const play = f.player.play(f.options); play.catch(() => {});
+    await waitFor(() => f.ipc.loadCalls.length === 1);
+    f.failure(f.ipc.generationId, kind);
+    await assert.rejects(play);
+    assert.equal(f.ipc.loadCalls.length, 1);
+    assert.equal(f.resolves.length, 1);
+    await f.player.stop(true);
+});
+
+test('absolute startup deadline rejects late core-playing even before timeout callback dispatch', async () => {
+    let now = 10000, expire;
+    const f = startupFixture({Date: {now: () => now}, setTimeout(callback, ms) {
+        if (ms === 15000) { expire = callback; return 'startup-timer'; }
+        return setTimeout(callback, ms);
+    }, clearTimeout(id) {if (id !== 'startup-timer') clearTimeout(id);}});
+    const play = f.player.play(f.options); play.catch(() => {});
+    await waitFor(() => f.ipc.loadCalls.length === 1);
+    now += 15001;
+    f.property('core-idle', false);
+    assert.equal(f.counts().started, 0);
+    expire();
+    await assert.rejects(play, /startup-route-deadline/);
+    f.property('core-idle', false); f.failure();
+    assert.equal(f.ipc.loadCalls.length, 1);
+    assert.equal(f.counts().released, 1);
+    await f.player.stop(true);
+});
+
+test('failure during awaited audio tail drains before next generation; Stop cancels old startup', async () => {
+    const f = startupFixture(), gate = makeDeferred();
+    const invoke = f.ipc.invoke.bind(f.ipc);
+    let audioPending = false;
+    f.ipc.invoke = function (channel, request) {
+        if (!audioPending && request.operation === 'set-properties' && request.payload.entries.some(e => e.name === 'aid')) {
+            audioPending = true; return gate.promise;
+        }
+        return invoke(channel, request);
+    };
+    const play = f.player.play(f.options); play.catch(() => {});
+    await waitFor(() => audioPending);
+    f.failure();
+    await new Promise(r => setImmediate(r));
+    assert.equal(f.ipc.loadCalls.length, 1, 'cannot begin next generation while previous tail owns writes');
+    gate.resolve({status: 'ok'});
+    await waitFor(() => f.ipc.loadCalls.length === 2);
+    await f.player.stop(true);
+    await assert.rejects(play, {name: 'PlaybackSuperseded'});
+    f.property('core-idle', false);
+    assert.equal(f.counts().started, 0);
+});
+
+for (const phase of ['begin-generation', 'loadfile', 'audio', 'subtitle', 'unpause']) {
+    for (const action of ['stop', 'play', 'next']) test(`${action} supersedes a startup awaiting ${phase} without old tail writes`, async () => {
+        const f = startupFixture(), gate = makeDeferred();
+        const invoke = f.ipc.invoke.bind(f.ipc);
+        let waiting = false;
+        f.ipc.invoke = function (channel, request) {
+            const result = invoke(channel, request), payload = request.payload || {};
+            const matches = phase === 'begin-generation' ? request.operation === 'begin-generation' :
+                phase === 'loadfile' ? request.operation === 'command' && payload.data[0] === 'loadfile' :
+                request.operation === 'set-properties' && payload.entries.some(e => e.name ===
+                    (phase === 'audio' ? 'aid' : phase === 'subtitle' ? 'sid' : 'pause'));
+            if (!waiting && matches) {waiting = true; return gate.promise.then(() => result);}
+            return result;
+        };
+        const old = f.player.play(f.options); old.catch(() => {});
+        await waitFor(() => waiting);
+        const oldGeneration = f.ipc.generationId;
+        if (action === 'stop') await f.player.stop(true);
+        else {
+            f.ipc.suppressCorePlaying = false;
+            await f.player.play({...f.options, _etePlayRequestId: 2, command: action === 'next' ? 'nextTrack' : undefined});
+        }
+        const countBeforeRelease = f.ipc.calls.length;
+        gate.resolve();
+        await assert.rejects(old, {name: 'PlaybackSuperseded'});
+        await new Promise(resolve => setImmediate(resolve));
+        f.failure(oldGeneration); f.property('core-idle', false, oldGeneration); f.property('eof-reached', true, oldGeneration);
+        const lateWrites = f.ipc.calls.slice(countBeforeRelease).filter(c => ['command', 'set-properties', 'begin-generation'].includes(c.request.operation));
+        assert.equal(lateWrites.length, 0);
+        assert.equal(f.ipc.loadCalls.length, action === 'stop' && phase === 'begin-generation' ? 0 :
+            action === 'stop' ? 1 : phase === 'begin-generation' ? 1 : 2);
+        await f.player.stop(true);
+    });
+}
+
+test('delayed external subtitles belong to the load attempt as well as the Play request', async () => {
+    const callbacks = [];
+    const f = startupFixture({setTimeout(callback, ms) {
+        if (ms === 700) {callbacks.push(callback); return 'subtitle-delay';}
+        return setTimeout(callback, ms);
+    }});
+    f.options.mediaSource.MediaStreams.push({Type: 'Subtitle', Index: 1, DeliveryMethod: 'External', DeliveryUrl: 'https://synthetic.invalid/sub'});
+    f.options.mediaSource.DefaultSubtitleStreamIndex = 1;
+    const play = f.player.play(f.options); play.catch(() => {});
+    await waitFor(() => callbacks.length === 1);
+    f.failure();
+    await waitFor(() => callbacks.length === 2);
+    callbacks[0]();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.ipc.calls.filter(c => c.request.operation === 'command' && c.request.payload.data[0] === 'sub-add').length, 0);
+    callbacks[1]();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.ipc.calls.filter(c => c.request.operation === 'command' && c.request.payload.data[0] === 'sub-add').length, 1);
+    f.property('core-idle', false);
+    await play;
+    await f.player.stop(true);
+});
+
+for (const action of ['stop', 'play', 'next', 'helper-error']) test(`${action} during next route resolution cannot load a late URL`, async () => {
+    const f = startupFixture(), gate = makeDeferred();
+    f.controls.resolve = request => request.mode === 'same-origin' ? gate.promise : Promise.resolve();
+    const old = f.player.play(f.options); old.catch(() => {});
+    await waitFor(() => f.ipc.loadCalls.length === 1);
+    f.failure();
+    await waitFor(() => f.resolves.length === 2);
+    if (action === 'stop') await f.player.stop(true);
+    else if (action === 'helper-error') {
+        f.ipc.emit(nativeHelperClient.EVENT_CHANNEL, {}, {type: 'bridge_error', reason: 'protocol-failure'});
+    } else {
+        f.ipc.suppressCorePlaying = false;
+        await f.player.play({...f.options, _etePlayRequestId: 2, command: action === 'next' ? 'nextTrack' : undefined});
+    }
+    await assert.rejects(old, {name: action === 'helper-error' ? 'NativeHelperError' : 'PlaybackSuperseded'});
+    const loaded = f.ipc.loadCalls.length;
+    gate.resolve();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(f.ipc.loadCalls.length, loaded);
+    await f.player.stop(true);
 });

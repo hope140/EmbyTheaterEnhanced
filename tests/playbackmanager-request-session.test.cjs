@@ -2536,3 +2536,107 @@ test('all existing compatibility stages remain before terminal exit, with no nex
     assert.equal(f.manager.getCurrentPlayer(), null);
     assert.equal(f.queue._playlist.length, 0);
 });
+
+test('production generated manager keeps one request/session across real adapter startup route rotation', async () => {
+    const native = require('./helpers/startup-route-fixture.cjs').startupFixture();
+    let streamInfo;
+    const fixture = makeFixture({decoratePlayer(player) {
+        player.play = info => {streamInfo = info; return native.player.play(info);};
+    }});
+    fixture.apiClient.getCurrentUser = async () => ({Configuration: {}});
+    const item = makeItem('startup-route'); item.Path = 'C:\\Library\\fixture.mkv.strm';
+    const playing = fixture.manager.play({items: [item], fullscreen: false, startPositionTicks: 2460000000});
+    await waitFor(() => fixture.calls.metadata.length === 1);
+    const source = makeMediaSource(item.Id, 'startup-session');
+    delete source.StreamUrl;
+    Object.assign(source, {SupportsDirectPlay: false, SupportsDirectStream: true, SupportsTranscoding: false, Path: '/fixture/movie.mkv', Container: 'strm'});
+    fixture.calls.metadata[0].pending.resolve({MediaSources: [source], PlaySessionId: 'startup-session'});
+    await waitFor(() => native.ipc.loadCalls.length === 1);
+    const requestId = streamInfo._etePlayRequestId;
+    native.failure();
+    await waitFor(() => native.ipc.loadCalls.length === 2);
+    assert.equal(fixture.calls.metadata.length, 1);
+    assert.equal(fixture.calls.playbackStarts.length, 0);
+    assert.equal(fixture.calls.alerts.length, 0);
+    native.property('core-idle', false);
+    await playing;
+    await settle();
+    assert.equal(fixture.calls.playbackStarts.length, 1);
+    assert.equal(streamInfo._etePlayRequestId, requestId);
+    assert.equal(streamInfo.playSessionId, 'startup-session');
+    assert.equal(streamInfo.mediaSource.Id, source.Id);
+    assert.equal(streamInfo.item.Id, item.Id);
+    assert.equal(fixture.calls.metadata.length, 1);
+    await native.player.stop(true);
+    await fixture.manager.stop();
+});
+
+for (const succeeds of [true, false]) test(`integrated STRM exhaustion then actual Transcode ${succeeds ? 'success' : 'terminal exit'}`, async () => {
+    const native = require('./helpers/startup-route-fixture.cjs').startupFixture();
+    const streams = [];
+    const f = makeFixture({decoratePlayer(player, events) {
+        player.supportsControlDiagnostics = true;
+        player.play = info => { streams.push(info); return native.player.play(info); };
+        player.stop = (...args) => native.player.stop(...args);
+        const destroy = player.destroy;
+        player.destroy = (...args) => { destroy(); return native.player.destroy(...args); };
+        native.eventCalls.push = function (...rows) {
+            for (const row of rows) events.trigger(player, row[1], [null, ...(row[2] || [])]);
+            return Array.prototype.push.apply(this, rows);
+        };
+    }});
+    installFailureQueue(f);
+    f.queue.items[0].Path = '/fixture/movie.mkv.strm';
+    f.apiClient.getCurrentUser = async () => ({Configuration: {}});
+    const playing = f.manager.nextTrack().catch(() => {});
+    await waitFor(() => f.calls.metadata.length === 1);
+    const initial = makeMediaSource('failure-A', 'session-initial');
+    delete initial.StreamUrl;
+    Object.assign(initial, {SupportsDirectStream: true, Path: '/fixture/movie.mkv', Container: 'strm'});
+    f.calls.metadata[0].pending.resolve({MediaSources: [initial], PlaySessionId: 'session-initial'});
+    for (let count = 1; count <= 3; count++) {
+        await waitFor(() => native.ipc.loadCalls.length === count);
+        if (count > 1) {
+            native.failure(native.ipc.loadCalls[count - 2].generationId);
+            native.property('core-idle', false, native.ipc.loadCalls[count - 2].generationId);
+        }
+        native.failure();
+    }
+    await waitFor(() => f.calls.metadata.length === 2);
+    const compatible = makeMediaSource('failure-A', 'session-compatible');
+    compatible.StreamUrl = 'https://synthetic.invalid/stream?AllowVideoStreamCopy=false&AllowAudioStreamCopy=false';
+    compatible.SupportsTranscoding = false;
+    f.calls.metadata[1].pending.resolve({MediaSources: [compatible], PlaySessionId: 'session-compatible'});
+    await waitFor(() => native.ipc.loadCalls.length === 4);
+    assert.equal(streams[1].playMethod, 'Transcode');
+    assert.equal(native.resolves.length, 2, 'Transcode does not restart STRM routes');
+    const routeLogs = native.ipc.notifications.filter(row => row.channel === 'enhanced-diagnostics-log' && row.request.event === 'startup-route').map(row => row.request.details);
+    const starts = routeLogs.filter(row => row.disposition === 'start');
+    assert.deepEqual(starts.map(row => row.attempt), [1, 2, 3]);
+    assert.equal(new Set(starts.map(row => row.playRequestId)).size, 1);
+    assert.equal(new Set(starts.map(row => row.control.operationId)).size, 1);
+    assert.ok(starts.every(row => row.budgetMs === 15000 && row.remainingMs >= 0));
+    assert.equal(routeLogs.filter(row => row.disposition === 'budget-start').length, 1);
+    if (succeeds) native.property('core-idle', false);
+    else native.failure();
+    await playing; await settle();
+    assert.equal(new Set(native.ipc.loadCalls.map(row => row.generationId)).size, 4);
+    assert.equal(f.calls.metadata.length, 2);
+    assert.ok(f.calls.metadata.every(row => row.itemId === 'failure-A'));
+    assert.deepEqual(reportsFor(f.calls, 'reportPlaybackStart'), [{itemId: 'failure-A', playSessionId: 'session-initial', mediaSourceId: 'media-failure-A'}], 'preserve manager terminal start/stop reporting contract');
+    assert.equal(f.manager.getCurrentPlayer(), succeeds ? f.player : null);
+    if (succeeds) await f.manager.stop();
+    else assert.equal(f.queue._playlist.length, 0);
+    await settle();
+    const stopCount = reportsFor(f.calls, 'reportPlaybackStopped').length;
+    assert.equal(stopCount, 1);
+    assert.equal(reportsFor(f.calls, 'reportPlaybackStopped')[0].playSessionId, 'session-compatible');
+    const destroyed = f.calls.destroyed;
+    f.events.trigger(f.player, 'error', [null, {type: 'NativeHelperError'}]);
+    f.events.trigger(f.player, 'stopped');
+    native.failure(native.ipc.loadCalls[0].generationId);
+    await settle();
+    assert.equal(f.calls.destroyed, destroyed);
+    assert.equal(reportsFor(f.calls, 'reportPlaybackStopped').length, stopCount);
+    assert.equal(f.calls.metadata.length, 2);
+});

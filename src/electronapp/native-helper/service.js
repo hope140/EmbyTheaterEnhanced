@@ -519,7 +519,7 @@ function createService(options) {
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('media-error');
-          sendEvent({type: 'bridge_error', reason: 'load-failed', endReason: 4,
+          sendEvent({type: 'bridge_error', reason: 'load-failed', generationId: message.generationId, failureKind: 'media-load', endReason: 4,
             mpvErrorCode: mpvErrorCode(message.value.error)});
           log('load-failed', {reason: 'mpv-end-file-error'});
           return;
@@ -817,7 +817,7 @@ function createService(options) {
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('load-failed');
-          sendEvent({type: 'bridge_error', reason: 'load-failed'});
+          sendEvent({type: 'bridge_error', reason: 'load-failed', generationId: load.generationId, failureKind: 'bridge-operation'});
           log('load-failed', {reason: String(error.message || 'load-failed').slice(0, 128)});
         });
         return {status: 'accepted'};

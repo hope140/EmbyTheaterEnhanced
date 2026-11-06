@@ -229,6 +229,7 @@ test('native media failure keeps numeric evidence and anonymous request identity
   assert.deepEqual(errors.map(message => [message.reason, message.endReason, message.mpvErrorCode]), [
     ['load-failed', 4, -13], ['load-failed', 4, null], ['load-failed', 4, null], ['load-failed', 4, null]
   ]);
+  assert.ok(errors.every(message => message.generationId === generationId && message.failureKind === 'media-load'));
   active.options.onEvent({name: 'end-file', generationId: generationId + 1, value: {reason: 4, error: -12}});
   assert.equal(main.sent.map(args => args[1]).filter(message => message.type === 'bridge_error').length, 4);
   assert.equal(active.currentGenerationId, generationId);

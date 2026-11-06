@@ -10,7 +10,7 @@ const DISPOSITIONS = new Set(['BEGIN_GENERATION', 'RETIRE_GENERATION', 'ACCEPT',
 const REASONS = new Set(['superseded', 'stop', 'destroy', 'renderer-destroy', 'service-destroy', 'retired',
     'minimize', 'hide', 'renderer-visibility', 'renderer-notify-visibility', 'media-error', 'load-failed',
     'helper-terminal', 'presentation-cancelled', 'maximize', 'unmaximize', 'restore', 'enter-full-screen',
-    'leave-full-screen', 'show', 'focus', 'upper-play-invalidated']);
+    'leave-full-screen', 'show', 'focus', 'upper-play-invalidated', 'startup-route-failed', 'startup-deadline']);
 function projectControl(value) {
     try {
         if (!value || typeof value !== 'object') return null;
