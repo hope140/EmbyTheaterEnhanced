@@ -423,7 +423,19 @@ class ApiClient extends BaseApiClient {
     }
     getPlaybackInfo(itemId, options, deviceProfile, signal) {
         return this.ajax({ url: this.getUrl(`Items/${itemId}/PlaybackInfo`, options), type: 'POST',
-            data: JSON.stringify({ DeviceProfile: deviceProfile }), contentType: 'application/json', dataType: 'json', signal });
+            data: JSON.stringify({ DeviceProfile: deviceProfile }), contentType: 'application/json', dataType: 'json', signal,
+            // Match the existing metadata GET budget, including response-body decoding.
+            timeout: 30000, timeoutError: true });
+    }
+    reportPlaybackStopped(options) {
+        if (!options) throw new Error('null options');
+        this.lastPlaybackProgressReport = 0;
+        this.lastPlaybackProgressReportTicks = null;
+        // This acknowledgement has no payload contract. Consume its body within the
+        // deadline so a stalled response cannot indefinitely hold the switch barrier.
+        return this.ajax({ url: this.getUrl('Sessions/Playing/Stopped'), type: 'POST',
+            data: JSON.stringify(options), contentType: 'application/json', dataType: 'text',
+            timeout: 10000, timeoutError: true });
     }
     reportPlaybackStart(options) {
         const report = super.reportPlaybackStart(options);
