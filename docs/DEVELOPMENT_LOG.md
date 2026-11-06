@@ -1740,3 +1740,5 @@ runner 与缓存合成回归 47／47：真实本地小字节锁定／复制／�
 这些是 Linux PowerShell／合成 I/O 证据，未验证真实 Windows 文件共享、映射盘行为或完整官方缓存成功路径。没有获取新 runtime、启动 Electron／Windows 验收或真实取流，不修改旧 checkout 和不完整 ZIP；完整公开回归及准确保存点另记。
 
 本轮 FN 集合在 Node 24.18.1／Linux PowerShell 下 289／289 通过。维护 JS 620 文件、维护 PowerShell 55 文件及原型 runner 3 文件语法通过；有限凭据模式 719 个维护文本文件与本轮 10 个改动文件／新增行检查无发现。实际 Windows 本地盘／文件共享和原始官方缓存成功路径仍未运行，不能以函数替身或小字节复制测试替代。准确提交的公开回归待追加。
+
+代码提交 `9ec266383f4d528f5a5ccbbd0c0e7282682afa56` 在 Node 24.18.1／Linux PowerShell 7.4.13 的公开复验为 **2748 项：2716 pass／0 fail／32 平台 skip**，固定 6 份材料排除保留；同轮 runner 定向 47／47、FN 集合 289／289。后续保存仅补文档，不把它描述为已验证 Windows 官方归档缓存或完整 fixture。没有新增下载、启动 Windows／Electron、读取登录态或真实取流。
