@@ -2291,7 +2291,7 @@ for (const retirement of ['new-play', 'stop', 'none']) {
             close.resolve();
             await settle();
             assert.equal(fixture.calls.alerts.length, delay === 'loader' && retirement !== 'none' ? 0 : 1);
-            assert.equal(fixture.calls.metadata.length, retirement === 'stop' ? 1 : 2);
+            assert.equal(fixture.calls.metadata.length, retirement === 'new-play' ? 2 : 1);
         });
     }
 }
@@ -2348,3 +2348,136 @@ for (const expire of [false, true]) {
         assert.equal(timers.size, 0);
     });
 }
+
+// Execute the production-generated manager; use the frozen queue reset below
+// rather than a fixture's intentionally lightweight reset implementation.
+function installFailureQueue(f) {
+    let Queue;
+    vm.runInNewContext(fs.readFileSync(path.join(repoRoot, 'vendor/web-snapshot/www/modules/common/playback/playqueuemanager.js'), 'utf8'), {
+        define(_deps, factory) { const exports = {}; factory(exports); Queue = exports.default; }
+    });
+    f.queue.reset = function () { Queue.prototype.reset.call(this); this.currentIndex = -1; };
+    const items = [makeItem('failure-A'), makeItem('next-B')];
+    f.queue.items = items; f.queue._playlist = items;
+    f.queueControl.nextItem = q => items[q.currentIndex + 1] ? {item: items[q.currentIndex + 1], index: q.currentIndex + 1} : null;
+}
+for (const failure of ['initial', 'playing', 'outer', 'unexpected-eof']) {
+    for (const dialog of ['resolve', 'reject', 'nonfullscreen']) {
+        test(`terminal ${failure} exits without next item with ${dialog} dialog`, async () => {
+            const loaders = [], close = deferred();
+            const f = makeFixture({alertLoader: loaders, alertResult: close.promise});
+            installFailureQueue(f);
+            f.queue.items[0].playOptions = {fullscreen: dialog !== 'nonfullscreen'};
+            if (failure === 'initial') f.player.play = stream => { f.calls.play.push(stream); return Promise.reject(new Error('synthetic load failure')); };
+            const first = f.manager.nextTrack().catch(() => {});
+            await waitFor(() => f.calls.metadata.length === 1);
+            if (failure === 'outer') f.rejectMetadata(0, {errorCode: 'NoCompatibleStream', skipToNextItem: true});
+            else {
+                const source = makeMediaSource('failure-A', 'session-A'); source.SupportsTranscoding = false;
+                f.calls.metadata[0].pending.resolve({MediaSources: [source], PlaySessionId: 'session-A'});
+            }
+            await first;
+            if (failure === 'playing') f.events.trigger(f.player, 'error', [null, {type: 'NativeHelperError'}]);
+            if (failure === 'unexpected-eof') f.events.trigger(f.player, 'error', [null, {unexpectedEof: true}]);
+            await settle();
+            assert.equal(f.manager.getCurrentPlayer(), null);
+            assert.equal(f.queue._playlist.length, 0);
+            assert.equal(f.queue._currentPlaylistIndex, -1);
+            assert.equal(f.queue._repeatMode, 'RepeatNone');
+            assert.equal(f.calls.destroyed, 1);
+            assert.equal(f.calls.playbackStops.length, 1);
+            assert.equal(f.calls.playbackStops[0].nextMediaType, null);
+            const alertCount = loaders.length;
+            f.events.trigger(f.player, 'stopped', []);
+            f.events.trigger(f.player, 'error', [null, {type: 'NativeHelperError'}]);
+            await settle();
+            assert.equal(f.calls.destroyed, 1, 'duplicate terminal events do not destroy twice');
+            assert.equal(loaders.length, alertCount, 'duplicate terminal events do not show another error');
+            for (const load of loaders) load();
+            if (dialog === 'reject' && loaders.length) close.reject(new Error('dialog dismissed'));
+            else close.resolve();
+            await settle();
+            assert.equal(f.calls.metadata.length, 1);
+            assert.equal(f.calls.playbackStarts.some(state => state.NowPlayingItem.Id === 'next-B'), false);
+            assert.equal(reportsFor(f.calls, 'reportPlaybackStopped').length, failure === 'outer' || dialog === 'nonfullscreen' ? 0 : 1);
+        });
+    }
+}
+for (const succeeds of [true, false]) {
+    test(`same-item compatibility recovery ${succeeds ? 'succeeds' : 'exhausts then exits'} without advancing`, async () => {
+        const f = makeStopBoundaryFixture(); installFailureQueue(f);
+        const first = f.manager.nextTrack();
+        await waitFor(() => f.calls.metadata.length === 1);
+        f.resolveMetadata(0, 'session-A'); await first;
+        const initialPlay = f.player.play;
+        if (!succeeds) f.player.play = stream => { f.calls.play.push(stream); return Promise.reject(new Error('compatibility load failure')); };
+        f.events.trigger(f.player, 'error', [null, {type: 'NativeHelperError'}]);
+        await waitFor(() => f.calls.metadata.length === 2);
+        const source = makeMediaSource('failure-A', 'session-compat'); source.SupportsTranscoding = succeeds;
+        f.calls.metadata[1].pending.resolve({MediaSources: [source], PlaySessionId: 'session-compat'});
+        await settle();
+        assert.equal(f.calls.metadata.length, 2);
+        assert.equal(f.calls.metadata.every(call => call.itemId === 'failure-A'), true);
+        assert.equal(f.calls.play.length, 2);
+        assert.equal(f.manager.getCurrentPlayer(), succeeds ? f.player : null);
+        if (succeeds) { f.player.play = initialPlay; await f.manager.stop(); }
+    });
+}
+for (const kind of ['normal-ended', 'local-next', 'remote-input-next', 'remote-playnow']) {
+    test(`${kind} still advances after terminal failure policy change`, async () => {
+        const f = makeStopBoundaryFixture(); installFailureQueue(f);
+        const first = f.manager.nextTrack(); await waitFor(() => f.calls.metadata.length === 1);
+        f.resolveMetadata(0, 'session-A'); await first;
+        let next;
+        if (kind === 'normal-ended') f.events.trigger(f.player, 'stopped', []);
+        else if (kind === 'local-next') next = f.manager.nextTrack();
+        else if (kind === 'remote-input-next') {
+            let input;
+            vm.runInNewContext(fs.readFileSync(path.join(repoRoot, 'vendor/web-snapshot/www/modules/common/inputmanager.js'), 'utf8'), {
+                window: {addEventListener() {}}, document: {activeElement: null}, self: {},
+                CustomEvent: class { constructor(type, options) { this.type = type; Object.assign(this, options); } },
+                define(_deps, factory) {
+                    const exports = {};
+                    factory(exports, {default: {}}, {default: {}}, {default: f.manager},
+                        {default: {getCurrentScope: () => ({dispatchEvent: () => true})}},
+                        {appHost: {}}, {default: {on() {}}});
+                    input = exports.default;
+                }
+            });
+            input.trigger('nexttrack');
+        } else next = f.manager.play({items: [makeItem('remote-B')], command: 'PlayNow'});
+        await waitFor(() => f.calls.metadata.length === 2);
+        f.resolveMetadata(1, 'session-B'); if (next) await next;
+        await settle();
+        assert.equal(f.calls.play.length, 2);
+        assert.equal(f.calls.playbackStarts.length, 2);
+        await f.manager.stop();
+    });
+}
+
+test('all existing compatibility stages remain before terminal exit, with no next-item request', async () => {
+    const f = makeStopBoundaryFixture(); installFailureQueue(f);
+    const queries = [], getInfo = f.apiClient.getPlaybackInfo;
+    f.apiClient.getPlaybackInfo = (id, query, ...rest) => { queries.push(query); return getInfo(id, query, ...rest); };
+    f.player.play = stream => { f.calls.play.push(stream); return Promise.reject(new Error('synthetic decode failure')); };
+    const first = f.manager.nextTrack().catch(() => {});
+    const urls = [null, 'stream://transcode', 'stream://transcode?AllowVideoStreamCopy=false',
+        'stream://transcode?AllowVideoStreamCopy=false&AllowAudioStreamCopy=false'];
+    for (let index = 0; index < urls.length; index++) {
+        await waitFor(() => f.calls.metadata.length === index + 1);
+        const source = makeMediaSource('failure-A', 'session-' + index);
+        if (index === 0) { delete source.StreamUrl; source.SupportsDirectStream = true; }
+        else source.StreamUrl = urls[index];
+        f.calls.metadata[index].pending.resolve({MediaSources: [source], PlaySessionId: 'session-' + index});
+    }
+    await first; await settle();
+    assert.equal(f.calls.play.length, 4);
+    assert.equal(f.calls.metadata.length, 4);
+    assert.equal(f.calls.metadata.every(call => call.itemId === 'failure-A'), true);
+    assert.equal(queries[1].EnableDirectPlay, false);
+    assert.equal(queries[1].EnableDirectStream, false);
+    assert.equal(queries[2].AllowVideoStreamCopy, false);
+    assert.equal(queries[3].AllowAudioStreamCopy, false);
+    assert.equal(f.manager.getCurrentPlayer(), null);
+    assert.equal(f.queue._playlist.length, 0);
+});
