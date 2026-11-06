@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-06 — FN runtime provenance 夹具补齐生成器
+
+飞牛规划顺延 0.4.19，本轮不改产品版本或 main。完整 Windows 材料回归在旧来源 `da544ee` 得到 2884 pass／12 fail／8 skip（共 2904）：其中 6 项 runtime provenance 用例因夹具未复制新 FN generator，在生成阶段失败，未进入各自断言。现仅按 overlay 合同补齐夹具生成器输入，保留全部原断言，新增 FN 输出／提交生成器哈希核对及 missing、dirty、运行载荷篡改负例；9／9 定向通过，独立静态审查无新增阻断。
+
+另 5 项历史 Git 对象缺失和 1 项删除确认前的本地 fetch 失败独立保留，不能计作本次夹具修正已解决。旧完整回执、checkout 与 Host 锁不改写；新提交须重新绑定并验证源码 Host，不能以旧锁证明新来源。相关普通回归结果另记开发记录。
+
 ## 2026-11-06 — FN 分支正常整合 0.4.17 基线
 
 在非保护 FN 分支普通合入 main `ddaa683`，保留既有历史和 main 的 0.4.17 元数据；目标仍为后续 0.4.18，不自行 bump／Tag／发布。canonical transport 同时保留 TimeoutError／正文截止、FN owner 路由及登录退休屏障，重新生成选定 AMD 和 selection 哈希；音轨索引零及关于页修正保留。两侧文档历史均保留。首轮组合定向 388 pass／1 个假 Response.json 同步返回夹具失败，改为真实 Fetch 的 Promise 合同后期限／API 定向 22／22。完整组合复验另记开发记录，不把旧回环证据外推到新整合包。

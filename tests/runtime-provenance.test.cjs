@@ -159,6 +159,9 @@ function createFixture(root) {
     writeFile(path.join(root, 'package-lock.json'), JSON.stringify({lockfileVersion: 3, packages: {}}));
 
     for (const relativePath of [
+        // Overlay contracts declare their generators; keep the independent
+        // fixture complete when a new transform (including FN) is registered.
+        ...new Set(webPreparation.WEB_OVERLAY_CONTRACT.flatMap(contract => contract.generatorPaths)),
         'tools/prepare-preload.cjs',
         'tools/prepare-web-overlays.cjs',
         'tools/patch-subtitle-language-preference.cjs',
@@ -293,6 +296,16 @@ test('runtime provenance binds tracked product sources to committed Git blobs', 
         writeFile(path.join(root, 'src', 'electronapp', 'some-normal-file.js'), 'module.exports = "dirty";\r\n');
         const runtime = createRuntime(root, 'runtime');
         assert.equal(runProvenance('write', root, runtime).exitCode, 0);
+        const sourceManifest = JSON.parse(fs.readFileSync(path.join(runtime, 'source-provenance.json'), 'utf8'));
+        const fnContract = webPreparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'fn-connect-manual-server');
+        const fnOverlay = sourceManifest.webSnapshot.overlays.find(entry => entry.id === fnContract.id);
+        assert.equal(fnOverlay.baseSha256, fnContract.expectedBaseSha256);
+        assert.equal(fnOverlay.runtimeSha256, fnContract.expectedOutputSha256);
+        assert.equal(hash(fs.readFileSync(path.join(runtime, fnContract.runtimePath))).toUpperCase(), fnContract.expectedOutputSha256);
+        assert.deepEqual(fnOverlay.generatorHashes, fnContract.generatorPaths.map(generatorPath => ({
+            path: generatorPath,
+            sha256: hash(childProcess.execFileSync('git', ['-C', root, 'show', 'HEAD:' + generatorPath])).toUpperCase()
+        })));
         const manifest = JSON.parse(fs.readFileSync(path.join(runtime, 'runtime-provenance.json'), 'utf8'));
         assert.equal(manifest.validatedProductScope.includesIgnoredSourceFiles, false);
         assert.equal(manifest.validatedProductScope.sourceSelection, 'git-commit-blobs');
@@ -329,6 +342,36 @@ test('runtime provenance binds tracked product sources to committed Git blobs', 
     } finally {
         fs.rmSync(root, {recursive: true, force: true});
     }
+});
+
+for (const mutation of ['missing', 'dirty']) test('FN fixture generator ' + mutation + ' is rejected before Web output is written', t => {
+    const root = createTempRoot('ete-provenance-fn-generator-');
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    createFixture(root);
+    const generatorPath = 'tools/patch-fn-connect.cjs';
+    if (mutation === 'missing') fs.unlinkSync(path.join(root, generatorPath));
+    else fs.appendFileSync(path.join(root, generatorPath), '\n// synthetic uncommitted generator change\n');
+    const runtime = path.join(root, 'runtime-rejected');
+    fs.mkdirSync(runtime);
+    assert.throws(() => webPreparation.apply(root, runtime), error => error.message ===
+        (mutation === 'missing' ? 'Web overlay generator missing: ' : 'Tracked generator differs from HEAD: ') + generatorPath);
+    assert.deepEqual(fs.readdirSync(runtime), []);
+});
+
+test('runtime provenance rejects tampered FN Web output without rewriting the payload', t => {
+    const root = createTempRoot('ete-provenance-fn-output-');
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    createFixture(root);
+    const runtime = createRuntime(root, 'runtime-fn-output');
+    assert.equal(runProvenance('write', root, runtime).exitCode, 0);
+    const contract = webPreparation.WEB_OVERLAY_CONTRACT.find(entry => entry.id === 'fn-connect-manual-server');
+    const file = path.join(runtime, contract.runtimePath);
+    const changed = Buffer.concat([fs.readFileSync(file), Buffer.from('\n// synthetic runtime change\n')]);
+    fs.writeFileSync(file, changed);
+    const invalid = runProvenance('validate', root, runtime);
+    assert.equal(invalid.exitCode, 1);
+    assert.ok(invalid.report.errors.includes('source-provenance-invalid'));
+    assert.deepEqual(fs.readFileSync(file), changed);
 });
 
 test('runtime provenance rejects prepared and source-provenance tampering', () => {
