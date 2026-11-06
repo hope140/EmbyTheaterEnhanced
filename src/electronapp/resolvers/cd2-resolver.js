@@ -23,7 +23,7 @@
         if (typeof window !== 'undefined' && window.ipc && typeof window.ipc.invoke === 'function') {
             return {
                 resolve: function (request) { return window.ipc.invoke(RESOLVE_CHANNEL, request); },
-                cancel: function (requestId) { window.ipc.send(CANCEL_CHANNEL, {requestId: requestId}); }
+                cancel: function (requestId, configLease) { window.ipc.send(CANCEL_CHANNEL, {requestId: requestId, configLease: configLease}); }
             };
         }
         return null;
@@ -82,7 +82,7 @@
         if (signal && signal.aborted) throw abortError();
 
         abortListener = function () {
-            if (typeof transport.cancel === 'function') transport.cancel(requestId);
+            if (typeof transport.cancel === 'function') transport.cancel(requestId, dependencies && dependencies.configLease);
         };
         if (signal) signal.addEventListener('abort', abortListener, {once: true});
 
@@ -92,6 +92,7 @@
                 candidates: candidates.slice(0, 4)
             };
             if (dependencies && dependencies.ruleId) request.ruleId = dependencies.ruleId;
+            if (dependencies && dependencies.configLease) request.configLease = dependencies.configLease;
             if (dependencies && dependencies.mode) request.mode = dependencies.mode;
             if (dependencies && Number.isSafeInteger(dependencies.deadlineAt)) {
                 request.deadlineAt = dependencies.deadlineAt;

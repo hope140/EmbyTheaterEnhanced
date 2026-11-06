@@ -134,7 +134,8 @@ function loadPlayer({plans = {}, resolverError, createError, setPropertiesError,
   const modules = [
     {}, playbackManager, pluginManager, events, router, appSettings, userSettings, (names, callback) => callback(), {},
     {isStrm: () => !!resolverError, resolveAsync: async request => { if (resolverError) throw resolverError; return {type: 'native', source: request.nativeSource}; }},
-    {}, {}, {}, {},
+    {begin: async () => ({config: {version: 1, enabled: true, cd2: {enabled: true}, rules: []},
+      lease: 'synthetic-playback-config', release() {}})}, {}, {}, {},
     {create: async () => { if (createError) throw createError; return {mode: 'native-helper', endpoint}; }}
   ];
   modules[13] = {install() {}, createNative: () => ({playbackStarted() {}, playbackReady() {}, playbackFailed() {},

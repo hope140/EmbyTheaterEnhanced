@@ -198,17 +198,17 @@ test('retired command responses cannot attach diagnostics to a new play; rejecte
     assert.doesNotMatch(JSON.stringify(failed), /PRIVATE_CANARY/);
 });
 
-test('load diagnostics describe planned start and metadata without reordering loadfile or start property writes', async () => {
+test('load diagnostics describe the request start applied before loadfile', async () => {
     const f = fixture(); await f.play({playerStartPositionTicks: 123456789});
     const load = f.log('loadfile-requested').details;
     assert.equal(load.requestedStartSeconds, 12.3456789);
     assert.equal(load.plannedStartSeconds, 12);
-    assert.equal(load.startOptionWriteOrder, 'after-loadfile-submission');
+    assert.equal(load.startOptionWriteOrder, 'before-loadfile-submission');
     assert.equal(load.nativeGenerationId, f.generation());
     assert.equal(load.cached.durationCurrentGeneration, null);
     const loadIndex = f.operations.findIndex(row => row.operation === 'command' && row.payload.data[0] === 'loadfile');
     const startIndex = f.operations.findIndex(row => row.operation === 'set-properties' && row.payload.entries.some(entry => entry.name === 'start'));
-    assert.ok(startIndex > loadIndex);
+    assert.ok(startIndex >= 0 && startIndex < loadIndex);
     assert.equal(f.operations[startIndex].payload.entries.find(entry => entry.name === 'start').value, '12');
 });
 

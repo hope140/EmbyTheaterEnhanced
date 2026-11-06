@@ -77,9 +77,10 @@ class FakeNode {
 function loadView(invoke) {
     let View;
     function BaseView() {}
+    BaseView.prototype.onResume = function () {};
     vm.runInNewContext(source, {
         define(_dependencies, factory) {
-            View = factory({}, BaseView, null, null, null, null, null, {
+            View = factory({show() {}, hide() {}}, BaseView, null, null, null, null, null, {
                 removeDraftRule(rules, id) { return rules.filter(rule => rule.id !== id); }
             });
         },
@@ -99,6 +100,8 @@ function tokenDraftPage(invoke, config) {
         '.txtCd2Origin': new FakeNode('input'),
         '.txtCd2Token': new FakeNode('input'),
         '.tokenState': statusNode(),
+        '.playbackConfigState': statusNode(),
+        '.tokenSaveState': statusNode(),
         '.btnSave': new FakeNode('button'),
         '.saveState': statusNode(),
         '.rulesList': new FakeNode('div'),
@@ -199,6 +202,7 @@ function savePage(invoke) {
         '.txtCd2Origin': origin,
         '.btnSave': saveButton,
         '.saveState': saveState,
+        '.playbackConfigState': statusNode(),
         '.rulesList': list,
         '.txtCd2Token': {value: ''},
         '.tokenState': statusNode(),
@@ -482,6 +486,49 @@ function tokenSavedResponse(config, tokenConfigured, status = 'unknown', revisio
     snapshot.cd2.tokenConfigured = tokenConfigured;
     return {status: 'saved', config: snapshot, connectionStatus: status, connectionRevision: revision};
 }
+
+test('Token feedback is nearby, preserves unsaved ordinary fields, and explains the active old revision', async () => {
+    const config = basicConfig();
+    const response = tokenSavedResponse(config, true);
+    response.playbackStatus = {stateRevision: 4, savedRevision: 2, playbackRevision: 1};
+    const {page, nodes} = tokenDraftPage(async () => response, config);
+    nodes['.txtCd2Origin'].value = 'https://unsaved.invalid';
+    nodes['.txtCd2Token'].value = 'synthetic-only';
+    await page.setToken();
+    assert.match(nodes['.tokenSaveState'].textContent, /Token 已保存.*无需重启.*下次新播放/);
+    assert.match(nodes['.playbackConfigState'].textContent, /已保存配置 #2.*当前播放会话使用 #1.*保持原配置/);
+    assert.equal(nodes['.txtCd2Origin'].value, 'https://unsaved.invalid');
+    assert.equal(page.config.cd2.origin, config.cd2.origin);
+    response.playbackStatus = {stateRevision: 3, savedRevision: 1, playbackRevision: 1};
+    nodes['.txtCd2Token'].value = 'synthetic-older-reply'; await page.setToken();
+    assert.match(nodes['.playbackConfigState'].textContent, /已保存配置 #2/, 'late snapshots must not regress the revision display');
+});
+
+test('reentering a retained settings page refreshes playback status without saving or overwriting drafts', async () => {
+    const calls = [], config = basicConfig();
+    const {page, nodes} = tokenDraftPage(async channel => {
+        calls.push(channel); return {stateRevision: 7, savedRevision: 3, playbackRevision: 3};
+    }, config);
+    nodes['.txtCd2Origin'].value = 'https://draft.invalid';
+    await page.onResume({});
+    assert.deepEqual(calls, ['enhanced-strm-playback-status']);
+    assert.equal(nodes['.txtCd2Origin'].value, 'https://draft.invalid');
+    assert.match(nodes['.playbackConfigState'].textContent, /已保存配置 #3.*当前播放会话使用 #3/);
+});
+
+test('reloading settings derives saved versus active state from main rather than an ephemeral success message', async () => {
+    const config = basicConfig(), calls = [];
+    const {page, nodes} = tokenDraftPage(async channel => {
+        calls.push(channel);
+        if (channel === 'enhanced-strm-config-get') return {...config, playbackStatus: {stateRevision: 8, savedRevision: 4, playbackRevision: 2}};
+        return {connectionStatus: 'unknown', connectionRevision: 9};
+    }, config);
+    nodes['.saveState'].textContent = '';
+    await page.loadSettings();
+    assert.match(nodes['.playbackConfigState'].textContent, /已保存配置 #4.*当前播放会话使用 #2/);
+    assert.match(nodes['.saveState'].textContent, /普通设置.*保存设置.*Token.*独立/);
+    assert(!calls.includes('enhanced-strm-config-save'));
+});
 
 test('AUTO disable draft survives immediate Token persistence and is posted by Save', async () => {
     const persisted = basicConfig([autoRule('auto-one')]);

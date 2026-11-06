@@ -137,15 +137,29 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         else if (result.status === 'error') toast((result.added ? '已加入 ' + result.added + ' 集，其余未加入：' : '') + detail(result));
         return result;
     }
-    async function localSource(api, item, source, signal) {
+    async function localSource(api, item, source, signal, onDiagnostic) {
         var value = context(api);
-        if (!value || !item || item.MediaType !== 'Video' || !source || !source.Id || item.ServerId && value.serverId !== item.ServerId || signal && signal.aborted) return null;
+        if (!value || JSON.stringify(context(current())) !== JSON.stringify(value) || !item || item.MediaType !== 'Video' || !source || !source.Id || item.ServerId && value.serverId !== item.ServerId || signal && signal.aborted) return null;
         var requestId = 'download-' + Date.now().toString(36) + '-' + (++sequence).toString(36);
         function abort() {try {window.ipc.send(channels.cancel, {requestId: requestId});} catch (_) {}}
         if (signal) signal.addEventListener('abort', abort, {once: true});
         try {
             var result = await invoke('lookup', {context: value, itemId: item.Id, mediaSourceId: source.Id, requestId: requestId});
-            if (signal && signal.aborted || JSON.stringify(context(api)) !== JSON.stringify(value)) return null;
+            if (signal && signal.aborted || JSON.stringify(context(api)) !== JSON.stringify(value) || JSON.stringify(context(current())) !== JSON.stringify(value)) return null;
+            var d = result && result.diagnostic || {};
+            var reasons = ['cancelled', 'context-unavailable', 'context-changed', 'version-mismatch', 'no-record', 'not-complete',
+                'directory-changed', 'file-missing', 'file-unavailable', 'file-changed', 'record-changed', 'integrity-mismatch', 'local-verified'];
+            var diagnostic = {reason: reasons.indexOf(d.reason) >= 0 ? d.reason : 'unavailable',
+                stage: ['context', 'record', 'file-identity', 'file-hash', 'verified'].indexOf(d.stage) >= 0 ? d.stage : 'unavailable'};
+            if (d.changedCopySkipped === true) diagnostic.changedCopySkipped = true;
+            try {if (typeof onDiagnostic === 'function') onDiagnostic(diagnostic);} catch (_) {}
+            if (result && (diagnostic.changedCopySkipped === true || result.status !== 'hit' && ['directory-changed', 'file-missing', 'file-unavailable', 'file-changed', 'integrity-mismatch'].indexOf(diagnostic.reason) >= 0)) {
+                try {
+                    var notice = toast(result.status === 'hit' ? '一份本地下载文件已变化或不可用，文件和记录未自动删除，本次使用另一份有效本地副本。' :
+                        '本地下载文件已变化或不可用，文件和记录未自动删除，本次将使用在线来源。');
+                    if (notice && typeof notice.catch === 'function') notice.catch(function () {});
+                } catch (_) {}
+            }
             return result && result.status === 'hit' && typeof result.source === 'string' ? result : null;
         } finally {if (signal) signal.removeEventListener('abort', abort);}
     }

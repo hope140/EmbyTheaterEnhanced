@@ -614,4 +614,34 @@ replaceOnce('seek percent diagnostic dispatch',
     '      (ticks *= percent /= 100), this.seek(parseInt(ticks), player);',
     '      (ticks *= percent /= 100), this.seek(parseInt(ticks), player, diagnosticContext);');
 
+// Alert loading and dismissal can outlive the playback that requested them.
+replaceOnce('error dialog owner capture',
+    '    if (!fullscreen) return afterPlaybackErrorMessage(instance, errorCode, playNextTrack);\n    var options;',
+    `    var sequence = instance._etePlayRequestSequence, delivered = false, completed = false;
+    function current() { return sequence === instance._etePlayRequestSequence; }
+    function finish() {
+      if (completed) return;
+      completed = true;
+      if (current()) return afterPlaybackErrorMessage(instance, errorCode, playNextTrack);
+    }
+    if (!fullscreen) return finish();
+    var options;`);
+replaceOnce('error dialog delayed delivery',
+    '          alert(options).then(resolve, reject);',
+    `          if (delivered) return;
+          delivered = true;
+          if (!current()) return resolve();
+          alert(options).then(resolve, reject);`);
+replaceOnce('error dialog dismissal ownership',
+    '        return afterPlaybackErrorMessage(instance, errorCode, playNextTrack);',
+    '        return finish();');
+replaceOnce('error payload defaults and premature EOF',
+    '    function onPlaybackError(e, error) {\n      var errorType = error.type,',
+    `    function onPlaybackError(e, error) {
+      error = error || {};
+      if (error.unexpectedEof || (e && e.unexpectedEof)) {
+        return onPlaybackStopped.call(this, e, {errorCode: "NoCompatibleStream", playNext: false});
+      }
+      var errorType = error.type,`);
+
 fs.writeFileSync(file, source, 'utf8');

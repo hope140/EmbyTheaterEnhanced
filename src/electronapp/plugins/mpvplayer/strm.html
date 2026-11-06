@@ -3,6 +3,8 @@
         <form class="auto-center" novalidate>
             <header class="ete-settings-header" aria-label="STRM 智能解析说明">
                 <p>为 STRM 媒体设置 CloudDrive2 与本地挂载路径，并决定可用来源的尝试顺序。</p>
+                <p>普通设置和规则需点击底部“保存设置”；Token 使用独立按钮保存。保存后无需重启，下次新播放生效。</p>
+                <p class="playbackConfigState" role="status" aria-live="polite"></p>
             </header>
 
             <section class="ete-settings-section verticalSection ete-strm-enabled-section" aria-labelledby="ete-strm-basic-title">
@@ -37,6 +39,7 @@
                         <button type="button" is="emby-button" class="raised ete-settings-button ete-settings-button--secondary btnSetToken">设置新 Token</button>
                         <button type="button" is="emby-button" class="button-link ete-settings-button ete-settings-button--text btnClearToken">清除 Token</button>
                     </div>
+                    <div class="tokenSaveState fieldDescription" role="status" aria-live="polite"></div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
                     <label>

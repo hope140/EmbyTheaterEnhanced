@@ -177,7 +177,7 @@ class FakeIpc extends EventEmitter {
     }
 }
 
-function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
+function makeContext(windowTarget, dom, nativeClient, resolver, downloads, configClient) {
     let moduleFactory;
     const amdRequire = function (dependencies, callback, errback) {
         if (dependencies && dependencies[0] === 'css!./libmpv') {
@@ -224,7 +224,8 @@ function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
     const globalize = {translate(value) { return value; }};
     const playbackManager = {getSubtitleUrl() { return ''; }};
     const pluginManager = {mapPath(_player, value) { return value; }};
-    const events = {trigger() { }};
+    const eventCalls = [];
+    const events = {trigger(...args) { eventCalls.push(args); }};
     const embyRouter = {showVideoOsd() { return Promise.resolve(); }, setTransparency() { }};
     const appSettings = {get() { return undefined; }, set() { }};
     const userSettings = {getSubtitleAppearanceSettings() { return {}; }};
@@ -240,7 +241,8 @@ function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
         amdRequire,
         connectionManager,
         resolver,
-        undefined,
+        configClient || {begin: async () => ({config: {version: 1, enabled: true, cd2: {enabled: true}, rules: []},
+            lease: 'synthetic-playback-config', release() {}})},
         undefined,
         undefined,
         require('../src/electronapp/enhanced/nexttrack-transition'),
@@ -249,7 +251,7 @@ function makeContext(windowTarget, dom, nativeClient, resolver, downloads) {
     );
     const player = {};
     Player.call(player);
-    return {player, context};
+    return {player, context, eventCalls};
 }
 
 function makePlayOptions(url) {
@@ -278,6 +280,64 @@ function getHttp(url) {
         request.on('error', reject);
     });
 }
+
+test('loading EOF rejects without normal stopped and start is owned before loadfile', async () => {
+    const ipc = new FakeIpc();
+    ipc.suppressCorePlaying = true;
+    const target = makeEventTarget();
+    Object.assign(target, {ipc, platform: 'win32', PlayerWindowId: 1});
+    const resolver = {isStrm: () => false, resolveAsync: async info => ({type: 'native', source: info.nativeSource})};
+    const {player, eventCalls} = makeContext(target, makeDom(), nativeHelperClient, resolver);
+    const options = makePlayOptions('https://fixture.invalid/media');
+    options.playerStartPositionTicks = 800000000;
+    const play = player.play(options);
+    play.catch(() => {});
+    await waitFor(() => ipc.loadCalls.length === 1);
+    const loadIndex = ipc.calls.findIndex(c => c.request.operation === 'command' && c.request.payload.data[0] === 'loadfile');
+    const startWrites = ipc.calls.slice(0, loadIndex).filter(c => c.request.operation === 'set-properties')
+        .flatMap(c => c.request.payload.entries).filter(e => e.name === 'start');
+    assert.equal(startWrites.at(-1)?.value, '80');
+    ipc.emit(nativeHelperClient.EVENT_CHANNEL, {}, {type: 'property_change', generationId: ipc.generationId,
+        data: {name: 'eof-reached', value: true}});
+    const result = await Promise.race([play.then(() => 'resolved', e => e), new Promise(r => setTimeout(() => r('pending'), 100))]);
+    assert.equal(result.unexpectedEof, true);
+    assert.equal(eventCalls.filter(c => c[1] === 'stopped').length, 0);
+    await player.stop(true);
+});
+
+for (const seconds of [0, 246, 1471]) test(`current EOF after core-playing reports normal completion once at start ${seconds}`, async () => {
+    const ipc = new FakeIpc(), target = makeEventTarget();
+    Object.assign(target, {ipc, platform: 'win32', PlayerWindowId: 1});
+    let started = 0;
+    const resolver = {isStrm: () => false, resolveAsync: async info => ({type: 'native', source: info.nativeSource})};
+    const {player, eventCalls} = makeContext(target, makeDom(), nativeHelperClient, resolver, undefined,
+        {begin: async () => ({config: {}, lease: 'lease', release() {}, started() {started++;}})});
+    const options = makePlayOptions('https://fixture.invalid/media');
+    options.playerStartPositionTicks = seconds * 10000000;
+    await player.play(options);
+    assert.equal(started, 1);
+    const eof = generationId => ipc.emit(nativeHelperClient.EVENT_CHANNEL, {}, {type: 'property_change', generationId,
+        data: {name: 'eof-reached', value: true}});
+    eof(ipc.generationId - 1);
+    assert.equal(eventCalls.filter(c => c[1] === 'stopped').length, 0);
+    eof(ipc.generationId); eof(ipc.generationId);
+    assert.equal(eventCalls.filter(c => c[1] === 'stopped').length, 1);
+    await player.stop(true);
+});
+
+for (const hit of [true, false]) test('unavailable configuration preserves local-download priority: ' + hit, async () => {
+    const ipc = new FakeIpc(), target = makeEventTarget();
+    Object.assign(target, {ipc, platform: 'win32', PlayerWindowId: 1});
+    let resolves = 0;
+    const resolver = {isStrm: () => true, resolveAsync: async () => {resolves++; throw Error('unowned resolver');}};
+    const downloads = {localSource: async () => hit ? {source: 'C:\\SyntheticDownloads\\movie.mkv'} : null};
+    const {player} = makeContext(target, makeDom(), nativeHelperClient, resolver, downloads, {begin: async () => null});
+    const options = makePlayOptions('https://fixture.invalid/original');
+    await player.play(options);
+    assert.equal(resolves, 0);
+    assert.equal(ipc.loadCalls[0].data[1], hit ? 'C:\\SyntheticDownloads\\movie.mkv' : options.url);
+    await player.stop(true);
+});
 
 test('ready diagnostics fail open before generation while delayed STRM/CD2 play reaches current-generation core-playing', async () => {
     const server = http.createServer((request, response) => {
@@ -422,7 +482,8 @@ for (const phase of ['loading', 'playing']) {
         assert.equal(ipc.loadCalls.length, 1, 'diagnostics must not retry or change playback policy');
         if (phase === 'playing') {
             ipc.emit(nativeHelperClient.EVENT_CHANNEL, {}, {type: 'property_change', data: {name: 'eof-reached', value: true}});
-            assert.equal(diagnostics().at(-1).request.details.stopSource, 'native-eof-reached');
+            assert.equal(diagnostics().filter(row => row.request.event === 'stop').length, 0,
+                'EOF after an error cannot also report normal completion');
         }
         await player.stop(true);
         assert.equal(diagnostics().filter(row => row.request.event === 'stop').at(-1).request.details.stopSource, 'adapter-stop-destroy');
