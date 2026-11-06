@@ -22,11 +22,12 @@ function projectLog(value) {
     } catch (_) {return null;}
 }
 function createInputReference() {
-    const key = crypto.randomBytes(32);
+    let key = null;
+    try {key = crypto.randomBytes(32);} catch (_) { /* Optional diagnostics cannot block service startup. */ }
     return function inputReference(source) {
         const result = {inputEndpointRef: null, inputScheme: 'unavailable', endpointRole: 'input-only', finalEndpointRef: null};
         try {
-            if (typeof source !== 'string' || source.length > 8192 || /[\x00-\x20\x7f]/.test(source)) return result;
+            if (!key || typeof source !== 'string' || source.length > 8192 || /[\x00-\x20\x7f]/.test(source)) return result;
             const url = new URL(source);
             if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) return result;
             result.inputScheme = url.protocol === 'https:' ? 'https' : 'http';

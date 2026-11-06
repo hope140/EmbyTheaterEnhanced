@@ -5,6 +5,13 @@ const {createNativeDiagnostics} = require('../src/electronapp/enhanced/native-di
 const {NativeHelperClient} = require('../src/electronapp/native-helper/controller');
 const diagnostics = require('../src/electronapp/enhanced/diagnostics');
 const observation = extra => ({kind: 'response', stage: 'response', networkError: 'none', httpStatus: 200, sequence: 1, ...extra});
+test('unavailable random key degrades only endpoint diagnostics instead of failing the playback service', () => {
+    const fs = require('node:fs'), vm = require('node:vm'), path = require('node:path'), module = {exports: {}};
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/electronapp/enhanced/media-network-diagnostics.js'), 'utf8'),
+        {module, exports: module.exports, require() {return {randomBytes() {throw Error('SECRET_CANARY');}};}, URL});
+    const ref = module.exports.createInputReference();
+    assert.equal(ref('https://synthetic.invalid/').inputEndpointRef, null);
+});
 test('network schema rejects arbitrary strings, fields, accessors and fabricated status shapes', () => {
     assert.deepEqual(projectLog(observation()), observation());
     for (const value of [null, [], observation({raw: 'TOKEN_CANARY'}), observation({kind: 'TOKEN_CANARY'}),
