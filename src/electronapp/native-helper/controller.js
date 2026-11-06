@@ -404,7 +404,7 @@ class NativeHelperClient {
     return this.currentGenerationId;
   }
 
-  retireGeneration(reason) {
+  retireGeneration(reason, control) {
     const retired = this.currentGenerationId;
     if (retired === null) return;
     for (const pending of [...this.pending.values()]) {
@@ -416,7 +416,7 @@ class NativeHelperClient {
     this.recordTimeline({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: retired, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-retired', currentAuthoritativeGeneration: null, action: 'RETIRE_GENERATION', reason });
     this.currentGenerationId = null;
     this.currentLabel = null;
-    this.diagnose('generation-retired', retired, 'RETIRE_GENERATION', {reason});
+    this.diagnose('generation-retired', retired, 'RETIRE_GENERATION', {reason, control});
   }
 
   request(method, params = {}, options = {}) {

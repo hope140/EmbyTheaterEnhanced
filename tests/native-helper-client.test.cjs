@@ -252,7 +252,7 @@ test('retire during begin advances request epoch, notifies with null generation,
 
   const retirement = ipc.notifications.at(-1);
   assert.equal(retirement.request.operation, 'retire-generation');
-  assert.deepEqual(retirement.request.payload, {reason: 'superseded', generationId: null, requestEpoch: 2});
+  assert.deepEqual(retirement.request.payload, {control: null, reason: 'superseded', generationId: null, requestEpoch: 2});
   assert.deepEqual(operationCalls(ipc, 'begin-generation')[0].request.payload, {label: 'B', requestEpoch: 1});
   pendingBegin.resolve({status: 'ok', generationId: 41});
   await assert.rejects(pending, /generation-superseded/);
@@ -333,4 +333,20 @@ test('preview owner is read-only and retires synchronously with generation autho
   assert.equal(ipc.calls.length,calls);
   endpoint.retireGeneration('next'); assert.equal(endpoint.getPreviewOwner(),null);
   await endpoint.destroy(); assert.equal(endpoint.getPreviewOwner(),null);
+});
+
+test('media-load error carries its exact generation and stale errors are dropped', async () => {
+  const ipc = new FakeIpc(), {endpoint} = await clientModule.create({ipc});
+  const messages = [];
+  endpoint.addEventListener('message', event => messages.push(event));
+  const old = await endpoint.beginGeneration('old');
+  const current = await endpoint.beginGeneration('current');
+  for (const generationId of [old.generationId, current.generationId]) {
+    ipc.emit(clientModule.EVENT_CHANNEL, {}, {type: 'bridge_error', generationId,
+      reason: 'load-failed', failureKind: 'media-load', endReason: 4, mpvErrorCode: -13});
+  }
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].generationId, current.generationId);
+  assert.equal(messages[0].data.data.failureKind, 'media-load');
+  await endpoint.destroy();
 });

@@ -4,13 +4,34 @@ const {createRecorder} = require('./bounded-diagnostics');
 const crypto = require('node:crypto');
 const networkDiagnostics = require('./media-network-diagnostics');
 const EVENTS = new Set(['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file',
-    'presentation-prepare', 'presentation-arm', 'presentation-clear', 'surface-hidden', 'media-network-input']);
+    'presentation-prepare', 'presentation-arm', 'presentation-clear', 'surface-hidden', 'media-network-input', 'destroy-requested', 'destroy-completed']);
 const DISPOSITIONS = new Set(['BEGIN_GENERATION', 'RETIRE_GENERATION', 'ACCEPT', 'DROP_STALE_GENERATION',
-    'DROP_STALE_HELPER', 'DROP_TRANSPORT_TERMINAL', 'DROP_UNATTRIBUTED', 'requested', 'ready', 'unavailable', 'stale', 'cleared', 'hidden']);
+    'DROP_STALE_HELPER', 'DROP_TRANSPORT_TERMINAL', 'DROP_UNATTRIBUTED', 'requested', 'completed', 'ready', 'unavailable', 'stale', 'cleared', 'hidden']);
 const REASONS = new Set(['superseded', 'stop', 'destroy', 'renderer-destroy', 'service-destroy', 'retired',
     'minimize', 'hide', 'renderer-visibility', 'renderer-notify-visibility', 'media-error', 'load-failed',
     'helper-terminal', 'presentation-cancelled', 'maximize', 'unmaximize', 'restore', 'enter-full-screen',
-    'leave-full-screen', 'show', 'focus', 'upper-play-invalidated']);
+    'leave-full-screen', 'show', 'focus', 'upper-play-invalidated', 'startup-route-failed', 'startup-deadline']);
+function projectControl(value) {
+    try {
+        if (!value || typeof value !== 'object') return null;
+        var output = {};
+        var allowed = {
+            "controlOrigin": ["unknown", "osd", "osd-route", "input", "windows-media", "host-command", "remote-playstate", "remote-general", "manager", "queue"],
+            "navigationCommand": ["back", "home", "route"],
+            "navigationAssociation": ["route-context", "unknown"],
+            "controlReason": ["stop", "next", "replacement", "error-cleanup", "error-auto-next", "ended-auto-next", "queue-empty", "destroy", "new-play"],
+            "callSite": ["manager-play", "manager-stop", "manager-next", "manager-replacement", "manager-ended", "adapter-stop", "adapter-destroy", "adapter-new-play"]};
+        for (var name in allowed) {
+            var descriptor = Object.getOwnPropertyDescriptor(value, name);
+            output[name] = descriptor && allowed[name].indexOf(descriptor.value) >= 0 ? descriptor.value : 'unknown';
+        }
+        var operation = Object.getOwnPropertyDescriptor(value, 'operationId');
+        output.operationId = operation && typeof operation.value === 'string' && /^(?:manager|adapter)-[1-9][0-9]{0,12}$/.test(operation.value) ? operation.value : null;
+        var navigation = Object.getOwnPropertyDescriptor(value, 'navigationId');
+        output.navigationId = navigation && typeof navigation.value === 'string' && /^navigation-[1-9][0-9]{0,12}$/.test(navigation.value) ? navigation.value : null;
+        return output;
+    } catch (_) { return null; }
+}
 function id(value) { return Number.isSafeInteger(value) && value > 0 ? value : null; }
 function mpvErrorCode(value) { return Number.isInteger(value) && value >= -2147483648 && value <= 2147483647 ? value : null; }
 
@@ -69,6 +90,8 @@ function createNativeDiagnostics(logger, options) {
                 mediaSourceRef: request ? request.mediaSourceRef : 'UNAVAILABLE',
                 playbackPhase: request ? request.playbackPhase : 'UNAVAILABLE',
                 disposition: input.disposition};
+            if (input.control) details.control = projectControl(input.control);
+            if (input.name.startsWith('destroy-')) details.claimedGenerationId = id(input.claimedGenerationId);
             if (input.reason !== undefined) details.reason = REASONS.has(input.reason) ? input.reason : 'UNAVAILABLE';
             if (input.name === 'end-file') {
                 details.endReason = Number.isInteger(input.endReason) && input.endReason >= 0 && input.endReason <= 5 ? input.endReason : null;
@@ -90,4 +113,4 @@ function createNativeDiagnostics(logger, options) {
     };
 }
 
-module.exports = {createNativeDiagnostics, mpvErrorCode};
+module.exports = {createNativeDiagnostics, mpvErrorCode, projectControl};

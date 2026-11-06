@@ -318,7 +318,7 @@
         }
     }
 
-    async function resolveAsync(options, dependencies) {
+    async function resolveAsync(options, dependencies, sequence) {
         var prepared = prepare(options);
         var context = prepared.context;
         var config = dependencies && dependencies.config;
@@ -341,9 +341,17 @@
             deadlineAt = now() + DEFAULT_TOTAL_BUDGET_MS;
 
             try {
-                for (var stageIndex = 0; stageIndex < order.length; stageIndex++) {
+                for (var stageIndex = sequence ? sequence.index : 0; stageIndex < order.length; stageIndex++) {
+                    if (sequence) sequence.index = stageIndex + 1;
                     var stage = order[stageIndex];
-                    if (stage === 'native') return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
+                    if (sequence) {
+                        if (sequence.seen[stage]) continue;
+                        sequence.seen[stage] = true;
+                    }
+                    if (stage === 'native') {
+                        if (sequence) sequence.nativeTried = true;
+                        return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
+                    }
                     if (stage === 'mount') {
                         result = mountResolver.resolve(context, Object.assign({}, dependencies || {}, {rule: rule}));
                         if (result && result.type === 'local') {
@@ -377,9 +385,16 @@
                         cd2Reason = result && result.reason;
                     }
                 }
+                if (sequence && sequence.nativeTried) return null;
+                if (sequence) sequence.nativeTried = true;
                 return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
             } catch (error) {
                 if (error && error.name === 'AbortError') throw error;
+                if (sequence) {
+                    sequence.index = order.length;
+                    if (sequence.nativeTried) return null;
+                    sequence.nativeTried = true;
+                }
                 return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
             }
         }
@@ -412,6 +427,37 @@
         }
     }
 
+    // One cursor per upper Play. Consumed misses and delivered sources are never revisited.
+    // Each resolver pass shares the existing absolute CD2 budget; the player bounds all passes and media loads.
+    function createSequence(options, dependencies) {
+        var prepared = prepare(options);
+        var config = dependencies && dependencies.config;
+        if (prepared.result || !hasPersistentConfig(config) || config.enabled === false ||
+            !selectRule(prepared.context, config)) return null;
+        var snapshot = Object.assign({}, dependencies, {config: JSON.parse(JSON.stringify(config))});
+        var state = {index: 0, nativeTried: false, seen: Object.create(null)};
+        var closed = false;
+        var busy = false;
+        return {
+            next: async function () {
+                if (busy) throw new Error('resolver-sequence-busy');
+                if (closed) return null;
+                if (snapshot.signal && snapshot.signal.aborted) {
+                    var error = new Error('Playback cancelled'); error.name = 'AbortError'; throw error;
+                }
+                busy = true;
+                try {
+                    var result = await resolveAsync(prepared.context, snapshot, state);
+                    if (snapshot.signal && snapshot.signal.aborted) {
+                        var cancelled = new Error('Playback cancelled'); cancelled.name = 'AbortError'; throw cancelled;
+                    }
+                    if (!result || state.nativeTried && state.index >= orderForRule(selectRule(prepared.context, snapshot.config)).length) closed = true;
+                    return result;
+                } finally { busy = false; }
+            }
+        };
+    }
+
     return {
         isStrm: isStrm,
         describeContext: describeContext,
@@ -422,6 +468,7 @@
         routeForResult: routeForResult,
         resolve: resolve,
         resolveAsync: resolveAsync,
+        createSequence: createSequence,
         resolveStrm: resolve
     };
 }));

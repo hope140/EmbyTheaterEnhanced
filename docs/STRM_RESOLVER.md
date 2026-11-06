@@ -83,3 +83,17 @@ Mount 规则命中时，会将 candidate 按 `sourcePrefix → mountPrefix` 做�
 ## Known limitations
 
 当前 unit/fake/frozen Electron 已覆盖 DirectUrl + file-local UA、unsafe UA/header → same-origin、known-expiry bounded reacquire、transport reject/timeout → same-origin、规则策略顺序、source/mount/cloud prefix replacement、最长前缀、AUTO/USER/DISABLED、CD2 miss → Mount/Native、POSIX candidate 不进入 Windows Mount、Transcode、Abort、cancel、late callback、双 NextTrack、libmpv Stop、PlaybackManager Stop-before-player.play 和旧 `core-playing` listener。真实 settings UI 的 native-window 自动化和真实服务器 cloud-first/mount-first playback 未在本分支宣称；HTTP-error-triggered refresh、任意 additionalHeaders 和 active full-directory discovery 仍不支持。
+
+## 起播阶段的同请求后续路线
+
+`createSequence()` 为已命中持久规则的 STRM 主视频创建请求内游标，普通媒体、转码和已下载本地优先路径保持原行为。每次 `next()` 消费实际设置顺序中尚未尝试的阶段；解析 miss 和已交付的路线均不重走。Native 位于自定义顺序中间时也只消费一次。规则从本次配置快照复制，设置变化只影响新 Play。
+
+URL 交付或 load 命令 accepted 不代表成功起播。只有当前 native generation 的主媒体 `end-file reason=4` 被分类为 `media-load`；起播前该错误可推进游标。无法确认媒体归属的 load command/transport/protocol 故障、字幕错误、主动停止和已 core-playing 后的错误不轮换路线。每次加载分配新 native generation；旧 generation 的错误、属性及 EOF 不得完成新尝试。上一尝试的同步异步尾部先排空，延迟字幕额外绑定 attempt；不递归调用用户 Play，不创建新 Session，也不调用 Next。
+
+从首次路线解析开始到有效 core-playing 设置 **15 秒绝对总期限**，涵盖解析及真实媒体起播等待；检查结果提交时的时间，不能依赖 timer 的调度顺序。每次继续解析仍按原 1200ms（已知新资源恢复另受原合同限制）限制连续 CD2 阶段，总期限不会因换路线重置。CD2 内既有 expiry 校验保留；不新增同路线重取 URL。轮换仅退休媒体 generation，不取消整个配置 lease；Stop、新 Play、Next 或退出才取消原请求链。起播 offset、音字幕选择与 DirectUrl file-local UA 沿原加载步骤逐次应用，同源/Native 不继承 DirectUrl UA。
+
+后续路线耗尽时只拒绝原 `player.play` Promise，将同集兼容流/转码及最终错误收尾交还 PlaybackManager。正常 EOF 与主动 Next 不受此游标控制。终局错误不自动下一集由独立 PlaybackManager 修复提供，必须在组合候选上重新验证。
+
+诊断 `startup-route` 复用请求/native owner，添加数字 `attempt`、受限路线及 `start/failed/advance/success/exhausted/cancelled` disposition。原因只记录媒体错误、后续路线、起播成功、请求退休或期限等类别，不记录 URL、路径、媒体名、凭据，也不把 helper 范围 HTTP 状态绑定到本次资源。
+
+公开测试通过生产 patcher 输出、真实 JS resolver/adapter 和合成 IPC 验证上述控制流；不能代替 Windows 固定 DLL、真实用户媒体、可见画面和服务器 Session 验收。可运行 `node --test tests/strm-resolver-settings.test.cjs tests/native-helper-diagnostics-playback.test.cjs tests/native-helper-client.test.cjs tests/native-helper-service.test.cjs tests/playbackmanager-request-session.test.cjs`；最后一项需要仓库固定 Web 快照。

@@ -32,8 +32,8 @@ function fixture(t) {
         else if (relative === 'item/item.js') { const lifecycle=require('../tools/patch-item-lifecycle.cjs'); output=lifecycle.patchDetailCache(lifecycle.patchItemLifecycle(require('../tools/patch-externalplayer-residue.cjs').patchItemText(base))); }
         else if (relative === 'home/home.js') output = home.patchHomeView(base);
         else if (relative === 'home/hometab.js') output = home.patchHomeTab(base);
-        else if (relative === 'modules/viewmanager/viewmanager.js') output = home.patchViewManager(plugins.patchViewManager(base));
-        else if (relative === 'modules/approuter.js') output = home.patchRouter(plugins.patchRouter(base));
+        else if (relative === 'modules/viewmanager/viewmanager.js') output = require('../tools/patch-playback-input-diagnostics.cjs').patchViewManager(home.patchViewManager(plugins.patchViewManager(base)));
+        else if (relative === 'modules/approuter.js') output = require('../tools/patch-playback-input-diagnostics.cjs').patchRouter(home.patchRouter(plugins.patchRouter(base)));
         else {
             const method = relative.includes('emby-itemscontainer') ? 'patchItemsContainer' : 'patchVirtualScroller';
             output = home[method](require('../tools/patch-search-ui.cjs').patchBrowseGuard(require('../tools/patch-movie-browser.cjs')[method](base)));
@@ -141,6 +141,7 @@ test('prepared preload consumes the finite test arguments; renderer options are 
     vm.runInNewContext(block, {window, process: {env: {}, argv: ['renderer', trial.rendererArgument]}, ipcRenderer: {send() {}},
         require(name) {
             if (name === './enhanced/page-cache/test-options') return options;
+            if (name === './enhanced/navigation-diagnostics') return require('../src/electronapp/enhanced/navigation-diagnostics');
             if (name === './enhanced/diagnostics') return {hashPath() {}};
             if (name === './enhanced/renderer-errors') return {install() {}};
             if (name === './enhanced/windows-media-renderer') return {};

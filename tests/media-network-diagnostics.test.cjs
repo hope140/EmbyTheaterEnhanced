@@ -30,7 +30,7 @@ test('submitted endpoint references ignore credentials/path/query and cannot cla
     assert.notEqual(first.inputEndpointRef, createInputReference()('https://example.invalid/').inputEndpointRef);
     assert.equal(first.finalEndpointRef, null); assert.equal(first.endpointRole, 'input-only');
     for (const value of ['C:\\PATH_CANARY', 'file:///PATH_CANARY', '\nhttps://example.invalid', 'https://' + 'x'.repeat(9000)]) assert.equal(ref(value).inputEndpointRef, null);
-    assert.doesNotMatch(JSON.stringify(first), /CANARY|example|user/);
+    assert.doesNotMatch(JSON.stringify(first), /CANARY|user/);
 });
 test('late curl observations remain helper-only across A/B, Stop and concurrent resources; invalid text never reaches timeline or logger', () => {
     const records = [], observe = createNativeDiagnostics(row => records.push(row));
@@ -72,5 +72,34 @@ test('load-input keeps only a submitted endpoint reference and the original requ
     const before = records.length;
     observe({name: 'media-network-input', disposition: 'ACCEPT', generationId: 1, helperRun: 1, network: {...network, raw: 'SECRET_CANARY'}});
     assert.equal(records.length, before);
-    assert.doesNotMatch(JSON.stringify([records, diagnostics.sanitizeRecord(row)]), /CANARY|synthetic\.invalid/);
+    assert.doesNotMatch(JSON.stringify([records, diagnostics.sanitizeRecord(row)]), /CANARY/);
+});
+
+test('input host, route shape, path grouping and exact locator attempts survive real logging/export without path or signature values', async t => {
+    const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-input-diagnostic-'));
+    t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+    const ref = createInputReference(), logger = diagnostics.createLogger(root);
+    const a = ref('https://USER_CANARY:PASSWORD_CANARY@media.example.invalid:8443/Videos/RESOURCE_CANARY/stream.mkv?sig=SIGNATURE_CANARY');
+    const signedAgain = ref('https://media.example.invalid:8443/Videos/RESOURCE_CANARY/stream.mkv?sig=CHANGED_CANARY');
+    const other = ref('https://media.example.invalid:8443/Videos/OTHER_CANARY/stream.mkv?sig=SIGNATURE_CANARY');
+    assert.equal(a.inputHost, 'media.example.invalid'); assert.equal(a.inputPort, 8443);
+    assert.deepEqual(a.inputRoute, ['Videos', '{segment}', 'stream.mkv']);
+    assert.equal(a.inputEndpointRef, other.inputEndpointRef);
+    assert.notEqual(a.inputPathRef, other.inputPathRef);
+    assert.equal(a.inputPathRef, signedAgain.inputPathRef, 'path grouping deliberately ignores all query values');
+    assert.notEqual(a.inputLocatorRef, signedAgain.inputLocatorRef, 'exact submitted locator includes the query');
+    assert.notEqual(a.loadAttempt, signedAgain.loadAttempt);
+    assert.equal(a.finalEndpointRef, null);
+    const observe = createNativeDiagnostics(logger);
+    observe({name: 'generation-begin', disposition: 'BEGIN_GENERATION', generationId: 9, helperRun: 1, label: 'play-9-9'});
+    observe({name: 'media-network-input', disposition: 'ACCEPT', generationId: 9, helperRun: 1, network: a});
+    const read = await logger.readRecords();
+    const row = read.records.find(row => row.event === 'load-input');
+    assert.equal(row.details.inputHost, a.inputHost);
+    assert.deepEqual(row.details.inputRoute, a.inputRoute);
+    assert.equal(row.details.inputPathRef, a.inputPathRef);
+    const report = await logger.exportReport({});
+    assert.match(report, /media.example.invalid/); assert.match(report, /8443/);
+    assert.doesNotMatch(JSON.stringify(read) + report, /CANARY|sig=|https:\/\/USER/);
 });

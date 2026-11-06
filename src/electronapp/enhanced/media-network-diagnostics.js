@@ -22,14 +22,23 @@ function projectLog(value) {
     } catch (_) {return null;}
 }
 function createInputReference() {
-    let key = null;
+    let key = null, attempt = 0;
     try {key = crypto.randomBytes(32);} catch (_) { /* Optional diagnostics cannot block service startup. */ }
     return function inputReference(source) {
-        const result = {inputEndpointRef: null, inputScheme: 'unavailable', endpointRole: 'input-only', finalEndpointRef: null};
+        const result = {inputEndpointRef: null, inputScheme: 'unavailable', endpointRole: 'input-only', finalEndpointRef: null,
+            inputHost: null, inputPort: null, inputRoute: [], inputPathRef: null, inputLocatorRef: null, loadAttempt: ++attempt};
         try {
             if (!key || typeof source !== 'string' || source.length > 8192 || /[\x00-\x20\x7f]/.test(source)) return result;
             const url = new URL(source);
             if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) return result;
+            const reference = parts => crypto.createHmac('sha256', key).update(JSON.stringify(parts)).digest('hex').slice(0, 32);
+            result.inputHost = url.hostname.toLowerCase();
+            result.inputPort = Number(url.port || (url.protocol === 'https:' ? 443 : 80));
+            // Only fixed route vocabulary survives. Never copy arbitrary path/query values.
+            const vocabulary = new Set(['emby', 'Videos', 'Audio', 'Items', 'stream', 'stream.mkv', 'stream.mp4', 'master.m3u8', 'Subtitles', 'Download']);
+            result.inputRoute = url.pathname.split('/').filter(Boolean).slice(0, 24).map(part => vocabulary.has(part) ? part : '{segment}');
+            result.inputPathRef = 'path-' + reference(['input-path', url.protocol, url.hostname, url.port, url.pathname]);
+            result.inputLocatorRef = 'loc-' + reference(['input-locator', url.protocol, url.hostname, url.port, url.pathname, url.search]);
             result.inputScheme = url.protocol === 'https:' ? 'https' : 'http';
             result.inputEndpointRef = 'ep-' + crypto.createHmac('sha256', key)
                 .update(JSON.stringify(['input-endpoint', url.protocol, url.hostname.toLowerCase(), url.port])).digest('hex').slice(0, 32);
@@ -39,7 +48,7 @@ function createInputReference() {
 }
 function projectInput(value) {
     try {
-        const keys = ['inputEndpointRef', 'inputScheme', 'endpointRole', 'finalEndpointRef'], clean = {};
+        const keys = ['inputEndpointRef', 'inputScheme', 'endpointRole', 'finalEndpointRef', 'inputHost', 'inputPort', 'inputRoute', 'inputPathRef', 'inputLocatorRef', 'loadAttempt'], clean = {};
         if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== keys.length) return null;
         for (const name of keys) {
             const descriptor = Object.getOwnPropertyDescriptor(value, name);
@@ -49,6 +58,13 @@ function projectInput(value) {
         if (!['http', 'https', 'unavailable'].includes(clean.inputScheme) || clean.endpointRole !== 'input-only' || clean.finalEndpointRef !== null) return null;
         const ref = clean.inputEndpointRef;
         if (ref !== null && (typeof ref !== 'string' || !/^ep-[a-f0-9]{32}$/.test(ref))) return null;
+        if (!Number.isSafeInteger(clean.loadAttempt) || clean.loadAttempt < 1 ||
+            !(clean.inputHost === null || typeof clean.inputHost === 'string' && clean.inputHost.length <= 253 && /^[a-z0-9.:[\]-]+$/.test(clean.inputHost)) ||
+            !(clean.inputPort === null || Number.isInteger(clean.inputPort) && clean.inputPort > 0 && clean.inputPort <= 65535) ||
+            !(clean.inputPathRef === null || /^path-[a-f0-9]{32}$/.test(clean.inputPathRef)) ||
+            !(clean.inputLocatorRef === null || /^loc-[a-f0-9]{32}$/.test(clean.inputLocatorRef)) ||
+            !Array.isArray(clean.inputRoute) || clean.inputRoute.length > 24 ||
+            clean.inputRoute.some(part => !['emby', 'Videos', 'Audio', 'Items', 'stream', 'stream.mkv', 'stream.mp4', 'master.m3u8', 'Subtitles', 'Download', '{segment}'].includes(part))) return null;
         return clean;
     } catch (_) {return null;}
 }
