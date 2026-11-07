@@ -106,3 +106,19 @@ if ($LASTEXITCODE -ne 0) { throw 'Historical test input preflight failed.' }
 [Electron44.5.0 session 合同](https://github.com/electron/electron/blob/v44.5.0/docs/api/session.md)列出 local-network、local-network-access、loopback-network、storage-access、top-level-storage-access，request／check 分别观察且仍拒绝。[Chromium 官方 net error 列表](https://chromium.googlesource.com/chromium/src/+/main/net/base/net_error_list.h)是有限错误枚举来源，精确 Chromium152 tag 未复核；不由名称推断当前已发生权限请求。产品还存在历史 Chromium switches 与普通浏览器不同；此修订不修改它们，不声称所有有效安全参数相同。独立 Session 本身不表示 DIRECT，Node WS 的代理拒绝也不代表官网 Chromium WS 路径；本次不为诊断发起代理解析或另取凭据。
 
 合成测试只能证明记录与决定隔离、时序和脱敏，不能确定官网本次是否依赖被阻止的 Emby 请求、子 frame 或权限。收到事件后才定位实际分支；连接和后续媒体正文／Native 解码／seek 仍分别待验收，不能自动放宽现有边界。
+
+## Reporter自测与短临时目录预检
+
+本次仅测试接线变化，产品源码与前一认证修订相同，但Host锁／完整Windows回执仍须绑定最终准确HEAD，不借用旧锁。测试启动器不打包、不增加正式诊断的伪造输入参数，仅接受固定标记的合成临时树及原selftest的输入子目录。完整黑盒仍包含原collector实际调用；单独库存Oracle和启动器单元测试通过不代表Windows采集成功。
+
+Work复验用新的干净LF checkout，保留前一失败目录和原始回执。先在原授权任务目录选择足够短的scratch，只对本次测试进程设置TEMP／TMP并保留原Path，不改系统环境、长路径、权限或安全设置。检查固定夹具的最长文件路径（包括新增arguments JSON及warning-output分支），保守先要求scratch长度加128不超过240字符，并另查仓库脚本路径；这只是本夹具的前置余量，不是全局长路径兼容证明。只读解析本次子进程将使用的powershell.exe，确认与既定WindowsPowerShell5.1位置匹配；只记录成功／匹配布尔，不输出全量Path或环境值。
+
+前置通过后，在同一准确SHA先执行以下不依赖Host绑定的定向命令，不停止用户程序来满足测试：
+
+```powershell
+node --test tests/report-playback-process-fixture.test.cjs tests/report-playback-issue.test.cjs tests/report-playback-issue-encoding.test.cjs tests/diagnostics-collector.test.cjs
+```
+
+须确认实际WindowsPowerShell5.1黑盒及编码用例未skip，正常／ZIP／脱敏拒绝／collector失败传播等原断言全部执行；随后重新绑定验证Host并完成前述完整Windows、材料、Electron回环、构建与VerifyOnly。具体执行次序仍服从各材料前置，不变更当前runtime或真实认证范围。
+
+collector若仍失败，保留为失败并停止重复调用；仅保存本轮快照及bundle状态、固定警告、子进程是否启动／退出已确认、解释器匹配布尔和路径长度。缺少真实异常时，进一步诊断需协调一次仅合成数据的最小调用，最多记录固定异常类型／错误ID与阶段，不保存原message、stderr全文、命令行、登录态或完整环境。不同观察轮次分开，不把后轮状态回填前轮，也不把短目录复验成功单独当作历史失败的因果证明。

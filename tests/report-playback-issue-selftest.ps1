@@ -103,6 +103,22 @@ exit $ExitCode
     return $path
 }
 
+function Invoke-FixtureReporterProcess {
+    param([string]$ScriptPath, [object[]]$ReporterArguments)
+    $expected = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../tools/report-playback-issue.ps1'))
+    Assert-True ([IO.Path]::GetFullPath($ScriptPath) -eq $expected) 'Unexpected reporter fixture target.'
+    $argumentFile = Join-Path $workspace ('reporter-arguments-' + [Guid]::NewGuid().ToString('N') + '.json')
+    Write-JsonUtf8 $argumentFile @($ReporterArguments)
+    $ps51 = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+    $launcher = Join-Path $PSScriptRoot 'helpers/report-playback-process-fixture.ps1'
+    try {
+        & $ps51 -NoProfile -ExecutionPolicy Bypass -File $launcher -Mode Reporter -ArgumentsFile $argumentFile
+        $script:FixtureReporterExitCode = $LASTEXITCODE
+    } finally {
+        Remove-Item -LiteralPath $argumentFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-Reporter {
     param(
         [string]$ScriptPath,
@@ -115,7 +131,6 @@ function Invoke-Reporter {
         [switch]$Zip
     )
     $args = @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath,
         '-OutputRoot', $OutputRoot,
         '-LogRoot', $TargetLogRoot,
         '-InstallRoot', $TargetInstallRoot,
@@ -126,9 +141,8 @@ function Invoke-Reporter {
     )
     if ([string]::IsNullOrEmpty($Note)) { $args += '-EmptyUserNote' } else { $args += @('-UserNote', $Note) }
     if (-not $Zip) { $args += '-NoZip' }
-    $ps51 = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
-    $output = @(& $ps51 @args 2>&1)
-    $exitCode = $LASTEXITCODE
+    $output = @(Invoke-FixtureReporterProcess -ScriptPath $ScriptPath -ReporterArguments $args 2>&1)
+    $exitCode = $script:FixtureReporterExitCode
     $result = $null
     foreach ($line in @($output | Select-Object -Last 8)) {
         try {
@@ -159,7 +173,6 @@ function Invoke-ReporterRaw {
         [string]$CollectorPath
     )
     $arguments = @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $ScriptPath,
         '-OutputRoot', $OutputRoot,
         '-LogRoot', $TargetLogRoot,
         '-InstallRoot', $TargetInstallRoot,
@@ -171,12 +184,11 @@ function Invoke-ReporterRaw {
     )
     if ([string]::IsNullOrEmpty($Note)) { $arguments += '-EmptyUserNote' } else { $arguments += @('-UserNote', $Note) }
     if ($CollectorPath) { $arguments += @('-TestCollectorPath', $CollectorPath) }
-    $ps51 = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
     $previousErrorAction = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $output = @(& $ps51 @arguments 2>&1)
-        $exitCode = $LASTEXITCODE
+        $output = @(Invoke-FixtureReporterProcess -ScriptPath $ScriptPath -ReporterArguments $arguments 2>&1)
+        $exitCode = $script:FixtureReporterExitCode
     } finally {
         $ErrorActionPreference = $previousErrorAction
     }
@@ -223,6 +235,7 @@ function Assert-ZipNoRawSecrets {
 
 $workspace = Join-Path ([IO.Path]::GetTempPath()) ('ete-issue-snapshot-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+[IO.File]::WriteAllText((Join-Path $workspace '.synthetic-reporter-fixture'), 'SYNTHETIC_REPORTER_FIXTURE')
 try {
     . (Join-Path $PSScriptRoot '..\tools\diagnostics-common.ps1')
     $fixture = New-Fixture -Root $workspace
@@ -247,10 +260,12 @@ try {
     $rich = $runs[0]
     Assert-True ($rich.Issue.product.appVersion -eq '0.2.0') 'Product appVersion was not observed.'
     Assert-True ($rich.Issue.product.bridgeMode -eq 'native-helper') 'Product bridgeMode was not observed.'
+    Assert-True ($rich.Issue.processState.status -eq 'OK') 'Synthetic process inventory is unavailable.'
+    Assert-True ($rich.Issue.processState.unownedNativeHelperCount -eq 0) 'Synthetic unowned Helper count is not zero.'
     Assert-True ($rich.Issue.processState.embyHostRunning -eq $false) 'Program-not-running evidence is incorrect.'
     Assert-True ($rich.Issue.processState.electronCount -eq 0) 'Electron count is not zero when the program is not running.'
     Assert-True ($rich.Issue.processState.nativeHelperCount -eq 0) 'Native Helper count is not zero when the program is not running.'
-    Assert-True (@('NONE_OBSERVED', 'UNOWNED_HELPER_OBSERVED', 'HELPER_WITHOUT_APP') -contains [string]$rich.Issue.processState.residualStatus) 'Residual process status is not an allowlisted observation.'
+    Assert-True ([string]$rich.Issue.processState.residualStatus -eq 'NONE_OBSERVED') 'Residual process status is not an allowlisted observation.'
     Assert-True ($rich.Issue.processState.appWindowState -eq 'Fullscreen') 'Existing app window state was not captured.'
     Assert-True (@($rich.Issue.processState.nativeHelperEvents).Count -gt 0) 'Native Helper event evidence is missing.'
     Assert-True ($rich.Issue.playbackState.route -eq 'mount') 'Playback route was not captured.'

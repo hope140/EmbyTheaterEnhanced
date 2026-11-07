@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-07 — Reporter 黑盒自测的进程输入隔离
+
+只修测试：Reporter 黑盒自测不再把整机没有 Emby 当作前提。测试启动器在固定、标记的合成树内调用原 reporter，并给进程查询提供明确 Empty 输入；原来的 false／零计数断言保留，还收紧为状态OK、无孤立Helper及NONE_OBSERVED。另用原函数的六种严格合成oracle覆盖多根、多级／逆序父子、无关Electron、孤立与无归属Helper、查询UNAVAILABLE。产品观测、未知／脱敏语义、入口参数和FN接线没有改变，不增加产品伪造进程输入入口。
+
+Node24.18.1／Linux PowerShell7定向组合26 pass／0 fail／3平台skip，其中新夹具9／9；不等同WindowsPowerShell5.1黑盒。独立只读审查无新增阻断。此前collector调用失败仍单独待查；catch中的exitCode1为固定失败字段，不能当作已取得子进程真实退出码，长路径仍是候选。新SHA的Windows完整门禁和Host绑定另行执行，旧失败回执保留，复验前置见[产品验证准备](FN_PRODUCT_VALIDATION.md#reporter自测与短临时目录预检)。
+
 ## 2026-11-07 — FN 认证错误收尾与有界观察候选
 
 认证窗拒绝导航后停止当前主加载并保留固定标题，不据此销毁可能已认证的 Session。Emby 页面仍由原客户端接管；被阻止进入 Emby 后，主表单可以继续验证授权。其他跳转／主加载失败显示精确 origin 或固定错误码；通知按随机 profileId 关联，早到失败不被默认提示覆盖，旧窗口事件不覆盖新配置。用户显式重连先确认旧连接移除，再创建新 Session；未确认收尾则停止。普通客户端和现用隔离 runtime 不改。
