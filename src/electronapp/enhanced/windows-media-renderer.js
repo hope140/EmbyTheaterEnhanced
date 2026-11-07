@@ -176,7 +176,7 @@ function install(window, send, options = {}) {
         }
         if (!currentCommand() || !requireInput) return false;
         lastCommandSequence = packet.sequence;
-        try { requireInput(['inputmanager'], function(input) { if (currentCommand()) (input.default || input).trigger(packet.command); }, function() {}); }
+        try { requireInput(['inputmanager'], function(input) { if (currentCommand()) (input.default || input).trigger(packet.command, {diagnosticOrigin: "windows-media"}); }, function() {}); }
         catch (_) { return false; }
         return true;
     };

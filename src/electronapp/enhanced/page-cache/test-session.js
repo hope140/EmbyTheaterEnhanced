@@ -21,7 +21,7 @@ function physical(target, directory) {
     if (directory ? !stat.isDirectory() : !stat.isFile()) fail();
     return absolute;
 }
-const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/apphost.js',
+const SOURCE_FILES = Object.freeze(['electronapp/main.js', 'electronapp/enhanced/navigation-diagnostics.js', 'electronapp/apphost.js',
     ...['response-contract', 'source-probe', 'collection', 'source-session', 'directory-preferences', 'transfer', 'publication', 'deletion', 'file-state', 'task-store', 'manager', 'ipc', 'renderer']
         .map(name => 'electronapp/enhanced/advance-download/' + name + '.js'),
     'electronapp/enhanced/advance-download/windows-publish.cs', 'electronapp/enhanced/advance-download/windows-delete.cs',
@@ -36,8 +36,8 @@ const FLOW_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/modules/virtual-scroller/virtual-scroller.js', sha256: '4F7F014519217712350B156F86C710654CE1D48F39DA98B2811C8314BAB63DEC'}),
     Object.freeze({path: 'electronapp/www/home/home.js', sha256: 'BA337B1E152FF26787B2D612156A76263A9C41E2149F0504D9D01A7E575E8D5F'}),
     Object.freeze({path: 'electronapp/www/home/hometab.js', sha256: 'EE30D819DE898154D8D6727CE31FE86418F79761368FA4B7075F071DF56635CB'}),
-    Object.freeze({path: 'electronapp/www/modules/viewmanager/viewmanager.js', sha256: '4F35A1F33E3540BD95CAAEAECF1B361A077E2A6FC0E566B655E2B603E35E6F83'}),
-    Object.freeze({path: 'electronapp/www/modules/approuter.js', sha256: '364CF6818BA4D92D237943FFD1D59FDB8B533E944BE7E4AB06588F203A1E66C5'})
+    Object.freeze({path: 'electronapp/www/modules/viewmanager/viewmanager.js', sha256: '23F9348020E6C02B475AEC3D2DFFBD8866DDB1CBEF4AF7A70B51DD949F14F022'}),
+    Object.freeze({path: 'electronapp/www/modules/approuter.js', sha256: '12C9BC738ABF46A6148BD59A289FE9357204A069659EA9D7BE3F07234710A9AA'})
 ]);
 const DETAIL_OVERLAYS = Object.freeze([
     Object.freeze({path: 'electronapp/www/app.js', sha256: '02AC6C7D2206F5BD78F1709A1D1160AE490B2C71DE2C33E98DA40F2ADAF26BF2'}),

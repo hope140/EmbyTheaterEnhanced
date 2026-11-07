@@ -229,6 +229,7 @@ test('native media failure keeps numeric evidence and anonymous request identity
   assert.deepEqual(errors.map(message => [message.reason, message.endReason, message.mpvErrorCode]), [
     ['load-failed', 4, -13], ['load-failed', 4, null], ['load-failed', 4, null], ['load-failed', 4, null]
   ]);
+  assert.ok(errors.every(message => message.generationId === generationId && message.failureKind === 'media-load'));
   active.options.onEvent({name: 'end-file', generationId: generationId + 1, value: {reason: 4, error: -12}});
   assert.equal(main.sent.map(args => args[1]).filter(message => message.type === 'bridge_error').length, 4);
   assert.equal(active.currentGenerationId, generationId);
@@ -1229,4 +1230,30 @@ test('service exit waits for the owned snapshot request and cannot publish after
   await new Promise(resolve=>setImmediate(resolve));assert.equal(done,false);assert.equal(service.isPreviewOwner(owner),false);
   complete({ready:true,generationId:owner.generationId,format:'bgr24',width:1,height:1,pixels:'AAAA'});
   assert.equal(await request,null);await closing;assert.equal(done,true);
+});
+
+test('renderer destroy records the verified retired owner and cause without adopting a replacement generation', async () => {
+  const ClientClass = makeClientClass(), {service, logs} = makeService(ClientClass);
+  const created = await service.call('create');
+  const {generationId} = await service.call('begin-generation', {label: 'play-1-1', requestEpoch: 1}, created.endpointId);
+  const control = {operationId: 'manager-17', controlOrigin: 'osd-route', controlReason: 'stop', callSite: 'adapter-stop', raw: 'PRIVATE_CANARY'};
+  service.notify('retire-generation', {generationId, requestEpoch: 2, reason: 'upper-play-invalidated', control}, created.endpointId);
+  await service.call('destroy', {diagnostic: {generationId, control}}, created.endpointId);
+  const rows = logs.filter(row => row.event.startsWith('destroy-'));
+  assert.deepEqual(rows.map(row => row.event), ['destroy-requested', 'destroy-completed']);
+  for (const row of rows) {
+    assert.equal(row.details.generationId, generationId);
+    assert.equal(row.details.requestId, 'play-1-1');
+    assert.equal(row.details.control.operationId, 'manager-17');
+    assert.equal(row.details.control.controlOrigin, 'osd-route');
+  }
+  assert.equal(rows[1].details.disposition, 'completed');
+  assert.doesNotMatch(JSON.stringify(rows), /PRIVATE_CANARY/);
+  const b = await service.call('create');
+  const next = await service.call('begin-generation', {label: 'play-2-2', requestEpoch: 1}, b.endpointId);
+  service.notify('retire-generation', {generationId: next.generationId, requestEpoch: 2}, b.endpointId);
+  await service.call('destroy', {diagnostic: {generationId, control}}, b.endpointId);
+  assert.equal(logs.at(-1).details.generationId, null, 'a stale claimed generation cannot adopt the retired replacement');
+  assert.equal(logs.at(-1).details.requestId, 'UNAVAILABLE');
+  await service.destroy();
 });

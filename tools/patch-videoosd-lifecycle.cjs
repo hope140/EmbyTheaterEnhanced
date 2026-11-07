@@ -307,6 +307,12 @@ function patchVideoOsd(source) {
         '(VideoOsd.prototype.pause = function () {\n      this.paused = !0;\n      this.releaseRateKeys();');
     output = once(output, '(VideoOsd.prototype.destroy = function () {\n',
         '(VideoOsd.prototype.destroy = function () {\n      this._eteRateKeysDestroyed = true;\n      this.releaseRateKeys();\n');
+    output = once(output, '_playbackmanager.default.stop(self.currentPlayer);',
+        '_playbackmanager.default.stop(self.currentPlayer, {controlOrigin:"osd"});');
+    output = once(output, '_playbackmanager.default.nextTrack(self.currentPlayer);',
+        '_playbackmanager.default.nextTrack(self.currentPlayer, {controlOrigin:"osd"});');
+    output = once(output, '_playbackmanager.default.stop(statsOverlay)),',
+        '_playbackmanager.default.stop(statsOverlay, (window.__eteNavigationDiagnostics ? window.__eteNavigationDiagnostics.stopContext(statsOverlay) : {controlOrigin:"unknown"}))),');
     return patchIntroSkip(patchThumbnailPreview(output));
 }
 

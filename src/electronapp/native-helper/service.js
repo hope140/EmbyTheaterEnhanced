@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('node:child_process');
 const {NativeHelperClient, PROTOCOL_VERSION} = require('./controller');
-const {createNativeDiagnostics, mpvErrorCode} = require('../enhanced/native-diagnostics');
+const {createNativeDiagnostics, mpvErrorCode, projectControl} = require('../enhanced/native-diagnostics');
 
 const CALL_CHANNEL = 'enhanced-native-helper-call';
 const NOTIFY_CHANNEL = 'enhanced-native-helper-notify';
@@ -170,6 +170,7 @@ function createService(options) {
   let presentationTokenHighWater = 0;
   let presentation = null;
   let lastVisibleMedia = null;
+  let retiredDiagnosticOwner = null;
   let surfaceEpoch = 0;
   let placementRevision = 0;
   let placementInFlight = null;
@@ -518,7 +519,7 @@ function createService(options) {
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('media-error');
-          sendEvent({type: 'bridge_error', reason: 'load-failed', endReason: 4,
+          sendEvent({type: 'bridge_error', reason: 'load-failed', generationId: message.generationId, failureKind: 'media-load', endReason: 4,
             mpvErrorCode: mpvErrorCode(message.value.error)});
           log('load-failed', {reason: 'mpv-end-file-error'});
           return;
@@ -701,8 +702,18 @@ function createService(options) {
     if (operation === 'destroy') {
       // Retire this endpoint before awaiting its process. A new create owns a
       // different ID, and this completion must never revoke the replacement.
+      const diagnosticOwner = client;
+      const control = projectControl(payload && payload.diagnostic && payload.diagnostic.control);
+      const claimedGenerationId = payload && payload.diagnostic && payload.diagnostic.generationId;
+      const diagnosticGeneration = diagnosticOwner && (diagnosticOwner.currentGenerationId ||
+        retiredDiagnosticOwner && retiredDiagnosticOwner.client === diagnosticOwner &&
+        retiredDiagnosticOwner.generationId === claimedGenerationId && retiredDiagnosticOwner.generationId);
+      const note = name => diagnostic({name, disposition: name === 'destroy-completed' ? 'completed' : 'requested', helperRun: helperRuns.get(diagnosticOwner),
+        generationId: diagnosticGeneration, claimedGenerationId, control});
+      note('destroy-requested');
       activeEndpointId = null;
       await destroyClient('renderer-destroy');
+      note('destroy-completed');
       return {status: 'ok'};
     }
     let beginEpoch;
@@ -806,7 +817,7 @@ function createService(options) {
           clearPresentation(presentation);
           surfaceWanted = false;
           syncSurfaceVisibility('load-failed');
-          sendEvent({type: 'bridge_error', reason: 'load-failed'});
+          sendEvent({type: 'bridge_error', reason: 'load-failed', generationId: load.generationId, failureKind: 'bridge-operation'});
           log('load-failed', {reason: String(error.message || 'load-failed').slice(0, 128)});
         });
         return {status: 'accepted'};
@@ -847,7 +858,8 @@ function createService(options) {
       ++generationEpoch;
       // A newer endpoint epoch also cancels a begin whose ID has not returned to the renderer yet.
       if (client && (validToken(request.requestEpoch) || request.generationId === null || request.generationId === client.currentGenerationId)) {
-        client.retireGeneration(request.reason || 'retired');
+        if (client.currentGenerationId !== null) retiredDiagnosticOwner = {client, generationId: client.currentGenerationId};
+        client.retireGeneration(request.reason || 'retired', projectControl(request.control));
       }
     }
     if (operation === 'set-visible') {
@@ -865,6 +877,7 @@ function createService(options) {
     surfaceWanted = false;
     syncSurfaceVisibility(reason);
     const owned = client;
+    retiredDiagnosticOwner = null;
     client = null;
     if (owned) {
       owned.retireGeneration(reason);

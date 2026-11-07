@@ -176,9 +176,12 @@ function createService({enabled = false, mode = 'live', io, controller: supplied
         },
         cancel(requestId) {
             const ticket = sources.get(requestId); if (ticket) ticket.cancelled = true;
-            for (const [key, lease] of leases) if (lease.requestId === requestId) { lease.value.revoke(); leases.delete(key); }
+            for (const [key, lease] of leases) if (lease.requestId === requestId) lease.value.revoke();
         },
-        release(leaseId) { const lease = leases.get(leaseId); if (lease) { lease.value.revoke(); leases.delete(leaseId); } },
+        release(leaseId) {
+            const lease = leases.get(leaseId);
+            if (lease) return Promise.resolve(lease.value.revoke()).then(() => { if (leases.get(leaseId) === lease) leases.delete(leaseId); });
+        },
         async remove(id) {
             const r = record(id, true); r.closed = true; retire(r);
             if (r.apiPromise) await (await r.apiPromise).close();

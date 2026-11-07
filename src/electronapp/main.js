@@ -776,7 +776,7 @@
 
     function sendCommand(cmd) {
 
-        var script = "require(['inputmanager'], function(inputmanager){inputmanager.trigger('" + cmd + "');});";
+        var script = "require(['inputmanager'], function(inputmanager){inputmanager.trigger('" + cmd + "', {diagnosticOrigin: 'host-command'});});";
         sendJavascript(script);
     }
 

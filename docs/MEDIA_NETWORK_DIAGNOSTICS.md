@@ -23,3 +23,28 @@
 保持 terminal=no，不配置原始 log-file。为覆盖第三方销毁时绕过 mpv logger 的 stderr 回退，helper 在加载库之前把 C stderr 和 Win32 标准错误句柄指向 NUL，失败则在初始化播放器前退出。命令异常不再把 what() 文本送进 protocol-error，而用固定拒绝原因；致命失败保留进程退出码。未增加文件、请求或探测流量。
 
 合成材料测试编译生产 C++ 投影的相同字节，并加载准确 DLL，通过本机 HTTP/TLS 实际请求验证；断言没有额外探测请求，检查控制台／退出 stderr 金丝雀、伪造 URL／头／reason phrase、长文本、未知前缀、洪泛与溢出。`tools/media-network-helper-smoke.cjs` 另通过隐藏的全新 Electron 窗口运行完整生产 Helper，核实日志 client 的创建、poll、销毁及父端诊断接线，并在失败后验证正常播放、暂停／恢复、音量和停止退出。JS 回归检查 A→B／Stop 的迟到日志保持 helper 级、旧 helper 不认领新播放，且字段在日志与导出投影后无敏感金丝雀。完整客户端、真实 Emby/CD2、个人网络和系统安装仍未验收。
+
+## 停止因果与输入地址诊断
+
+播放行为保持原样：普通错误是否在提示后进入下一集、已有转码恢复、队列选择、停止／会话上报与取消顺序均不由诊断决定。`queue-decision` 记录现有自动下一集开关、是否允许 next、是否存在下一项、是否错误及是否返回错误 Promise。`ended-auto-next` 只表示非错误 stopped 分支选择 next，不单独证明 native EOF；须结合同 request/generation 的原生 EOF 记录。
+
+`control-requested` 使用有限 `controlOrigin`、`controlReason`、`callSite` 和操作编号。来源标签包括 OSD、OSD 路由退出、通用输入、Windows 媒体命令、Host 命令、远端 Playstate、manager 和 queue。未携带上下文的调用明确 unknown；Host／通用输入不能反推最初的设备或用户。操作编号在 manager 模块或 adapter 实例内递增，仅在本次运行结合 request/generation 使用，不是跨启动全局 ID。Next 到替换停止、错误提示完成到自动 Next 通过闭包／参数传递，不使用跨异步共享的“当前来源”。其他播放器保持原参数合同。
+
+`stop-requested`、`invalidation-requested` 与 `destroy-requested` 的 `latest-known-at-stop-request` 是失效前同步复制的已有观察：位置、时长、缓存、各自 generation／归属判定、观察时间及最近提交 seek。时间为 renderer 接收观察的墙钟时间，不是服务器或解码器采样时间。旧值仍可展示但归属为 false/unknown，不能用于推导当前剩余量；seek 仍只关联最近提交，不宣称底层确认。日志不发送查询、不 await，也不延后原取消流程。终止缓存观察绕过周期限频。完成记录保留首次实际销毁的快照；重复销毁请求可以有独立请求记录，但只有原物理销毁完成记录。
+
+retire IPC 携带经过有限枚举投影的操作上下文。destroy IPC 的快照只作为诊断输入；main 以现有 endpoint 和保存的实际 retired client/generation 校验关联，无法核实的 claimed generation 保持未关联，不控制播放。`renderer-destroy` 表示 renderer 请求销毁，不表示 renderer 崩溃。完成表示现有销毁 Promise 完成，不扩大原退出保证。
+
+`load-input` 新增可读 `inputHost`、`inputPort`、固定白名单路由段 `inputRoute`；其他路径段统一 `{segment}`，query、userinfo、签名和头不输出。以下引用使用与端点引用相同的 service 内存随机密钥及分域 HMAC，重启不可比较：
+
+- `inputEndpointRef`：协议、规范化主机和端口；同域不同资源仍相同。
+- `inputPathRef`：以上字段加规范化 pathname；同路径换 query 签名保持相同。它是路径分组，**不是完整媒体资源身份**：query 可选择不同媒体，path 中的签名变化也会改变该引用。
+- `inputLocatorRef`：以上字段加完整 query；用于区别准确提交定位符，不含 userinfo／fragment。签名变化也会变化，不能解释为内容变化。
+- `loadAttempt`：service 中每次合法 loadfile 诊断调用递增，结合 helperRun、generationId、requestId 区分尝试；不统计重定向或 mpv 内部请求。
+
+允许字段经真实 logger、重读及导出保留。可读主机包含 IP／私有域名时也会显示，这是地址定位信息；不包含认证头、Cookie、完整链接或任意 path/query 值。`finalEndpointRef=null`，输入信息不能关联 helper-only HTTP 响应，也不能判断最终跳转主机。固定 curl debug 事件仍没有资源标识；本次不启用 trace、不改网络路由、不做代理播放，未做新的 Windows DLL 实验，沿用上文固定后端验证的能力边界。
+
+## 2026-11-06 — 导航停止来源的有限因果诊断
+
+输入 Back/Home 的有限来源按当前播放器与 stream 对象快照记录，参数、调用次数及取消路径不变。Home 的同步 route context 经 WeakMap 传递到异步 view request，仅在实际 viewbeforehide 的同步作用域内读取；请求取消、替换播放、stream 变化或已消费上下文一律 unknown。Stop 的 navigationId 与输入请求记录相连，有限字段经 manager、adapter、native 投影及真实 logger/export 保留；无路径、用户信息或命令原文落盘。
+
+原生 history.back() 到 popstate 没有命令身份，无法可靠证明某次退栈由某个远端/本地命令发起。保留 navigation-requested（input-request-only）区分远端 GeneralCommand 与本地 Back；异步退栈的 Stop 明确 unknown，不用全局最后命令、时间接近、目的 URL 或 pending 队列伪造归属。正常 EOF 自动离开不新增主动 Stop。不改变历史状态、路由参数、播放/停止/取消顺序或版本；仍为 0.4.18。生成运行时测试覆盖取消、无退栈、多导航、晚到、A→B、EOF 及真实落盘/导出。此补足不声称查明历史提前停止的根因。

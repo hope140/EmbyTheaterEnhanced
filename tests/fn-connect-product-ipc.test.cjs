@@ -62,7 +62,7 @@ function rendererFixture(handler) {
     const window = {ipc, addEventListener(event, fn) { windowEvents.set(event, fn); }};
     vm.runInNewContext(fs.readFileSync('src/electronapp/enhanced/fn-connect/renderer.js', 'utf8'), {
         define(_names, factory) { module = factory(connection, events); },
-        window, Set, URL
+        window, Set, URL, AbortController
     });
     return {module, api, calls, sent, transport: window.__eteFnTransport, snapshot: () => ({...current}), pulse() { listeners.get('credentialsupdated')(); },
         switchUser(accountId) { current = {...current, accountId}; listeners.get('credentialsupdated')(); },
@@ -130,4 +130,40 @@ test('new authentication JSON waits for retirement acknowledgement before its ne
     await new Promise(resolve => setImmediate(resolve)); assert.equal(done, false);
     gate.resolve({status: 'ok'}); await pending; assert.equal(done, true);
     assert.deepEqual(f.calls.filter(v => ['switch', 'bind'].includes(v.operation)).map(v => v.operation), ['switch', 'bind']);
+});
+
+test('Native lease release returns one shared main acknowledgement for route retirement', async () => {
+    const gate = deferred();
+    const f = rendererFixture(value => value.operation === 'capabilities' ? {status: 'ok', enabled: true} :
+        value.operation === 'source' ? lease : value.operation === 'release' ? gate.promise : {status: 'ok'});
+    await f.module.route('profile');
+    const source = await f.module.source(f.api, 'https://media.example.test/a', new AbortController().signal);
+    let settled = false;
+    const first = source.release(), second = source.release();
+    assert.equal(first, second);
+    first.then(() => {settled = true;}); await Promise.resolve();
+    assert.equal(settled, false);
+    assert.equal(f.calls.filter(value => value.operation === 'release').length, 1);
+    gate.resolve({status: 'ok'}); await first;
+    assert.equal(settled, true);
+});
+
+for (const duringRelease of [false, true]) test('real renderer account retirement cancels Native startup without old-account fallback: ' + duringRelease, async () => {
+    const {startupFixture, makeDeferred, waitFor} = require('./helpers/startup-route-fixture.cjs');
+    const gate = makeDeferred();
+    const r = rendererFixture(value => value.operation === 'capabilities' ? {status: 'ok', enabled: true} :
+        value.operation === 'source' ? lease : value.operation === 'release' && duringRelease ? gate.promise : {status: 'ok'});
+    await r.module.route('profile');
+    const f = startupFixture(undefined, {available: () => r.module.available(), source: (_api, url, signal) => r.module.source(r.api, url, signal)});
+    Object.assign(f.config.rules[0], {strategy: 'custom', order: ['native', 'direct-url', 'cd2-http', 'mount']});
+    f.options.url = 'https://media.example.test/native';
+    const play = f.player.play(f.options); play.catch(() => {});
+    try {
+        await waitFor(() => f.ipc.loadCalls.length === 1);
+        if (duringRelease) { f.failure(); await waitFor(() => r.calls.some(v => v.operation === 'release')); }
+        r.switchUser('other-account'); gate.resolve({status: 'ok'});
+        if (!duringRelease) f.failure();
+        await assert.rejects(play, e => e.playbackSuperseded === true);
+        assert.equal(f.ipc.loadCalls.length, 1); assert.equal(f.resolves.length, 0);
+    } finally {gate.resolve({status: 'ok'}); await f.player.stop(true);}
 });

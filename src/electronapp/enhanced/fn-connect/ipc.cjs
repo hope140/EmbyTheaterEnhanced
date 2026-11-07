@@ -53,7 +53,7 @@ function register({ipcMain, getWebContents, electron, enabled = false, service: 
                 case 'bind': result = await service.bind(value.id, value.context); break;
                 case 'switch': await service.switchIdentity(value.context, value.id); result = {}; break;
                 case 'source': result = await service.source(value); break;
-                case 'release': service.release(value.leaseId); result = {}; break;
+                case 'release': await service.release(value.leaseId); result = {}; break;
                 case 'remove': await service.remove(value.id); result = {}; break;
                 default: throw new Error();
             }

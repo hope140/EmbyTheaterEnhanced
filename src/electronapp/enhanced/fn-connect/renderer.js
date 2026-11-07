@@ -125,24 +125,32 @@ define(['connectionManager', 'events'], function (connectionManager, events) {
             if (signal.aborted || switching) throw abortError();
             if (!same(captured, current())) throw abortError();
             observedIdentity = captured;
-            var requestId = ++sequence, retired = false, leaseId;
-            function release() {
-                if (retired) return; retired = true; active.delete(release); signal.removeEventListener('abort', release);
-                ipc().send('enhanced-fn-connect-cancel', {requestId: requestId});
-                if (leaseId) call('release', {leaseId: leaseId}).catch(function () {});
+            var requestId = ++sequence, retired = false, leaseId, releasePromise;
+            var owner = new AbortController();
+            function retireOwner() {
+                owner.abort(); active.delete(retireOwner); signal.removeEventListener('abort', retireOwner); release();
             }
-            active.add(release); signal.addEventListener('abort', release, {once: true});
+            function release() {
+                if (retired) return releasePromise; retired = true;
+                ipc().send('enhanced-fn-connect-cancel', {requestId: requestId});
+                releasePromise = leaseId ? call('release', {leaseId: leaseId}) : Promise.resolve();
+                releasePromise.catch(function () {}); // Event-driven retirement has no awaiting caller.
+                return releasePromise;
+            }
+            active.add(retireOwner); signal.addEventListener('abort', retireOwner, {once: true});
             try {
                 var result = await call('source', {context: captured, source: source, requestId: requestId});
                 leaseId = result.leaseId;
                 if (retired || signal.aborted || !same(captured, current()) || !same(captured, context(api))) {
                     if (leaseId) await call('release', {leaseId: leaseId}); throw abortError();
                 }
-                if (!result.matched) { release(); return null; }
+                if (!result.matched) { retireOwner(); return null; }
                 if (typeof result.url !== 'string' || !/^http:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}\/r\/[a-f0-9]{48}$/.test(result.url) ||
                     typeof leaseId !== 'string' || !/^[a-f0-9]{48}$/.test(leaseId)) throw new Error('FN_SOURCE_INVALID');
-                return {url: result.url, release: release};
-            } catch (error) { release(); throw error; }
+                return {url: result.url, release: release, ownerSignal: owner.signal, isOwnerCurrent: function () {
+                    return !signal.aborted && !switching && same(captured, current()) && same(captured, context(api));
+                }};
+            } catch (error) { retireOwner(); throw error; }
         }
     };
 });

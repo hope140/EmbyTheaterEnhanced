@@ -15,11 +15,14 @@ async function createBridge(controller, {enabled = false} = {}) {
     server.headersTimeout = 10000;
     server.requestTimeout = 15000;
     server.on('connection', socket => { allSockets.add(socket); socket.once('close', () => allSockets.delete(socket)); });
-    function revoke(key) {
-        const lease = leases.get(key);
-        if (!lease) return;
+    function revoke(key, lease = leases.get(key)) {
+        if (!lease) return Promise.resolve();
+        if (lease.retiring) return lease.retiring;
         leases.delete(key);
         for (const active of lease.active) active.abort();
+        lease.retiring = Promise.all([...lease.pending]).then(() => { if (lease.closeError) throw lease.closeError; });
+        lease.retiring.catch(() => {}); // State/abort listeners may retire without awaiting.
+        return lease.retiring;
     }
     const off = controller.onState(event => {
         if (event.state === 'ready') return;
@@ -34,11 +37,13 @@ async function createBridge(controller, {enabled = false} = {}) {
         return lease;
     }
     server.on('request', async (req, res) => {
-        let lease, active, response;
+        let lease, active, response, done, pending;
         try {
             if (!['GET', 'HEAD'].includes(req.method)) throw fail('METHOD_REJECTED');
             lease = lookup(req, 'media');
             active = new AbortController();
+            pending = new Promise(resolve => { done = resolve; });
+            lease.pending.add(pending);
             lease.active.add(active);
             const abort = () => active.abort();
             res.once('close', abort);
@@ -61,11 +66,13 @@ async function createBridge(controller, {enabled = false} = {}) {
             if (req.method === 'HEAD') { response.dispose?.(); response.body.destroy(); res.end(); }
             else {
                 response.body.once('error', () => res.destroy());
+                response.body.once('close', () => { if (!response.body.readableEnded) res.destroy(); });
                 response.body.pipe(res);
                 await new Promise(resolve => { res.once('close', resolve); res.once('finish', resolve); });
             }
             res.removeListener('close', abort);
         } catch (error) {
+            if (lease && error?.code === 'ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED') lease.closeError = error;
             response?.dispose?.();
             if (!res.headersSent) {
                 res.writeHead(error?.code === 'LEASE_GONE' ? 410 : 502, {'Content-Type': 'text/plain', 'Cache-Control': 'no-store'});
@@ -73,7 +80,13 @@ async function createBridge(controller, {enabled = false} = {}) {
             } else res.destroy();
         } finally {
             active?.abort();
-            if (lease && active) lease.active.delete(active);
+            try { await response?.dispose?.(); await response?.drain?.(); }
+            catch { if (lease) lease.closeError = fail('ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED'); }
+            finally {
+                if (lease && active) lease.active.delete(active);
+                if (lease && pending) lease.pending.delete(pending);
+                done?.();
+            }
         }
     });
     server.on('upgrade', async (req, client, head) => {
@@ -120,9 +133,10 @@ async function createBridge(controller, {enabled = false} = {}) {
             if (!['media', 'websocket'].includes(kind) || leases.size >= 64) throw fail('INVALID_LEASE');
             // Controller performs the same URL/header validation before I/O.
             const key = randomBytes(24).toString('hex');
-            leases.set(key, {id, generation, path, headers: {...headers}, kind, active: new Set()});
+            const lease = {id, generation, path, headers: {...headers}, kind, active: new Set(), pending: new Set()};
+            leases.set(key, lease);
             return Object.freeze({url: (kind === 'websocket' ? origin.replace('http:', 'ws:') : origin) + '/r/' + key,
-                revoke: () => revoke(key)});
+                revoke: () => revoke(key, lease)});
         },
         async close() {
             if (closed) return;
