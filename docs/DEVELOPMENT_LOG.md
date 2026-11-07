@@ -4,7 +4,7 @@
 
 原reporter从整机Emby.Theater.exe根集合统计后代，合成InstallRoot只影响安装信息读取，不能隔离进程查询。黑盒自测却固定要求false／零计数，因此未运行前提并未由夹具建立。现不修改产品，测试专用启动器固定原脚本、限制标记的临时合成树和参数集合，以闭包提供Empty查询。另提取原库存函数做六种精确Oracle，进程字段只允许名称／父子关系；命令行和执行路径getter在夹具中抛错，防止扩大读取。正常、退出2／3及包含空格、引号、字面美元符的参数也保留断言。原collector仍按产品真实方式启动，不声明已隔离其系统观测；测试目录约束不是恶意链接替换防护沙箱。
 
-新启动器首轮发现跨脚本作用域和数组参数不能具名绑定的问题，已改闭包及白名单hashtable，未更改产品断言；参数路径预期也按实际规范化合同修正。新夹具9／9、相关诊断组合26 pass／0 fail／3平台skip，平台skip保留WindowsPowerShell5.1黑盒／编码边界。产品tools/src/native逐字节不变，不结束任何实际进程，不改权限／网络／版本。
+新启动器首轮发现跨脚本作用域和数组参数不能具名绑定的问题，已改闭包及白名单hashtable，未更改产品断言；参数路径预期也按实际规范化合同修正。新夹具9／9、相关诊断组合26 pass／0 fail／3平台skip，平台skip保留WindowsPowerShell5.1黑盒／编码边界。产品tools/src/native逐字节不变，不结束任何实际进程，不改权限／网络／版本。代码提交 `51d03c8` 的公开回归2880 pass／0 fail／32平台skip（共2912，固定6份材料文件排除），耗时156.1秒；显式runtime base／provenance／overlay／preload材料切片17／17。JS630份／PowerShell57份语法与有限凭据模式扫描通过，扫描不等同完整泄露审计。后续仅补结果文档，WindowsPowerShell5.1及最终准确SHA的完整门禁仍未执行。
 
 后续一次受限观察在collector阶段失败，并未到旧断言，不能把后来观测的进程状态倒填旧失败。源码可证collector_invocation_failed来自调用catch，可能为命令解析、native stderr终止错误或执行异常；固定exitCode1不是实际子进程退出回执。传统PS5/.NET的深路径风险另作前置核对，缺少原异常时不认定根因。新Windows回归需短合成scratch、既有Path及实际powershell.exe解析预检，失败仍失败；不修改系统长路径／安全设置，不借新夹具宣称collector或真实FN播放通过。
 
