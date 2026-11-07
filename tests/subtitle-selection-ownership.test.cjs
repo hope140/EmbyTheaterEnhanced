@@ -66,6 +66,7 @@ function makeHarness() {
     let automaticReady = true;
     let unpaused = false;
     let rejectSid = false;
+    let resolvedSource = null;
     const body = {
         firstChild: null,
         insertBefore(node) { node.parentNode = this; this.firstChild = node; },
@@ -146,7 +147,7 @@ function makeHarness() {
         {getSubtitleAppearanceSettings() { return {}; }},
         function (dependencies, callback) { if (dependencies[0] === 'css!./libmpv') callback(); return Promise.resolve(); },
         {},
-        {isStrm() { return false; }, resolveAsync(ctx) { return Promise.resolve({type: 'native', source: ctx.nativeSource}); }},
+        {isStrm() { return false; }, resolveAsync(ctx) { return Promise.resolve(resolvedSource || {type: 'native', source: ctx.nativeSource}); }},
         undefined, undefined, undefined, nextTransition,
         {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }}
     );
@@ -175,6 +176,7 @@ function makeHarness() {
             assert.equal(unpaused, true, 'loadfile submitted and unpause reached');
         },
         rejectNextSid() { rejectSid = true; },
+        setResolvedSource(value) { resolvedSource = value; },
         holdReady() { automaticReady = false; }, ready() { target.dispatchEvent({type: 'core-playing'}); },
         setTracks(value) { tracks = value; }, setTrackRead(value) { trackRead = value; }};
 }
@@ -412,4 +414,32 @@ test('VideoSideData preserves generated closed-caption track contract',async()=>
     h.setTrackRead(()=>{throw Error('generated captions lack a container ff-index');});
     h.player.setSubtitleStreamIndex(8);await flushSelection();
     assert.equal(h.actions.at(-1).value,1);
+});
+
+const originalRoutes = [
+    {type:'url',source:'opaque:raw',sourceKind:'direct-url',isStrm:true,fallback:false},
+    {type:'url',source:'opaque:raw',sourceKind:'cd2-url',isStrm:true,fallback:false},
+    {type:'local',source:'opaque:raw',reason:'mount_hit',isStrm:true,localExists:true,fallback:false},
+    {type:'local',source:'opaque:raw',sourceKind:'downloaded-file',reason:'download_hit',localExists:true,fallback:false}
+];
+for(const route of originalRoutes) for(const method of ['DirectStream','Transcode']) {
+    test(`${method} resolved ${route.sourceKind||route.reason} uses only proven original-container mapping`,async()=>{
+        const h=makeHarness();h.setResolvedSource(route);await h.play([streams[0],embedded],undefined,method);
+        h.setTracks([mappedTrack]);h.player.setSubtitleStreamIndex(8);await flushSelection();
+        assert.equal(h.actions.at(-1).value,method==='DirectStream'?17:2);
+    });
+}
+for(const route of [{...originalRoutes[0],fallback:true},{...originalRoutes[0],isStrm:false},
+    {...originalRoutes[0],sourceKind:'unknown'},{...originalRoutes[2],localExists:false}]) {
+    test(`unproven DirectStream route does not infer container identity: ${JSON.stringify(route)}`,async()=>{
+        const h=makeHarness();h.setResolvedSource(route);await h.play([streams[0],embedded],undefined,'DirectStream');
+        h.setTrackRead(()=>{throw Error('not an original-container contract');});
+        h.player.setSubtitleStreamIndex(8);await flushSelection();assert.equal(h.actions.at(-1).value,2);
+    });
+}
+test('resolved DirectStream default and manual loading choices do not wait before unpause',async()=>{
+    const h=makeHarness();h.setResolvedSource(originalRoutes[0]);h.holdReady();
+    const playing=h.play([streams[0],embedded],8,'DirectStream');await h.loadingReached();
+    h.player.setSubtitleStreamIndex(8);await h.clock.advanceTo(3000);h.setTracks([mappedTrack]);
+    h.ready();await playing;await flushSelection();assert.equal(h.actions.at(-1).value,17);
 });

@@ -29,7 +29,7 @@ ffargs.push('-y',media);
 const ff=spawnSync(arg('--ffmpeg'),ffargs,{windowsHide:true,encoding:'utf8',timeout:20000});
 assert.equal(ff.status,0,ff.stderr);
 const child=spawn(arg('--mpv'),['--no-config','--load-scripts=no','--vo=null','--ao=null','--idle=yes','--pause=yes','--sub-auto=no',`--input-ipc-server=${pipe}`],{windowsHide:true,stdio:'ignore'});
-let socket,sequence=0,buffer='';const pending=new Map(),evidence=[];
+let server,socket,sequence=0,buffer='';const pending=new Map(),evidence=[];
 function command(command){return new Promise((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{pending.delete(id);reject(Error('IPC timeout'));},3000);pending.set(id,{resolve,reject,timer});socket.write(JSON.stringify({command,request_id:id})+'\n');});}
 (async()=>{
  try {
@@ -37,19 +37,28 @@ function command(command){return new Promise((resolve,reject)=>{const id=++seque
   assert.ok(socket,'mpv IPC ready');
   socket.on('data',data=>{buffer+=data;let nl;while((nl=buffer.indexOf('\n'))>=0){const row=JSON.parse(buffer.slice(0,nl));buffer=buffer.slice(nl+1);const p=pending.get(row.request_id);if(p){pending.delete(row.request_id);clearTimeout(p.timer);if(row.error==='success')p.resolve(row.data);else p.reject(Error(row.error));}}});
   const version=await command(['get_property','mpv-version']);
+  if(args.includes('--early-external')) {
+   server=require('node:http').createServer((_req,res)=>setTimeout(()=>{
+    res.writeHead(200,{'Content-Length':fs.statSync(media).size,'Content-Type':'video/x-matroska','Accept-Ranges':'none'});
+    fs.createReadStream(media).pipe(res);
+   },2200));
+   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  }
   const source=fs.readFileSync(path.join(__dirname,'../src/electronapp/plugins/libmpv.js'),'utf8');
   const code=source.slice(source.indexOf('        function enableInternalSubtitleStream('),source.indexOf('        function setAudioStream('));
   for(const order of ['first','middle','last']) {
-   await command(['loadfile',media]);
+   await command(['loadfile',server?`http://127.0.0.1:${server.address().port}/synthetic.mkv`:media]);
+   if(server){await delay(700);await command(['sub-add',path.join(temp,'external.srt'),'cached','EXTERNAL','eng']);}
    let initial;
-   for(let i=0;i<40;i++){initial=await command(['get_property','track-list']);if(initial.filter(t=>t.type==='sub').length===names.length)break;await delay(25);}
-   const internal=initial.filter(t=>t.type==='sub');assert.equal(internal.length,names.length);
+   for(let i=0;i<200;i++){initial=await command(['get_property','track-list']);if(initial.filter(t=>t.type==='sub'&&!t.external).length===names.length)break;await delay(25);}
+   const internal=initial.filter(t=>t.type==='sub'&&!t.external);assert.equal(internal.length,names.length);
+   if(server)assert.equal(initial.find(t=>t.type==='sub'&&t.external).id,1,'early external takes the first subtitle ID');
    const embedded=internal.map(t=>({Type:'Subtitle',Index:t['ff-index'],DeliveryMethod:'Embed'}));
    const simple=embedded[reportedLayout?2:0],traditional=embedded[reportedLayout?3:1];
    if(reportedLayout)assert.deepEqual(embedded.map(t=>t.Index),[5,6,7,8,9,10,11]);
    const external={Type:'Subtitle',Index:reportedLayout?12:77,DeliveryMethod:'External',DeliveryUrl:path.join(temp,'external.srt'),DisplayTitle:'EXTERNAL'};
    const rows=order==='first'?[external,...embedded]:order==='middle'?[embedded[0],external,...embedded.slice(1)]:[...embedded,external];
-   const request={routeAttempt:1,nativeGenerationId:1,subtitlePlayMethod:'DirectPlay'};
+   const request={routeAttempt:1,nativeGenerationId:1,subtitleUsesContainerIndex:true};
    const ops=[];
    const ctx={Promise,setTimeout,clearTimeout,activePlayRequest:request,subtitleSelectionSequence:0,mediaSource:{MediaStreams:rows},
     isCurrentPlayRequest:r=>r===request,requestDiagnosticDetails:()=>({}),emitClientDiagnostic:()=>{},
@@ -87,8 +96,9 @@ function command(command){return new Promise((resolve,reject)=>{const id=++seque
    evidence.push({order,tracks:(await command(['get_property','track-list'])).filter(t=>t.type==='sub').map(t=>({id:t.id,ffIndex:t['ff-index'],external:t.external,title:t.title,selected:t.selected})),operations:ops});
   }
   fs.writeFileSync(path.join(temp,'evidence.json'),JSON.stringify({version,evidence},null,2));
-  console.log(JSON.stringify({status:'passed',version,reportedLayout,orders:3,cachedCycles:6,evidence:path.join(temp,'evidence.json')}));
+  console.log(JSON.stringify({status:'passed',version,reportedLayout,earlyExternal:!!server,orders:3,cachedCycles:6,evidence:path.join(temp,'evidence.json')}));
  } finally {
+  if(server){server.closeAllConnections();server.close();}
   if(socket){try{await command(['quit']);}catch{} socket.destroy();}
   for(const p of pending.values()){clearTimeout(p.timer);p.reject(Error('probe closed'));}
   if(child.exitCode===null)child.kill();

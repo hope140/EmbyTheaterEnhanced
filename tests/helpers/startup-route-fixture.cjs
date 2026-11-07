@@ -286,13 +286,19 @@ function startupFixture(runtime) {
     const realResolver = require('../../src/electronapp/resolvers/strm-resolver');
     const resolves = [], cancellations = [], controls = {};
     const resolver = Object.assign({}, realResolver, {createSequence(info, dependencies) {
-        return realResolver.createSequence(info, {...dependencies, cd2Transport: {
+        const sequence = realResolver.createSequence(info, {...dependencies, cd2Transport: {
             resolve: async request => {resolves.push(request); if (controls.resolve) await controls.resolve(request); return {status: 'hit', type: 'url',
                 source: 'https://synthetic.invalid/' + request.mode,
                 sourceKind: request.mode === 'direct' ? 'direct-url' : 'cd2-url',
                 requestOptions: {userAgent: 'Synthetic-Agent'}};},
             cancel: id => cancellations.push(id)
         }});
+        const next = sequence.next.bind(sequence);
+        sequence.next = async () => {
+            const result = await next();
+            return result && controls.transformResult ? controls.transformResult(result) : result;
+        };
+        return sequence;
     }});
     const config = {version: 1, enabled: true, rules: [{id: 'rule', enabled: true, strategy: 'cloud-first',
         sourcePrefix: '/fixture', cloudPrefix: '/cloud', mountPrefix: 'X:\\Fixture'}]};

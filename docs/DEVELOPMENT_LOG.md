@@ -1,5 +1,9 @@
 # 维护记录
 
+## Early external subtitle discovery and raw-source DirectStream
+
+Delayed synthetic input reproduces an external subtitle taking the first native track ID before embedded tracks are discovered. Container-index mapping now also covers explicitly verified raw STRM and downloaded-file routes while retaining the original session play method; it is recalculated on every attempt so native/remux fallback never inherits raw-source eligibility. The default-readiness path uses the same contract. This synthetic reproduction does not substitute for real-session track evidence.
+
 ## DirectPlay subtitle identity correction
 
 The candidate resolves embedded DirectPlay subtitles through the current native track table rather than counting external rows as track IDs. Default selection is readiness-bound and newer user selections retain ownership. External cached loading no longer writes a guessed sid. Remux/transcode mapping is unchanged; synthetic evidence is not a diagnosis of a real incident. See [contract and validation](SUBTITLE_TRACK_MAPPING.md). No version or release changes.

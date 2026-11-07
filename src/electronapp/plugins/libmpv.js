@@ -99,6 +99,19 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         return 'unknown';
     }
 
+    function usesContainerSubtitleIndex(playMethod, result) {
+        if (playMethod === 'DirectPlay') return true;
+        if (playMethod !== 'DirectStream' || !result || result.fallback !== false ||
+            typeof result.source !== 'string' || !result.source) return false;
+        // STRM resolution changes the physical source, not Emby's session play
+        // method. These routes read original bytes without the Emby remuxer.
+        if (result.type === 'url' && result.isStrm === true &&
+            (result.sourceKind === 'direct-url' || result.sourceKind === 'cd2-url')) return true;
+        if (result.type !== 'local' || result.localExists !== true) return false;
+        return result.isStrm === true && result.reason === 'mount_hit' ||
+            result.sourceKind === 'downloaded-file' && result.reason === 'download_hit';
+    }
+
     function logStrmResolverResult(result, request, detected) {
         var type = result && result.type ? result.type : 'native';
         var reason = result && result.reason ? result.reason : 'native_fallback';
@@ -338,7 +351,6 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             invalidatePlayRequest(retiringSnapshot.control, retiringSnapshot);
             request = {
                 generation: playGeneration,
-                subtitlePlayMethod: options && options.playMethod,
                 diagnosticControl: projectControl(options && options._eteDiagnosticControl),
                 previewItem: options && options.item ? {Id: options.item.Id, ServerId: options.item.ServerId} : null,
                 playbackRequestId: playbackRequestId,
@@ -1369,6 +1381,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 } catch (_) { /* Context diagnostics are optional and fail-open. */ }
             }
             var resolverObservation = logStrmResolverResult(resolverResult, request, isStrmRequest);
+            // Recompute for every attempt: raw -> native fallback must not
+            // inherit the preceding file's container-index contract.
+            request.subtitleUsesContainerIndex = usesContainerSubtitleIndex(options.playMethod, resolverResult);
             if (enhancedRouteState) {
                 enhancedRouteState.commit(request, {
                     requestId: request.requestId,
@@ -1510,7 +1525,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             // Register the default's selection owner now, but do not block
             // unpause on native media readiness. A later user choice wins.
             var defaultSubtitle;
-            if (playMethod === 'DirectPlay') {
+            if (request.subtitleUsesContainerIndex) {
                 defaultSubtitle = setSubtitleStream(subtitleIndexToSet, request, corePlaying);
             } else {
                 await setSubtitleStream(subtitleIndexToSet, request);
@@ -2285,12 +2300,12 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         }
 
         // Emby Index is a container stream index, not an mpv subtitle track ID.
-        // Only DirectPlay preserves that identity. Remux/transcode retain their
-        // existing contract until the server provides an output-track mapping.
-        function enableDirectPlaySubtitleStream(stream, ownsSelection, ownerRequest, mediaReady) {
+        // Original-container routes preserve that identity. Server remux and
+        // transcode retain their existing output-track selection contract.
+        function enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady) {
             if (mediaReady) {
                 return mediaReady.then(function () {
-                    if (ownsSelection()) return enableDirectPlaySubtitleStream(stream, ownsSelection, ownerRequest);
+                    if (ownsSelection()) return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest);
                 }, function () {});
             }
             var live = true;
@@ -2387,8 +2402,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                });
                                return Promise.resolve();
                             }
-                            if (ownerRequest.subtitlePlayMethod === 'DirectPlay' && stream.DeliveryMethod !== 'VideoSideData') {
-                                return enableDirectPlaySubtitleStream(stream, ownsSelection, ownerRequest, mediaReady);
+                            if (ownerRequest.subtitleUsesContainerIndex && stream.DeliveryMethod !== 'VideoSideData') {
+                                return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady);
                             }
                             return enableInternalSubtitleStream(stream, subIndex, ownsSelection);
                         }

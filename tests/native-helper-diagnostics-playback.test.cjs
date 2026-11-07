@@ -460,6 +460,7 @@ for (const action of ['deadline', 'stop', 'play', 'next', 'selection', 'route', 
         // Keep this pre-core-playing continuation test on the legacy remux
         // path. DirectPlay default mapping now waits for media readiness.
         f.options.playMethod = 'DirectStream';
+        f.controls.transformResult = result => ({...result, sourceKind: 'synthetic-remux', fallback: true});
         const gate = makeDeferred(), invoke = f.ipc.invoke.bind(f.ipc);
         let waiting = false;
         f.ipc.invoke = (channel, request) => {
@@ -503,3 +504,27 @@ for (const action of ['deadline', 'stop', 'play', 'next', 'selection', 'route', 
         await f.player.stop(true);
     });
 }
+
+test('DirectStream raw to native route rotation clears container mapping eligibility',async()=>{
+    const f=startupFixture();f.options.playMethod='DirectStream';
+    f.options.mediaSource.MediaStreams.push(
+        {Type:'Subtitle',Index:0,DeliveryMethod:'External',DeliveryUrl:'opaque:sub'},
+        {Type:'Subtitle',Index:8,DeliveryMethod:'Embed',Codec:'srt'});
+    f.options.mediaSource.DefaultSubtitleStreamIndex=8;
+    let results=0;
+    f.controls.transformResult=result=>++results===1?result:{...result,type:'native',sourceKind:'native',fallback:true};
+    const invoke=f.ipc.invoke.bind(f.ipc);let trackReads=0;
+    f.ipc.invoke=(channel,request)=>{
+        if(request.operation==='get-property'&&request.payload.name==='track-list'){
+            trackReads++;return Promise.resolve({status:'ok',value:[{type:'sub',external:false,id:17,'ff-index':8}]});
+        }
+        return invoke(channel,request);
+    };
+    const playing=f.player.play(f.options);playing.catch(()=>{});
+    await waitFor(()=>f.ipc.loadCalls.length===1);f.failure();
+    await waitFor(()=>f.ipc.loadCalls.length===2);
+    await waitFor(()=>f.ipc.calls.some(c=>c.request.operation==='set-properties'&&c.request.payload.entries.some(e=>e.name==='sid'&&e.value===2)));
+    f.property('core-idle',false);await playing;
+    assert.equal(trackReads,0,'retired raw default cannot query; native retains remux contract');
+    await f.player.stop(true);
+});
