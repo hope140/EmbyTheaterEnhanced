@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const pathRules = require('../resolvers/path-rules');
 const cd2Refresh = require('./cd2-refresh');
+const networkDiagnostics = require('./media-network-diagnostics');
 
 const DEFAULT_TOTAL_BUDGET_MS = 1200;
 const CONNECT_BUDGET_MS = 200;
@@ -308,6 +309,7 @@ function createService(options) {
     const clearTimer = settings.clearTimeout || clearTimeout;
     const transportFactory = settings.transportFactory || createGrpcTransport;
     const onDiagnostic = typeof settings.onDiagnostic === 'function' ? settings.onDiagnostic : function () {};
+    const inputReference = networkDiagnostics.createInputReference();
     const active = new Map();
     const modeSessions = new Map();
     const refresher = cd2Refresh.createRefresher({now: now, find: findDirectory, stream: refreshDirectory});
@@ -334,11 +336,40 @@ function createService(options) {
         return startedAt;
     }
 
-    function phaseDiagnostic(mode, event, startedAt) {
+    function phaseDiagnostic(mode, event, startedAt, request) {
         emitDiagnostic('info', event, {
+            requestId: request && request.requestId,
+            ruleId: request && request.ruleId,
             mode: mode || 'legacy',
             elapsedMs: Math.max(0, now() - startedAt)
         });
+    }
+
+    function downloadReplyDiagnostic(request, mode, acquiredAt, reply, attempt) {
+        try {
+            const receivedAt = now();
+            const response = reply && reply.response;
+            const expiry = parseExpiresIn(response && response.expiresIn, acquiredAt);
+            const agent = validateUserAgent(response && response.userAgent);
+            const address = inputReference(mode === 'direct' ? response && response.directUrl : sameOriginSource(response, config.origin));
+            address.replyObservation = address.loadAttempt;
+            delete address.loadAttempt;
+            address.referenceScope = 'cd2-service';
+            emitDiagnostic('info', 'download-url-result', Object.assign({
+                requestId: request && request.requestId, ruleId: request && request.ruleId,
+                mode: mode, rpcAttempt: attempt, rpcStartedAt: acquiredAt, rpcReceivedAt: receivedAt,
+                rpcElapsedMs: Math.max(0, receivedAt - acquiredAt),
+                result: reply && reply.error ? 'rpc-error' : 'response',
+                reason: reply && reply.error ? classifyError(reply.error, getTransport().status) : 'received',
+                expiryState: !expiry.present ? 'absent' : expiry.valid ? 'valid' : 'invalid',
+                expiresInSeconds: expiry.valid ? expiry.seconds : null,
+                expiresAt: expiry.valid ? expiry.expiresAt : null,
+                remainingMs: expiry.valid ? expiry.expiresAt - receivedAt : null,
+                safetyMarginMs: expiry.valid ? expirySafetyMargin(expiry.seconds * 1000) : null,
+                expiryBasis: 'client-rpc-start', serverIssuedAt: null, cacheHit: 'unknown',
+                userAgentState: !agent.present ? 'absent' : agent.valid ? 'accepted' : 'invalid'
+            }, address));
+        } catch (_) { /* Optional observations never change the RPC result. */ }
     }
 
     function finishDiagnostic(request, mode, startedAt, response) {
@@ -672,14 +703,14 @@ function createService(options) {
                 reply = await waitForReady(entry, Math.min(overallDeadline, startedAt + CONNECT_BUDGET_MS));
                 if (entry.cancelled) return result('cancelled', 'cancelled');
                 if (reply.error) return result('miss', reply.error.localReason);
-                phaseDiagnostic(mode, 'client-ready', startedAt);
+                phaseDiagnostic(mode, 'client-ready', startedAt, request);
 
-                phaseDiagnostic(mode, 'find-file-start', startedAt);
+                phaseDiagnostic(mode, 'find-file-start', startedAt, request);
                 const found = await findWithRefresh(entry, cloudPath, mapping, request, startedAt, overallDeadline);
                 reply = found.reply;
                 overallDeadline = found.deadline;
                 entry.recoveryDeadlineAt = found.attempted ? overallDeadline : null;
-                phaseDiagnostic(mode, 'find-file-end', startedAt);
+                phaseDiagnostic(mode, 'find-file-end', startedAt, request);
                 if (entry.cancelled) return result('cancelled', 'cancelled');
                 const findReason = reply.error ? classifyError(reply.error, getTransport().status) :
                     !isRegularFile(reply.response) ? 'invalid_file' : null;
@@ -707,14 +738,15 @@ function createService(options) {
                 overallDeadline - (mode === 'direct' ? sameOriginReserveMs : 0),
                 acquiredAt + (mode === 'direct' ? DIRECT_DOWNLOAD_BUDGET_MS : DOWNLOAD_BUDGET_MS)
             );
-            phaseDiagnostic(mode, 'download-url-start', startedAt);
+            phaseDiagnostic(mode, 'download-url-start', startedAt, request);
             reply = await unary(entry, 'GetDownloadUrlPath', {
                 path: cloudPath,
                 preview: false,
                 lazy_read: false,
                 get_direct_url: mode === 'direct'
             }, deadline);
-            phaseDiagnostic(mode, 'download-url-end', startedAt);
+            phaseDiagnostic(mode, 'download-url-end', startedAt, request);
+            downloadReplyDiagnostic(request, mode, acquiredAt, reply, 1);
             if (entry.cancelled) return result('cancelled', 'cancelled');
             if (reply.error) {
                 if (mode === 'direct') {
@@ -758,14 +790,15 @@ function createService(options) {
             if (directResult.reacquire && now() < overallDeadline) {
                 acquiredAt = now();
                 deadline = Math.min(overallDeadline - sameOriginReserveMs, acquiredAt + DIRECT_DOWNLOAD_BUDGET_MS);
-                phaseDiagnostic(mode, 'download-url-start', startedAt);
+                phaseDiagnostic(mode, 'download-url-start', startedAt, request);
                 reply = await unary(entry, 'GetDownloadUrlPath', {
                     path: cloudPath,
                     preview: false,
                     lazy_read: false,
                     get_direct_url: true
                 }, deadline);
-                phaseDiagnostic(mode, 'download-url-end', startedAt);
+                phaseDiagnostic(mode, 'download-url-end', startedAt, request);
+                downloadReplyDiagnostic(request, mode, acquiredAt, reply, 2);
                 if (entry.cancelled) return result('cancelled', 'cancelled');
                 if (!reply.error) {
                     directResponse = reply.response;

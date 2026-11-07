@@ -133,7 +133,8 @@ function loadPlayer(options) {
     const settings = options || {};
     const windowTarget = makeEventTarget();
     windowTarget.platform = 'win32';
-    windowTarget.enhancedDiagnostics = function () {};
+    const diagnostics = [];
+    windowTarget.ipc = {send(channel, record) {if (channel === 'enhanced-diagnostics-log') diagnostics.push(record);}};
     const dom = makeDom();
     const requireCalls = [];
     const toastCallbacks = [];
@@ -200,7 +201,7 @@ function loadPlayer(options) {
     const strmResolver = {
         isStrm() { return settings.isStrm !== undefined ? settings.isStrm : result.isStrm === true; },
         routeForResult,
-        resolveAsync() { return Promise.resolve(result); }
+        resolveAsync() { if (settings.resolverError) return Promise.reject(settings.resolverError); return Promise.resolve(result); }
     };
     const endpoint = makeNativeEndpoint();
     const dependencies = [
@@ -214,7 +215,7 @@ function loadPlayer(options) {
         amdRequire,
         {},
         strmResolver,
-        {begin: async () => ({config: {version: 1, enabled: true, cd2: {enabled: true}, rules: []},
+        settings.configClient || {begin: async () => ({config: {version: 1, enabled: true, cd2: {enabled: true}, rules: []},
             lease: 'synthetic-playback-config', release() {}})},
         undefined,
         undefined,
@@ -224,7 +225,7 @@ function loadPlayer(options) {
     const Player = moduleFactory(...dependencies);
     const player = {};
     Player.call(player);
-    return {player, dom, endpoint, requireCalls, toastCallbacks, toastCalls, toast};
+    return {player, dom, endpoint, requireCalls, toastCallbacks, toastCalls, toast, diagnostics};
 }
 
 async function playAndFlush(player, options) {
@@ -344,5 +345,23 @@ test('Toast load, missing API, throw and reject are fail-open for Native playbac
         await playAndFlush(loaded.player, makeOptions());
         assert.equal(loaded.endpoint.commands.some(message => message[0] === 'loadfile'), true, settings.name);
         await loaded.player.stop(true);
+    }
+});
+
+test('missing config and resolver exceptions explain native fallback without changing it', async () => {
+    for (const missing of [true, false]) {
+        const fixture = loadPlayer(missing ? {
+            configClient: {begin(options) {options.onDiagnostic({reason: 'timeout', elapsedMs: 1001, timeoutMs: 1000}); return Promise.resolve(null);}}
+        } : {resolverError: new TypeError('PRIVATE_ERROR https://private.invalid/?token=SECRET')});
+        await playAndFlush(fixture.player, makeOptions());
+        const record = fixture.diagnostics.find(v => v.event === 'resolver-fallback');
+        assert(record);
+        assert.equal(record.details.reason, missing ? 'config-unavailable' : 'resolver-exception');
+        assert.equal(record.details.stage, missing ? 'config-check' : 'resolve-source');
+        assert.equal(record.details.errorCode, missing ? 'resolver-config-unavailable' : 'unclassified');
+        assert.equal(record.details.configReason, missing ? 'timeout' : 'unobserved');
+        assert.equal(record.details.errorKind, missing ? 'Error' : 'TypeError');
+        assert.equal(record.details.route, 'native');
+        assert(!JSON.stringify(fixture.diagnostics).includes('PRIVATE_ERROR'));
     }
 });
