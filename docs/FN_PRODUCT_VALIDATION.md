@@ -119,6 +119,6 @@ Work复验用新的干净LF checkout，保留前一失败目录和原始回执�
 node --test tests/report-playback-process-fixture.test.cjs tests/report-playback-issue.test.cjs tests/report-playback-issue-encoding.test.cjs tests/diagnostics-collector.test.cjs
 ```
 
-须确认实际WindowsPowerShell5.1黑盒及编码用例未skip，正常／ZIP／脱敏拒绝／collector失败传播等原断言全部执行；随后重新绑定验证Host并完成前述完整Windows、材料、Electron回环、构建与VerifyOnly。具体执行次序仍服从各材料前置，不变更当前runtime或真实认证范围。
+当前四文件集合为35项。新增WindowsPowerShell5.1 launcher的3个成功退出／参数用例及10个JSON拒绝用例必须实际执行，成功路径须报告运行版本5.1；Linux会明确skip这13项，不以PS7替代。须确认原WindowsPowerShell5.1黑盒及编码用例也未skip，正常／ZIP／脱敏拒绝／collector失败传播等原断言全部执行；随后重新绑定验证Host并完成前述完整Windows、材料、Electron回环、构建与VerifyOnly。具体执行次序仍服从各材料前置，不变更当前runtime或真实认证范围。
 
 collector若仍失败，保留为失败并停止重复调用；仅保存本轮快照及bundle状态、固定警告、子进程是否启动／退出已确认、解释器匹配布尔和路径长度。缺少真实异常时，进一步诊断需协调一次仅合成数据的最小调用，最多记录固定异常类型／错误ID与阶段，不保存原message、stderr全文、命令行、登录态或完整环境。不同观察轮次分开，不把后轮状态回填前轮，也不把短目录复验成功单独当作历史失败的因果证明。

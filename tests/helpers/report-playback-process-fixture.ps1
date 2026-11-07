@@ -50,7 +50,17 @@ $query = {
 Set-Item -Path function:Get-CimInstance -Value $query
 if ($Mode -eq 'Reporter') {
     if ($Case -ne 'Empty' -or -not $ArgumentsFile) {throw 'INVALID_REPORTER_FIXTURE'}
-    $reporterArguments = @(ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($ArgumentsFile)))
+    # PS5 emits a JSON array as one object; PS7 enumerates it by default.
+    # Preserve the root array on both, including nested values for rejection.
+    $argumentJson = [IO.File]::ReadAllText($ArgumentsFile)
+    try {
+        if ((Get-Command ConvertFrom-Json -CommandType Cmdlet).Parameters.ContainsKey('NoEnumerate')) {
+            $reporterArguments = ConvertFrom-Json -InputObject $argumentJson -NoEnumerate
+        } else {
+            $reporterArguments = ConvertFrom-Json -InputObject $argumentJson
+        }
+    } catch {throw 'INVALID_REPORTER_FIXTURE_ARGUMENT'}
+    if ($reporterArguments -isnot [array]) {throw 'INVALID_REPORTER_FIXTURE_ARGUMENT'}
     foreach ($argument in $reporterArguments) {if ($argument -isnot [string]) {throw 'INVALID_REPORTER_FIXTURE_ARGUMENT'}}
     $parameters = @{}
     $switches = @('NoZip', 'SkipWindowsEvents', 'EmptyUserNote')
