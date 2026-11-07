@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-11-07 — 首页、播放诊断与字幕身份映射验收候选
+
+将首页／日志整合提交 adbc23b 与字幕提交 10a42d1（含 b6c8bfc）组合，保留双方提交历史。两份维护文档的追加冲突保留全部记录；libmpv 自动合并后复核同时保留配置结果／回退阶段诊断和原始容器字幕轨身份映射。其他生产文件与对应候选一致，不添加新播放路线、重试或版本改动。
+
+组合定向 324/324 通过；公共集合 2469 通过、79 失败、32 跳过，失败名称与上一组合在同一云环境下完全相同（固定工具链不齐和 Node 24.22.1 夹具问题），不能记为全量通过。584 文件 JS 语法、681 文本有限凭据模式扫描及差异空白检查通过。需在固定 Windows 工具链对准确整合提交补全回归和完整验收包构建；字幕独立候选的真实 mpv 合成验证不等于用户实际播放验收。
+
+本阶段仅交独立验收包，不合 main、不发布测试版、不覆盖现用安装或配置。实际验收包含首页标已播放／删除／返回的位置与继续播放布局，以及默认外挂后切换第一个简英和第三个简中、直接内嵌入场对照。缺失或歧义轨身份会关闭字幕并记录原因，普通 remux／transcode 保持既有映射边界；首次播放现场根因不据此宣称已修复。用户验收通过后再安排测试版。
+
 ## 2026-11-07 — 首页稳定性与播放诊断组合候选（未发布）
 
 独立分支整合首页候选 a1d2382 与诊断候选 71c61423，保留两个父提交；冲突仅发生在本页和开发记录的追加条目，双方内容均保留。生产代码与各自候选逐文件一致，没有新增播放行为、字幕修正或版本变更。
@@ -20,6 +28,14 @@ CD2 分阶段解析的 RPC 开始/结束加入 requestId/ruleId，新增 downloa
 
 针对性测试覆盖超时/拒绝/无效响应/取消/成功、日志接收端异常、fallback 继续播放、过期字段缺失/无效及敏感金丝雀。本机针对性测试 71/71 通过（包含真实 logger 落盘的 host/TTL/秘密金丝雀）；JS 语法与有限凭据模式扫描通过。公共测试尝试结果 2428 通过、79 失败、32 跳过，当前 Node 24.22.1 下存在 build-input fixture 的 fs.cpSync EEXIST，且缺少 pwsh；不能作为全量放行证据，须在固定工具链补验。Windows 实机未验收；本分支不合 main、不发布、不改版本号。
 
+
+## Early external subtitle discovery and raw-source DirectStream
+
+Delayed synthetic input reproduces an external subtitle taking the first native track ID before embedded tracks are discovered. Container-index mapping now also covers explicitly verified raw STRM and downloaded-file routes while retaining the original session play method; it is recalculated on every attempt so native/remux fallback never inherits raw-source eligibility. The default-readiness path uses the same contract. This synthetic reproduction does not substitute for real-session track evidence.
+
+## DirectPlay subtitle identity correction
+
+The candidate resolves embedded DirectPlay subtitles through the current native track table rather than counting external rows as track IDs. Default selection is readiness-bound and newer user selections retain ownership. External cached loading no longer writes a guessed sid. Remux/transcode mapping is unchanged; synthetic evidence is not a diagnosis of a real incident. See [contract and validation](SUBTITLE_TRACK_MAPPING.md). No version or release changes.
 
 ## 2026-11-06 — 导航停止来源的有限因果诊断
 
