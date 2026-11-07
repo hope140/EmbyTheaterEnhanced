@@ -111,6 +111,17 @@
             // The existing scroller clamps positions when fresh content is shorter.
             restoreScroll(value.outer);
         }
+        function holdBaselineLayout() {
+            // Keep the native scroll range while its virtual rows remeasure.
+            // This is transient geometry, not cached media or a new page layout.
+            flowRows.forEach(function(row) {
+                var height = row.block.getBoundingClientRect().height;
+                if (height > 0 && !row.block.style.minHeight) row.block.style.minHeight = height + 'px';
+            });
+        }
+        function releaseBaselineLayout() {
+            flowRows.forEach(function(row) { row.block.style.minHeight = ''; });
+        }
         function rowBusy(row) {
             if (!row.status) {
                 row.items.inert = true; row.allowed = false; row.items.classList.add('eteHomeFlowPending');
@@ -268,7 +279,7 @@
             owner.sectionsRendered = true;
             committedTicket = ticket;
             getItems(stage).forEach(function(items) { owner.addFocusBehavior(items); });
-            if (!flowing && baselinePosition) return;
+            if (!flowing && baselinePosition && (!baselinePosition.restoreFocus || baselinePosition.input !== inputRevision)) return;
             var match = focusedItemId && Array.from(stage.querySelectorAll('[data-id]')).find(function(element) {
                 return element.getAttribute('data-id') === focusedItemId;
             });
@@ -506,7 +517,13 @@
             if (!active || disposed || !owner.view) return {status: 'cancelled'};
             var reuse = stageMode === 'server' && flowLayout !== null && sameIdentity(flowTicket, identity(epoch));
             if (!reuse) clear();
-            else { epoch++; provider.cancel(); cancelWaits(); pauseItems(stage); flowRows.forEach(rowBusy); }
+            else {
+                // Reconnect/manual refresh and ordinary return need the same
+                // protection as a server data notification, before pausing rows.
+                if (!baselinePosition) baselinePosition = baselineSnapshot();
+                holdBaselineLayout();
+                epoch++; provider.cancel(); cancelWaits(); pauseItems(stage); flowRows.forEach(rowBusy);
+            }
             var position = baselinePosition;
             var loadEpoch = epoch, identityDeadline = identityClock.now() + 3000, ticket = identity(loadEpoch);
             loading.show();
@@ -559,6 +576,7 @@
                 if (!current(ticket)) return {status: 'cancelled'};
                 flowRows.forEach(function(row) { row.allowed = true; row.items.inert = false; row.items.classList.remove('eteHomeFlowPending'); row.items.classList.remove('eteHomeFlowProgramPending'); });
                 ready(ticket, options);
+                releaseBaselineLayout();
                 restoreBaselinePosition(position, ticket);
                 return {status: 'server'};
             } catch (_) {
@@ -600,12 +618,19 @@
                     if (pending && pending.epoch === epoch) return pending.promise;
                     if (owner.sectionsRendered && committedTicket && current(committedTicket)) return Promise.resolve({status: stageMode});
                 }
+                if (!active && !flowing && pausedBaselinePosition &&
+                    pausedBaselinePosition.input === inputRevision && sameIdentity(pausedBaselinePosition.scope, identity(epoch))) {
+                    if (!baselinePosition) { baselinePosition = pausedBaselinePosition; baselinePosition.restoreFocus = true; }
+                }
                 active = true;
                 if (options.refresh) layoutCache.invalidate();
                 return start(options);
             },
             pause: function() {
-                if (!flowing) pausedBaselinePosition = baselineSnapshot();
+                if (!flowing) {
+                    pausedBaselinePosition = baselineSnapshot();
+                    if (stageMode === 'server') holdBaselineLayout();
+                }
                 if (flowing) {
                     savedScroll = scrollState(owner.scroller || owner.view);
                     flowRows.forEach(function(row) {

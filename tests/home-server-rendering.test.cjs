@@ -864,3 +864,41 @@ for (const type of ['onnow', 'activerecordings']) test('default retained Home ma
     assert.equal(row.classList.contains('eteHomeFlowProgramPending'), false);
     assert.equal(row.children[0].getAttribute('data-id'), 'fresh-program'); f.controller.dispose();
 });
+
+
+test('ordinary baseline return restores outer position after native row refresh without a data event', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const row = f.root.querySelector('.itemsContainer'); f.document.activeElement = row.children[0];
+    f.controller.pause();
+    const resume = row.resume.bind(row);
+    row.resume = async options => { const result = await resume(options); f.move(0); return result; };
+    await f.controller.resume();
+    assert.equal(f.position(), 640);
+    assert.equal(row.parentContainer.style.minHeight, '');
+    assert.ok(f.focus.some(value => value && value.getAttribute && value.getAttribute('data-id')));
+    f.controller.dispose();
+});
+
+test('baseline pending refresh holds row geometry and releases it after fresh delivery', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const row = f.root.querySelector('.itemsContainer'), layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'LibraryChanged'}]); await flowFlush();
+    assert.equal(row.parentContainer.style.minHeight, '240px');
+    layout.resolve(sections()); await flowFlush();
+    assert.equal(row.parentContainer.style.minHeight, ''); assert.equal(f.position(), 640);
+    f.controller.dispose();
+});
+
+test('ordinary return does not restore old focus or scroll after user navigation input', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    f.document.activeElement = f.root.querySelector('.itemsContainer').children[0]; f.controller.pause();
+    const layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    const pending = f.controller.resume({autoFocus: true}); await flowFlush();
+    const focusCount = f.focus.filter(value => !(value instanceof Items)).length;
+    f.owner.view.events.wheel(); f.move(900); layout.resolve(sections()); await pending;
+    assert.equal(f.position(), 900); assert.deepEqual(f.writes, []);
+    assert.equal(f.focus.filter(value => !(value instanceof Items)).length, focusCount);
+    f.controller.dispose();
+});
