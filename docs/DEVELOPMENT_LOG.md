@@ -1,5 +1,9 @@
 # 维护记录
 
+## DirectPlay subtitle identity correction
+
+The candidate resolves embedded DirectPlay subtitles through the current native track table rather than counting external rows as track IDs. Default selection is readiness-bound and newer user selections retain ownership. External cached loading no longer writes a guessed sid. Remux/transcode mapping is unchanged; synthetic evidence is not a diagnosis of a real incident. See [contract and validation](SUBTITLE_TRACK_MAPPING.md). No version or release changes.
+
 ## 2026-11-06 — 导航停止来源的有限因果诊断
 
 隔离 Home 验证入口同步新增诊断模块的源码清单与生成路由精确哈希，预加载测试使用真实诊断模块；固定材料门禁保持。首轮完整测试发现旧替身缺模块及旧路由哈希合同，均已补齐。

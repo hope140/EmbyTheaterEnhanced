@@ -457,9 +457,15 @@ for (const action of ['deadline', 'stop', 'play', 'next', 'selection', 'route', 
         f.options.mediaSource.MediaStreams.push({Type: 'Subtitle', Index: 1, Codec: 'dvb_teletext',
             Extradata: '00000000000123', DeliveryMethod: 'Embed'});
         f.options.mediaSource.DefaultSubtitleStreamIndex = 1;
+        // Keep this pre-core-playing continuation test on the legacy remux
+        // path. DirectPlay default mapping now waits for media readiness.
+        f.options.playMethod = 'DirectStream';
         const gate = makeDeferred(), invoke = f.ipc.invoke.bind(f.ipc);
         let waiting = false;
         f.ipc.invoke = (channel, request) => {
+            if (request.operation === 'get-property' && request.payload.name === 'track-list') {
+                return Promise.resolve({status: 'ok', value: [{type: 'sub', external: false, id: 1, 'ff-index': 1}]});
+            }
             const result = invoke(channel, request);
             if (!waiting && request.operation === 'set-properties' && request.payload.entries.some(e => e.name === 'sid' && e.value === 1)) {
                 waiting = true; return gate.promise.then(() => result);
