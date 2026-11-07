@@ -6,7 +6,7 @@
 
 产品 authenticationOnly 路径不启用旧 header-only 原型的 PREARM MIME 门禁。新增在原策略分支中观察权限 check／request（仍全部拒绝）、Emby 请求取消和 main／subframe 导航拒绝，以及 did-fail-load、onErrorOccurred 和有限 HTTP 响应；不替换唯一 onBeforeRequest 策略 listener。每代最多32条，成功 XHR 最多4条，不额外发请求，不读 Cookie／浏览器 profile／正文或原始 console。日志只保留有限枚举与顺序，经 IPC 再筛选后进入现有脱敏 logger。Chromium main 核过的 net error 名仅用于精确枚举，未声称全部在当前精确 Chromium tag 出现或都表示用户权限拒绝。
 
-固定 Node24.18.1 首轮扩展56项中55通过、1失败，原因是新增 Controller 夹具发出 string chunk 而非真实 Buffer；修正夹具后通过，不改生产解析断言。后续72项定向全部通过，含拒绝／失败前后时序、原配置与新配置重试、关闭／取消／退休屏障、认证完成但未验证时的 Emby 拒绝、日志 canary、权限拒绝、代次／数量上限和实际 IPC 传递。独立复核进一步发现晚到 open 的清理未进入退休屏障，已统一 helper 并补成功／失败回归，失败后仍禁止重开。最终组合切片414／414通过，涵盖FN及退出／preload／overlay／provenance；629份JS和56份PowerShell语法检查通过，729份维护文本有限凭据模式扫描通过。完整公开回归另记准确提交结果。未操作现用 runtime，未做真实认证／媒体请求或更改安全策略；官方页面通用连接错误根因仍待新事件证据，不归因 NAS 配置、代理或本地网络权限。
+固定 Node24.18.1 首轮扩展56项中55通过、1失败，原因是新增 Controller 夹具发出 string chunk 而非真实 Buffer；修正夹具后通过，不改生产解析断言。后续72项定向全部通过，含拒绝／失败前后时序、原配置与新配置重试、关闭／取消／退休屏障、认证完成但未验证时的 Emby 拒绝、日志 canary、权限拒绝、代次／数量上限和实际 IPC 传递。独立复核进一步发现晚到 open 的清理未进入退休屏障，已统一 helper 并补成功／失败回归，失败后仍禁止重开。最终组合切片414／414通过，涵盖FN及退出／preload／overlay／provenance；629份JS和56份PowerShell语法检查通过，729份维护文本有限凭据模式扫描通过。代码提交 `cb74e54` 的完整公开回归为2871 pass／0 fail／32平台skip（共2903，固定6份材料文件排除），耗时152.1秒；显式runtime base／provenance／overlay／preload材料切片17／17。后续仅补结果文档。未操作现用 runtime，未做真实认证／媒体请求或更改安全策略；官方页面通用连接错误根因仍待新事件证据，不归因 NAS 配置、代理或本地网络权限。
 
 ## 2026-11-06 — FN 来源恢复与匿名媒体取流原型
 
