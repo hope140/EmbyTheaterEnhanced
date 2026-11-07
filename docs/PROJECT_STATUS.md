@@ -4,7 +4,7 @@
 
 非保护 FN 分支普通 merge main `f17204b`，源码树对应已发布 v0.4.18 `391f4c2`；继承 0.4.18 元数据，飞牛规划0.4.19，不自行 bump／发布或恢复预载／暂存。libmpv 同时保留15秒／逐路线一次／终局不自动下一集、原始 Native source 身份与 FN request/attempt 双重提交检查。账号退休终止旧 Native 起播；每租约 HTTP 撤销等待其请求 dispose/drain 后才允许后续路线，失败不推进。手动路线退休不提前取消整个配置 lease。
 
-最终组合定向743／743、零skip；范围包括 FN/Native、主线路线/字幕/期限/终局、API期限、preload/overlay及provenance夹具。独立静态审查问题已闭合，公开回归待保存准确提交后追加。历史／材料前置及新 SHA 的完整 Windows、Host、Electron 回环合同见 [产品验证准备](FN_PRODUCT_VALIDATION.md)，不外推旧回执或宣称真实 FN 播放通过。
+最终组合定向743／743、零skip；范围包括 FN/Native、主线路线/字幕/期限/终局、API期限、preload/overlay及provenance夹具。独立静态审查问题已闭合，合并源码 `c6af672` 的公开回归为2836 pass／0 fail／32平台skip（共2868，固定排除6份材料文件）；显式材料切片27／27，34个overlay及preload按生产生成器核验。后续仅补结果文档。历史／材料前置及新 SHA 的完整 Windows、Host、Electron 回环合同见 [产品验证准备](FN_PRODUCT_VALIDATION.md)，不外推旧回执或宣称真实 FN 播放通过。
 
 ## 2026-11-06 — FN runtime provenance 夹具补齐生成器
 

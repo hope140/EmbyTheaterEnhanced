@@ -1861,3 +1861,5 @@ runner 与缓存合成回归 47／47：真实本地小字节锁定／复制／�
 初步定向739／739。审查修订中一轮33项为29 pass／4 fail，原 cancel 通知断言揭示提前取消通知的语义差异；恢复原通知且保留对应租约收尾记录后解决。新增drain夹具一轮等待未收敛，准确停止所属本地测试、未计PASS；补提前close收尾及3秒有界测试后43／43。最终组合743／743、零fail／skip，包括新尝试/真实renderer账号退休/真实HTTP桥延迟及失败drain、原Native路线/字幕/终局/API/overlay与provenance断言。独立静态复核确认问题闭合；这些是Node／本地合成证据，非真实FN或Windows产品验收。
 
 没有改变main、版本策略、依赖或系统安全／网络配置，没有真实认证或取流；0.4.18元数据仅继承main。长回归历史Git输入预检仍为三个原指定提交的五个blob，新测试无历史基线引用；独立视觉／benchmark工具的额外历史依赖不计入普通集合。新Host/完整Windows/Electron回环必须绑定最终SHA，旧证据不改写。公开普通回归待提交后追加。
+
+合并源码 `c6af6727d395eff2f3ef676aa21c8db9e5413b68` 的公开普通回归完成：**2868 项，2836 pass／0 fail／32 平台 skip**，固定6份材料文件排除保留。组合定向743／743；显式 PlaybackManager observer、VideoOSD、维护Web、AMD实例身份与dialogclose五份材料切片27／27；627份JS／56份PS语法通过，有限凭据模式727份维护文本及新增行已知私人目标检查无发现。提交后的生产生成器apply/inspect核验34个overlay，FN既有输出哈希保持一致，preload已重新生成，历史预检五个原始blob匹配。依赖、vendor和Host输入身份不变；Host runner绑定仍须新HEAD重新建立。后续提交只补本段与项目状态，不改变受测代码。未执行新的Windows/Electron/真实认证或媒体正文请求。
