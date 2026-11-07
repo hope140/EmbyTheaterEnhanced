@@ -6,24 +6,32 @@ const CHANNEL = 'enhanced-fn-connect';
 const CANCEL = 'enhanced-fn-connect-cancel';
 const IDENTITY = 'enhanced-fn-connect-identity';
 const NOTICE = 'enhanced-fn-connect-notice';
-function safeNotice(value) {
-    if (['LOGIN_PAGE_LOAD_FAILED', 'TARGET_PAGE_LOAD_FAILED'].includes(value)) return {code: value, origin: null};
+const {normalizeAuthObservation} = require('./core/auth-observation.cjs');
+const {errorCode} = require('./core/diagnostics.cjs');
+function safeNotice(value, detail) {
+    const binding = detail && /^[a-f0-9]{36}$/.test(detail.profileId || '') ? {profileId: detail.profileId} : {};
+    if (['LOGIN_PAGE_LOAD_FAILED', 'TARGET_PAGE_LOAD_FAILED'].includes(value)) {
+        const notice = {code: value, origin: null, ...binding};
+        if (detail) notice.errorCode = errorCode({code: detail.errorCode});
+        return notice;
+    }
     const match = /^(LOGIN_REDIRECT_REQUIRES_REVIEW|LOGIN_POPUP_REQUIRES_REVIEW|LOGIN_TARGET_REQUIRES_EMBY_CLIENT) origin: (.+)$/.exec(value || '');
     if (!match || match[2].length > 512) return null;
-    if (['NON_HTTP_ORIGIN', 'UNPARSEABLE_ORIGIN'].includes(match[2])) return {code: match[1], origin: null};
+    if (['NON_HTTP_ORIGIN', 'UNPARSEABLE_ORIGIN'].includes(match[2])) return {code: match[1], origin: null, ...binding};
     try { const u = new URL(match[2]); if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || u.href !== u.origin + '/') return null;
-        return {code: match[1], origin: u.origin}; } catch { return null; }
+        return {code: match[1], origin: u.origin, ...binding}; } catch { return null; }
 }
 const reasons = new Set(['FN_CONNECT_DISABLED', 'FN_PROFILE_UNKNOWN', 'FN_PROFILE_LIMIT', 'FN_IDENTITY_INVALID',
     'FN_SERVER_MISMATCH', 'FN_ACCOUNT_PROFILE_MISMATCH', 'FN_ACCOUNT_UNVERIFIED', 'FN_ACCOUNT_NOT_BOUND',
     'FN_REQUEST_INVALID', 'FN_REQUEST_PENDING', 'FN_CLOSE_UNCONFIRMED', 'CANCELLED', 'INVALID_PROFILE',
     'INVALID_ADDRESS', 'API_BASE_REQUIRES_REVIEW', 'INVALID_AUTH_ORIGIN', 'INVALID_MEDIA_ORIGIN',
-    'FN_AUTH_NOT_READY', 'FN_AUTH_REQUIRED', 'ACCESS_CODE_REQUIRED', 'AUTH_NOT_STARTED', 'NETWORK_ERROR',
+    'PROFILE_CLOSED', 'FN_AUTH_NOT_READY', 'FN_AUTH_REQUIRED', 'ACCESS_CODE_REQUIRED', 'AUTH_NOT_STARTED', 'NETWORK_ERROR',
     'NETWORK_TIMEOUT', 'SERVER_ID_MISMATCH', 'INVALID_EMBY_INFO', 'ACCESS_DENIED_UNCLASSIFIED',
     'ANONYMOUS_MEDIA_CLOSE_UNCONFIRMED', 'TARGET_OUT_OF_SCOPE', 'HTTPS_REQUIRED', 'FN_IDENTITY_CARRIER_MISMATCH', 'AUTH_BOOTSTRAP_ROLE_INVALID']);
-function register({ipcMain, getWebContents, electron, enabled = false, service: supplied} = {}) {
+function register({ipcMain, getWebContents, electron, enabled = false, service: supplied, onDiagnostic = () => {}} = {}) {
     const service = supplied || createService({enabled, io: enabled ? createElectronIO(electron, {anonymousMediaEnabled: true, authenticationOnly: true,
-        onStatus(value) { try { const notice = safeNotice(value), contents = getWebContents(); if (notice && contents && !contents.isDestroyed()) contents.send(NOTICE, notice); } catch {} }
+        onDiagnostic(value) {try {const safe = normalizeAuthObservation(value); if (safe) onDiagnostic(safe);} catch {}},
+        onStatus(value, detail) { try { const notice = safeNotice(value, detail), contents = getWebContents(); if (notice && contents && !contents.isDestroyed()) contents.send(NOTICE, notice); } catch {} }
     }) : undefined});
     let stopped = false;
     const watched = new Map();
@@ -58,7 +66,10 @@ function register({ipcMain, getWebContents, electron, enabled = false, service: 
                 default: throw new Error();
             }
             return {status: 'ok', ...result};
-        } catch (error) { return {status: 'error', reason: reasons.has(error?.code) ? error.code : 'FN_CONNECT_FAILED'}; }
+        } catch (error) {
+            return {status: 'error', reason: reasons.has(error?.code) ? error.code : 'FN_CONNECT_FAILED',
+                ...(value?.operation === 'open' && /^[a-f0-9]{36}$/.test(error?.profileId || '') ? {profileId: error.profileId} : {})};
+        }
     });
     const cancel = (event, value) => {
         if (trusted(event) && Number.isSafeInteger(value?.requestId) && value.requestId > 0) service.cancel(value.requestId);

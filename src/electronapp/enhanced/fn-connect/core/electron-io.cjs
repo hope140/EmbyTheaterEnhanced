@@ -5,6 +5,7 @@ const https = require('node:https');
 const {PassThrough} = require('node:stream');
 const {fail} = require('./policy.cjs');
 const {errorCode, normalizeDiagnostic} = require('./diagnostics.cjs');
+const {createAuthObservation} = require('./auth-observation.cjs');
 
 function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, onDiagnostic = () => {}, environment = process.env,
     externalHeaderOrigin, anonymousMediaEnabled = false, mode = 'live', authenticationOnly = false} = {}) {
@@ -13,8 +14,12 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
     let externalTrialUsed = false;
     let reservedExternalSession, externalTrialStarted = false;
     const mediaChecks = new WeakMap();
+    const sessionIds = new WeakMap();
+    const authObservations = new WeakMap();
+    let authSequence = 0;
     const frozenSessions = new WeakSet();
     function freeze(ses) {
+        authObservations.get(ses)?.observer?.retire();
         if (mediaChecks.has(ses)) mediaChecks.get(ses).freeze();
         else {
             ses.webRequest.onBeforeRequest({urls: ['<all_urls>']}, (_details, callback) => callback({cancel: true}));
@@ -41,13 +46,26 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
             if (frozenSessions.has(ses)) {
                 ses.webRequest.onBeforeRequest(null); ses.webRequest.onBeforeSendHeaders?.(null); ses.webRequest.onHeadersReceived(null); frozenSessions.delete(ses);
             }
-            ses.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
-            ses.setPermissionCheckHandler(() => false);
+            sessionIds.set(ses, id);
+            authObservations.get(ses)?.observer?.retire();
+            const auth = {ordinal: ++authSequence, generation: 0};
+            authObservations.set(ses, auth);
+            ses.setPermissionRequestHandler((contents, permission, callback, details) => {
+                if (!contents || contents.id === auth.windowId) auth.observer?.record('PERMISSION_REQUEST', {url: details?.requestingUrl},
+                    {permission, decision: 'BLOCK'});
+                callback(false);
+            });
+            ses.setPermissionCheckHandler((contents, permission, requestingOrigin) => {
+                if (!contents || contents.id === auth.windowId) auth.observer?.record('PERMISSION_CHECK', {url: requestingOrigin},
+                    {permission, decision: 'BLOCK'});
+                return false;
+            });
             diagnostic({event: 'SESSION_CREATED', sessionMode: storage?.persistent ? 'PERSISTENT' : 'MEMORY'});
             return ses;
         },
         async openLogin(ses, profile, {signal, onCancel, onLifecycle = () => {}, deferNavigation = false}) {
             if (authenticationOnly && profile.bootstrap.origin === profile.emby.origin) throw fail('AUTH_BOOTSTRAP_ROLE_INVALID');
+            const status = (value, detail = {}) => onStatus(value, {...detail, ...(sessionIds.has(ses) ? {profileId: sessionIds.get(ses)} : {})});
             let preArmReports = 0;
             const preArmBlocked = (d, stage, reason, type) => {
                 if (preArmReports >= 32) return;
@@ -109,11 +127,38 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
             const win = new BrowserWindow({width: 900, height: 720, title: 'FN transport experiment — normal NAS login',
                 webPreferences: {session: ses, nodeIntegration: false, contextIsolation: true, sandbox: true,
                     webSecurity: true, allowRunningInsecureContent: false}});
+            const auth = authObservations.get(ses);
+            auth?.observer?.retire();
+            const observer = authenticationOnly ? createAuthObservation({profile, authSession: auth?.ordinal || ++authSequence,
+                generation: auth ? ++auth.generation : 1, emit: onDiagnostic}) : null;
+            if (auth) {auth.observer = observer; auth.windowId = win.webContents.id;}
+            // These are observers, not a second policy listener. Preserve the
+            // unique onBeforeRequest gate and all original permission decisions.
+            const owns = details => details.webContentsId === win.webContents.id;
+            if (observer) {
+                let successfulXhrObservations = 0;
+                ses.webRequest.onErrorOccurred?.({urls: ['<all_urls>']}, details => {
+                    if (owns(details)) observer.record('RESOURCE_ERROR', details, {errorCode: errorCode({code: typeof details.error === 'string' ? details.error.replace(/^net::/, '') : ''})});
+                });
+                ses.webRequest.onResponseStarted?.({urls: ['<all_urls>']}, details => {
+                    if (!owns(details)) return;
+                    const successfulXhr = details.resourceType === 'xhr' && details.statusCode >= 200 && details.statusCode < 400;
+                    if (['mainFrame', 'subFrame'].includes(details.resourceType) || details.statusCode >= 400 || successfulXhr && successfulXhrObservations < 4) {
+                        if (successfulXhr) successfulXhrObservations++;
+                        observer.record('RESOURCE_RESPONSE', details, {status: details.statusCode});
+                    }
+                });
+                win.webContents.on('did-fail-load', (_e, _code, description, url, mainFrame) => {
+                    observer.record('PAGE_LOAD_FAILED', {url}, {errorCode: errorCode({code: typeof description === 'string' ? description.replace(/^net::/, '') : ''}),
+                        frameClass: mainFrame === true ? 'MAIN' : mainFrame === false ? 'SUBFRAME' : 'UNKNOWN'});
+                });
+            }
             if (authenticationOnly) ses.webRequest.onBeforeRequest({urls: ['<all_urls>']}, (details, callback) => {
-                let cancel = false;
+                let cancel = false, reason;
                 if (details.webContentsId === win.webContents.id) {
-                    try { cancel = new URL(details.url).origin === profile.emby.origin; } catch { cancel = true; }
+                    try { cancel = new URL(details.url).origin === profile.emby.origin; if (cancel) reason = 'EMBY_ROLE'; } catch { cancel = true; reason = 'INVALID_URL'; }
                 }
+                if (cancel) observer?.record(reason === 'EMBY_ROLE' ? 'AUTH_EMBY_BLOCKED' : 'AUTH_REQUEST_BLOCKED', details, {decision: 'BLOCK', reason});
                 callback({cancel});
             });
             let mainClose = false, lifetimeAbort = false, nativeClose = false, contentClose = false;
@@ -134,11 +179,27 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
             if (/\bChrome\/[\d.]+/.test(originalAgent) && browserAgent !== originalAgent) {
                 win.webContents.setUserAgent(browserAgent);
             }
+            if (observer) {
+                const effectiveAgent = win.webContents.getUserAgent();
+                observer.record('UA_OBSERVATION', {}, {browserHasElectron: /\bElectron\//.test(effectiveAgent),
+                    ...(typeof ses.getUserAgent === 'function' ? {agentMatchesSession: effectiveAgent === ses.getUserAgent()} : {})});
+            }
             const permitted = value => {
                 try { const u = new URL(value); return !u.username && !u.password && profile.authOrigins.has(u.origin) &&
                     (!authenticationOnly || u.origin !== profile.emby.origin); } catch { return false; }
             };
             let blocked = false;
+            let stoppedTitle;
+            const stopAuthenticationNavigation = title => {
+                if (!authenticationOnly || win.isDestroyed()) return;
+                // Navigation failure does not prove authentication failure.
+                // Preserve the Session so the main form can verify it, while
+                // the fixed title makes this stopped page explicit.
+                stoppedTitle = title;
+                win.webContents.stop?.();
+                win.setTitle?.(title);
+            };
+            win.on('page-title-updated', event => {if (stoppedTitle) {event.preventDefault(); win.setTitle?.(stoppedTitle);}});
             const reportBlocked = (code, destination) => {
                 let origin = 'UNPARSEABLE_ORIGIN';
                 try {
@@ -146,15 +207,24 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
                     origin = ['https:', 'http:'].includes(u.protocol) ? u.origin : 'NON_HTTP_ORIGIN';
                 } catch { /* Never report parser errors or the original URL. */ }
                 blocked = true;
-                onStatus(code + ' origin: ' + origin);
+                if (!win.isDestroyed()) status(code + ' origin: ' + origin);
             };
             win.webContents.setWindowOpenHandler(({url}) => { reportBlocked('LOGIN_POPUP_REQUIRES_REVIEW', url); return {action: 'deny'}; });
             for (const event of ['will-navigate', 'will-redirect']) win.webContents.on(event, (e, destination) => {
                 destination = typeof destination === 'string' ? destination : typeof e.url === 'string' ? e.url : undefined;
-                if (!permitted(destination)) { e.preventDefault(); reportBlocked('LOGIN_REDIRECT_REQUIRES_REVIEW', destination); }
+                if (!permitted(destination)) {
+                    e.preventDefault();
+                    let target = false;
+                    try {target = authenticationOnly && new URL(destination).origin === profile.emby.origin;} catch {}
+                    observer?.record('NAVIGATION_BLOCKED', {url: destination}, {decision: 'BLOCK',
+                        frameClass: e.isMainFrame === true ? 'MAIN' : e.isMainFrame === false ? 'SUBFRAME' : 'UNKNOWN'});
+                    reportBlocked(target ? 'LOGIN_TARGET_REQUIRES_EMBY_CLIENT' : 'LOGIN_REDIRECT_REQUIRES_REVIEW', destination);
+                    if (e.isMainFrame !== false) stopAuthenticationNavigation(target ? 'FN 认证导航已停止，请回 ETE 继续验证' : 'FN 认证跳转已停止，请回 ETE 核对地址');
+                }
             });
             // Do not inject username/password, OAuth interceptors or client IDs.
             win.on('closed', () => {
+                observer?.retire();
                 lifecycle('WINDOW_CLOSED', {cause: mainClose ? 'MAIN_HANDLE' : lifetimeAbort ? 'LIFETIME_ABORT' :
                     nativeClose ? 'NATIVE_REQUEST' : contentClose ? 'CONTENT_REQUEST' : 'UNATTRIBUTED'});
                 onCancel();
@@ -169,7 +239,7 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
                 lifecycle('BOOTSTRAP_LOAD_STARTED');
                 win.loadURL(profile.bootstrap.href).catch(error => {
                     lifecycle('BOOTSTRAP_LOAD_FAILED', {code: errorCode(error)});
-                    if (!blocked) onStatus('LOGIN_PAGE_LOAD_FAILED');
+                    if (!blocked && !win.isDestroyed()) { status('LOGIN_PAGE_LOAD_FAILED', {errorCode: errorCode(error)}); stopAuthenticationNavigation('FN 认证入口加载失败，请回 ETE 查看错误'); }
                 });
             }
             return {webContentsId: win.webContents.id, close() {
@@ -185,7 +255,7 @@ function createElectronIO({session, BrowserWindow, net}, {onStatus = () => {}, o
                         lifecycle('TARGET_LOAD_STARTED');
                         win.loadURL(profile.emby.href).catch(error => {
                             lifecycle('TARGET_LOAD_FAILED', {code: errorCode(error)});
-                            if (!blocked) onStatus('TARGET_PAGE_LOAD_FAILED');
+                            if (!blocked && !win.isDestroyed()) status('TARGET_PAGE_LOAD_FAILED', {errorCode: errorCode(error)});
                         });
                     }
                 }};

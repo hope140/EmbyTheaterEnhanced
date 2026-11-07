@@ -92,3 +92,17 @@ if ($LASTEXITCODE -ne 0) { throw 'Historical test input preflight failed.' }
 本次共享 Native bridge 的每租约 HTTP 收尾与产品 renderer 的身份退休发生变化，因此须在新 SHA 重跑现成 Electron 44.5.0 回环 runner，复用准确官方 ZIP，零额外下载；仍按同轮双回执／源码绑定及进程／合成 profile 清理判定。旧 b557b8f 的 15阶段／19 checks 不外推。
 
 现成回环覆盖真实 Electron Session／CookieJar、API／WS／媒体桥 I/O、Range／重定向凭据隔离及取消／关闭。它未驱动完整产品 renderer+Native adapter 的账号切换／路线推进，也没有专门制造新 drain Promise 延迟或失败；这些由本次 Node 的真实桥接+可控收尾和真实 renderer+adapter 合成回归补足，不能替代 Windows 完整产品 GUI 或真实 FN／CDN 解码／seek。全部基础门禁成功后才生成、VerifyOnly 独立 runtime；真实认证／正文请求仍另行明确范围，不在此准备步骤内。
+
+## 认证失败与下一轮观察
+
+本轮候选不覆盖或修补正在使用的旧隔离 runtime。新提交先依前述门禁重新绑定 Host／完整回归／Electron 回环／构建与 VerifyOnly，再由用户自行启动；不能复制旧 profile 或在旧包中替换文件沿用来源回执。普通 ETE 不启用该入口。
+
+表单的服务器字段填写已核服务基址，端口留空保留 HTTPS 默认端口；网页文件路径仍拒绝。官方登录入口填写用户原有完整 URL，可含路径。额外认证 origin 仅填逐项核定的 `https://主机[:端口]`，不含路径、参数、用户信息或通配符；它不能替换登录入口。外部媒体 origin 仅授权媒体消费者，与认证入口分开，纯认证观察时留空且不勾正文许可。示例不代表自动发现或信任。
+
+被拒主导航会停止加载并显示固定窗口标题，主表单保留精确 origin 审核提示；不自动清除 Session。目标为 Emby 时提示回到 ETE 继续验证，不允许认证窗转为 Emby 客户端。其他受阻／主加载失败只有用户显式重连才退休旧会话并重开；旧收尾未确认时不创建新窗。验证失败不自动重试；正常验证通过后关闭认证窗不退休 ready profile。退出整个客户端仍不跨进程复用产品 FN 登录，不能将历史持久原型能力外推到此入口。
+
+下一次需要窗口的动作限用户自行在新隔离包中按原批准配置打开官方入口一次；不由助手切换前台、不播放、不新增允许 origin、不读取浏览器登录态。若出现官方“无法连接”页面，先停止继续验证／刷新，把本轮 `fn-connect / auth-observation` 有限日志交由协调者核对。记录字段仅有 `authSession / generation / sequence`、`event`、`sourceClass`（BOOTSTRAP／APPROVED_FN／EMBY／OTHER）、固定 `permission / decision / reason / frameClass / resourceType / errorCode`、HTTP `status / mimeClass` 和 UA 比较布尔。每代最多32条，最后一条标记 capped；成功 XHR 最多4条，静态资源成功响应不逐项记录。不要索取原 URL、签名链接、Cookie、Token、密码或原始 console。条目缺失、上限或 OTHER 不能当作没有失败。
+
+[Electron44.5.0 session 合同](https://github.com/electron/electron/blob/v44.5.0/docs/api/session.md)列出 local-network、local-network-access、loopback-network、storage-access、top-level-storage-access，request／check 分别观察且仍拒绝。[Chromium 官方 net error 列表](https://chromium.googlesource.com/chromium/src/+/main/net/base/net_error_list.h)是有限错误枚举来源，精确 Chromium152 tag 未复核；不由名称推断当前已发生权限请求。产品还存在历史 Chromium switches 与普通浏览器不同；此修订不修改它们，不声称所有有效安全参数相同。独立 Session 本身不表示 DIRECT，Node WS 的代理拒绝也不代表官网 Chromium WS 路径；本次不为诊断发起代理解析或另取凭据。
+
+合成测试只能证明记录与决定隔离、时序和脱敏，不能确定官网本次是否依赖被阻止的 Emby 请求、子 frame 或权限。收到事件后才定位实际分支；连接和后续媒体正文／Native 解码／seek 仍分别待验收，不能自动放宽现有边界。

@@ -55,7 +55,7 @@ function createService({enabled = false, mode = 'live', io, controller: supplied
             const r = {id, config, epoch: 0, context: null, binding: null, accountId: null, closed: false};
             records.set(id, r);
             try { await controller.start(id); available(); return {id, state: 'authorizing'}; }
-            catch (error) { r.closed = true; await controller.close(id); records.delete(id); throw error; }
+            catch (error) { r.closed = true; await controller.close(id); records.delete(id); error.profileId = id; throw error; }
         },
         async verify(id) {
             const r = record(id); retire(r);

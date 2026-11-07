@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-11-07 — FN 认证停止、显式重试与有限诊断
+
+原认证窗阻止导航后保留远端页面自身状态；主表单只收到未绑定 profile 的通用通知，open resolve 又可能覆盖早到错误。现按 profile 绑定有限 notice，阻止主导航后 stop 并设置固定标题；不把阻止导航当认证失效。特别保留官方授权完成、随后转向 Emby 但尚未 verify 的 Session，仍须原 Public Info 探针与 Emby 登录。未知 origin 不自动信任；显式重试确认移除完成后才创建新会话，失败不推进。迟到 verify／旧窗口事件不能重新路由或覆盖已退休表单。
+
+产品 authenticationOnly 路径不启用旧 header-only 原型的 PREARM MIME 门禁。新增在原策略分支中观察权限 check／request（仍全部拒绝）、Emby 请求取消和 main／subframe 导航拒绝，以及 did-fail-load、onErrorOccurred 和有限 HTTP 响应；不替换唯一 onBeforeRequest 策略 listener。每代最多32条，成功 XHR 最多4条，不额外发请求，不读 Cookie／浏览器 profile／正文或原始 console。日志只保留有限枚举与顺序，经 IPC 再筛选后进入现有脱敏 logger。Chromium main 核过的 net error 名仅用于精确枚举，未声称全部在当前精确 Chromium tag 出现或都表示用户权限拒绝。
+
+固定 Node24.18.1 首轮扩展56项中55通过、1失败，原因是新增 Controller 夹具发出 string chunk 而非真实 Buffer；修正夹具后通过，不改生产解析断言。后续72项定向全部通过，含拒绝／失败前后时序、原配置与新配置重试、关闭／取消／退休屏障、认证完成但未验证时的 Emby 拒绝、日志 canary、权限拒绝、代次／数量上限和实际 IPC 传递。独立复核进一步发现晚到 open 的清理未进入退休屏障，已统一 helper 并补成功／失败回归，失败后仍禁止重开。最终组合切片414／414通过，涵盖FN及退出／preload／overlay／provenance；629份JS和56份PowerShell语法检查通过，729份维护文本有限凭据模式扫描通过。完整公开回归另记准确提交结果。未操作现用 runtime，未做真实认证／媒体请求或更改安全策略；官方页面通用连接错误根因仍待新事件证据，不归因 NAS 配置、代理或本地网络权限。
+
 ## 2026-11-06 — FN 来源恢复与匿名媒体取流原型
 
 从可核验恢复提交 `3dbaee06` 导入原型并保留独立来源记录，不以旧树覆盖 main `09147a3` 的产品修复。新增可选无认证媒体消费者：逐跳精确 origin、实际 UA／Range、无 Cookie／认证／Referer、无重试，桥接器不向播放器交出未完全门控的 Location。响应交接前提前错误监听及请求 close／drain 两项审查问题已修复；失败 drain 保留 profile／锁。SPA 缺失 helper 按恢复测试合同重新实现，未声称恢复原字节。Windows fixture 对齐既有产品 44.5.0，历史 44.4.2 诊断脚本保留原身份。

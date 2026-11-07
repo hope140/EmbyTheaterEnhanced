@@ -1042,7 +1042,8 @@
     // the ordinary application path, including existing update/download flows.
     var unregisterFnConnect = require('./enhanced/fn-connect/ipc.cjs').register({
         ipcMain: ipcMain, getWebContents: getWebContents, electron: electron,
-        enabled: Boolean(fnConnectTrial)
+        enabled: Boolean(fnConnectTrial),
+        onDiagnostic: function (record) {enhancedLog({category: 'fn-connect', event: 'auth-observation', details: record});}
     });
     unregisterCd2Ipc = require('./enhanced/cd2-ipc').register({
         ipcMain: ipcMain,

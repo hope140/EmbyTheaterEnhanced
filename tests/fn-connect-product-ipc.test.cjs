@@ -167,3 +167,16 @@ for (const duringRelease of [false, true]) test('real renderer account retiremen
         assert.equal(f.ipc.loadCalls.length, 1); assert.equal(f.resolves.length, 0);
     } finally {gate.resolve({status: 'ok'}); await f.player.stop(true);}
 });
+
+test('load failure notice carries only an allowlisted error code, never raw diagnostic text', () => {
+    assert.deepEqual(safeNotice('LOGIN_PAGE_LOAD_FAILED', {errorCode: 'ERR_CONNECTION_RESET'}), {code: 'LOGIN_PAGE_LOAD_FAILED', origin: null, errorCode: 'ERR_CONNECTION_RESET'});
+    const result = safeNotice('LOGIN_PAGE_LOAD_FAILED', {errorCode: 'https://private.example/path?token=PRIVATE', message: 'PRIVATE'});
+    assert.deepEqual(result, {code: 'LOGIN_PAGE_LOAD_FAILED', origin: null, errorCode: 'OTHER'});
+});
+
+test('notice profile binding is finite and malformed binding metadata is omitted', () => {
+    assert.deepEqual(safeNotice('LOGIN_PAGE_LOAD_FAILED', {profileId: 'a'.repeat(36), errorCode: 'ERR_ABORTED'}),
+        {code: 'LOGIN_PAGE_LOAD_FAILED', origin: null, errorCode: 'ERR_ABORTED', profileId: 'a'.repeat(36)});
+    assert.deepEqual(safeNotice('LOGIN_PAGE_LOAD_FAILED', {profileId: 'private-url?token=PRIVATE', errorCode: 'ERR_FAILED'}),
+        {code: 'LOGIN_PAGE_LOAD_FAILED', origin: null, errorCode: 'ERR_FAILED'});
+});

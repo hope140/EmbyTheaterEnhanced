@@ -65,7 +65,11 @@ define(['connectionManager', 'events'], function (connectionManager, events) {
     function call(operation, value) {
         if (!ipc() || typeof ipc().invoke !== 'function') return Promise.reject(new Error('FN_CONNECT_UNAVAILABLE'));
         return ipc().invoke(channel, Object.assign({operation: operation}, value)).then(function (result) {
-            if (!result || result.status !== 'ok') throw new Error(result && result.reason || 'FN_CONNECT_FAILED');
+            if (!result || result.status !== 'ok') {
+                var error = new Error(result && result.reason || 'FN_CONNECT_FAILED');
+                if (operation === 'open' && /^[a-f0-9]{36}$/.test(result?.profileId || '')) error.profileId = result.profileId;
+                throw error;
+            }
             return result;
         });
     }
