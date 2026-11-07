@@ -4,7 +4,7 @@
 
 协调环境在 `69aa2358` 的Windows先行门禁12项中11通过、1失败：PS5.1把ConvertFrom-Json根数组作为单个输出对象，旧数组子表达式又包一层，导致合法参数被字符串守卫拒绝。现只修测试：PS7显式NoEnumerate，PS5.1直接赋值，之后严格检查根为数组及每项为字符串；不递归展平、不放宽标记根／白名单／退出链，不改产品provider或打包。
 
-新增真实System32 WindowsPowerShell5.1 launcher用例，成功路径核验5.1版本、参数和退出码，并分别拒绝十类非字符串／嵌套／异常JSON。Linux四文件定向35项：19 pass／0 fail／16平台skip，其中13项为PS5.1专属launcher；不能把PS7通过当Windows链通过。独立静态审查无新增阻断，修正后的实际PS5.1／完整Windows门禁仍待协调；旧失败材料保留。
+新增真实System32 WindowsPowerShell5.1 launcher用例，成功路径核验5.1版本、参数和退出码，并分别拒绝十类非字符串／嵌套／异常JSON。Linux四文件定向35项：19 pass／0 fail／16平台skip，其中13项为PS5.1专属launcher；不能把PS7通过当Windows链通过。独立静态审查无新增阻断。代码提交 `5deffbe` 的公开回归2890 pass／0 fail／45平台skip（共2935，固定6份材料文件排除），耗时158.3秒；JS630份／PowerShell57份语法及731份维护文本有限凭据模式扫描通过。后续仅补结果文档；修正后的实际PS5.1／完整Windows门禁仍待协调，旧失败材料保留。
 
 ## 2026-11-07 — Reporter 黑盒自测的进程输入隔离
 
