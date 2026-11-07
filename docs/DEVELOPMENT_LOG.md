@@ -1,5 +1,14 @@
 # 维护记录
 
+## 2026-11-07 — 播放配置和 CD2 回链诊断（独立分支，未发布）
+
+基线为 main f17204be（播放实现与 0.4.18 对应）。配置快照 begin 新增一次性 ready、timeout、aborted、released、invalid-response、ipc-error、ipc-unavailable 结果及 elapsedMs/timeoutMs；默认 1000 ms、晚到 lease 释放和原生回退保持不变。libmpv 的异常回退记录配置结果、发生阶段、固定错误码/错误类型，不输出异常原文；不能以新增日志倒推此前首次播放失败的原因。
+
+CD2 分阶段解析的 RPC 开始/结束加入 requestId/ruleId，新增 download-url-result 保留输入 host/port、路径结构及 service 内相关引用、取链起止时刻、回复 expiresIn、估算剩余时长与安全余量。expiresAt 仍按客户端 RPC 开始计算，不代表云盘签发时间；serverIssuedAt=null、cacheHit=unknown。只观察既有调用，不改变超时、路线、有效期判定、重取或播放行为。日志异常保持 fail-open。
+
+针对性测试覆盖超时/拒绝/无效响应/取消/成功、日志接收端异常、fallback 继续播放、过期字段缺失/无效及敏感金丝雀。本机针对性测试 71/71 通过（包含真实 logger 落盘的 host/TTL/秘密金丝雀）；JS 语法与有限凭据模式扫描通过。公共测试尝试结果 2428 通过、79 失败、32 跳过，当前 Node 24.22.1 下存在 build-input fixture 的 fs.cpSync EEXIST，且缺少 pwsh；不能作为全量放行证据，须在固定工具链补验。Windows 实机未验收；本分支不合 main、不发布、不改版本号。
+
+
 ## 2026-11-06 — 导航停止来源的有限因果诊断
 
 隔离 Home 验证入口同步新增诊断模块的源码清单与生成路由精确哈希，预加载测试使用真实诊断模块；固定材料门禁保持。首轮完整测试发现旧替身缺模块及旧路由哈希合同，均已补齐。

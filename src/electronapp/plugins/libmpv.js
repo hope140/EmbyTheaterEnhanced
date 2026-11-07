@@ -363,7 +363,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             };
             activePlayRequest = request;
             request.configSnapshot = strmConfigClient && typeof strmConfigClient.begin === 'function'
-                ? strmConfigClient.begin({requestId: request.requestId, signal: request.controller.signal}) : Promise.resolve(null);
+                ? strmConfigClient.begin({requestId: request.requestId, signal: request.controller.signal,
+                    onDiagnostic: function (value) {
+                        request.configDiagnosticReason = diagnosticEnum(value && value.reason,
+                            ['ready', 'timeout', 'aborted', 'released', 'invalid-response', 'ipc-error', 'ipc-unavailable'], 'unknown');
+                        emitClientDiagnostic('info', 'playback', 'resolver-config', Object.assign(requestDiagnosticDetails(request), {
+                            reason: request.configDiagnosticReason, elapsedMs: diagnosticNumber(value && value.elapsedMs),
+                            timeoutMs: diagnosticNumber(value && value.timeoutMs)
+                        }));
+                    }}) : Promise.resolve(null);
             if (enhancedRouteState) enhancedRouteState.begin(request);
             return request;
         }
@@ -1259,12 +1267,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 ));
             } catch (_) { /* Context diagnostics are optional and fail-open. */ }
 
+            var resolverStage = 'identify-strm';
             try {
                 isStrmRequest = !!(strmResolver && typeof strmResolver.isStrm === 'function' && strmResolver.isStrm(resolverContext));
                 if (isStrmRequest) {
                     resolverConfig = request.playbackConfig ? request.playbackConfig.config : null;
                     assertCurrentPlayRequest(request);
                 }
+                resolverStage = 'download-lookup';
                 var downloaded = null;
                 var downloadLookup = 'not-attempted';
                 var downloadDiagnostic = {reason: 'unavailable', stage: 'unavailable'};
@@ -1285,6 +1295,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 emitClientDiagnostic('info', 'playback', 'download-lookup', Object.assign(requestDiagnosticDetails(request), {result: downloadLookup,
                     reason: downloadDiagnostic.reason, stage: downloadDiagnostic.stage, changedCopySkipped: downloadDiagnostic.changedCopySkipped === true}));
+                resolverStage = 'config-check';
                 if (!downloaded && isStrmRequest && !request.playbackConfig) throw Error('resolver-config-unavailable');
                 var resolverDependencies = {
                     fs: typeof window !== 'undefined' ? window.fs : null,
@@ -1299,15 +1310,23 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         ? window.__eteDiagnosticHash
                         : null
                 };
+                resolverStage = 'create-sequence';
                 if (!downloaded && options.item.MediaType === 'Video' && typeof strmResolver.createSequence === 'function') {
                     request.routeSequence = strmResolver.createSequence(resolverContext, resolverDependencies);
                     if (request.routeSequence) startRouteDeadline(request);
                 }
+                resolverStage = 'resolve-source';
                 resolverResult = downloaded ? {type: 'local', source: downloaded.source, sourceKind: 'downloaded-file',
                     reason: 'download_hit', isStrm: isStrmRequest, localExists: true, fallback: false}
                     : request.routeSequence ? await request.routeSequence.next() : await strmResolver.resolveAsync(resolverContext, resolverDependencies);
             } catch (err) {
                 if (err && (err.name === 'AbortError' || err.playbackSuperseded)) throw supersededError();
+                emitClientDiagnostic('warn', 'playback', 'resolver-fallback', Object.assign(requestDiagnosticDetails(request), {
+                    reason: resolverStage === 'config-check' && !request.playbackConfig && isStrmRequest ? 'config-unavailable' : 'resolver-exception',
+                    configReason: request.configDiagnosticReason || 'unobserved', route: 'native', stage: resolverStage,
+                    errorCode: resolverStage === 'config-check' && !request.playbackConfig ? 'resolver-config-unavailable' : 'unclassified',
+                    errorKind: diagnosticEnum(err && err.name, ['Error', 'TypeError', 'RangeError', 'SyntaxError'], 'unknown')
+                }));
                 resolverResult = {
                     type: 'native',
                     source: nativeSource,
