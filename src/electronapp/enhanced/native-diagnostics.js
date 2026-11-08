@@ -41,9 +41,12 @@ function createNativeDiagnostics(logger, options) {
     const requests = new Map();
     const engineSeen = new Map();
     const severityLogger = row => logger({...row, level: ['fatal', 'error'].includes(row.details.mpvLevel) ? 'error' : row.details.mpvLevel === 'warn' ? 'warn' : 'info'});
-    const emitEngineError = createRecorder(severityLogger, 'mpv-engine', 60, options);
-    const emitEngineContext = createRecorder(severityLogger, 'mpv-engine', 180, options);
-    const emitOperation = createRecorder(row => logger({...row, level: row.event === 'operation-error' ? 'warn' : 'info'}), 'native-helper', 120, options);
+    const lane = name => ({...options, deliveryReceipts: true, lane: name});
+    const emitEngineError = createRecorder(severityLogger, 'mpv-engine', 60, lane('engine-error'));
+    const emitEngineWarning = createRecorder(severityLogger, 'mpv-engine', 60, lane('engine-warning'));
+    const emitEngineContext = createRecorder(severityLogger, 'mpv-engine', 180, lane('engine-context'));
+    const emitOperationError = createRecorder(row => logger({...row, level: 'error'}), 'native-helper', 120, lane('operation-error'));
+    const emitOperation = createRecorder(row => logger({...row, level: 'info'}), 'native-helper', 120, lane('operation-success'));
     // Private, memory-only key: references are comparable only within this service
     // lifetime, never across users/restarts. Do not use the stable path/ID hashes.
     let identityKey;
@@ -66,15 +69,22 @@ function createNativeDiagnostics(logger, options) {
                 const snapshot = require('./engine-diagnostics').projectEngineSnapshot(input.engine);
                 if (!snapshot) return;
                 const key = input.helperRun + ':' + snapshot.candidateGenerationId;
-                const previousState = engineSeen.get(key) || {recordSequence: 0, snapshotSequence: 0};
-                const previous = previousState.recordSequence;
+                const previousState = engineSeen.get(key) || {written: new Set(), pending: new Set(), retained: new Set(), snapshotSequence: 0};
+                if (snapshot.snapshotSequence < previousState.snapshotSequence) return;
+                const previousSnapshot = previousState.snapshotSequence;
+                previousState.snapshotSequence = snapshot.snapshotSequence;
+                previousState.retained = new Set(snapshot.records.map(record => record.sequence));
+                for (const sequence of previousState.written) if (!previousState.retained.has(sequence)) previousState.written.delete(sequence);
+                engineSeen.set(key, previousState);
+                if (engineSeen.size > 64) engineSeen.delete(engineSeen.keys().next().value);
                 const owner = requests.get(key);
-                let newest = previous;
+                let attempted = false;
                 for (const record of snapshot.records) {
-                    if (record.sequence <= previous) continue;
-                    newest = Math.max(newest, record.sequence);
-                    const emitRecord = ['fatal', 'error', 'warn'].includes(record.level) ? emitEngineError : emitEngineContext;
-                    emitRecord('engine-message', {helperRun: input.helperRun, generationId: null,
+                    if (previousState.written.has(record.sequence) || previousState.pending.has(record.sequence)) continue;
+                    attempted = true;
+                    previousState.pending.add(record.sequence);
+                    const emitRecord = ['fatal', 'error'].includes(record.level) ? emitEngineError : record.level === 'warn' ? emitEngineWarning : emitEngineContext;
+                    const receipt = emitRecord('engine-message', {helperRun: input.helperRun, generationId: null,
                         requestId: 'UNAVAILABLE', association: 'active-generation-context',
                         candidateGenerationId: snapshot.candidateGenerationId,
                         candidateRequestId: owner ? owner.requestId : 'UNAVAILABLE',
@@ -82,17 +92,21 @@ function createNativeDiagnostics(logger, options) {
                         snapshotSequence: snapshot.snapshotSequence, nativeDropped: snapshot.dropped,
                         nativeSequence: record.sequence, nativeMonotonicMicros: record.monotonicMicros,
                         module: record.module, mpvLevel: record.level, message: record.message});
+                    const complete = written => {
+                        previousState.pending.delete(record.sequence);
+                        if (written === true && previousState.retained.has(record.sequence)) previousState.written.add(record.sequence);
+                    };
+                    if (receipt && typeof receipt.then === 'function') receipt.then(complete, () => complete(false));
+                    else complete(receipt);
                 }
-                if (snapshot.records.length === 0 || newest !== previous || snapshot.phase !== 'startup') {
+                if (snapshot.records.length === 0 || attempted || snapshot.phase !== 'startup') {
                     emitEngineContext('engine-window', {helperRun: input.helperRun, generationId: null,
                         association: 'active-generation-context', candidateGenerationId: snapshot.candidateGenerationId,
                         candidateRequestId: owner ? owner.requestId : 'UNAVAILABLE', diagnosticMode: snapshot.mode,
                         phase: snapshot.phase, nativeDropped: snapshot.dropped, retainedRecords: snapshot.records.length,
                         snapshotSequence: snapshot.snapshotSequence,
-                        observerSnapshotGaps: Math.max(0, snapshot.snapshotSequence - previousState.snapshotSequence - 1)});
+                        observerSnapshotGaps: Math.max(0, snapshot.snapshotSequence - previousSnapshot - 1)});
                 }
-                engineSeen.set(key, {recordSequence: newest, snapshotSequence: snapshot.snapshotSequence});
-                if (engineSeen.size > 64) engineSeen.delete(engineSeen.keys().next().value);
                 return;
             }
             if (input && input.name === 'media-network') {
@@ -142,7 +156,7 @@ function createNativeDiagnostics(logger, options) {
                 details.property = typeof input.property === 'string' && /^[a-z0-9/-]{1,128}$/.test(input.property) ? input.property : null;
                 details.mpvErrorCode = input.errorCode;
                 details.reason = typeof input.error === 'string' ? input.error.slice(0, 256) : 'mpv-operation-failed';
-                emitOperation(input.name, details);
+                emitOperationError(input.name, details);
                 return;
             }
             if (input.name === 'startup-property-result') {
@@ -152,7 +166,7 @@ function createNativeDiagnostics(logger, options) {
                     typeof result.applied !== 'boolean' || typeof result.value !== 'string' || result.value.length > 64 ||
                     !/^[a-zA-Z0-9_+.,:-]+$/.test(result.value)) return;
                 Object.assign(details, result);
-                emitOperation(input.name, details);
+                (result.applied === false || result.errorCode < 0 ? emitOperationError : emitOperation)(input.name, details);
                 return;
             }
             if (input.name === 'media-network-input') {

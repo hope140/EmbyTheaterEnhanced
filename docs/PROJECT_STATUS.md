@@ -1314,3 +1314,12 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
+
+
+## 2026-11-08 diagnostic priority correction (acceptance only)
+
+Warning and successful startup-property floods now have separate minute and pending-write budgets from fatal/error and failed operations (including applied:false). Engine identities are marked saved only after the logger completes successfully; in-flight identities are bounded and generation-scoped. A newer snapshot can retry retained unsaved records without a later sequence hiding a failed earlier one. No playback behavior, retries, EOF policy or keep-open changes.
+
+Critical storms remain bounded: engine critical 60/minute, operation critical 120/minute, 32 outstanding writes per lane, plus at most one rate marker per window. Suppression counters count rejected delivery attempts by lane and reason, carry across windows and failed writes, and are exported on the next successful write; saturation is explicit. This is not lossless delivery: native retention/eviction, no later snapshot, process termination, permanently stalled storage and log rotation remain limits. Operation events are not automatically retried. Warning/context pressure cannot consume critical admission capacity, but all lanes ultimately share filesystem throughput.
+
+Added real createNativeDiagnostics -> recorder -> disk logger -> diagnostic report regressions for rate/pending isolation, critical storms, failed writes and snapshot replay, applied:false, generation identities and credential removal. Targeted priority and existing bounded-observer suite: 25 passed. Final full gates, fresh helper compile and installer provenance must be revalidated on the resulting commit; previous acceptance candidate is on HOLD.
