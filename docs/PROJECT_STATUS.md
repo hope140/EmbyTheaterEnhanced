@@ -1,5 +1,64 @@
 # 项目状态
 
+## 2026-11-08 — v0.4.19 测试版发行准备
+
+以完整验收提交 45717026 为功能基线，保留首页刷新归属、legacy 返回恢复、字幕原始容器及 DirectStream 轨身份映射和配置/CD2 诊断。定向用户验收获通过反馈，已授权测试版发行；该反馈不扩展为所有媒体、设备或长期播放问题均已解决。
+
+本提交仅将产品及锁文件版本统一为 0.4.19，并更新发行说明和记录，不修改生产代码、依赖或既有构建门禁。验收基线 Windows 完整集合 2752 通过、0 失败、3 跳过，公共集合 2619 通过、0 失败、3 跳过，材料自测 136 通过；真实冻结首页组件 16/16、稳定性 3/3，固定产品 DLL 两条字幕路线各三种排列、六次循环通过，VerifyOnly 与安装器解包逐文件比对通过。新版本需绑定本次准确源码提交重新运行 CI 和发行构建；这些基线结果不能直接替代新包证据。
+
+发行保持 Pre-release 测试渠道，不提升正式 Latest。历史偶发提前停止根因仍未知，不新增播放中自动恢复；安装生命周期、所有真实服务器组合及可见硬件表现不由合成回归证明。
+
+## 2026-11-08 — DirectStream subtitle ID reconciliation
+
+The acceptance candidate left native/server DirectStream on positional mpv IDs. An external subtitle discovered before embedded tracks can consume ID 1, so source subtitle order no longer equals native ID. DirectStream now resolves the existing output subtitle order through the current generation's non-external track table. It excludes real external metadata rows, retains extracted internal streams, and requires matching embedded counts. This does not infer original source ff-index identity across remux. Original-container mapping remains exact; Transcode, generated captions, and the legacy teletext continuation remain unchanged. Default lookup waits for media readiness without blocking unpause; cancellation and route changes invalidate old results.
+
+Selection requests, bounded track-table observations and submitted IDs are recorded, including the mapping mode. A separate post-command observation records the selected track without blocking selection or mutating playback. Missing or inconsistent tables disable the requested subtitle with a diagnostic rather than guessing. Tests cover early external IDs, external rows at every position, changed remux indexes, count mismatch, extracted internal streams and interrupted selections. A real mpv synthetic probe using the installed baseline adapter reproduced first-embedded staying external and third-embedded selecting the second; the new adapter passed the same three-order sequence. This is not a GUI or real-user-media acceptance claim. No main merge or publication.
+
+## 2026-11-08 — 首页刷新回归候选（未发布）
+
+在验收基线 041910f 上补齐三条未覆盖边界：同身份后台通知不显示全局 loading；只改变查询 RandomSeed 时复用原生分区 DOM，但仍使用新 seed 读取内容；真正布局变化时暂保外层分区容器高度，避免旧行被替换后滚动范围瞬间归零。初载、显式手动刷新、身份变更和失败路径保留，临时几何在提交、清理和错误时释放。
+
+baseline 回退旧 homesections 后统一解绑新首页的 API/socket 刷新监听，把刷新重新交给既有 ItemsRefresher。此前只有实验 flow 分支这样做，baseline 仍会因 LibraryChanged 清空整个旧首页。新增有界 home 诊断记录固定刷新原因、代次、布局是否复用和 fallback 阶段，不读取通知 Data，不记录媒体或认证信息。
+
+Node 定向回归通过；后台转圈、seed 引起 DOM 替换、legacy 重复监听和外层几何共 10 个修前对照断言失败，候选通过。Windows 原生组件合成场景的完整复验仍待交接，不将其等同于真实删除或安装验收；现场两组组件 TypeError 的准确来源仍未确定。本候选不改播放、版本号，不合 main，不发布。
+
+## 2026-11-07 — 首页、播放诊断与字幕身份映射验收候选
+
+将首页／日志整合提交 adbc23b 与字幕提交 10a42d1（含 b6c8bfc）组合，保留双方提交历史。两份维护文档的追加冲突保留全部记录；libmpv 自动合并后复核同时保留配置结果／回退阶段诊断和原始容器字幕轨身份映射。其他生产文件与对应候选一致，不添加新播放路线、重试或版本改动。
+
+组合定向 324/324 通过；公共集合 2469 通过、79 失败、32 跳过，失败名称与上一组合在同一云环境下完全相同（固定工具链不齐和 Node 24.22.1 夹具问题），不能记为全量通过。584 文件 JS 语法、681 文本有限凭据模式扫描及差异空白检查通过。需在固定 Windows 工具链对准确整合提交补全回归和完整验收包构建；字幕独立候选的真实 mpv 合成验证不等于用户实际播放验收。
+
+本阶段仅交独立验收包，不合 main、不发布测试版、不覆盖现用安装或配置。实际验收包含首页标已播放／删除／返回的位置与继续播放布局，以及默认外挂后切换第一个简英和第三个简中、直接内嵌入场对照。缺失或歧义轨身份会关闭字幕并记录原因，普通 remux／transcode 保持既有映射边界；首次播放现场根因不据此宣称已修复。用户验收通过后再安排测试版。
+
+## 2026-11-07 — 首页稳定性与播放诊断组合候选（未发布）
+
+独立分支整合首页候选 a1d2382 与诊断候选 71c61423，保留两个父提交；冲突仅发生在本页和开发记录的追加条目，双方内容均保留。生产代码与各自候选逐文件一致，没有新增播放行为、字幕修正或版本变更。
+
+组合定向测试 178/178 通过；额外边界集合 55 通过、7 因缺少 pwsh 失败。公共集合为 2432 通过、79 失败、32 跳过，79 项失败名称与诊断候选此前本机结果一致（Node 24.22.1 的 fs.cpSync EEXIST 夹具及缺少 pwsh 等环境限制），不是全量通过。583 文件 JS 语法及 680 文本有限凭据模式扫描通过。需在固定工具链对整合准确提交复验；本轮未运行 Windows 客户端、未验收真实首页操作或家中播放，未合 main、未发布。字幕和首次播放现场根因仍待独立调查。
+
+## 2026-11-07 — 首页刷新位置与布局稳定性候选
+
+默认 baseline 普通返回也复用暂停前的位置快照；数据通知、重连及显式刷新在暂停原生行之前保存位置。保留既有焦点语义，刷新期间已有用户输入时不恢复旧焦点或滚动。复用分区在刷新期间临时保留原高度，完成后释放，不改变服务端数据、卡片布局、缓存策略、播放链路或版本号。
+
+新增三项时序回归覆盖无通知返回时的原生行位置丢失、pending 行高保留/释放及返回过程中用户滚动；原实现的对照断言失败，候选定向集合通过。浏览器检查入口 `node tools/check-home-refresh-stability.cjs <Chromium绝对路径>` 使用固定原生列表/虚拟渲染器和合成数据，阻断网络；执行环境的 Chromium socket 限制使本轮未能完成该项，不将 Node 时序夹具当成真实布局或 Windows 客户端验收。仍需验证真实首页标已播放、删除和返回时的滚动及继续播放行绘制，当前仅为候选，不宣称已确认现场两项症状全部消失。
+
+## 2026-11-07 — 播放配置和 CD2 回链诊断（独立分支，未发布）
+
+基线为 main f17204be（播放实现与 0.4.18 对应）。配置快照 begin 新增一次性 ready、timeout、aborted、released、invalid-response、ipc-error、ipc-unavailable 结果及 elapsedMs/timeoutMs；默认 1000 ms、晚到 lease 释放和原生回退保持不变。libmpv 的异常回退记录配置结果、发生阶段、固定错误码/错误类型，不输出异常原文；不能以新增日志倒推此前首次播放失败的原因。
+
+CD2 分阶段解析的 RPC 开始/结束加入 requestId/ruleId，新增 download-url-result 保留输入 host/port、路径结构及 service 内相关引用、取链起止时刻、回复 expiresIn、估算剩余时长与安全余量。expiresAt 仍按客户端 RPC 开始计算，不代表云盘签发时间；serverIssuedAt=null、cacheHit=unknown。只观察既有调用，不改变超时、路线、有效期判定、重取或播放行为。日志异常保持 fail-open。
+
+针对性测试覆盖超时/拒绝/无效响应/取消/成功、日志接收端异常、fallback 继续播放、过期字段缺失/无效及敏感金丝雀。本机针对性测试 71/71 通过（包含真实 logger 落盘的 host/TTL/秘密金丝雀）；JS 语法与有限凭据模式扫描通过。公共测试尝试结果 2428 通过、79 失败、32 跳过，当前 Node 24.22.1 下存在 build-input fixture 的 fs.cpSync EEXIST，且缺少 pwsh；不能作为全量放行证据，须在固定工具链补验。Windows 实机未验收；本分支不合 main、不发布、不改版本号。
+
+
+## Early external subtitle discovery and raw-source DirectStream
+
+Delayed synthetic input reproduces an external subtitle taking the first native track ID before embedded tracks are discovered. Container-index mapping now also covers explicitly verified raw STRM and downloaded-file routes while retaining the original session play method; it is recalculated on every attempt so native/remux fallback never inherits raw-source eligibility. The default-readiness path uses the same contract. This synthetic reproduction does not substitute for real-session track evidence.
+
+## DirectPlay subtitle identity correction
+
+The candidate resolves embedded DirectPlay subtitles through the current native track table rather than counting external rows as track IDs. Default selection is readiness-bound and newer user selections retain ownership. External cached loading no longer writes a guessed sid. Remux/transcode mapping is unchanged; synthetic evidence is not a diagnosis of a real incident. See [contract and validation](SUBTITLE_TRACK_MAPPING.md). No version or release changes.
+
 ## 2026-11-06 — 导航停止来源的有限因果诊断
 
 隔离 Home 验证入口同步新增诊断模块的源码清单与生成路由精确哈希，预加载测试使用真实诊断模块；固定材料门禁保持。首轮完整测试发现旧替身缺模块及旧路由哈希合同，均已补齐。

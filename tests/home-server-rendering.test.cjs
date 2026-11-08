@@ -43,6 +43,7 @@ class Items extends Element {
     async refreshItems() {
         if (this.paused) return;
         const data = await this.fetchData({Limit: 12});
+        if (this.eteHomeFlowOwns && !this.eteHomeFlowOwns(data)) return;
         this.options = this.getListOptions(data.Items);
         this.result = data;
         this.replaceChildren(...data.Items.map(item => { const card = new Element(this.ownerDocument); card.setAttribute('data-id', item.Id); return card; }));
@@ -863,4 +864,235 @@ for (const type of ['onnow', 'activerecordings']) test('default retained Home ma
     held({Items: [{Id: 'fresh-program'}]}); await pending;
     assert.equal(row.classList.contains('eteHomeFlowProgramPending'), false);
     assert.equal(row.children[0].getAttribute('data-id'), 'fresh-program'); f.controller.dispose();
+});
+
+
+test('ordinary baseline return restores outer position after native row refresh without a data event', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const row = f.root.querySelector('.itemsContainer'); f.document.activeElement = row.children[0];
+    f.controller.pause();
+    const resume = row.resume.bind(row);
+    row.resume = async options => { const result = await resume(options); f.move(0); return result; };
+    await f.controller.resume();
+    assert.equal(f.position(), 640);
+    assert.equal(row.parentContainer.style.minHeight, '');
+    assert.ok(f.focus.some(value => value && value.getAttribute && value.getAttribute('data-id')));
+    f.controller.dispose();
+});
+
+test('baseline pending refresh holds row geometry and releases it after fresh delivery', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const row = f.root.querySelector('.itemsContainer'), layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'LibraryChanged'}]); await flowFlush();
+    assert.equal(row.parentContainer.style.minHeight, '240px');
+    layout.resolve(sections()); await flowFlush();
+    assert.equal(row.parentContainer.style.minHeight, ''); assert.equal(f.position(), 640);
+    f.controller.dispose();
+});
+
+test('ordinary return does not restore old focus or scroll after user navigation input', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    f.document.activeElement = f.root.querySelector('.itemsContainer').children[0]; f.controller.pause();
+    const layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    const pending = f.controller.resume({autoFocus: true}); await flowFlush();
+    const focusCount = f.focus.filter(value => !(value instanceof Items)).length;
+    f.owner.view.events.wheel(); f.move(900); layout.resolve(sections()); await pending;
+    assert.equal(f.position(), 900); assert.deepEqual(f.writes, []);
+    assert.equal(f.focus.filter(value => !(value instanceof Items)).length, focusCount);
+    f.controller.dispose();
+});
+
+for (const type of ['LibraryChanged', 'UserDataChanged']) test('same-owner background '+type+' refresh does not open global loading', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const shows = f.loading.filter(value => value === 'show').length;
+    const layout = flowGate();
+    f.api.getJSON = request => request.route.endsWith('/HomeSections') ? layout.promise : Promise.resolve({Items: [{Id: 'fresh'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: type, Data: {UserId: 'user-1'}}]); await flowFlush();
+    assert.equal(f.loading.filter(value => value === 'show').length, shows);
+    layout.resolve(sections()); await flowFlush();
+    assert.equal(f.position(), 640);
+    await f.controller.refresh({refresh: true});
+    assert.equal(f.loading.filter(value => value === 'show').length, shows + 1);
+    f.controller.dispose();
+});
+
+for (const mode of [null, 'retain', 'sections']) test('query-only RandomSeed changes retain the native layout in '+(mode || 'baseline'), async () => {
+    let seed = 17; const queries = [];
+    const f = fixture(request => {
+        if (request.route.endsWith('/HomeSections')) return Promise.resolve(sections().map(section => ({...section, RandomSeed: seed})));
+        queries.push(request.query.RandomSeed);
+        return Promise.resolve({Items: [{Id: 'fresh-'+seed}]});
+    }, null, {enabled: false}, null, bridge, mode);
+    await f.controller.resume(); const stage = f.root.children[0], row = f.root.querySelector('.itemsContainer');
+    f.controller.pause(); seed = 29;
+    await f.controller.resume();
+    assert.equal(f.root.children[0], stage); assert.equal(f.root.querySelector('.itemsContainer'), row);
+    assert.equal(row.result.Items[0].Id, 'fresh-29');
+    assert.ok(queries.includes(17)); assert.ok(queries.includes(29)); f.controller.dispose();
+});
+
+test('Home diagnostic reasons identify background work without reading notification payloads', async () => {
+    const f = dataPositionFixture(), records = []; f.deps.diagnostics = value => records.push(value);
+    await f.controller.resume();
+    const notification = {MessageType: 'LibraryChanged'};
+    Object.defineProperty(notification, 'Data', {get() { throw Error('must not inspect notification data'); }});
+    f.deps.events.trigger(f.api, 'message', [notification]); await flowFlush();
+    assert.ok(records.some(record => record.event === 'refresh-trigger' && record.details.reason === 'LibraryChanged'));
+    assert.ok(records.some(record => record.event === 'refresh-start' && record.details.background === true));
+    assert.ok(records.some(record => record.event === 'refresh-layout' && record.details.reused === true));
+    assert.ok(records.some(record => record.event === 'refresh-complete' && record.details.status === 'server'));
+    assert.doesNotMatch(JSON.stringify(records), /user-1|server-1|item-first|<unsafe>/);
+    f.deps.diagnostics = () => { throw Error('logger failure'); };
+    assert.equal((await f.controller.refresh()).status, 'server'); f.controller.dispose();
+});
+
+for (const name of ['LibraryChanged', 'UserDataChanged', 'websocketopen', 'websocketclose']) test('legacy fallback leaves '+name+' refresh to the original owner', async () => {
+    const f = dataPositionFixture(); f.version('4.9.0.0');
+    assert.equal((await f.controller.resume()).status, 'legacy'); f.move(640);
+    const stage = f.root.children[0], loads = f.legacy.length, shows = f.loading.filter(value => value === 'show').length;
+    f.deps.events.trigger(f.api, name.startsWith('websocket') ? name : 'message', [{MessageType: name}]);
+    await flowFlush();
+    assert.equal(f.root.children[0], stage); assert.equal(f.position(), 640);
+    assert.equal(f.legacy.length, loads); assert.equal(f.loading.filter(value => value === 'show').length, shows);
+    assert.equal(f.api._callbacks.message.length, 1, 'only the configuration/policy retirement listener remains');
+    f.controller.dispose();
+    assert.equal(f.api._callbacks.message.length, 0);
+});
+
+function legacyPositionFixture() {
+    const f = dataPositionFixture(); f.version('4.9.0.0');
+    f.legacyReads = 0;
+    f.readLegacy = () => Promise.resolve({Items: [{Id: 'legacy-' + ++f.legacyReads}]});
+    f.deps.legacy.loadSections = async function(stage, client, user) {
+        f.legacy.push({stage, client, user});
+        const row = new Items(f.document); stage.appendChild(row); row.parentContainer = stage;
+        row.fetchData = () => f.readLegacy(); row.getListOptions = () => ({});
+        await row.resume({refresh: true});
+    };
+    return f;
+}
+
+test('legacy ordinary return retains native stage, refreshes rows and releases geometry', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.move(640);
+    const stage = f.root.children[0], row = f.root.querySelector('.itemsContainer'), first = row.children[0];
+    f.controller.pause(); assert.equal(f.controller.canRestore(), true);
+    const gate = flowGate(); f.readLegacy = () => gate.promise;
+    const work = f.controller.resume(); await flowFlush();
+    assert.equal(f.root.children[0], stage); assert.equal(row.children[0], first);
+    assert.equal(f.position(), 640); assert.equal(f.root.style.minHeight, '240px');
+    gate.resolve({Items: [{Id: 'fresh-legacy'}]}); assert.equal((await work).status, 'legacy');
+    assert.equal(f.root.children[0], stage); assert.equal(f.legacy.length, 1);
+    assert.equal(row.children[0].getAttribute('data-id'), 'fresh-legacy');
+    assert.equal(f.position(), 640); assert.equal(f.root.style.minHeight, ''); f.controller.dispose();
+});
+
+for (const kind of ['manual', 'resume-refresh', 'configuration']) test('legacy '+kind+' revalidates layout rather than reusing stale sections', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); const stage = f.root.children[0];
+    let work;
+    if (kind === 'manual') work = f.controller.refresh();
+    else {
+        f.controller.pause();
+        if (kind === 'configuration') f.api.getCurrentUser = () => Promise.resolve({Configuration: {HomeSections: ['changed']}});
+        work = f.controller.resume(kind === 'resume-refresh' ? {refresh: true} : {});
+    }
+    assert.equal((await work).status, 'legacy'); assert.equal(f.root.contains(stage), false);
+    assert.equal(f.legacy.length, 2); f.controller.dispose();
+});
+
+for (const change of ['user', 'auth', 'locale', 'version', 'query', 'client']) test('legacy '+change+' change denies restore and removes old DOM before reads', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); const stage = f.root.children[0]; f.controller.pause();
+    if (change === 'user') f.user('user-2');
+    if (change === 'auth') f.api._identityEpoch++;
+    if (change === 'locale') f.api.getCurrentLocale = () => 'en-US';
+    if (change === 'version') f.version('4.9.1.0');
+    if (change === 'query') f.owner.params = {context: 'changed'};
+    if (change === 'client') f.switchClient();
+    assert.equal(f.controller.canRestore(), false);
+    f.api.getCurrentUser = () => new Promise(() => {});
+    const work = f.controller.resume(); assert.equal(f.root.contains(stage), false);
+    f.controller.pause(); assert.equal((await work).status, 'cancelled'); f.controller.dispose();
+});
+
+for (const name of ['UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated']) test('legacy '+name+' retires paused route without a second data-refresh owner', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    f.deps.events.trigger(f.api, 'message', [{MessageType: name}]);
+    assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false);
+    assert.equal(f.root.style.minHeight, ''); assert.equal(f.api._callbacks.message.length, 0);
+    await f.controller.resume(); assert.equal(f.legacy.length, 2); f.controller.dispose();
+});
+
+test('legacy pause cancels retained wait and rejects late row delivery across the next resume', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    const old = flowGate(); f.readLegacy = () => old.promise;
+    const first = f.controller.resume(); await flowFlush(); f.controller.pause();
+    assert.equal((await first).status, 'cancelled');
+    f.readLegacy = () => Promise.resolve({Items: [{Id: 'new-generation'}]});
+    await f.controller.resume(); old.resolve({Items: [{Id: 'retired-generation'}]}); await flowFlush();
+    assert.equal(f.root.querySelector('.itemsContainer').children[0].getAttribute('data-id'), 'new-generation');
+    f.controller.dispose();
+});
+
+test('legacy auth change during retained read clears old DOM and rejects delayed result', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    const gate = flowGate(); f.readLegacy = () => gate.promise;
+    const work = f.controller.resume(); await flowFlush(); f.api._identityEpoch++;
+    gate.resolve({Items: [{Id: 'retired'}]}); assert.equal((await work).status, 'cancelled');
+    assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false); f.controller.dispose();
+});
+
+test('patched native Home view and manager use real legacy canRestore and reject policy retirement', async () => {
+    const fs = require('node:fs'), home = require('../tools/patch-server-home.cjs'), plugin = require('../tools/patch-plugin-settings.cjs');
+    const {makeRuntime} = require('./helpers/plugin-dom.cjs');
+    const source = home.patchHomeView(fs.readFileSync('vendor/web-snapshot/www/home/home.js', 'utf8'));
+    const start = source.indexOf('HomeView.prototype.eteHomeRestoreState=') + 'HomeView.prototype.eteHomeRestoreState='.length;
+    const restore = Function('return (' + source.slice(start, source.indexOf(',HomeView.prototype.onPause=', start)) + ')')();
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    const runtime = makeRuntime({transform: value => home.patchViewManager(plugin.patchViewManager(value))});
+    runtime.document.body.contains = element => runtime.document.contains(element);
+    class Controller {
+        constructor() { const tab = {eteHome: f.controller}; this.tabControllers = [tab]; this.currentTabController = tab; }
+        eteHomeRestoreState() { return restore.call(this); }
+    }
+    await runtime.manager.loadView({url: '/home', view: runtime.page('home'), type: 'home', controllerFactory: Controller});
+    const resident = runtime.manager.currentView();
+    await runtime.manager.loadView({url: '/details', view: runtime.page('details'), type: 'details'});
+    assert.equal(runtime.manager.canRestoreHome({url: '/home', type: 'home'}), true);
+    await runtime.manager.tryRestoreView({url: '/home', type: 'home'}); assert.equal(runtime.manager.currentView(), resident);
+    await runtime.manager.loadView({url: '/details', view: runtime.page('details'), type: 'details'});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserPolicyUpdated'}]);
+    assert.equal(runtime.manager.canRestoreHome({url: '/home', type: 'home'}), false);
+    await assert.rejects(runtime.manager.tryRestoreView({url: '/home', type: 'home'}));
+    assert.equal(resident.classList.contains('hide'), true); f.controller.dispose();
+});
+
+
+test('baseline layout replacement holds the entire scroll range until new rows commit', async () => {
+    const f = dataPositionFixture(); await f.controller.resume(); f.move(640);
+    const before = f.root.children[0]; let attachHeight;
+    const replace = f.root.replaceChildren;
+    f.root.replaceChildren = function(...children) {
+        if (children.length && children[0] !== before) attachHeight = this.style.minHeight;
+        return replace.apply(this, children);
+    };
+    f.api.getJSON = request => Promise.resolve(request.route.endsWith('/HomeSections') ? sections().slice(1) : {Items: [{Id: 'after-delete'}]});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'LibraryChanged'}]); await flowFlush();
+    assert.notEqual(f.root.children[0], before);
+    assert.equal(attachHeight, '240px'); assert.equal(f.root.style.minHeight, '');
+    assert.equal(f.position(), 640); f.controller.dispose();
+});
+
+test('baseline container geometry is released on error and identity retirement', async () => {
+    for (const kind of ['error', 'identity']) {
+        const f = dataPositionFixture(); await f.controller.resume();
+        f.controller.pause(); assert.equal(f.root.style.minHeight, '240px');
+        if (kind === 'identity') { f.user(null); f.deps.events.trigger(f.deps.connection, 'localusersignedout'); }
+        else {
+            f.api.getJSON = () => Promise.reject(Error('synthetic failure'));
+            f.deps.legacy.loadSections = () => Promise.reject(Error('synthetic legacy failure'));
+            await f.controller.resume();
+        }
+        assert.equal(f.root.style.minHeight, ''); f.controller.dispose();
+    }
 });

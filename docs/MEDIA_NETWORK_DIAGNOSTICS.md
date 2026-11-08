@@ -48,3 +48,11 @@ retire IPC 携带经过有限枚举投影的操作上下文。destroy IPC 的快
 输入 Back/Home 的有限来源按当前播放器与 stream 对象快照记录，参数、调用次数及取消路径不变。Home 的同步 route context 经 WeakMap 传递到异步 view request，仅在实际 viewbeforehide 的同步作用域内读取；请求取消、替换播放、stream 变化或已消费上下文一律 unknown。Stop 的 navigationId 与输入请求记录相连，有限字段经 manager、adapter、native 投影及真实 logger/export 保留；无路径、用户信息或命令原文落盘。
 
 原生 history.back() 到 popstate 没有命令身份，无法可靠证明某次退栈由某个远端/本地命令发起。保留 navigation-requested（input-request-only）区分远端 GeneralCommand 与本地 Back；异步退栈的 Stop 明确 unknown，不用全局最后命令、时间接近、目的 URL 或 pending 队列伪造归属。正常 EOF 自动离开不新增主动 Stop。不改变历史状态、路由参数、播放/停止/取消顺序或版本；仍为 0.4.18。生成运行时测试覆盖取消、无退栈、多导航、晚到、A→B、EOF 及真实落盘/导出。此补足不声称查明历史提前停止的根因。
+
+## 配置获取与 CD2 回链补充（2026-11-07，待集成）
+
+- playback/resolver-config 是一次配置 begin 的终态；ready 表示拿到有效 lease/config，不代表开始播放。默认超时仍为 1000 ms。aborted/released 为取消，ipc-error 为调用拒绝，invalid-response 为结果格式/状态不合要求。elapsedMs 使用客户端时钟；不保存 lease、配置内容或异常原文。
+- playback/resolver-fallback 仅记录既有异常回退分支；stage 区分 identify-strm、download-lookup、config-check、create-sequence、resolve-source。errorCode 目前只确认 resolver-config-unavailable，其余 unclassified；errorKind 仅有限 JS 错误类型。正常 resolver 返回的路线仍使用原 resolve 事件，不新增自动重试。
+- CD2 显式 direct/same-origin 模式的 download-url-result 使用同 requestId/ruleId；rpcAttempt 区分已有的首次调用及过期重取。rpcStartedAt/rpcReceivedAt 是客户端时刻，expiresInSeconds 是 CD2 回复的有效整数，expiresAt/remainingMs 是原实现基准的估算，不保证云盘真实过期时间。未提供/无效值为 null，而非默认认定已经过期；cacheHit=unknown，serverIssuedAt=null。
+- 回链记录保留 inputHost/inputPort/inputRoute；任意路径段仍为 {segment}，防止路径内凭据泄露。referenceScope=cd2-service 的 HMAC 只在该服务生命周期内可比，不能与 native load-input 的 HMAC 直接比较；replyObservation 是回复观察序号，不是播放器 load 次数。inputLocatorRef 可区分同服务内 URL 是否改变，但不能反推 query。签名、Token、Cookie、账号密码及 User-Agent 原文不会进入这些新日志。
+- endpointRole=input-only、finalEndpointRef=null 仍有效。HTTP 引擎记录依然 helper-only，不能把它强行归到 CD2 回复或当前字幕/视频。停止来源已有的有限因果诊断保持原样，没有证据时仍 unknown。上述补充不等于已定位历史 403、首次无兼容流或中途退出的根因。

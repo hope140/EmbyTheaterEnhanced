@@ -52,7 +52,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         if (!settings.native) customElements.define('emby-itemscontainer', Items, {extends: 'div'});
         const view = document.querySelector('.view'), root = view.querySelector('.sections');
         const config = Object.assign({layoutMs: 15, fastMs: 25, slowMs: 220, count: 2, ignoreAbort: false}, settings);
-        const calls = [], held = [], modules = new Map(); let user = 'synthetic-user', generation = 1;
+        const calls = [], held = [], diagnostics = [], modules = new Map(); let user = 'synthetic-user', generation = 1;
         const api = {serverId: () => 'synthetic-server', getCurrentUserId: () => user, isLoggedIn: () => !!user,
             serverVersion: () => '4.10.0.40', getCurrentLocale: () => 'zh-CN', _identityEpoch: 0,
             getUrl: (route, query) => ({route, query}), getCurrentUser: () => Promise.resolve({Id: user}),
@@ -99,19 +99,34 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         for (const id of ['modules/cardbuilder/cardbuilder.js', 'modules/layoutmanager.js', 'modules/common/globalize.js',
             'modules/approuter.js', 'modules/emby-elements/emby-button/emby-button.js']) modules.set(id, {default: {}});
         const events = load('modules/emby-apiclient/events.js').default;
-        if (settings.native) (0,eval)(input.nativeSetup)({modules,load,api,connection,input});
+        if (settings.native) (0,eval)(input.nativeSetup)({modules,load,api,connection,input,settings});
+        if (settings.nativeLegacy) {
+            modules.set('modules/common/usersettings/usersettings.js', {default: {getHomeScreenSections: () => ['latestmedia']}});
+            modules.set('modules/common/appsettings.js', {default: {get: () => String(Date.now()), set() {}}});
+            modules.set('modules/registrationservices/registrationservices.js', {default: {}});
+            modules.set('modules/emby-elements/emby-scroller/emby-scroller.js', {default: {}});
+            api.getCurrentUser = () => Promise.resolve({Id: user, Configuration: {LatestItemsExcludes: []}, Policy: {EnableContentDownloading: false}});
+            api.getUserViews = () => Promise.resolve({Items: Array.from({length: config.count}, (_, i) => ({Id: String(i), Name: 'Synthetic Library ' + i, CollectionType: 'movies'}))});
+            api.getLatestItems = query => api.getJSON({route: 'Users/synthetic-user/Sections/' + query.ParentId + '/Items', query}).then(data => data.Items);
+            const get = api.getJSON.bind(api);
+            api.getJSON = (request, signal) => get(request, signal).then(data => {
+                if (request.route.endsWith('/HomeSections')) data.forEach(section => { section.ViewType = 'list'; });
+                return data;
+            });
+        }
         const owner = {view, sectionsContainer: root, params: {tab: 'home'}, addFocusBehavior() {}};
         const controller = load('enhanced/home/home-tab.js').default.create(owner, {
+            diagnostics: record => diagnostics.push(record),
             document, connection, events, layout: {tv: true}, cards: settings.native ? load('modules/cardbuilder/cardbuilder.js').default : {}, globalize: {getCurrentLocale: () => 'zh-CN'},
             homeFlowOptions: {mode},
             pageCacheOptions: settings.cache ? {enabled: true, ttlMs: 10000, maxEntries: 2, maxBytes: 1048576} : undefined,
             loading: {show() { root.dataset.loading = 'true'; }, hide() { root.dataset.loading = 'false'; }},
-            focus: {focus: element => element.focus({preventScroll: true}), autoFocus() {}},
-            legacy: {loadSections(stage) { stage.textContent = 'Synthetic legacy'; return Promise.resolve(); }}
+            focus: settings.realFocus ? load('modules/focusmanager.js').default : {focus: element => element.focus({preventScroll: true}), autoFocus() {}},
+            legacy: settings.nativeLegacy ? load('modules/homesections/homesections.js').default : {loadSections(stage) { stage.textContent = 'Synthetic legacy'; return Promise.resolve(); }}
         });
         delete window.define;
         function visible(card) { return !!card.getClientRects().length && getComputedStyle(card).visibility !== 'hidden'; }
-        window.trial = {controller, owner, api, events, connection, config, calls,
+        window.trial = {controller, owner, api, events, connection, config, calls, diagnostics,
             bump() { generation++; }, release() { held.splice(0).forEach(fn => fn()); },
             setUser(value) { user = value; api._identityEpoch++; events.trigger(connection, value ? 'localusersignedin' : 'localusersignedout'); },
             snapshot() { const cards = [...root.querySelectorAll('.itemsContainer .card')].filter(visible); return {

@@ -99,6 +99,19 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         return 'unknown';
     }
 
+    function usesContainerSubtitleIndex(playMethod, result) {
+        if (playMethod === 'DirectPlay') return true;
+        if (playMethod !== 'DirectStream' || !result || result.fallback !== false ||
+            typeof result.source !== 'string' || !result.source) return false;
+        // STRM resolution changes the physical source, not Emby's session play
+        // method. These routes read original bytes without the Emby remuxer.
+        if (result.type === 'url' && result.isStrm === true &&
+            (result.sourceKind === 'direct-url' || result.sourceKind === 'cd2-url')) return true;
+        if (result.type !== 'local' || result.localExists !== true) return false;
+        return result.isStrm === true && result.reason === 'mount_hit' ||
+            result.sourceKind === 'downloaded-file' && result.reason === 'download_hit';
+    }
+
     function logStrmResolverResult(result, request, detected) {
         var type = result && result.type ? result.type : 'native';
         var reason = result && result.reason ? result.reason : 'native_fallback';
@@ -363,7 +376,15 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             };
             activePlayRequest = request;
             request.configSnapshot = strmConfigClient && typeof strmConfigClient.begin === 'function'
-                ? strmConfigClient.begin({requestId: request.requestId, signal: request.controller.signal}) : Promise.resolve(null);
+                ? strmConfigClient.begin({requestId: request.requestId, signal: request.controller.signal,
+                    onDiagnostic: function (value) {
+                        request.configDiagnosticReason = diagnosticEnum(value && value.reason,
+                            ['ready', 'timeout', 'aborted', 'released', 'invalid-response', 'ipc-error', 'ipc-unavailable'], 'unknown');
+                        emitClientDiagnostic('info', 'playback', 'resolver-config', Object.assign(requestDiagnosticDetails(request), {
+                            reason: request.configDiagnosticReason, elapsedMs: diagnosticNumber(value && value.elapsedMs),
+                            timeoutMs: diagnosticNumber(value && value.timeoutMs)
+                        }));
+                    }}) : Promise.resolve(null);
             if (enhancedRouteState) enhancedRouteState.begin(request);
             return request;
         }
@@ -1259,12 +1280,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 ));
             } catch (_) { /* Context diagnostics are optional and fail-open. */ }
 
+            var resolverStage = 'identify-strm';
             try {
                 isStrmRequest = !!(strmResolver && typeof strmResolver.isStrm === 'function' && strmResolver.isStrm(resolverContext));
                 if (isStrmRequest) {
                     resolverConfig = request.playbackConfig ? request.playbackConfig.config : null;
                     assertCurrentPlayRequest(request);
                 }
+                resolverStage = 'download-lookup';
                 var downloaded = null;
                 var downloadLookup = 'not-attempted';
                 var downloadDiagnostic = {reason: 'unavailable', stage: 'unavailable'};
@@ -1285,6 +1308,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 }
                 emitClientDiagnostic('info', 'playback', 'download-lookup', Object.assign(requestDiagnosticDetails(request), {result: downloadLookup,
                     reason: downloadDiagnostic.reason, stage: downloadDiagnostic.stage, changedCopySkipped: downloadDiagnostic.changedCopySkipped === true}));
+                resolverStage = 'config-check';
                 if (!downloaded && isStrmRequest && !request.playbackConfig) throw Error('resolver-config-unavailable');
                 var resolverDependencies = {
                     fs: typeof window !== 'undefined' ? window.fs : null,
@@ -1299,15 +1323,23 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         ? window.__eteDiagnosticHash
                         : null
                 };
+                resolverStage = 'create-sequence';
                 if (!downloaded && options.item.MediaType === 'Video' && typeof strmResolver.createSequence === 'function') {
                     request.routeSequence = strmResolver.createSequence(resolverContext, resolverDependencies);
                     if (request.routeSequence) startRouteDeadline(request);
                 }
+                resolverStage = 'resolve-source';
                 resolverResult = downloaded ? {type: 'local', source: downloaded.source, sourceKind: 'downloaded-file',
                     reason: 'download_hit', isStrm: isStrmRequest, localExists: true, fallback: false}
                     : request.routeSequence ? await request.routeSequence.next() : await strmResolver.resolveAsync(resolverContext, resolverDependencies);
             } catch (err) {
                 if (err && (err.name === 'AbortError' || err.playbackSuperseded)) throw supersededError();
+                emitClientDiagnostic('warn', 'playback', 'resolver-fallback', Object.assign(requestDiagnosticDetails(request), {
+                    reason: resolverStage === 'config-check' && !request.playbackConfig && isStrmRequest ? 'config-unavailable' : 'resolver-exception',
+                    configReason: request.configDiagnosticReason || 'unobserved', route: 'native', stage: resolverStage,
+                    errorCode: resolverStage === 'config-check' && !request.playbackConfig ? 'resolver-config-unavailable' : 'unclassified',
+                    errorKind: diagnosticEnum(err && err.name, ['Error', 'TypeError', 'RangeError', 'SyntaxError'], 'unknown')
+                }));
                 resolverResult = {
                     type: 'native',
                     source: nativeSource,
@@ -1368,6 +1400,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 } catch (_) { /* Context diagnostics are optional and fail-open. */ }
             }
             var resolverObservation = logStrmResolverResult(resolverResult, request, isStrmRequest);
+            // Recompute for every attempt: raw -> native fallback must not
+            // inherit the preceding file's container-index contract.
+            request.subtitleUsesContainerIndex = usesContainerSubtitleIndex(options.playMethod, resolverResult);
+            request.subtitleUsesOutputOrder = options.playMethod === 'DirectStream' && !request.subtitleUsesContainerIndex;
             if (enhancedRouteState) {
                 enhancedRouteState.commit(request, {
                     requestId: request.requestId,
@@ -1479,6 +1515,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 assertAttempt();
                 request.nativeGenerationId = diagnosticGeneration(nativeGeneration && nativeGeneration.generationId);
             }
+            request.subtitleReady = {attempt: request.routeAttempt, generation: request.nativeGenerationId, promise: corePlaying};
             await setProperty(Object.assign(playerOptions, audioDelay(), interlace(), createClosedCaptionTrack(mediaSource, isVideo), getMpvAudioOptions(mediaType)))
             assertAttempt();
             request.loadStartedAt = Date.now();
@@ -1505,13 +1542,26 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
 
             var subtitleIndexToSet = mediaSource.DefaultSubtitleStreamIndex == null ? -1 : mediaSource.DefaultSubtitleStreamIndex;
-            await setSubtitleStream(subtitleIndexToSet, request)
+            // Register the default's selection owner now, but do not block
+            // unpause on native media readiness. A later user choice wins.
+            var defaultSubtitle;
+            var defaultSubtitleStream = (mediaSource.MediaStreams || []).find(function (stream) { return stream.Type === 'Subtitle' && stream.Index === subtitleIndexToSet; });
+            if (request.subtitleUsesContainerIndex || request.subtitleUsesOutputOrder &&
+                (!defaultSubtitleStream || defaultSubtitleStream.Codec !== 'dvb_teletext')) {
+                defaultSubtitle = setSubtitleStream(subtitleIndexToSet, request, corePlaying);
+            } else {
+                await setSubtitleStream(subtitleIndexToSet, request);
+                defaultSubtitle = Promise.resolve();
+            }
+            defaultSubtitle.catch(function () {});
             assertAttempt();
             await setProperty({
                 pause: false
             })
             assertAttempt();
             await corePlaying;
+            assertAttempt();
+            await defaultSubtitle;
             assertAttempt();
         }
 
@@ -2271,12 +2321,114 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             })
         }
 
-        function setSubtitleStream(index, ownerRequest) {
+        // Emby Index is a container stream index, not an mpv subtitle track ID.
+        // Original-container routes preserve that identity. Server remux and
+        // transcode retain their existing output-track selection contract.
+        function enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady, outputOrdinal, outputCount) {
+            if (mediaReady) {
+                return mediaReady.then(function () {
+                    if (ownsSelection()) return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, null, outputOrdinal, outputCount);
+                }, function () {});
+            }
+            var live = true;
+            var observedTracks = false;
+            var lastTrackTable = null;
+            var lastNativeTrackCount = null;
+            var deadline;
+            function current() { return live && ownsSelection(); }
+            function unavailable(reason) {
+                if (!current()) return;
+                emitClientDiagnostic('warn', 'playback', 'subtitle-track-unavailable', Object.assign(
+                    requestDiagnosticDetails(ownerRequest), {reason: reason, subtitleStreamIndex: stream.Index,
+                        subtitleMapping: outputOrdinal == null ? 'container-index' : 'output-order',
+                        outputOrdinal: outputOrdinal, expectedTrackCount: outputCount,
+                        observedTrackCount: lastNativeTrackCount, tracks: lastTrackTable}));
+            }
+            var bounded = new Promise(function (resolve) {
+                deadline = setTimeout(function () {
+                    unavailable('track-list-deadline');
+                    live = false;
+                    resolve();
+                }, 1500);
+            });
+            function read() {
+                if (!current()) return Promise.resolve();
+                return getProperty('track-list').then(function (tracks) {
+                    if (!current()) return;
+                    var nativeTracks = Array.isArray(tracks) ? tracks.filter(function (track) {
+                        return track.type === 'sub' && track.external === false &&
+                            Number.isInteger(track.id) && track.id > 0 &&
+                            Number.isInteger(track['ff-index']) && track['ff-index'] >= 0;
+                    }) : [];
+                    lastNativeTrackCount = nativeTracks.length;
+                    lastTrackTable = Array.isArray(tracks) ? tracks.filter(function (track) { return track.type === 'sub'; }).map(function (track) {
+                        return {id: track.id, containerIndex: track['ff-index'], external: track.external,
+                            selected: track.selected, title: track.title, language: track.lang, codec: track.codec};
+                    }) : null;
+                    if (!observedTracks && nativeTracks.length) {
+                        observedTracks = true;
+                        emitClientDiagnostic('info', 'playback', 'subtitle-track-table', Object.assign(
+                            requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: stream.Index,
+                                subtitleMapping: outputOrdinal == null ? 'container-index' : 'output-order',
+                                tracks: lastTrackTable}));
+                    }
+                    // DirectStream keeps the server's existing output-order contract,
+                    // but an external track may have consumed any native ID. Do not
+                    // interpret the source Index as a remuxed output ff-index.
+                    var matches = outputOrdinal == null ? nativeTracks.filter(function (track) {
+                        return track['ff-index'] === stream.Index;
+                    }) : nativeTracks.length === outputCount && outputOrdinal >= 0 && outputOrdinal < nativeTracks.length
+                        ? [nativeTracks[outputOrdinal]] : [];
+                    if (matches.length === 1) {
+                        clearTimeout(deadline);
+                        emitClientDiagnostic('info', 'playback', 'subtitle-track-submitted', Object.assign(
+                            requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: stream.Index,
+                                subtitleTrackId: matches[0].id, subtitleMapping: outputOrdinal == null ? 'container-index' : 'output-order',
+                                association: 'submission-only'}));
+                        return enableInternalSubtitleStream(stream, matches[0].id, current).then(function () {
+                            if (!current()) return;
+                            // Observation is diagnostic-only and cannot delay selection
+                            // or mutate a newer selection after its asynchronous read.
+                            Promise.resolve().then(function () { return getProperty('track-list'); }).then(function (observed) {
+                                if (!ownsSelection()) return;
+                                var selected = Array.isArray(observed) ? observed.filter(function (track) {
+                                    return track.type === 'sub' && track.selected === true;
+                                }).map(function (track) { return {id: track.id, external: track.external,
+                                    containerIndex: track['ff-index']}; }) : [];
+                                emitClientDiagnostic('info', 'playback', 'subtitle-track-observed', Object.assign(
+                                    requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: stream.Index,
+                                        subtitleTrackId: matches[0].id, selectedTracks: selected,
+                                        selectedTarget: selected.length === 1 && selected[0].id === matches[0].id && selected[0].external === false}));
+                            }, function () {});
+                        });
+                    }
+                    if (matches.length > 1) { unavailable('ambiguous-container-index'); return; }
+                    // loadfile acceptance precedes file-loaded. A bounded retry
+                    // avoids trusting the previous file's positional track IDs.
+                    return new Promise(function (resolve) { setTimeout(resolve, 100); }).then(read);
+                }, function () { unavailable('track-list-unavailable'); });
+            }
+            // Never leave the previous subtitle showing while a new mapping is
+            // unresolved. A stale result must not undo Off or another selection.
+            var work = setProperty({sid: 'no'}).then(read);
+            return Promise.race([bounded, work]).catch(function () {
+                unavailable('subtitle-selection-failed');
+            }).then(function () {
+                live = false;
+                clearTimeout(deadline);
+            });
+        }
+
+        function setSubtitleStream(index, ownerRequest, mediaReady) {
             ownerRequest = ownerRequest || activePlayRequest;
             var selectionSequence = ++subtitleSelectionSequence;
             var ownerMediaSource = mediaSource;
             var ownerAttempt = ownerRequest && ownerRequest.routeAttempt;
             var ownerGeneration = ownerRequest && ownerRequest.nativeGenerationId;
+            if (!mediaReady && ownerRequest && ownerRequest.subtitleReady &&
+                ownerRequest.subtitleReady.attempt === ownerAttempt && ownerRequest.subtitleReady.generation === ownerGeneration) {
+                mediaReady = ownerRequest.subtitleReady.promise;
+            }
             function ownsSelection() {
                 return isCurrentPlayRequest(ownerRequest) && !ownerRequest.attemptFailed &&
                     !ownerRequest.startupExpired && !ownerRequest.terminalError &&
@@ -2285,12 +2437,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
             if (!ownsSelection()) return Promise.resolve();
             setProperty({ "sub-delay": 0 })
+            emitClientDiagnostic('info', 'playback', 'subtitle-selection-requested', Object.assign(
+                requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: index,
+                    subtitleMapping: ownerRequest.subtitleUsesContainerIndex ? 'container-index' :
+                        ownerRequest.subtitleUsesOutputOrder ? 'output-order' : 'legacy'}));
             if (index === null || index < 0) {
                 return setProperty({ "sid": "no" });
             } else {
                 var subIndex = 0;
                 var i, length, stream;
                 var streams = mediaSource.MediaStreams || [];
+                var outputStreams = streams.filter(function (entry) {
+                    return entry.Type === 'Subtitle' && entry.DeliveryMethod !== 'VideoSideData' &&
+                        entry.IsExternal !== true && (entry.IsExternal === false || entry.DeliveryMethod !== 'External');
+                });
                 for (i = 0, length = streams.length; i < length; i++) {
                     stream = streams[i];
                     if (stream.Type == 'Subtitle') {
@@ -2310,6 +2470,14 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                                      }
                                  }
                                });
+                               return Promise.resolve();
+                            }
+                            if (ownerRequest.subtitleUsesContainerIndex && stream.DeliveryMethod !== 'VideoSideData') {
+                                return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady);
+                            }
+                            if (ownerRequest.subtitleUsesOutputOrder && stream.DeliveryMethod !== 'VideoSideData' && stream.Codec !== 'dvb_teletext') {
+                                return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady,
+                                    outputStreams.indexOf(stream), outputStreams.length);
                             }
                             return enableInternalSubtitleStream(stream, subIndex, ownsSelection);
                         }

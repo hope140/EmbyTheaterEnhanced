@@ -156,9 +156,9 @@ test('cold DirectUrl resolve emits safe timing for every completed CD2 phase', a
         assert.equal(transportFactoryCalls, 1);
         assert.deepEqual(timing, [
             'resolve-start', 'client-ready', 'find-file-start', 'find-file-end',
-            'download-url-start', 'download-url-end', 'resolve-hit'
+            'download-url-start', 'download-url-end', 'download-url-result', 'resolve-hit'
         ]);
-        for (const event of events) {
+        for (const event of events.filter(e => e.event !== 'download-url-result')) {
             assert.equal(Number.isSafeInteger(event.details.elapsedMs), true);
             assert.doesNotMatch(JSON.stringify(event), /private-file|cdn\.example\.test|token/i);
         }
@@ -199,7 +199,7 @@ test('same-origin retry emits download timing while reusing the ready client and
             'waitForReady', 'FindFileByPath', 'GetDownloadUrlPath', 'GetDownloadUrlPath'
         ]);
         assert.deepEqual(sameOriginTiming, [
-            'resolve-start', 'download-url-start', 'download-url-end', 'resolve-hit'
+            'resolve-start', 'download-url-start', 'download-url-end', 'download-url-result', 'resolve-hit'
         ]);
     } finally {
         service.close();
@@ -288,10 +288,10 @@ test('GetDownloadUrlPath timeouts preserve DirectUrl and same-origin phase telem
         assert.equal(sameOrigin.reason, 'timeout');
         assert.deepEqual(directTiming, [
             'resolve-start', 'client-ready', 'find-file-start', 'find-file-end',
-            'download-url-start', 'download-url-end', 'resolve-miss'
+            'download-url-start', 'download-url-end', 'download-url-result', 'resolve-miss'
         ]);
         assert.deepEqual(sameOriginTiming, [
-            'resolve-start', 'download-url-start', 'download-url-end', 'resolve-miss'
+            'resolve-start', 'download-url-start', 'download-url-end', 'download-url-result', 'resolve-miss'
         ]);
         assert.equal(transport.calls.filter(call => call.method === 'FindFileByPath').length, 1);
     } finally {
@@ -654,4 +654,78 @@ test('fake HTTP fixture covers 200, Range 206, 404, 500, redirect and timeout', 
     } finally {
         await new Promise(resolve => server.close(resolve));
     }
+});
+
+test('mode RPC diagnostics retain request/host/timing/expiry but not URL credentials', async t => {
+    const events = [];
+    const transport = fakeTransport({GetDownloadUrlPath(_call, cb) {
+        cb(null, {directUrl: 'https://cdn.example.test/PRIVATE_PATH?signature=PRIVATE_SIGN', expiresIn: '60', userAgent: 'PRIVATE_AGENT'});
+    }});
+    const service = cd2.createService({config: readyConfig(), transportFactory: () => transport, now: () => 10000,
+        onDiagnostic: record => events.push(record)});
+    try {
+        const response = await service.resolve({requestId: 'diagnostic-rpc', ruleId: 'test-rule', mode: 'direct', candidates: ['X:\\Media\\x.mkv']});
+        assert.equal(response.status, 'hit');
+        const d = events.find(e => e.event === 'download-url-result').details;
+        assert.equal(d.requestId, 'diagnostic-rpc'); assert.equal(d.inputHost, 'cdn.example.test');
+        assert.equal(d.rpcStartedAt, 10000); assert.equal(d.rpcReceivedAt, 10000);
+        assert.equal(d.expiresAt, 70000); assert.equal(d.remainingMs, 60000);
+        assert.equal(d.expiryBasis, 'client-rpc-start'); assert.equal(d.serverIssuedAt, null);
+        assert.equal(d.cacheHit, 'unknown'); assert.equal(d.expiryState, 'valid');
+        assert.equal(d.referenceScope, 'cd2-service'); assert.equal(d.loadAttempt, undefined);
+        assert.equal(d.userAgentState, 'accepted');
+        assert(!JSON.stringify(events).includes('PRIVATE'));
+        const safe = require('../src/electronapp/enhanced/diagnostics').sanitizeRecord(events.find(e => e.event === 'download-url-result'));
+        assert(JSON.stringify(safe).includes('cdn.example.test'));
+        const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-reply-log-'));
+        t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+        const logger = require('../src/electronapp/enhanced/diagnostics').createLogger(directory);
+        for (const event of events) assert.equal(await logger(event), true);
+        await logger.flush();
+        const persisted = fs.readFileSync(logger.getPaths().file, 'utf8');
+        assert(persisted.includes('cdn.example.test'));
+        assert(persisted.includes('diagnostic-rpc'));
+        assert(persisted.includes('expiresInSeconds'));
+        assert(!persisted.includes('PRIVATE'));
+
+        for (const e of events.filter(e => ['download-url-start','download-url-end','find-file-start','find-file-end'].includes(e.event))) {
+            assert.equal(e.details.requestId, 'diagnostic-rpc');
+        }
+    } finally {service.close();}
+});
+
+test('RPC observations classify absent/invalid expiry and remain fail-open', async () => {
+    for (const [expiry, state] of [[undefined, 'absent'], ['bad', 'invalid']]) {
+        const events = [];
+        const transport = fakeTransport({GetDownloadUrlPath(_call, cb) {cb(null, {directUrl: 'https://cdn.example.test/file', expiresIn: expiry});}});
+        const service = cd2.createService({config: readyConfig(), transportFactory: () => transport, onDiagnostic: v => events.push(v)});
+        await service.resolve({requestId: state, mode: 'direct', candidates: ['X:\\Media\\x.mkv']});
+        const d = events.find(e => e.event === 'download-url-result').details;
+        assert.equal(d.expiryState, state); assert.equal(d.remainingMs, null); assert.equal(d.expiresAt, null);
+        service.close();
+    }
+    const transport = fakeTransport({GetDownloadUrlPath(_call, cb) {cb(null, {directUrl: 'https://cdn.example.test/file'});}});
+    const service = cd2.createService({config: readyConfig(), transportFactory: () => transport, onDiagnostic() {throw Error('logger');}});
+    assert.equal((await service.resolve({requestId: 'sink-failure', mode: 'direct', candidates: ['X:\\Media\\x.mkv']})).status, 'hit');
+    service.close();
+});
+
+test('reply observations distinguish existing expiry reacquisition and same-origin endpoints', async () => {
+    const events = []; let calls = 0;
+    const transport = fakeTransport({GetDownloadUrlPath(call, cb) {
+        calls++;
+        cb(null, call.request.get_direct_url ? {directUrl: 'https://cdn.example.test/file', expiresIn: calls === 1 ? '1' : '60'} :
+            {downloadUrlPath: '/static/PRIVATE_PATH?sign=PRIVATE_SIGN'});
+    }});
+    const service = cd2.createService({config: readyConfig({totalBudgetMs: 1200}), transportFactory: () => transport, onDiagnostic: e => events.push(e)});
+    try {
+        assert.equal((await service.resolve({requestId: 'retry', mode: 'direct', candidates: ['X:\\Media\\x.mkv']})).status, 'hit');
+        assert.deepEqual(events.filter(e => e.event === 'download-url-result').map(e => e.details.rpcAttempt), [1, 2]);
+        await service.resolve({requestId: 'same-origin', mode: 'same-origin', candidates: ['X:\\Media\\x.mkv']});
+        const result = events.find(e => e.event === 'download-url-result' && e.details.requestId === 'same-origin');
+        assert.equal(result.details.inputHost, '127.0.0.1');
+        assert.equal(result.details.inputPort, 19798);
+        assert(!JSON.stringify(events).includes('PRIVATE'));
+    } finally {service.close();}
 });

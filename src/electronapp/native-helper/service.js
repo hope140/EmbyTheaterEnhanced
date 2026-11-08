@@ -42,6 +42,7 @@ const SET_PROPERTIES = new Set([
 ]);
 const GET_PROPERTIES = new Set([
   ...OBSERVED_PROPERTIES,
+  'track-list',
   'audio-codec-name', 'audio-out-params', 'audio-bitrate', 'current-ao', 'audio-out-detected-device',
   'video-out-params', 'video-codec', 'mpv-version', 'libmpv-version', 'mpv-build-date',
   'video-bitrate', 'current-vo', 'hwdec-current', 'display-names', 'display-fps',
@@ -795,6 +796,11 @@ function createService(options) {
     if (operation === 'get-property') {
       requireGeneration(active, payload);
       const name = validatePropertyName(payload.name, GET_PROPERTIES);
+      // loadfile acknowledgement does not mean its tracks are ready. Do not
+      // expose the preceding file's table under the newly allocated generation.
+      if (name === 'track-list' && active.state.fileLoaded !== true) {
+        return {status: 'ok', value: null};
+      }
       return {status: 'ok', value: await active.getProperty(name, 2000)};
     }
     if (operation === 'command') {

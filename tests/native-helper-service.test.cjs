@@ -1257,3 +1257,26 @@ test('renderer destroy records the verified retired owner and cause without adop
   assert.equal(logs.at(-1).details.requestId, 'UNAVAILABLE');
   await service.destroy();
 });
+
+test('track table is unavailable until current generation file-loaded, stale queries rejected', async () => {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass);
+  const created = await service.call('create');
+  const {generationId} = await service.call('begin-generation', {label: 'track-fixture'}, created.endpointId);
+  const active = ClientClass.clients[0];
+  active.state = {fileLoaded: false};
+  let reads = 0;
+  const table = [{type:'sub', id:7, external:false, 'ff-index':3}];
+  active.getProperty = async name => { assert.equal(name,'track-list'); reads++; return table; };
+  const query = id => service.call('get-property', {name:'track-list', generationId:id}, created.endpointId);
+  assert.equal((await query(generationId)).value, null);
+  assert.equal(reads, 0, 'previous file table is not queried');
+  active.state.fileLoaded = true;
+  assert.deepEqual((await query(generationId)).value, table);
+  await assert.rejects(query(generationId-1), /generation/);
+  const next = await service.call('begin-generation', {label: 'next'}, created.endpointId);
+  active.state.fileLoaded = false;
+  assert.equal((await query(next.generationId)).value,null);
+  assert.equal(reads,1);
+  await service.destroy();
+});

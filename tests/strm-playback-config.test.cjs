@@ -182,3 +182,40 @@ test('trusted save and independent Token mutations advance saved state, never th
     await call('PLAYBACK_END', {lease: b.lease});
     const c = await call('PLAYBACK_BEGIN', {requestId: 'play-c'}); assert.equal(c.config.cd2.tokenConfigured, false); assert.equal(services[2].runtime.token, '');
 });
+
+test('config begin emits one bounded outcome and elapsed time, never exception text or leases', async () => {
+    for (const [reason, invoke] of [
+        ['ready', () => Promise.resolve({status: 'ok', lease: 'PRIVATE_LEASE', config: {version: 1, cd2: {}, rules: []}})],
+        ['invalid-response', () => Promise.resolve({status: 'bad', error: 'PRIVATE_ERROR'})],
+        ['ipc-error', () => Promise.reject(Error('PRIVATE_ERROR token=PRIVATE_TOKEN'))],
+        ['timeout', () => new Promise(() => {})]
+    ]) {
+        const events = [];
+        const snapshot = await client.begin({ipc: {invoke}, requestId: 'diagnostic', timeoutMs: 5, onDiagnostic: v => events.push(v)});
+        if (snapshot) snapshot.release();
+        assert.equal(events.length, 1);
+        assert.equal(events[0].reason, reason);
+        assert(events[0].elapsedMs >= 0);
+        assert.equal(events[0].timeoutMs, 5);
+        assert(!JSON.stringify(events).includes('PRIVATE'));
+    }
+    const events = [], controller = new AbortController();
+    const result = client.begin({ipc: {invoke: () => new Promise(() => {})}, signal: controller.signal, onDiagnostic: v => events.push(v)});
+    controller.abort();
+    assert.equal(await result, null);
+    assert.equal(events[0].reason, 'aborted');
+    assert.equal(events.length, 1);
+});
+
+test('config observation failure cannot fail acquisition or change the default timeout', async () => {
+    const ipc = {invoke: () => Promise.resolve({status: 'ok', lease: 'valid', config: {version: 1, cd2: {}, rules: []}})};
+    for (const sink of [() => {throw Error('logger');}, () => Promise.reject(Error('logger'))]) {
+        const snapshot = await client.begin({ipc, onDiagnostic: sink});
+        assert(snapshot);
+        snapshot.release();
+    }
+    let event;
+    const snapshot = await client.begin({ipc, onDiagnostic: v => {event = v;}});
+    assert.equal(event.timeoutMs, 1000);
+    snapshot.release();
+});

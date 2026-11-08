@@ -67,7 +67,19 @@
         var settings = options || {};
         var ipc = settings.ipc || (typeof window !== 'undefined' ? window.ipc : null);
         var signal = settings.signal, lease = null, released = false;
-        if (!ipc || typeof ipc.invoke !== 'function') return Promise.resolve(null);
+        var diagnosticStartedAt = Date.now(), diagnosticFinished = false;
+        var timeoutMs = Number(settings.timeoutMs) > 0 ? Number(settings.timeoutMs) : 1000;
+        function observe(reason) {
+            if (diagnosticFinished) return;
+            diagnosticFinished = true;
+            try {
+                if (typeof settings.onDiagnostic === 'function') {
+                    var output = settings.onDiagnostic({reason: reason, elapsedMs: Math.max(0, Date.now() - diagnosticStartedAt), timeoutMs: timeoutMs});
+                    if (output && typeof output.catch === 'function') output.catch(function () {});
+                }
+            } catch (_) { /* Diagnostics cannot change config acquisition. */ }
+        }
+        if (!ipc || typeof ipc.invoke !== 'function') {observe('ipc-unavailable'); return Promise.resolve(null);}
         var stop, timer;
         var stopped = new Promise(function (resolve) {stop = resolve;});
         function end(value) {
@@ -77,13 +89,14 @@
         function release() {
             if (released) return;
             released = true;
+            observe(signal && signal.aborted ? 'aborted' : 'released');
             stop(null);
             if (signal) signal.removeEventListener('abort', release);
             if (lease) end(lease);
         }
-        if (signal && signal.aborted) return Promise.resolve(null);
+        if (signal && signal.aborted) {observe('aborted'); return Promise.resolve(null);}
         if (signal) signal.addEventListener('abort', release, {once: true});
-        timer = setTimeout(release, Number(settings.timeoutMs) > 0 ? Number(settings.timeoutMs) : 1000);
+        timer = setTimeout(function () {observe('timeout'); release();}, timeoutMs);
         var request = Promise.resolve().then(function () {
             if (released) return null;
             return ipc.invoke('enhanced-strm-playback-begin', {requestId: settings.requestId});
@@ -93,14 +106,15 @@
                 if (lease) end(lease);
                 return null;
             }
-            if (!value || value.status !== 'ok' || typeof lease !== 'string' || !validConfig(value.config)) {release(); return null;}
+            if (!value || value.status !== 'ok' || typeof lease !== 'string' || !validConfig(value.config)) {observe('invalid-response'); release(); return null;}
+            observe('ready');
             return {config: value.config, lease: lease, revision: value.revision, release: release,
                 started: function () {
                     if (released) return;
                     try {Promise.resolve(ipc.invoke('enhanced-strm-playback-started', {lease: lease})).catch(function () {});}
                     catch (_) { /* Status reporting cannot fail playback. */ }
                 }};
-        }, function () {release(); return null;});
+        }, function () {observe('ipc-error'); release(); return null;});
         return Promise.race([request, stopped]).finally(function () {clearTimeout(timer);});
     }
 

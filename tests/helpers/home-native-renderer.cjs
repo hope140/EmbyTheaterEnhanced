@@ -10,17 +10,19 @@ function augment(root,input){
  for(const [id,method]of [['modules/virtual-scroller/virtual-scroller.js','patchVirtualScroller'],['modules/emby-elements/emby-itemscontainer/emby-itemscontainer.js','patchItemsContainer']])result[id]=home[method](search.patchBrowseGuard(movie[method](result[id])));
  result.nativeBabel=fs.readFileSync(path.join(root,'vendor/web-snapshot/www/modules/babelhelpers.js'),'utf8');
  result.nativeCss=['modules/sections.css','modules/layout.css','modules/cardbuilder/card.css','modules/indicators/indicators.css','modules/emby-elements/emby-progressbar/emby-progressbar.css','modules/themes/dark/theme.css','modules/virtual-scroller/virtual-scroller.css','modules/emby-elements/emby-itemscontainer/emby-itemscontainer.css'].map(file=>fs.readFileSync(path.join(root,'vendor/web-snapshot/www',file),'utf8')).join('\n');
+ for(const id of ['modules/focusmanager.js','modules/homesections/homesections.js'])result[id]=fs.readFileSync(path.join(root,'vendor/web-snapshot/www',id),'utf8');
  result.nativeSetup='('+install.toString()+')';return result;
 }
-function install({modules,load,api,connection,input}){
+function install({modules,load,api,connection,input,settings={}}){
  document.documentElement.classList.add('layout-tv');
  (0,eval)(input.nativeBabel);window.require=()=>Promise.resolve([]);
  const set=(id,value)=>modules.set(id,{default:value});
  set('modules/browser.js',{});set('modules/layoutmanager.js',{tv:true});
  set('modules/common/globalize.js',{getCurrentLocale:()=> 'zh-CN',getCurrentLocales:()=>['zh-CN'],translate:s=>s});
  set('modules/emby-apiclient/connectionmanager.js',{...connection,getApiClient:()=>api,deviceId:()=> 'synthetic-device'});
- set('modules/focusmanager.js',{focus:e=>e?.focus({preventScroll:true}),autoFocus(){},containsActiveElement:e=>e.contains(document.activeElement)});
- set('modules/shortcuts.js',{on(){},off(){},onClick(){},getShortcutAttributes:i=>[{name:'data-id',value:i.Id}],getShortcutAttributesHtml:i=>' data-id="'+i.Id+'"'});
+ if(settings.realFocus)load('modules/focusmanager.js');
+ else set('modules/focusmanager.js',{focus:e=>e?.focus({preventScroll:true}),autoFocus(){},containsActiveElement:e=>e.contains(document.activeElement)});
+ set('modules/shortcuts.js',{on(){},off(){},onClick(){},getItemElementFromChildNode(child,main,container){const selector=container?.getItemSelector()||'.card,.listItem,.epgRow,.dataGridItem';return child.closest(main?selector:'[data-type],'+selector);},getShortcutAttributes:i=>[{name:'data-id',value:i.Id}],getShortcutAttributesHtml:i=>' data-id="'+i.Id+'"'});
  set('modules/common/inputmanager.js',{trigger:()=>false});set('modules/common/input/api.js',{});
  set('modules/common/itemhelper.js',{getDisplayName:i=>i.Name||'',getItemTypeName:i=>i.Type,getContentTypeName:i=>i.Type,canMarkPlayed:()=>false,canRate:()=>false});
  set('modules/common/playback/playbackmanager.js',{canPlay:()=>true,currentItem:()=>null});
