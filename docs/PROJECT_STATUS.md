@@ -1,5 +1,13 @@
 # 项目状态
 
+## 2026-11-08 — v0.4.19 测试版发行准备
+
+以完整验收提交 45717026 为功能基线，保留首页刷新归属、legacy 返回恢复、字幕原始容器及 DirectStream 轨身份映射和配置/CD2 诊断。定向用户验收获通过反馈，已授权测试版发行；该反馈不扩展为所有媒体、设备或长期播放问题均已解决。
+
+本提交仅将产品及锁文件版本统一为 0.4.19，并更新发行说明和记录，不修改生产代码、依赖或既有构建门禁。验收基线 Windows 完整集合 2752 通过、0 失败、3 跳过，公共集合 2619 通过、0 失败、3 跳过，材料自测 136 通过；真实冻结首页组件 16/16、稳定性 3/3，固定产品 DLL 两条字幕路线各三种排列、六次循环通过，VerifyOnly 与安装器解包逐文件比对通过。新版本需绑定本次准确源码提交重新运行 CI 和发行构建；这些基线结果不能直接替代新包证据。
+
+发行保持 Pre-release 测试渠道，不提升正式 Latest。历史偶发提前停止根因仍未知，不新增播放中自动恢复；安装生命周期、所有真实服务器组合及可见硬件表现不由合成回归证明。
+
 ## 2026-11-08 — DirectStream subtitle ID reconciliation
 
 The acceptance candidate left native/server DirectStream on positional mpv IDs. An external subtitle discovered before embedded tracks can consume ID 1, so source subtitle order no longer equals native ID. DirectStream now resolves the existing output subtitle order through the current generation's non-external track table. It excludes real external metadata rows, retains extracted internal streams, and requires matching embedded counts. This does not infer original source ff-index identity across remux. Original-container mapping remains exact; Transcode, generated captions, and the legacy teletext continuation remain unchanged. Default lookup waits for media readiness without blocking unpause; cancellation and route changes invalidate old results.
