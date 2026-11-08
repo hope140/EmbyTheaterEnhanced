@@ -290,7 +290,7 @@ class NativeHelperClient {
   }
 
   diagnose(name, generationId, disposition, details = {}) {
-    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file', 'media-network'].includes(name)) return;
+    if (!['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file', 'media-network', 'mpv-engine', 'operation-error', 'startup-property-result'].includes(name)) return;
     try {
       const pending = this.onDiagnostic({name, generationId, disposition, currentGenerationId: this.currentGenerationId, ...details});
       if (pending && typeof pending.catch === 'function') pending.catch(() => {});
@@ -313,6 +313,11 @@ class NativeHelperClient {
       if (!projected) return; // Before timeline, callbacks, IPC or persistent logs.
       message = {type: 'lifecycle', scope: 'helper', name: 'media-network',
         helperInstanceId: message.helperInstanceId, detail: projected};
+    }
+    if (message.name === 'mpv-engine') {
+      const clean = require('../enhanced/engine-diagnostics').projectEngineSnapshot(message.detail);
+      if (!clean || message.type !== 'lifecycle' || message.scope !== 'helper') return;
+      message = {...message, detail: clean};
     }
     const endDetails = message.name === 'end-file' && message.value ? {
       endReason: message.value.reason, mpvErrorCode: message.value.error
@@ -356,6 +361,7 @@ class NativeHelperClient {
       this.recordTimeline({ ...base, action, reason: message.reason || null, detail: message.detail || null });
       if (message.name === 'unattributed-native-event') this.diagnose(message.rawEventName, null, 'DROP_UNATTRIBUTED');
       if (message.name === 'ready') { this.readyReceived = true; this.handshake = message.detail || null; }
+      if (message.name === 'mpv-engine') this.diagnose('mpv-engine', null, 'ACCEPT_HELPER_GLOBAL', {engine: message.detail});
       if (message.name === 'media-network') this.diagnose('media-network', null, 'ACCEPT_HELPER_GLOBAL', {network: message.detail});
       return;
     }
@@ -377,9 +383,11 @@ class NativeHelperClient {
         this.operationErrors.push(operationError);
         if (this.operationErrors.length > 64) this.operationErrors.shift();
         this.recordTimeline({ ...base, action: 'ACCEPT_OPERATION_ERROR', operation: message.operation, property: message.property || null, errorCode: message.errorCode });
+        this.diagnose('operation-error', message.generationId, 'ACCEPT', operationError);
         try { this.onEvent(message); } catch (_) { /* consumer errors cannot corrupt transport state */ }
         return;
       }
+      if (message.name === 'startup-property-result') this.diagnose(message.name, message.generationId, 'ACCEPT', {result: message.value});
       this.recordTimeline({ ...base, action: 'ACCEPT', value: message.value });
       this.diagnose(message.name, message.generationId, 'ACCEPT', endDetails);
       if (message.name === 'core-idle' && message.value === false && !this.state.playing) this.diagnose('core-playing', message.generationId, 'ACCEPT');
@@ -393,14 +401,14 @@ class NativeHelperClient {
     }
   }
 
-  beginGeneration(label, observedProperties = [], diagnosticIdentity) {
+  beginGeneration(label, observedProperties = [], diagnosticIdentity, diagnosticMode = 'normal') {
     if (this.currentGenerationId !== null) this.retireGeneration('superseded');
     this.currentGenerationId = this.allocateGenerationId();
     this.currentLabel = label;
     this.state = { status: 'loading', path: null, playing: false, fileLoaded: false };
     this.recordTimeline({ atParentMicros: monotonicMicros(), helperInstanceId: this.helperInstanceId, generationId: this.currentGenerationId, requestId: null, rawEventId: null, rawEventName: null, mediaIdentity: null, name: 'generation-begin', currentAuthoritativeGeneration: this.currentGenerationId, action: 'BEGIN_GENERATION', label });
     this.diagnose('generation-begin', this.currentGenerationId, 'BEGIN_GENERATION', {label, diagnosticIdentity});
-    this.command('activate-generation', { properties: observedProperties }, this.currentGenerationId);
+    this.command('activate-generation', { properties: observedProperties, diagnosticMode: diagnosticMode === 'detailed' ? 'detailed' : 'normal' }, this.currentGenerationId);
     return this.currentGenerationId;
   }
 

@@ -1,8 +1,9 @@
-define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-settings', 'css!./diagnostics'], function (loading, BaseView) {
+define(['loading', 'baseView', 'emby-button', 'emby-select', 'emby-scroller', 'css!./enhanced-settings', 'css!./diagnostics'], function (loading, BaseView) {
     'use strict';
 
     var CHANNELS = {
         status: 'enhanced-diagnostics-status',
+        setMode: 'enhanced-diagnostics-set-mode',
         export: 'enhanced-diagnostics-export',
         open: 'enhanced-diagnostics-open-directory',
         clear: 'enhanced-diagnostics-clear'
@@ -29,6 +30,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
     function DiagnosticsView(view) {
         BaseView.apply(this, arguments);
         this.view = view;
+        view.querySelector('.btnSaveDiagnosticMode').addEventListener('click', this.saveMode.bind(this));
         view.querySelector('.btnExportDiagnostics').addEventListener('click', this.exportDiagnostics.bind(this));
         view.querySelector('.btnOpenDiagnostics').addEventListener('click', this.openDirectory.bind(this));
         view.querySelector('.btnClearDiagnostics').addEventListener('click', this.clearLogs.bind(this));
@@ -44,12 +46,27 @@ define(['loading', 'baseView', 'emby-button', 'emby-scroller', 'css!./enhanced-s
             view.querySelector('.diagnosticsEnabled').textContent = response.enabled === true ? '已启用' : '不可用';
             view.querySelector('.diagnosticsDirectory').textContent = response.logDirectory || '%APPDATA%\\EmbyTheaterEnhanced\\logs';
             view.querySelector('.diagnosticsSize').textContent = formatBytes(response.currentBytes);
+            view.querySelector('.selectDiagnosticMode').value = response.diagnosticMode === 'detailed' ? 'detailed' : 'normal';
+            view.querySelector('.selectDiagnosticMode').disabled = false;
+            view.querySelector('.btnSaveDiagnosticMode').disabled = false;
             setStatus(view.querySelector('.diagnosticsState'), '', false);
         }).catch(function () {
             setStatus(view.querySelector('.diagnosticsState'), '无法读取日志状态，请重启应用后重试。', true);
         }).then(function () {
             loading.hide();
         });
+    };
+
+    DiagnosticsView.prototype.saveMode = function () {
+        var view = this.view, button = view.querySelector('.btnSaveDiagnosticMode');
+        button.disabled = true;
+        view.querySelector('.selectDiagnosticMode').disabled = true;
+        return request(CHANNELS.setMode, {mode: view.querySelector('.selectDiagnosticMode').value}).then(function (response) {
+            if (!response || response.status !== 'saved') throw new Error('save-failed');
+            setStatus(view.querySelector('.diagnosticsState'), '已保存，将对后续播放生效。普通模式也会保留必要错误。', false);
+        }).catch(function () {
+            setStatus(view.querySelector('.diagnosticsState'), '保存失败，诊断级别未更改，请重试。', true);
+        }).then(function () { button.disabled = false; view.querySelector('.selectDiagnosticMode').disabled = false; });
     };
 
     DiagnosticsView.prototype.exportDiagnostics = function () {

@@ -165,6 +165,7 @@ function createService(options) {
   let destroyPromise = null;
   const pendingClientDestructions = new Set();
   let activeEndpointId = null;
+  let diagnosticSelection = null;
   let generationEpoch = 0;
   let rendererEpoch = 0;
   let presentationEpoch = 0;
@@ -728,7 +729,13 @@ function createService(options) {
       requireEndpoint(endpointId);
       if (beginEpoch !== generationEpoch || active !== client) throw new Error('generation-superseded');
       const label = typeof payload.label === 'string' ? payload.label.slice(0, 128) : 'play';
-      const generationId = active.beginGeneration(label, [...observed], payload.diagnosticIdentity);
+      if (!diagnosticSelection || diagnosticSelection.endpointId !== endpointId || diagnosticSelection.label !== label) {
+        let diagnosticMode = 'normal';
+        try { if (typeof settings.getDiagnosticMode === 'function' && settings.getDiagnosticMode() === 'detailed') diagnosticMode = 'detailed'; }
+        catch (_) { /* Optional preferences cannot fail a playback generation. */ }
+        diagnosticSelection = {endpointId, label, mode: diagnosticMode};
+      }
+      const generationId = active.beginGeneration(label, [...observed], payload.diagnosticIdentity, diagnosticSelection.mode);
       const record = presentation;
       if (ownsPresentation(record) && record.token === payload.presentationToken && validToken(record.holdId)) {
         record.targetGeneration = generationId;

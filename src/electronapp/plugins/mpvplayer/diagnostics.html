@@ -4,6 +4,20 @@
             <p>查看日志状态、导出诊断报告或打开日志目录。</p>
         </header>
 
+        <section class="ete-settings-section verticalSection ete-diagnostics-panel" aria-labelledby="ete-diagnostics-mode-title">
+            <div class="ete-settings-section-header"><h2 id="ete-diagnostics-mode-title" class="sectionTitle">诊断级别</h2></div>
+            <div class="ete-settings-card">
+                <div class="selectContainer">
+                    <select is="emby-select" class="selectDiagnosticMode" label="日志级别" aria-describedby="diagnosticModeDescription" disabled>
+                        <option value="normal">普通</option><option value="detailed">详细</option>
+                    </select>
+                </div>
+                <p id="diagnosticModeDescription" class="fieldDescription">普通模式保留必要错误。详细模式另保留每次播放启动时最多 15 秒的有界上下文。保存后对后续播放生效，不中断当前播放。</p>
+                <p class="fieldDescription">日志可能包含服务器地址、媒体文件路径和错误说明；令牌、Cookie、Authorization 和完整远程地址会移除。导出分享前请检查内容。</p>
+                <button type="button" is="emby-button" class="raised button-submit ete-settings-button ete-settings-button--primary btnSaveDiagnosticMode" disabled>保存诊断级别</button>
+            </div>
+        </section>
+
         <section class="ete-settings-section verticalSection ete-diagnostics-panel" aria-labelledby="ete-diagnostics-status-title">
             <div class="ete-settings-section-header">
                 <div><h2 id="ete-diagnostics-status-title" class="sectionTitle">状态</h2></div>

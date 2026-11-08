@@ -107,7 +107,8 @@ function makeClientClass(options) {
       if (!settings.deferredStart) return Promise.resolve(this);
       return new Promise((resolve, reject) => { this.resolveStart = resolve; this.rejectStart = reject; });
     }
-    beginGeneration(label, observedProperties, diagnosticIdentity) {
+    beginGeneration(label, observedProperties, diagnosticIdentity, diagnosticMode) {
+      this.diagnosticMode = diagnosticMode;
       this.currentGenerationId = ++nextGeneration;
       if (typeof this.options.onDiagnostic === 'function') {
         this.options.onDiagnostic({name: 'generation-begin', generationId: this.currentGenerationId,
@@ -184,6 +185,7 @@ function makeService(ClientClass, options) {
     getWebContents: () => main.webContents,
     execFile: placementExecutor,
     logger: typeof settings.logger === 'function' ? settings.logger : record => logs.push(record),
+    getDiagnosticMode: settings.getDiagnosticMode,
     runtimeRoot: 'C:\\fixture-runtime'
   });
   return {main, service, logs, placementExecutor};
@@ -1278,5 +1280,30 @@ test('track table is unavailable until current generation file-loaded, stale que
   active.state.fileLoaded = false;
   assert.equal((await query(next.generationId)).value,null);
   assert.equal(reads,1);
+  await service.destroy();
+});
+
+
+test('diagnostic mode is sampled at each begin-generation without touching the active player', async () => {
+  const ClientClass = makeClientClass(); let mode = 'normal';
+  const {service} = makeService(ClientClass, {getDiagnosticMode: () => mode});
+  const {endpointId} = await service.call('create');
+  await service.call('begin-generation', {label:'play-1-1'}, endpointId);
+  const active = ClientClass.clients[0]; assert.equal(active.diagnosticMode, 'normal');
+  mode = 'detailed'; assert.equal(active.diagnosticMode, 'normal');
+  await service.call('begin-generation', {label:'play-1-1'}, endpointId); assert.equal(active.diagnosticMode, 'normal', 'same Play route replacement keeps its sampled mode');
+  await service.call('begin-generation', {label:'play-2-2'}, endpointId); assert.equal(active.diagnosticMode, 'detailed');
+  mode = 'normal'; assert.equal(active.diagnosticMode, 'detailed');
+  await service.call('begin-generation', {label:'play-3-3'}, endpointId); assert.equal(active.diagnosticMode, 'normal');
+  await service.destroy();
+});
+
+
+test('a diagnostic preference read failure cannot fail playback generation creation', async () => {
+  const ClientClass = makeClientClass();
+  const {service} = makeService(ClientClass, {getDiagnosticMode() {throw Error('settings-unavailable');}});
+  const {endpointId} = await service.call('create');
+  const result = await service.call('begin-generation', {label:'play-1-1'}, endpointId);
+  assert.ok(result.generationId > 0); assert.equal(ClientClass.clients[0].diagnosticMode, 'normal');
   await service.destroy();
 });

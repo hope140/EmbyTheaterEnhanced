@@ -306,10 +306,12 @@ public:
         size_t newBytes = pendingBytes - existingBytes + payload.size() + 4;
         if (isCritical && (frames + 1 > MAX_PENDING_FRAMES || newBytes > MAX_PENDING_BYTES)) {
             // Optional network telemetry never makes an authoritative frame fail.
-            auto diagnostic = coalesced.find("media-network-diagnostics");
-            if (diagnostic != coalesced.end()) {
-                pendingBytes -= diagnostic->second.size() + 4; coalesced.erase(diagnostic); ++coalescedDropped;
-                frames = critical.size() + coalesced.size(); newBytes = pendingBytes + payload.size() + 4;
+            for (auto diagnostic = coalesced.begin(); diagnostic != coalesced.end() &&
+                 (frames + 1 > MAX_PENDING_FRAMES || newBytes > MAX_PENDING_BYTES);) {
+                if (diagnostic->first == "media-network-diagnostics" || diagnostic->first.find("mpv-engine-diagnostics-") == 0) {
+                    pendingBytes -= diagnostic->second.size() + 4; diagnostic = coalesced.erase(diagnostic); ++coalescedDropped;
+                    frames = critical.size() + coalesced.size(); newBytes = pendingBytes + payload.size() + 4;
+                } else ++diagnostic;
             }
         }
         if (frames + 1 > MAX_PENDING_FRAMES || newBytes > MAX_PENDING_BYTES) {
@@ -442,6 +444,10 @@ struct NetworkLogProjection {
     const char* stage = "unavailable";
     const char* networkError = "unknown";
     int httpStatus = 0;
+    int streamOk = -1;
+    int64_t declaredContentSize = -2;
+    int seekable = -1;
+    const char* mpvLevel = "unknown";
 };
 bool networkLogView(const char* text, size_t maximum, std::string_view& view) {
     if (!text) return false;
@@ -472,7 +478,19 @@ bool projectNetworkLog(const char* prefix, const char* text, NetworkLogProjectio
         if (number.size() != 3 || !networkDigits(number)) return false;
         const int code = (number[0]-'0')*100+(number[1]-'0')*10+number[2]-'0';
         if (code < 100 || code > 599 || line.substr(end, 6) != " size=") return false;
-        out = {"response", "response", code >= 400 ? "http-status" : "none", code}; return true;
+        out = {"response", "response", code >= 400 ? "http-status" : "none", code};
+        out.streamOk = head.find("ok=1") != std::string_view::npos ? 1 : 0;
+        const size_t sizeAt = end + 6, sizeEnd = line.find(' ', sizeAt);
+        if (sizeEnd != std::string_view::npos) {
+            try {
+                const auto size = std::string(line.substr(sizeAt, sizeEnd-sizeAt));
+                size_t used = 0; const auto value = std::stoll(size, &used);
+                if (used == size.size() && value >= -1 && value <= 9007199254740991LL) out.declaredContentSize = value;
+            } catch (...) { }
+            if (line.substr(sizeEnd, 11) == " seekable=1") out.seekable = 1;
+            if (line.substr(sizeEnd, 11) == " seekable=0") out.seekable = 0;
+        }
+        return true;
     }
     const std::string_view http("HTTP error ");
     if (line.substr(0, http.size()) == http) {
@@ -528,6 +546,132 @@ struct NetworkLogBudget {
 };
 // END NETWORK_LOG_CORE
 
+
+// BEGIN ENGINE_DIAGNOSTIC_CORE (portable tests compile these exact bytes)
+std::string scrubEngineText(const char* raw) {
+    if (!raw) return {};
+    size_t length = 0;
+    while (length <= 65536 && raw[length]) ++length;
+    if (length > 65536) return "[oversized engine message omitted]";
+    std::string text; text.reserve(length);
+    for (size_t i=0;i<length;++i) {
+        unsigned char c=static_cast<unsigned char>(raw[i]);
+        if (c=='\\' && i+1<length && (raw[i+1]=='"'||raw[i+1]=='\'')) c=static_cast<unsigned char>(raw[++i]);
+        if ((c>=32 && c!=127)||c=='\n'||c=='\r'||c=='\t') text+=static_cast<char>(c);
+    }
+    std::string lower=text;
+    for (auto& c:lower) if(c>='A'&&c<='Z') c=static_cast<char>(c-'A'+'a');
+    auto space=[](char c){return c==' '||c=='\t'||c=='\r'||c=='\n';};
+    auto schemeChar=[](char c){return (c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='+'||c=='.'||c=='-';};
+    std::string safe;
+    for (size_t i=0;i<text.size();) {
+        bool replaced=false;
+        for (const char* key:{"proxy-authorization","authorization","set-cookie","cookie","bearer","api_key","api-key","token","password","secret","credential","signature","pickcode","sig"}) {
+            const size_t count=std::strlen(key);
+            if (lower.compare(i,count,key)!=0) continue;
+            size_t at=i+count;
+            const bool bearer=std::string_view(key)=="bearer";
+            const bool header=std::string_view(key)=="proxy-authorization"||std::string_view(key)=="authorization"||std::string_view(key)=="set-cookie"||std::string_view(key)=="cookie";
+            if (!bearer && at<text.size() && (text[at]=='"'||text[at]=='\'')) ++at;
+            if (bearer) {if(at==text.size()||!space(text[at]))continue;}
+            else {
+                while(at<text.size()&&(text[at]==' '||text[at]=='\t'))++at;
+                if(at==text.size()||(text[at]!=':'&&text[at]!='='))continue;
+                ++at;
+            }
+            while(at<text.size()&&(text[at]==' '||text[at]=='\t'))++at;
+            size_t end=at;
+            if (header) {
+                do {
+                    while(end<text.size()&&text[end]!='\r'&&text[end]!='\n')++end;
+                    size_t next=end;
+                    if(next<text.size()&&text[next]=='\r')++next;
+                    if(next<text.size()&&text[next]=='\n')++next;
+                    if(next>=text.size()||(text[next]!=' '&&text[next]!='\t'))break;
+                    end=next;
+                } while(end<text.size());
+                safe+="[credential header removed]";
+            } else {
+                const char quoted=at<text.size()&&(text[at]=='"'||text[at]=='\'')?text[at++]:0;
+                end=at;
+                while(end<text.size() && (quoted?text[end]!=quoted:!space(text[end])&&text[end]!=','&&text[end]!=';'&&text[end]!='&'&&text[end]!='"'&&text[end]!='\''))++end;
+                safe+=text.substr(i,at-i)+"[REDACTED]";
+                if(quoted && end<text.size()) {safe+=quoted;++end;}
+            }
+            i=end;replaced=true;break;
+        }
+        if(replaced)continue;
+        size_t scheme=i;
+        while(scheme<text.size()&&scheme-i<16&&schemeChar(lower[scheme]))++scheme;
+        if(scheme>i && scheme-i<16 && text.compare(scheme,3,"://")==0) {
+            size_t end=scheme+3;
+            while(end<text.size()&&!space(text[end])&&text[end]!='"'&&text[end]!='\''&&text[end]!='<'&&text[end]!='>')++end;
+            const size_t authorityAt=scheme+3;
+            size_t authorityEnd=authorityAt;
+            while(authorityEnd<end&&text[authorityEnd]!='/'&&text[authorityEnd]!='?'&&text[authorityEnd]!='#')++authorityEnd;
+            auto authority=text.substr(authorityAt,authorityEnd-authorityAt);
+            const auto user=authority.rfind('@');if(user!=std::string::npos)authority.erase(0,user+1);
+            safe+=text.substr(i,authorityAt-i)+authority+"/[remote-path]";i=end;continue;
+        }
+        safe+=text[i++];
+    }
+    if(safe.size()>384)safe.resize(384);
+    while(!safe.empty()&&!validUtf8(safe))safe.pop_back();
+    return safe;
+}
+struct EngineLogRecord {uint64_t sequence, at; std::string module, level, message;};
+struct EngineLogWindow {
+    uint64_t generation = 0, started = 0, sequence = 0, snapshotSequence = 0, lastFlush = 0, dropped = 0;
+    bool detailed = false, dirty = false, contextOpen = false;
+    std::string phase = "startup";
+    std::vector<EngineLogRecord> errors, warnings, context;
+    void begin(uint64_t id, bool detail, uint64_t now) {
+        generation=id; started=now; lastFlush=0; snapshotSequence=0; dropped=0; detailed=detail; phase="startup";
+        errors.clear(); warnings.clear(); context.clear(); dirty=true; contextOpen=true;
+    }
+    void finish(const char* next) {if (generation && phase != next) {phase=next; dirty=true;}}
+    void tick(uint64_t now) {if (generation && phase=="startup" && now-started>=15000000) finish("timeout");}
+    void add(const char* prefix, const char* level, const char* text, uint64_t now) {
+        tick(now);
+        if (!generation || !prefix || !level) return;
+        std::string_view module;
+        if (!networkLogView(prefix,64,module) || module.empty()) module="other";
+        for (char c : module) if (!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9')||c=='_'||c=='/'||c=='.'||c=='-')) {module="other";break;}
+        const std::string severity(level);
+        const bool error = severity=="fatal" || severity=="error", warning = severity=="warn";
+        if (!error && !warning) {
+            if (!detailed || !contextOpen || now-started>=15000000 || (severity!="info"&&severity!="v"&&severity!="debug")) return;
+            const auto root = module.substr(0,module.find('/'));
+            if (root!="cplayer"&&root!="demux"&&root!="ffmpeg"&&root!="vd"&&root!="ad"&&root!="ao"&&root!="vo"&&root!="curl") return;
+        }
+        auto& records = error ? errors : warning ? warnings : context;
+        const size_t capacity = error ? 16 : warning ? 8 : 40;
+        const auto safe = scrubEngineText(text);
+        if (safe.empty()) return;
+        for (const auto& row : records) if (row.module==module && row.level==severity && row.message==safe) {++dropped;dirty=true;return;}
+        if (records.size()>=capacity) {records.erase(records.begin()+static_cast<ptrdiff_t>(capacity/2));++dropped;}
+        records.push_back({++sequence,now,std::string(module),severity,safe}); dirty=true;
+    }
+    std::string snapshot(uint64_t now) {
+        tick(now); ++snapshotSequence; dirty=false; lastFlush=now;
+        std::vector<EngineLogRecord> records=errors;
+        records.insert(records.end(),warnings.begin(),warnings.end()); records.insert(records.end(),context.begin(),context.end());
+        std::sort(records.begin(),records.end(),[](const auto& a,const auto& b){return a.sequence<b.sequence;});
+        std::string out="{\"mode\":"+quote(detailed?"detailed":"normal")+",\"phase\":"+quote(phase)+
+            ",\"candidateGenerationId\":"+std::to_string(generation)+",\"snapshotSequence\":"+std::to_string(snapshotSequence)+
+            ",\"dropped\":"+std::to_string(dropped)+",\"records\":[";
+        bool first=true;
+        for (const auto& row:records) {
+            if (!first) out+=',';
+            first=false;
+            out+="{\"sequence\":"+std::to_string(row.sequence)+",\"monotonicMicros\":"+std::to_string(row.at)+
+                ",\"module\":"+quote(row.module)+",\"level\":"+quote(row.level)+",\"message\":"+quote(row.message)+'}';
+        }
+        return out+"]}";
+    }
+};
+// END ENGINE_DIAGNOSTIC_CORE
+
 // BEGIN PREVIEW_OWNER_CORE (compiled independently by the portable regression)
 class PreviewOwner {
     uint64_t current = 0;
@@ -568,13 +712,24 @@ class Helper {
     mpv_handle* networkLogClient = nullptr;
     NetworkLogBudget networkLogBudget;
     uint64_t networkLogSequence = 0;
+    EngineLogWindow engineLogWindow;
+    uint64_t diagnosticOperationSequence = 0;
+    void flushEngineLogs(bool force = false) {
+        const auto now = monotonicMicros(); engineLogWindow.tick(now);
+        if (!engineLogWindow.generation || !engineLogWindow.dirty || (!force && now-engineLogWindow.lastFlush<250000)) return;
+        writer.enqueue(base("lifecycle") + ",\"scope\":\"helper\",\"name\":\"mpv-engine\",\"detail\":" + engineLogWindow.snapshot(now) + "}", false, "mpv-engine-diagnostics-" + std::to_string(engineLogWindow.generation));
+    }
     void emitNetworkLog(NetworkLogProjection projected) {
         if (!networkLogBudget.admit(monotonicMicros(), projected)) return;
         if (networkLogSequence >= 2147483647) return;
         writer.enqueue(base("lifecycle") + ",\"scope\":\"helper\",\"name\":\"media-network\",\"detail\":{\"kind\":" + quote(projected.kind) + ",\"stage\":" + quote(projected.stage) +
             ",\"networkError\":" + quote(projected.networkError) + ",\"httpStatus\":" +
             (projected.httpStatus ? std::to_string(projected.httpStatus) : "null") +
-            ",\"sequence\":" + std::to_string(++networkLogSequence) + "}}", false, "media-network-diagnostics");
+            ",\"sequence\":" + std::to_string(++networkLogSequence) +
+            ",\"streamOk\":" + (projected.streamOk<0 ? "null" : projected.streamOk ? "true" : "false") +
+            ",\"declaredContentSize\":" + (projected.declaredContentSize<-1 ? "null" : std::to_string(projected.declaredContentSize)) +
+            ",\"seekable\":" + (projected.seekable<0 ? "null" : projected.seekable ? "true" : "false") +
+            ",\"mpvLevel\":" + quote(projected.mpvLevel) + "}}", false, "media-network-diagnostics");
     }
     void pollNetworkLogs() {
         if (!networkLogClient) return;
@@ -587,7 +742,11 @@ class Helper {
             if (event->event_id != MPV_EVENT_LOG_MESSAGE || !event->data) continue;
             const auto* log = static_cast<const mpv_event_log_message*>(event->data);
             NetworkLogProjection projected;
-            if (projectNetworkLog(log->prefix, log->text, projected)) emitNetworkLog(projected);
+            if (projectNetworkLog(log->prefix, log->text, projected)) {
+                projected.mpvLevel = log->level ? log->level : "unknown";
+                emitNetworkLog(projected);
+            }
+            engineLogWindow.add(log->prefix, log->level, log->text, monotonicMicros());
         }
     }
 #undef FIELD
@@ -1608,6 +1767,10 @@ class Helper {
                 emitUnattributed({int(event->event_id), eventName(event->event_id), -1, property->name, value, event->reply_userdata, monotonicMicros()}, "unknown-observer-token");
                 return;
             }
+            if (observer->second.first == engineLogWindow.generation) {
+                if (std::string(property->name)=="core-idle" && value=="false") engineLogWindow.finish("playing");
+                if (std::string(property->name)=="eof-reached" && value=="true") engineLogWindow.finish("eof");
+            }
             auto media = generationToMedia.find(observer->second.first);
             int64_t mediaIdentity = media == generationToMedia.end() ? -1 : media->second;
             NativeRecord record{int(event->event_id), eventName(event->event_id), mediaIdentity, property->name, value, event->reply_userdata, monotonicMicros()};
@@ -1707,6 +1870,10 @@ public:
             }
             if (autoTargetGeneration && autoTargetGeneration != generation) cancelAutoLease();
             previewOwner.activate(generation); finishPreview("preview-generation-changed");
+            engineLogWindow.finish("retired"); flushEngineLogs(true);
+            const auto& parameters = message.at("params");
+            auto diagnosticMode = parameters.object.find("diagnosticMode");
+            engineLogWindow.begin(generation, diagnosticMode != parameters.object.end() && diagnosticMode->second.string == "detailed", monotonicMicros());
             latestActivatedGeneration = generation;
             return;
         }
@@ -1719,6 +1886,7 @@ public:
         }
         if (method == "retire-generation") {
             if (type != "command") throw std::runtime_error("retire-generation-requires-command");
+            if (engineLogWindow.generation == generation) {engineLogWindow.finish("retired"); flushEngineLogs(true);}
             retiredThroughGeneration = std::max(retiredThroughGeneration, generation);
             previewOwner.retire(retiredThroughGeneration);
             if (!ownsPreview(previewCapture.generation, previewCapture.media)) finishPreview("preview-generation-retired");
@@ -1759,6 +1927,16 @@ public:
             else
 #endif
             result = p_mpv_set_property_string(mpv, name.c_str(), value.c_str());
+            if (engineLogWindow.generation == generation && engineLogWindow.phase == "startup" &&
+                (name=="start"||name=="pause"||name=="aid"||name=="sid"||name=="hwdec"||name=="keep-open") && value.size()<=64) {
+                bool safeValue = !value.empty();
+                if (name=="hwdec") safeValue = std::set<std::string>{"no","auto","auto-safe","auto-copy","auto-copy-safe","d3d11va","d3d11va-copy","dxva2","dxva2-copy","nvdec","nvdec-copy","vulkan","vulkan-copy"}.count(value)>0;
+                else if (name=="pause"||name=="keep-open") safeValue = value=="yes"||value=="no"||value=="always"||value=="true"||value=="false";
+                else if (value!="no"&&value!="auto") for (char c:value) if ((c<'0'||c>'9')&&c!='-'&&c!='+'&&c!='.'&&c!='e') safeValue=false;
+                emitAttributed({int(MPV_EVENT_PROPERTY_CHANGE), "diagnostic-operation", uniqueOpenMedia(), "startup-property-result",
+                    "{\"property\":"+quote(name)+",\"value\":"+quote(safeValue?value:"unrecognized")+",\"applied\":"+(result>=0?"true":"false")+
+                    ",\"errorCode\":"+std::to_string(result)+",\"operationSequence\":"+std::to_string(++diagnosticOperationSequence)+'}',0,monotonicMicros()}, generation);
+            }
             if (result < 0) emitOperationError(generation, "set-property", name, result);
             return;
         }
@@ -2069,6 +2247,8 @@ public:
         submitNextLoad();
         for (int index = 0; index < 256; ++index) { mpv_event* event = p_mpv_wait_event(mpv, 0); if (!event || event->event_id == MPV_EVENT_NONE) break; handleEvent(event); }
         pollNetworkLogs();
+        if (engineLogWindow.phase != "startup") engineLogWindow.contextOpen = false;
+        flushEngineLogs();
         AutoStage stage = autoStage.load();
         if (autoDeadlineMicros && (stage == AutoStage::Armed || stage == AutoStage::CapturePending ||
             stage == AutoStage::ReleasePending) && monotonicMicros() >= autoDeadlineMicros) {

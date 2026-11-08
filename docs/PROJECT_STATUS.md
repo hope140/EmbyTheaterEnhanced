@@ -1,10 +1,18 @@
 # 项目状态
 
+## 2026-11-08 — Dialog and engine diagnostics acceptance integration
+
+Integrates the completed history-isolated playback notice and bounded engine diagnostic candidates on main 825c7c7. Both production changes are retained without additional playback behavior, EOF guards, retries or keep-open changes. Version remains 0.4.19 for a local acceptance package; no main merge or release is requested. Full tests, material checks, actual helper compilation, renderer and diagnostic probes must bind the final integration commit before packaging. Previous candidate evidence remains historical; the cause of concurrent-provider playback failures is not established.
+
 ## 2026-11-08 — Playback error notice history isolation
 
 Terminal playback notices now use a dedicated local surface with idempotent confirmation, Escape/Back and retirement. It reuses the frozen dialog template/classes and original focus/input owners, adds no history entry, and does not call the router. New Play/Next/Stop retire its request owner; stopped-stream identity is captured before synchronous playbackstop listeners can admit another Play. Ordinary alert/dialog/menu history and application shutdown remain unchanged.
 
 The isolated Chromium probe reproduces the previous race with real asynchronous browser history: OSD Back pending when the frozen alert opens can leave its original URL unreachable, so repeated confirmation traverses underlying pages without closing. The fixed probe passes both OSD return orders and 16 additional dismissal/retirement/ordinary-dialog/exit-adapter checks. The focused generated-manager, material and shutdown group passes 177 tests. This synthetic source/component evidence does not establish all causes of a field shutdown, verify a real media service or replace installed-client acceptance. The public suite attempt stalled in an unchanged batch-download confirmation test; the same individual test times out on the unmodified main baseline. No full-suite PASS is claimed. Reproduction commands and boundaries are in [testing](TESTING.md#playback-error-dialog-history).
+
+## 2026-11-08 — Bounded engine diagnostics
+
+Normal diagnostics now retain native operation failures and actual startup property results. A saved Normal/Detailed preference is sampled at the next Play without interrupting active playback. The native collector scrubs credentials before IPC and retains prioritized errors plus bounded startup context; exports preserve useful fault descriptions and explicitly contextual association. See [engine diagnostics](ENGINE_DIAGNOSTICS.md) for bounds, privacy and verification. This change does not alter playback routes, retry behavior or keep-open.
 
 ## 2026-11-08 — Native selection semantics
 
