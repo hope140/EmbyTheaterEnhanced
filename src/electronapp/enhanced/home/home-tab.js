@@ -7,6 +7,7 @@
     else if (typeof module === 'object' && module.exports) module.exports = factory(require('./server-sections.js'), null, null, null, null, require('../page-cache/home-layout-cache.js'));
 })(function(serverSections, cards, layout, globalize, router, cacheModule, defaultEvents) {
     'use strict';
+    var nextOwnerId = 0;
     function abort() { var error = new Error('Home request cancelled'); error.name = 'AbortError'; return error; }
     function listOptions(section, renderer) {
         var resume = section.SectionType === 'resume', next = section.SectionType === 'nextup', onNow = section.SectionType === 'onnow';
@@ -23,6 +24,13 @@
             lines: 3, action: 'programlink', inheritThumb: false, multiSelect: false});
         var contextMenuOptions = resume ? {removeFromResume: true} : next ? {removeFromNextUp: true} : onNow ? {createRecording: false} : {};
         return {renderer: renderer, options: options, virtualScrollLayout: 'horizontal-grid', contextMenuOptions: contextMenuOptions};
+    }
+    function layoutSignature(sections) {
+        // A query seed changes the requested contents, not the native DOM
+        // structure. Fresh section objects still own all subsequent reads.
+        return JSON.stringify(sections.map(function(section) {
+            return Object.assign({}, section, {RandomSeed: null});
+        }));
     }
     function create(owner, dependencies) {
         var legacy = dependencies.legacy, loading = dependencies.loading, focus = dependencies.focus, connection = dependencies.connection;
@@ -46,7 +54,22 @@
         var focusedTitleId = null, focusedSeeAll = false;
         var flowRows = [], flowTicket = null, flowLayout = null, eventClient = null, eventQueued = null;
         var savedScroll = null, flowFocus = null, flowRevision = 0, inputRevision = 0;
-        var baselinePosition = null, pausedBaselinePosition = null;
+        var baselinePosition = null, pausedBaselinePosition = null, baselineContainerHold = null;
+        var diagnosticOwner = ++nextOwnerId, diagnosticStart = 0, diagnosticCount = 0;
+        function diagnostic(event, details) {
+            try {
+                var now = Date.now();
+                if (now - diagnosticStart >= 60000) { diagnosticStart = now; diagnosticCount = 0; }
+                if (++diagnosticCount > 120) return;
+                var record = {schemaVersion: 1, level: 'info', category: 'home', event: event,
+                    details: Object.assign({ownerId: diagnosticOwner, epoch: epoch, mode: flowMode}, details)};
+                var work;
+                if (dependencies.diagnostics) work = dependencies.diagnostics(record);
+                else if (typeof window === 'object' && window.ipc && typeof window.ipc.send === 'function')
+                    work = window.ipc.send('enhanced-diagnostics-log', record);
+                if (work && typeof work.catch === 'function') work.catch(function() {});
+            } catch (_) { /* Observability never owns the page lifecycle. */ }
+        }
         function current(ticket) {
             if (!ticket || disposed || !active || ticket.epoch !== epoch || !owner.view || flowing && ticket.flowRevision !== flowRevision) return false;
             // A retained baseline stage must retire on auth/locale/query changes
@@ -112,6 +135,16 @@
             restoreScroll(value.outer);
         }
         function holdBaselineLayout() {
+            // A layout change can replace every row; holding only the retired
+            // rows would still collapse the outer scroll range during attach.
+            var container = owner.sectionsContainer;
+            if (!baselineContainerHold && container) {
+                var totalHeight = container.getBoundingClientRect().height;
+                if (totalHeight > 0) {
+                    baselineContainerHold = {element: container, minHeight: container.style.minHeight || ''};
+                    container.style.minHeight = totalHeight + 'px';
+                }
+            }
             // Keep the native scroll range while its virtual rows remeasure.
             // This is transient geometry, not cached media or a new page layout.
             flowRows.forEach(function(row) {
@@ -121,6 +154,10 @@
         }
         function releaseBaselineLayout() {
             flowRows.forEach(function(row) { row.block.style.minHeight = ''; });
+            if (baselineContainerHold) {
+                baselineContainerHold.element.style.minHeight = baselineContainerHold.minHeight;
+                baselineContainerHold = null;
+            }
         }
         function rowBusy(row) {
             if (!row.status) {
@@ -169,17 +206,20 @@
                 // fresh data loads. Policy/auth changes still clear the old stage.
                 epoch++; provider.cancel(); cancelWaits(); pauseItems(stage);
                 owner.sectionsRendered = false; committedTicket = null;
-                flowChanged(); return;
+                flowChanged({type: message.MessageType}); return;
             }
-            if (!flowing && message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) { clear(); flowChanged(); return; }
+            if (!flowing && message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) { clear(); flowChanged({type: message.MessageType}); return; }
             if (message && message.MessageType === 'UserPolicyUpdated') {
                 // A policy change may revoke visibility even when the auth string is unchanged.
-                clear(); flowChanged(); return;
+                clear(); flowChanged({type: message.MessageType}); return;
             }
-            if (message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) flowChanged();
+            if (message && ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) flowChanged({type: message.MessageType});
         }
-        function flowChanged() {
+        function flowChanged(event) {
             if (disposed) return;
+            var reason = event && event.type;
+            if (!['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated', 'websocketopen', 'websocketclose'].includes(reason)) reason = 'notification';
+            diagnostic('refresh-trigger', {reason: reason, active: active, stage: stageMode || 'none'});
             flowRevision++;
             flowRows.forEach(function(row) { rowBusy(row); });
             // Coalesce synchronous notifications. No polling or repeated retry:
@@ -190,7 +230,7 @@
                 if (eventQueued === queuedEpoch) eventQueued = null;
                 if (!active || disposed || epoch !== queuedEpoch) return;
                 layoutCache.invalidate();
-                return start({refresh: true});
+                return start({refresh: true, background: true, reason: reason});
             }).catch(function() {});
         }
         if (events) ['localusersignedin', 'localusersignedout', 'connected'].forEach(function(name) { events.on(connection, name, flowRetire); });
@@ -221,6 +261,7 @@
             });
         }
         function showError() {
+            releaseBaselineLayout();
             owner.sectionsRendered = false;
             var errorStage = newStage(), message = document.createElement('p');
             message.className = 'padded-left padded-right';
@@ -250,6 +291,7 @@
             });
         }
         function clear() {
+            releaseBaselineLayout();
             baselinePosition = pausedBaselinePosition = null;
             epoch++;
             provider.cancel();
@@ -293,8 +335,13 @@
             if (match && typeof focus.focus === 'function') focus.focus(match);
             else if (options.autoFocus) focus.autoFocus(owner.view);
         }
-        async function fallback(ticket, options) {
+        async function fallback(ticket, options, reason) {
             if (!current(ticket)) return {status: 'cancelled'};
+            diagnostic('refresh-fallback', {reason: reason || 'section-read', stage: stageMode || 'none'});
+            // Legacy homesections already owns data/socket refresh through its
+            // ItemsRefresher chain. Keeping this second listener would clear the
+            // entire legacy stage while those native row replies are pending.
+            unwatchClient();
             provider.cancel();
             var next = newStage();
             attach(next, 'legacy');
@@ -303,6 +350,7 @@
             await wait(ticket, function() { return legacy.loadSections(next, ticket.client, user); });
             if (!current(ticket) || stage !== next) return {status: 'cancelled'};
             ready(ticket, options);
+            releaseBaselineLayout();
             return {status: 'legacy'};
         }
         function render(next, sections, initial, ticket, options) {
@@ -390,7 +438,7 @@
                         if (!current(ticket) || stage !== next || signal && signal.aborted || response.status === 'cancelled') throw abort();
                         if (response.status !== 'server') {
                             if (flowing) throw new Error('Home section unavailable');
-                            if (!ticket.fallback) ticket.fallback = fallback(ticket, options).catch(function() { return {status: 'error'}; });
+                            if (!ticket.fallback) ticket.fallback = fallback(ticket, options, 'section-page-read').catch(function() { return {status: 'error'}; });
                             await ticket.fallback;
                             throw abort();
                         }
@@ -482,10 +530,9 @@
                 if (result.status !== 'server' || result.sections.some(function(section) { return section.ViewType !== 'cards' ||
                     section.ScrollDirection !== 'Horizontal' || !['Primary', 'Thumb'].includes(section.ImageType) || section.CardSizeOffset !== 0; })) {
                     flowRows = []; flowLayout = null; flowTicket = null;
-                    unwatchClient(); // Legacy refresh ownership remains with homesections/itemsrefresher.
-                    return await fallback(ticket, options);
+                    return await fallback(ticket, options, 'layout-unavailable');
                 }
-                var signature = JSON.stringify(result.sections), keep = reuse && signature === flowLayout;
+                var signature = layoutSignature(result.sections), keep = reuse && signature === flowLayout;
                 if (!keep) {
                     flowRows = []; var next = newStage();
                     render(next, result.sections, [], ticket, options); attach(next, 'server');
@@ -526,7 +573,9 @@
             }
             var position = baselinePosition;
             var loadEpoch = epoch, identityDeadline = identityClock.now() + 3000, ticket = identity(loadEpoch);
-            loading.show();
+            // Socket/library updates are background revalidation of the same
+            // visible page, not a new navigation. Keep initial/manual loading.
+            if (!reuse || !options.background) loading.show();
             try {
                 if (!ticket || !current(ticket) || identityClock.now() >= identityDeadline) ticket = await waitForIdentity(loadEpoch, identityDeadline);
             } catch (_) {
@@ -553,11 +602,13 @@
                 if (response.status !== 'server' || response.sections.some(function(section) {
                     return section.ViewType !== 'cards' || section.ScrollDirection !== 'Horizontal' ||
                         !['Primary', 'Thumb'].includes(section.ImageType) || section.CardSizeOffset !== 0;
-                })) return await fallback(ticket, options);
+                })) return await fallback(ticket, options, 'layout-unavailable');
                 var initial = await Promise.all(response.sections.map(function(section) { return provider.loadItems(section, {limit: 12}); }));
                 if (!current(ticket) || initial.some(function(result) { return result.status === 'cancelled'; })) return {status: 'cancelled'};
-                if (initial.some(function(result) { return result.status !== 'server'; })) return await fallback(ticket, options);
-                var signature = JSON.stringify(response.sections), items;
+                if (initial.some(function(result) { return result.status !== 'server'; })) return await fallback(ticket, options, 'initial-items-read');
+                var signature = layoutSignature(response.sections), items;
+                diagnostic('refresh-layout', {reused: !!(reuse && signature === flowLayout), sectionCount: response.sections.length,
+                    previousSectionCount: flowRows.length});
                 if (reuse && signature === flowLayout) {
                     flowRows.forEach(function(row, index) { row.ticket = ticket; row.section = response.sections[index]; row.cached = initial[index].result; });
                     items = flowRows.map(function(row) { return row.items; });
@@ -581,7 +632,7 @@
                 return {status: 'server'};
             } catch (_) {
                 if (current(ticket) && stageMode !== 'legacy') {
-                    try { return await fallback(ticket, options); } catch (_) { }
+                    try { return await fallback(ticket, options, 'render-or-refresh-error'); } catch (_) { }
                 }
                 if (current(ticket)) {
                     // Leave a retryable, bounded error without exposing request details.
@@ -596,10 +647,15 @@
             }
         }
         function start(options) {
+            options = options || {};
+            diagnostic('refresh-start', {reason: ['UserDataChanged', 'LibraryChanged', 'UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated', 'websocketopen', 'websocketclose', 'notification'].includes(options.reason) ? options.reason : options.refresh ? 'explicit-refresh' : 'resume',
+                background: options.background === true, stage: stageMode || 'none'});
             var work = (flowing ? flowRefresh : refresh)(options), record = {promise: work, epoch: epoch};
             pending = record;
             function release() { if (pending === record) pending = null; }
-            work.then(release, release);
+            work.then(function(result) {
+                diagnostic('refresh-complete', {requestEpoch: record.epoch, status: result && result.status || 'unknown'}); release();
+            }, function() { diagnostic('refresh-complete', {requestEpoch: record.epoch, status: 'rejected'}); release(); });
             return work;
         }
         return {
