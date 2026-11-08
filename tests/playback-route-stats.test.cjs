@@ -27,7 +27,7 @@ test('route stats map DirectUrl, CD2 HTTP, Mount, native fallback, and ordinary 
     const explicitNotAttempted = values(routeStats.makeStats({isStrm: true, route: 'mount', cd2Reason: 'not_attempted'}));
     assert.equal(explicitNotAttempted['CD2:'], '未使用');
 
-    const fallback = values(routeStats.makeStats({isStrm: true, route: 'native', reason: 'native_fallback', cd2Reason: 'missing_file'}));
+    const fallback = values(routeStats.makeStats({isStrm: true, route: 'native', reason: 'native_fallback', fallback: true, mountReason: 'mount_missing', cd2Reason: 'missing_file'}));
     assert.deepEqual(fallback, {'播放源:': 'Emby 原生', 'STRM:': '是', 'CD2:': '未命中', 'Mount:': '未命中', 'Fallback:': '是'});
 
     const ordinary = values(routeStats.makeStats({isStrm: false, route: 'native', reason: 'not_strm'}));

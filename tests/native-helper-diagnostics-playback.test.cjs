@@ -304,6 +304,12 @@ test('exhausted startup returns one failure to original manager promise and neve
     }
     await assert.rejects(play, {name: 'NativeHelperError'});
     assert.equal(f.ipc.loadCalls.length, 3);
+    const native = f.ipc.notifications.filter(row => row.channel === 'enhanced-diagnostics-log' &&
+        row.request.event === 'route-selected' && row.request.details.route === 'native').at(-1).request.details;
+    assert.equal(native.reason, 'native_fallback');
+    assert.equal(native.fallback, true);
+    assert.equal(native.mountReason, 'mount_missing');
+    assert.equal(native.cd2Reason, 'cd2_hit', 'the previous resolved URL was rejected by media load, not a resolver miss');
     assert.deepEqual(f.counts(), {released: 1, started: 0});
     assert.equal(f.eventCalls.filter(c => c[1] === 'error' || c[1] === 'stopped').length, 0);
     await f.player.stop(true);

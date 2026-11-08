@@ -182,7 +182,7 @@
             reason: reason,
             isStrm: detected === true,
             localExists: false,
-            fallback: true
+            fallback: reason === 'native_fallback' || reason === 'invalid_context'
         };
     }
 
@@ -279,10 +279,11 @@
         return result;
     }
 
-    function persistentNativeResult(context, reason, rule, cd2Reason) {
+    function persistentNativeResult(context, reason, rule, cd2Reason, mountReason) {
         var result = nativeResult(context.nativeSource, reason, true);
         if (rule && rule.id) result.ruleId = rule.id;
         if (cd2Reason) result.cd2Reason = cd2Reason;
+        if (mountReason) result.mountReason = mountReason;
         return result;
     }
 
@@ -301,6 +302,7 @@
             if (!rule) return persistentNativeResult(context, 'no_matching_rule');
             try {
                 result = mountResolver.resolve(context, Object.assign({}, dependencies || {}, {rule: rule}));
+                result.mountReason = result.reason;
                 result.isStrm = true;
                 result.ruleId = rule.id;
                 return result;
@@ -311,6 +313,7 @@
 
         try {
             result = mountResolver.resolve(context, dependencies);
+            result.mountReason = result.reason;
             result.isStrm = true;
             return result;
         } catch (err) {
@@ -327,7 +330,8 @@
         var deadlineAt;
         var now;
         var candidates;
-        var cd2Reason;
+        var history = sequence ? sequence.history : {};
+        var cd2Reason = history.cd2Reason;
         var result;
 
         if (prepared.result) return prepared.result;
@@ -348,12 +352,17 @@
                         if (sequence.seen[stage]) continue;
                         sequence.seen[stage] = true;
                     }
+                    // Reaching native first is a policy choice. Later positions mean
+                    // earlier stages missed or a delivered source failed to load.
                     if (stage === 'native') {
                         if (sequence) sequence.nativeTried = true;
-                        return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
+                        return persistentNativeResult(context, stageIndex === 0 ? 'native_selected' : 'native_fallback', rule, cd2Reason, history.mountReason);
                     }
                     if (stage === 'mount') {
+                        history.mountReason = 'mount_error';
                         result = mountResolver.resolve(context, Object.assign({}, dependencies || {}, {rule: rule}));
+                        history.mountReason = result && result.reason || 'mount_error';
+                        if (result) result.mountReason = history.mountReason;
                         if (result && result.type === 'local') {
                             result.isStrm = true;
                             result.ruleId = rule.id;
@@ -376,18 +385,19 @@
                             deadlineAt: deadlineAt,
                             refreshDeadlineAt: deadlineAt + REFRESH_RECOVERY_BUDGET_MS
                         });
+                        history.cd2Reason = cd2Reason = result && result.reason;
                         if (result && result.type === 'url') {
+                            if (history.mountReason) result.mountReason = history.mountReason;
                             result.isStrm = true;
                             result.localExists = false;
                             result.ruleId = rule.id;
                             return result;
                         }
-                        cd2Reason = result && result.reason;
                     }
                 }
                 if (sequence && sequence.nativeTried) return null;
                 if (sequence) sequence.nativeTried = true;
-                return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
+                return persistentNativeResult(context, 'native_fallback', rule, cd2Reason, history.mountReason);
             } catch (error) {
                 if (error && error.name === 'AbortError') throw error;
                 if (sequence) {
@@ -395,7 +405,7 @@
                     if (sequence.nativeTried) return null;
                     sequence.nativeTried = true;
                 }
-                return persistentNativeResult(context, 'native_fallback', rule, cd2Reason);
+                return persistentNativeResult(context, 'native_fallback', rule, cd2Reason, history.mountReason);
             }
         }
 
@@ -418,6 +428,7 @@
             }
 
             result = mountResolver.resolve(context, dependencies);
+            result.mountReason = result.reason;
             result.isStrm = true;
             if (cd2Reason) result.cd2Reason = cd2Reason;
             return result;
@@ -435,7 +446,7 @@
         if (prepared.result || !hasPersistentConfig(config) || config.enabled === false ||
             !selectRule(prepared.context, config)) return null;
         var snapshot = Object.assign({}, dependencies, {config: JSON.parse(JSON.stringify(config))});
-        var state = {index: 0, nativeTried: false, seen: Object.create(null)};
+        var state = {index: 0, nativeTried: false, history: {}, seen: Object.create(null)};
         var closed = false;
         var busy = false;
         return {

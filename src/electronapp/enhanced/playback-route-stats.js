@@ -19,7 +19,8 @@
 
     function reasonText(reason) {
         var value = typeof reason === 'string' ? reason : '';
-        if (!value || value === 'not_attempted') return '未使用';
+        if (!value || value === 'not_attempted' || value === 'mount_not_configured') return '未使用';
+        if (value === 'mount_hit' || value === 'cd2_hit' || value === 'direct_url_hit') return '命中';
         if (value.indexOf('timeout') >= 0) return '超时';
         if (value.indexOf('cancel') >= 0) return '已取消';
         if (value.indexOf('error') >= 0) return '错误';
@@ -38,8 +39,8 @@
 
         if (isStrm) {
             stats.push({label: 'CD2:', value: (route === 'direct-url' || route === 'cd2-http') ? '命中' : reasonText(observation && observation.cd2Reason)});
-            stats.push({label: 'Mount:', value: route === 'mount' ? '命中' : (route === 'direct-url' || route === 'cd2-http') ? '未使用' : observation && observation.reason === 'native_fallback' ? '未命中' : '未使用'});
-            stats.push({label: 'Fallback:', value: route === 'native' ? '是' : '否'});
+            stats.push({label: 'Mount:', value: route === 'mount' ? '命中' : reasonText(observation && observation.mountReason)});
+            stats.push({label: 'Fallback:', value: observation && observation.fallback === true ? '是' : '否'});
             if (observation && typeof observation.ruleId === 'string' && observation.ruleId) {
                 stats.push({label: '规则 ID:', value: observation.ruleId});
             }
@@ -66,6 +67,7 @@
                     reason: typeof value.reason === 'string' ? value.reason : null,
                     sourceKind: typeof value.sourceKind === 'string' ? value.sourceKind : null,
                     ruleId: typeof value.ruleId === 'string' ? value.ruleId : null,
+                    mountReason: typeof value.mountReason === 'string' ? value.mountReason : null,
                     cd2Reason: typeof value.cd2Reason === 'string' ? value.cd2Reason : null,
                     directReason: typeof value.directReason === 'string' ? value.directReason : null,
                     localExists: value.localExists === true,

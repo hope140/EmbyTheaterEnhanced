@@ -86,6 +86,7 @@ test('sidecar stem rule resolves an existing local media file', () => {
             type: 'local',
             source: expected,
             reason: 'mount_hit',
+            mountReason: 'mount_hit',
             isStrm: true,
             localExists: true,
             fallback: false
