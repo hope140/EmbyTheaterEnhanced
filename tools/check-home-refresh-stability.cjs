@@ -24,6 +24,7 @@ async function main(executable) {
                     if (rows.some(row => !row.querySelector('.itemsContainer').virtualScroller)) throw Error('native renderer absent');
                     view.scrollTop = 450;
                     const before = {scroll: view.scrollTop, height: rows[0].getBoundingClientRect().height};
+                    const diagnosticStart = trial.diagnostics.length;
                     trial.config.holdLayout = true;
                     if (kind === 'return') { trial.controller.pause(); trial.pending = trial.controller.resume(); }
                     else trial.events.trigger(trial.api, 'message', [{MessageType: kind}]);
@@ -36,7 +37,22 @@ async function main(executable) {
                     requestAnimationFrame(sample);
                     trial.config.holdLayout = false; trial.release();
                     if (trial.pending) await trial.pending;
-                    while (trial.owner.sectionsContainer.dataset.loading === 'true') await frame();
+                    // Background refresh intentionally has no global loading indicator.
+                    // Match this request's completion instead of observing spinner state.
+                    const started = trial.diagnostics.slice(diagnosticStart).find(record => record.event === 'refresh-start');
+                    if (!started) throw Error('refresh-start signal absent');
+                    const deadline = performance.now() + 5000;
+                    function completed() {
+                        const records = trial.diagnostics.slice(diagnosticStart);
+                        const committed = records.find(record => record.event === 'refresh-layout' && record.details.ownerId === started.details.ownerId);
+                        return committed && records.some(record => record.event === 'refresh-complete' &&
+                            record.details.ownerId === started.details.ownerId && record.details.status === 'server' &&
+                            record.details.requestEpoch === committed.details.epoch);
+                    }
+                    while (!completed()) {
+                        if (performance.now() > deadline) throw Error('refresh completion signal timed out');
+                        await frame();
+                    }
                     await frame(); await frame(); recording = false;
                     const after = {scroll: view.scrollTop, minHeight: rows[0].style.minHeight};
                     trial.controller.dispose(); return {before, pending, after, samples};

@@ -6,7 +6,7 @@
 // Real ItemsContainer, ItemsRefresher, homesections and focusmanager; synthetic API,
 // simplified horizontal Scroller, direct menu event sequence, no full app routing.
 const assert = require('node:assert/strict');
-const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), cp = require('node:child_process');
+const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), cp = require('node:child_process'), crypto = require('node:crypto');
 const {sources, openTrial} = require('../tests/helpers/home-flow-renderer.cjs');
 const {augment} = require('../tests/helpers/home-native-renderer.cjs');
 const root = path.resolve(__dirname, '..');
@@ -69,7 +69,8 @@ async function scenario(browser, input, legacy, kind, output) {
             else if (kind === 'remove-section') { t.removeSection = true; local(true); server(); }
             else if (kind === 'seed-only') { t.changeSeed = true; server(); }
             else {
-                t.controller.pause(); await t.controller.resume(); await wait(100);
+                t.controller.pause(); mark('paused-route-eligible=' + t.controller.canRestore());
+                await t.controller.resume(); await wait(100);
                 mark('websocketclose'); t.events.trigger(t.api, 'websocketclose');
                 await wait(30); mark('websocketopen'); t.events.trigger(t.api, 'websocketopen');
             }
@@ -100,10 +101,14 @@ function check(result, old) {
     if (old && ['remove-section', 'seed-only'].includes(kind)) assert.equal(result.minScroll, 0, 'old layout swap must reproduce transient reset');
     else assert.ok(samples.every(sample => sample.scroll === before.scroll), 'retain scroll in every sampled frame');
     if (!old) {
-        const since = result.events[0].at;
+        const since = result.events.find(event => event.name === 'websocketclose')?.at ?? result.events[0].at;
         assert.ok(samples.filter(sample => sample.at > since).every(sample => sample.loading !== 'true'), 'background notifications must not show global loading');
         assert.equal(result.remainingHold, '', 'release temporary outer geometry');
         if (legacy || kind === 'seed-only') assert.equal(result.oldDisconnected, false, 'retain existing native nodes');
+        if (kind === 'return-websocket') {
+            assert.ok(result.events.some(event => event.name === 'paused-route-eligible=true'), 'native route restore contract must allow the retained page');
+            assert.ok(result.queries.some(query => !query.layout), 'ordinary return must refresh native data');
+        }
     }
     if (kind === 'seed-only') assert.ok(result.queries.some(query => !query.layout && query.seed === 123), 'use fresh seed in item GET despite DOM reuse');
 }
@@ -132,6 +137,9 @@ async function main(args = process.argv.slice(2)) {
         for (const revision of compare ? [compare, null] : [null]) {
             const stage = path.join(output, revision ? 'baseline' : 'candidate'); fs.mkdirSync(stage, {recursive: true});
             const input = augment(root, sources(root, revision));
+            report.sourceHashes ||= {};
+            report.sourceHashes[revision || current] = Object.fromEntries(Object.entries(input).map(([id, source]) =>
+                [id, crypto.createHash('sha256').update(source).digest('hex')]));
             for (const legacy of [true, false]) for (const kind of legacy ? legacyCases : serverCases) {
                 let result;
                 try { result = await scenario(browser, input, legacy, kind, stage); check(result, !!revision); result.passed = true; }

@@ -43,6 +43,7 @@ class Items extends Element {
     async refreshItems() {
         if (this.paused) return;
         const data = await this.fetchData({Limit: 12});
+        if (this.eteHomeFlowOwns && !this.eteHomeFlowOwns(data)) return;
         this.options = this.getListOptions(data.Items);
         this.result = data;
         this.replaceChildren(...data.Items.map(item => { const card = new Element(this.ownerDocument); card.setAttribute('data-id', item.Id); return card; }));
@@ -955,8 +956,115 @@ for (const name of ['LibraryChanged', 'UserDataChanged', 'websocketopen', 'webso
     await flowFlush();
     assert.equal(f.root.children[0], stage); assert.equal(f.position(), 640);
     assert.equal(f.legacy.length, loads); assert.equal(f.loading.filter(value => value === 'show').length, shows);
-    assert.equal(f.api._callbacks.message.length, 0);
+    assert.equal(f.api._callbacks.message.length, 1, 'only the configuration/policy retirement listener remains');
     f.controller.dispose();
+    assert.equal(f.api._callbacks.message.length, 0);
+});
+
+function legacyPositionFixture() {
+    const f = dataPositionFixture(); f.version('4.9.0.0');
+    f.legacyReads = 0;
+    f.readLegacy = () => Promise.resolve({Items: [{Id: 'legacy-' + ++f.legacyReads}]});
+    f.deps.legacy.loadSections = async function(stage, client, user) {
+        f.legacy.push({stage, client, user});
+        const row = new Items(f.document); stage.appendChild(row); row.parentContainer = stage;
+        row.fetchData = () => f.readLegacy(); row.getListOptions = () => ({});
+        await row.resume({refresh: true});
+    };
+    return f;
+}
+
+test('legacy ordinary return retains native stage, refreshes rows and releases geometry', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.move(640);
+    const stage = f.root.children[0], row = f.root.querySelector('.itemsContainer'), first = row.children[0];
+    f.controller.pause(); assert.equal(f.controller.canRestore(), true);
+    const gate = flowGate(); f.readLegacy = () => gate.promise;
+    const work = f.controller.resume(); await flowFlush();
+    assert.equal(f.root.children[0], stage); assert.equal(row.children[0], first);
+    assert.equal(f.position(), 640); assert.equal(f.root.style.minHeight, '240px');
+    gate.resolve({Items: [{Id: 'fresh-legacy'}]}); assert.equal((await work).status, 'legacy');
+    assert.equal(f.root.children[0], stage); assert.equal(f.legacy.length, 1);
+    assert.equal(row.children[0].getAttribute('data-id'), 'fresh-legacy');
+    assert.equal(f.position(), 640); assert.equal(f.root.style.minHeight, ''); f.controller.dispose();
+});
+
+for (const kind of ['manual', 'resume-refresh', 'configuration']) test('legacy '+kind+' revalidates layout rather than reusing stale sections', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); const stage = f.root.children[0];
+    let work;
+    if (kind === 'manual') work = f.controller.refresh();
+    else {
+        f.controller.pause();
+        if (kind === 'configuration') f.api.getCurrentUser = () => Promise.resolve({Configuration: {HomeSections: ['changed']}});
+        work = f.controller.resume(kind === 'resume-refresh' ? {refresh: true} : {});
+    }
+    assert.equal((await work).status, 'legacy'); assert.equal(f.root.contains(stage), false);
+    assert.equal(f.legacy.length, 2); f.controller.dispose();
+});
+
+for (const change of ['user', 'auth', 'locale', 'version', 'query', 'client']) test('legacy '+change+' change denies restore and removes old DOM before reads', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); const stage = f.root.children[0]; f.controller.pause();
+    if (change === 'user') f.user('user-2');
+    if (change === 'auth') f.api._identityEpoch++;
+    if (change === 'locale') f.api.getCurrentLocale = () => 'en-US';
+    if (change === 'version') f.version('4.9.1.0');
+    if (change === 'query') f.owner.params = {context: 'changed'};
+    if (change === 'client') f.switchClient();
+    assert.equal(f.controller.canRestore(), false);
+    f.api.getCurrentUser = () => new Promise(() => {});
+    const work = f.controller.resume(); assert.equal(f.root.contains(stage), false);
+    f.controller.pause(); assert.equal((await work).status, 'cancelled'); f.controller.dispose();
+});
+
+for (const name of ['UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated']) test('legacy '+name+' retires paused route without a second data-refresh owner', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    f.deps.events.trigger(f.api, 'message', [{MessageType: name}]);
+    assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false);
+    assert.equal(f.root.style.minHeight, ''); assert.equal(f.api._callbacks.message.length, 0);
+    await f.controller.resume(); assert.equal(f.legacy.length, 2); f.controller.dispose();
+});
+
+test('legacy pause cancels retained wait and rejects late row delivery across the next resume', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    const old = flowGate(); f.readLegacy = () => old.promise;
+    const first = f.controller.resume(); await flowFlush(); f.controller.pause();
+    assert.equal((await first).status, 'cancelled');
+    f.readLegacy = () => Promise.resolve({Items: [{Id: 'new-generation'}]});
+    await f.controller.resume(); old.resolve({Items: [{Id: 'retired-generation'}]}); await flowFlush();
+    assert.equal(f.root.querySelector('.itemsContainer').children[0].getAttribute('data-id'), 'new-generation');
+    f.controller.dispose();
+});
+
+test('legacy auth change during retained read clears old DOM and rejects delayed result', async () => {
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    const gate = flowGate(); f.readLegacy = () => gate.promise;
+    const work = f.controller.resume(); await flowFlush(); f.api._identityEpoch++;
+    gate.resolve({Items: [{Id: 'retired'}]}); assert.equal((await work).status, 'cancelled');
+    assert.equal(f.root.children.length, 0); assert.equal(f.controller.canRestore(), false); f.controller.dispose();
+});
+
+test('patched native Home view and manager use real legacy canRestore and reject policy retirement', async () => {
+    const fs = require('node:fs'), home = require('../tools/patch-server-home.cjs'), plugin = require('../tools/patch-plugin-settings.cjs');
+    const {makeRuntime} = require('./helpers/plugin-dom.cjs');
+    const source = home.patchHomeView(fs.readFileSync('vendor/web-snapshot/www/home/home.js', 'utf8'));
+    const start = source.indexOf('HomeView.prototype.eteHomeRestoreState=') + 'HomeView.prototype.eteHomeRestoreState='.length;
+    const restore = Function('return (' + source.slice(start, source.indexOf(',HomeView.prototype.onPause=', start)) + ')')();
+    const f = legacyPositionFixture(); await f.controller.resume(); f.controller.pause();
+    const runtime = makeRuntime({transform: value => home.patchViewManager(plugin.patchViewManager(value))});
+    runtime.document.body.contains = element => runtime.document.contains(element);
+    class Controller {
+        constructor() { const tab = {eteHome: f.controller}; this.tabControllers = [tab]; this.currentTabController = tab; }
+        eteHomeRestoreState() { return restore.call(this); }
+    }
+    await runtime.manager.loadView({url: '/home', view: runtime.page('home'), type: 'home', controllerFactory: Controller});
+    const resident = runtime.manager.currentView();
+    await runtime.manager.loadView({url: '/details', view: runtime.page('details'), type: 'details'});
+    assert.equal(runtime.manager.canRestoreHome({url: '/home', type: 'home'}), true);
+    await runtime.manager.tryRestoreView({url: '/home', type: 'home'}); assert.equal(runtime.manager.currentView(), resident);
+    await runtime.manager.loadView({url: '/details', view: runtime.page('details'), type: 'details'});
+    f.deps.events.trigger(f.api, 'message', [{MessageType: 'UserPolicyUpdated'}]);
+    assert.equal(runtime.manager.canRestoreHome({url: '/home', type: 'home'}), false);
+    await assert.rejects(runtime.manager.tryRestoreView({url: '/home', type: 'home'}));
+    assert.equal(resident.classList.contains('hide'), true); f.controller.dispose();
 });
 
 

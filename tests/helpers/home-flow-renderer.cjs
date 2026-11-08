@@ -52,7 +52,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         if (!settings.native) customElements.define('emby-itemscontainer', Items, {extends: 'div'});
         const view = document.querySelector('.view'), root = view.querySelector('.sections');
         const config = Object.assign({layoutMs: 15, fastMs: 25, slowMs: 220, count: 2, ignoreAbort: false}, settings);
-        const calls = [], held = [], modules = new Map(); let user = 'synthetic-user', generation = 1;
+        const calls = [], held = [], diagnostics = [], modules = new Map(); let user = 'synthetic-user', generation = 1;
         const api = {serverId: () => 'synthetic-server', getCurrentUserId: () => user, isLoggedIn: () => !!user,
             serverVersion: () => '4.10.0.40', getCurrentLocale: () => 'zh-CN', _identityEpoch: 0,
             getUrl: (route, query) => ({route, query}), getCurrentUser: () => Promise.resolve({Id: user}),
@@ -116,6 +116,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         }
         const owner = {view, sectionsContainer: root, params: {tab: 'home'}, addFocusBehavior() {}};
         const controller = load('enhanced/home/home-tab.js').default.create(owner, {
+            diagnostics: record => diagnostics.push(record),
             document, connection, events, layout: {tv: true}, cards: settings.native ? load('modules/cardbuilder/cardbuilder.js').default : {}, globalize: {getCurrentLocale: () => 'zh-CN'},
             homeFlowOptions: {mode},
             pageCacheOptions: settings.cache ? {enabled: true, ttlMs: 10000, maxEntries: 2, maxBytes: 1048576} : undefined,
@@ -125,7 +126,7 @@ async function openTrial(browser, input, mode = 'baseline', settings = {}) {
         });
         delete window.define;
         function visible(card) { return !!card.getClientRects().length && getComputedStyle(card).visibility !== 'hidden'; }
-        window.trial = {controller, owner, api, events, connection, config, calls,
+        window.trial = {controller, owner, api, events, connection, config, calls, diagnostics,
             bump() { generation++; }, release() { held.splice(0).forEach(fn => fn()); },
             setUser(value) { user = value; api._identityEpoch++; events.trigger(connection, value ? 'localusersignedin' : 'localusersignedout'); },
             snapshot() { const cards = [...root.querySelectorAll('.itemsContainer .card')].filter(visible); return {

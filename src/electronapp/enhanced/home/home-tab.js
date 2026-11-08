@@ -55,6 +55,7 @@
         var flowRows = [], flowTicket = null, flowLayout = null, eventClient = null, eventQueued = null;
         var savedScroll = null, flowFocus = null, flowRevision = 0, inputRevision = 0;
         var baselinePosition = null, pausedBaselinePosition = null, baselineContainerHold = null;
+        var legacyTicket = null, legacyUserKey = null, legacyClient = null;
         var diagnosticOwner = ++nextOwnerId, diagnosticStart = 0, diagnosticCount = 0;
         function diagnostic(event, details) {
             try {
@@ -74,7 +75,8 @@
             if (!ticket || disposed || !active || ticket.epoch !== epoch || !owner.view || flowing && ticket.flowRevision !== flowRevision) return false;
             // A retained baseline stage must retire on auth/locale/query changes
             // even if the corresponding connection event has not arrived yet.
-            if (!flowing && flowTicket && (!validRetentionScope(flowTicket) || !sameScope(flowTicket, identity(epoch)))) { clear(); loading.hide(); return false; }
+            var retained = flowTicket || legacyTicket;
+            if (!flowing && retained && (!validRetentionScope(retained) || !sameScope(retained, identity(epoch)))) { clear(); loading.hide(); return false; }
             try { return connection.currentApiClient() === ticket.client && ticket.client.serverId() === ticket.server && ticket.client.getCurrentUserId() === ticket.user &&
                 (!strictIdentity || ticket.client.isLoggedIn() && (ticket.client._identityEpoch || 0) === ticket.auth &&
                     (ticket.client.getCurrentLocale() || '') === ticket.locale && ticket.client.serverVersion() === ticket.version && queryKey() === ticket.query); }
@@ -291,6 +293,7 @@
             });
         }
         function clear() {
+            unwatchLegacy(); legacyTicket = null; legacyUserKey = null;
             releaseBaselineLayout();
             baselinePosition = pausedBaselinePosition = null;
             epoch++;
@@ -342,6 +345,7 @@
             // ItemsRefresher chain. Keeping this second listener would clear the
             // entire legacy stage while those native row replies are pending.
             unwatchClient();
+            watchLegacy(ticket.client);
             provider.cancel();
             var next = newStage();
             attach(next, 'legacy');
@@ -349,9 +353,76 @@
             if (!current(ticket) || stage !== next) return {status: 'cancelled'};
             await wait(ticket, function() { return legacy.loadSections(next, ticket.client, user); });
             if (!current(ticket) || stage !== next) return {status: 'cancelled'};
+            legacyTicket = ticket; legacyUserKey = userKey(user);
+            guardLegacyItems(next, ticket);
             ready(ticket, options);
             releaseBaselineLayout();
             return {status: 'legacy'};
+        }
+        function userKey(user) {
+            try { return JSON.stringify([user.Configuration || {}, user.Policy || {}]); }
+            catch (_) { return null; }
+        }
+        function unwatchLegacy() {
+            if (legacyClient && events) events.off(legacyClient, 'message', legacyInvalidated);
+            legacyClient = null;
+        }
+        function watchLegacy(client) {
+            unwatchLegacy();
+            if (events) { legacyClient = client; events.on(client, 'message', legacyInvalidated); }
+        }
+        function legacyInvalidated(event, message) {
+            if (!message || !['UserUpdated', 'UserConfigurationUpdated', 'UserPolicyUpdated'].includes(message.MessageType)) return;
+            clear();
+            if (active) flowChanged({type: message.MessageType});
+        }
+        function guardLegacyItems(ownedStage, originalTicket) {
+            getItems(ownedStage).forEach(function(items) {
+                var fetch = items.fetchData, results = new WeakMap();
+                if (typeof fetch !== 'function') return;
+                // Leave transport and refresh scheduling with the native owner.
+                // Only reject replies from a retired pause/identity/stage epoch.
+                items.fetchData = function() {
+                    var ticket = identity(epoch), args = arguments, receiver = this;
+                    if (!current(ticket) || stage !== ownedStage) return Promise.reject(abort());
+                    return Promise.resolve(fetch.apply(receiver, args)).then(function(result) {
+                        if (result && typeof result === 'object') results.set(result, ticket);
+                        return result;
+                    });
+                };
+                items.eteHomeFlowOwns = function(result) {
+                    return stage === ownedStage && current(results.get(result) || originalTicket);
+                };
+                items.eteHomeFlowCanRestore = function() { return !baselinePosition || baselinePosition.input === inputRevision; };
+            });
+        }
+        async function resumeLegacy(options) {
+            var ownedStage = stage;
+            if (!baselinePosition) baselinePosition = baselineSnapshot();
+            var position = baselinePosition;
+            holdBaselineLayout();
+            epoch++; provider.cancel(); cancelWaits(); pauseItems(stage);
+            var ticket = identity(epoch);
+            owner.sectionsRendered = false;
+            try {
+                var user = await wait(ticket, function(signal) { return ticket.client.getCurrentUser({signal: signal}); });
+                if (!current(ticket) || stage !== ownedStage) return {status: 'cancelled'};
+                if (legacyUserKey === null || userKey(user) !== legacyUserKey) {
+                    clear(); return refresh(Object.assign({}, options, {refresh: true}));
+                }
+                await wait(ticket, function() {
+                    return Promise.all(getItems(ownedStage).map(function(items) { return items.resume({refresh: true}); }));
+                });
+                if (!current(ticket) || stage !== ownedStage) return {status: 'cancelled'};
+                legacyTicket = ticket;
+                ready(ticket, options); releaseBaselineLayout(); restoreBaselinePosition(position, ticket);
+                return {status: 'legacy'};
+            } catch (_) {
+                if (!current(ticket)) return {status: 'cancelled'};
+                clear(); showError(); return {status: 'error'};
+            } finally {
+                if (current(ticket)) { releaseBaselineLayout(); if (baselinePosition === position) baselinePosition = null; loading.hide(); }
+            }
         }
         function render(next, sections, initial, ticket, options) {
             return sections.map(function(section, index) {
@@ -562,6 +633,7 @@
         async function refresh(options) {
             options = options || {};
             if (!active || disposed || !owner.view) return {status: 'cancelled'};
+            if (!options.refresh && stageMode === 'legacy' && sameIdentity(legacyTicket, identity(epoch))) return resumeLegacy(options);
             var reuse = stageMode === 'server' && flowLayout !== null && sameIdentity(flowTicket, identity(epoch));
             if (!reuse) clear();
             else {
@@ -662,10 +734,10 @@
             flowEnabled: flowing,
             restoreEnabled: true,
             canRestore: function() {
-                return !disposed && !!owner.view && stageMode === 'server' && flowLayout !== null &&
-                    sameIdentity(flowTicket, identity(epoch));
+                return !disposed && !!owner.view && (stageMode === 'server' && flowLayout !== null &&
+                    sameIdentity(flowTicket, identity(epoch)) || !flowing && stageMode === 'legacy' && sameIdentity(legacyTicket, identity(epoch)));
             },
-            refresh: function(options) { layoutCache.invalidate(); return start(options); },
+            refresh: function(options) { layoutCache.invalidate(); return start(Object.assign({}, options, {refresh: true})); },
             resume: function(options) {
                 options = options || {};
                 if (disposed) return Promise.resolve({status: 'cancelled'});
@@ -685,7 +757,7 @@
             pause: function() {
                 if (!flowing) {
                     pausedBaselinePosition = baselineSnapshot();
-                    if (stageMode === 'server') holdBaselineLayout();
+                    if (stageMode === 'server' || stageMode === 'legacy') holdBaselineLayout();
                 }
                 if (flowing) {
                     savedScroll = scrollState(owner.scroller || owner.view);
