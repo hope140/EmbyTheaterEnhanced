@@ -100,7 +100,7 @@ function makeNativeEndpoint() {
         sendCommand(data) {
             commands.push(data);
             if (Array.isArray(data) && data[0] === 'loadfile') {
-                setImmediate(() => target.dispatchEvent({type: 'message', data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
+                setImmediate(() => target.dispatchEvent({type: 'message', generationId, data: {type: 'property_change', data: {name: 'core-idle', value: false}}}));
             }
             return Promise.resolve({status: 'accepted'});
         },
@@ -213,14 +213,15 @@ function loadPlayer(options) {
         {get() { return undefined; }, set() {}},
         {getSubtitleAppearanceSettings() { return {}; }},
         amdRequire,
-        {},
-        strmResolver,
+        {getApiClient() {return {}; }},
+        settings.strmResolver || strmResolver,
         settings.configClient || {begin: async () => ({config: {version: 1, enabled: true, cd2: {enabled: true}, rules: []},
             lease: 'synthetic-playback-config', release() {}})},
         undefined,
         undefined,
         require('../src/electronapp/enhanced/nexttrack-transition'),
-        {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }}
+        {create() { return Promise.resolve({mode: 'native-helper', endpoint}); }},
+        settings.advanceDownload
     ];
     const Player = moduleFactory(...dependencies);
     const player = {};
@@ -364,4 +365,25 @@ test('missing config and resolver exceptions explain native fallback without cha
         assert.equal(record.details.route, 'native');
         assert(!JSON.stringify(fixture.diagnostics).includes('PRIVATE_ERROR'));
     }
+});
+
+for (const downloaded of [false, true]) test('real native-first resolver drives toast and diagnostics, download priority=' + downloaded, async () => {
+    const actual = require('../src/electronapp/resolvers/strm-resolver');
+    const config = {version: 1, enabled: true, rules: [{id: 'synthetic', sourcePrefix: '/media', strategy: 'custom',
+        order: ['native', 'mount', 'direct-url', 'cd2-http']}]};
+    const fixture = loadPlayer({strmResolver: actual,
+        configClient: {begin: async () => ({config, lease: 'synthetic', release() {}})},
+        advanceDownload: downloaded ? {localSource: async () => ({source: 'X:\\Downloads\\movie.mkv'})} : undefined});
+    try {
+        await playAndFlush(fixture.player, makeOptions({item: {MediaType: 'Video', Type: 'Movie', Path: 'movie.strm'},
+            mediaSource: {Path: '/media/movie.mkv', Container: 'strm', MediaStreams: [], RunTimeTicks: 5000000000}}));
+        assert.deepEqual(fixture.toastCalls, []);
+        for (const event of ['route-selected', 'resolver-complete']) {
+            const record = fixture.diagnostics.find(value => value.event === event);
+            assert.equal(record.details.fallback, false, event);
+            assert.equal(record.details.reason, downloaded ? 'download_hit' : 'native_selected');
+        }
+        assert.equal(fixture.endpoint.commands.find(value => value[0] === 'loadfile')[1],
+            downloaded ? 'X:\\Downloads\\movie.mkv' : 'https://emby.example.test/native');
+    } finally {await fixture.player.stop(true);}
 });

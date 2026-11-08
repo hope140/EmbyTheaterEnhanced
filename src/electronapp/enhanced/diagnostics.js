@@ -559,7 +559,7 @@ function routeForRecord(record) {
     if (details.route === 'direct-url') return 'DIRECT URL';
     if (details.route === 'cd2-http') return 'CD2 HTTP';
     if (details.route === 'mount') return 'MOUNT';
-    if (details.route === 'native') return 'NATIVE FALLBACK';
+    if (details.route === 'native') return details.fallback === true ? 'NATIVE FALLBACK' : 'NATIVE';
     return 'UNKNOWN';
 }
 

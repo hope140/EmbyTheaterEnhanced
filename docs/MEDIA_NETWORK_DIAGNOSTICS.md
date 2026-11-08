@@ -56,3 +56,9 @@ retire IPC 携带经过有限枚举投影的操作上下文。destroy IPC 的快
 - CD2 显式 direct/same-origin 模式的 download-url-result 使用同 requestId/ruleId；rpcAttempt 区分已有的首次调用及过期重取。rpcStartedAt/rpcReceivedAt 是客户端时刻，expiresInSeconds 是 CD2 回复的有效整数，expiresAt/remainingMs 是原实现基准的估算，不保证云盘真实过期时间。未提供/无效值为 null，而非默认认定已经过期；cacheHit=unknown，serverIssuedAt=null。
 - 回链记录保留 inputHost/inputPort/inputRoute；任意路径段仍为 {segment}，防止路径内凭据泄露。referenceScope=cd2-service 的 HMAC 只在该服务生命周期内可比，不能与 native load-input 的 HMAC 直接比较；replyObservation 是回复观察序号，不是播放器 load 次数。inputLocatorRef 可区分同服务内 URL 是否改变，但不能反推 query。签名、Token、Cookie、账号密码及 User-Agent 原文不会进入这些新日志。
 - endpointRole=input-only、finalEndpointRef=null 仍有效。HTTP 引擎记录依然 helper-only，不能把它强行归到 CD2 回复或当前字幕/视频。停止来源已有的有限因果诊断保持原样，没有证据时仍 unknown。上述补充不等于已定位历史 403、首次无兼容流或中途退出的根因。
+
+## Native route selection and fallback
+
+A custom order with Native first reports `reason=native_selected` and `fallback=false`; it does not show the enhanced-source fallback toast. Native reached after earlier resolver stages or a failed source load retains `native_fallback` and the toast. Disabled enhancement, no matching rule, non-STRM and unsupported/transcoded playback are bypasses, not failed enhancement attempts. Invalid context and unexpected resolver/config errors retain their existing recovery behavior.
+
+Playback statistics, `route-selected`, `resolver-complete` and the exported report use the explicit fallback flag rather than the native route alone. `mountReason` and `cd2Reason` describe actual resolver outcomes and survive startup sequence advancement; a resolution hit does not prove successful playback. Media-load failure remains in the existing `startup-route` records. Unused routes are not inferred to be misses, and a missing Mount configuration displays unused. Downloaded-file priority, route order, deadlines, cancellation and session ownership are unchanged.

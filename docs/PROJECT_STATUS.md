@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-08 — Native selection semantics
+
+Native selected first by a custom STRM rule now reports `native_selected` with no fallback toast. Statistics and diagnostic exports consume explicit fallback and resolver outcomes, preserving real failure advancement and downloaded-file priority. Regression coverage includes Native-first, Mount/CD2 misses and source-load failures, bypasses, request ownership and diagnostic reporting. No version or release change; no client installation or real-server playback validation is implied.
+
 ## 2026-11-08 — v0.4.19 测试版发行准备
 
 以完整验收提交 45717026 为功能基线，保留首页刷新归属、legacy 返回恢复、字幕原始容器及 DirectStream 轨身份映射和配置/CD2 诊断。定向用户验收获通过反馈，已授权测试版发行；该反馈不扩展为所有媒体、设备或长期播放问题均已解决。

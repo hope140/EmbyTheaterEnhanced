@@ -202,6 +202,17 @@ test('export tolerates malformed rotation lines and produces an AI-friendly dete
     }
 });
 
+test('export summary distinguishes chosen native from a real native fallback', () => {
+    for (const fallback of [false, true]) {
+        const report = diagnostics.buildDiagnosticReport([{category: 'resolver', event: 'route-selected',
+            details: {requestId: 'synthetic', route: 'native', fallback, reason: fallback ? 'native_fallback' : 'native_selected'}}]);
+        assert.match(report, fallback ? /Last STRM Route: NATIVE FALLBACK/ : /Last STRM Route: NATIVE\r?\n/);
+        assert.match(report, fallback ? /Native Fallback: YES/ : /Native Fallback: NO/);
+        assert.match(report, /Last Mount Result: NOT REACHED/);
+        assert.match(report, /Last CD2 Result: NOT REACHED/);
+    }
+});
+
 test('export summary correlates only within the latest app run when request ids repeat', () => {
     const report = diagnostics.buildDiagnosticReport([
         {category: 'app', event: 'start', details: {}},
@@ -325,6 +336,7 @@ test('resolver context diagnostics describe DirectStream fields and identify inv
         type: 'native',
         source: complete.url,
         reason: 'mount_missing',
+        mountReason: 'mount_missing',
         isStrm: true,
         localExists: false,
         fallback: true
@@ -435,7 +447,7 @@ test('STRM identity recovery reuses getItem once, accepts only metadata STRM ide
         reason: 'not_strm',
         isStrm: false,
         localExists: false,
-        fallback: true
+        fallback: false
     });
 
     let ordinaryRequests = 0;

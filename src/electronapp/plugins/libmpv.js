@@ -118,7 +118,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         var isStrmValue = detected === true || result && result.isStrm === true;
         var isStrm = isStrmValue ? 'yes' : 'no';
         var localExists = result && result.localExists === true ? 'yes' : 'no';
-        var fallback = type === 'native' ? 'yes' : 'no';
+        var fallback = result && result.fallback === true ? 'yes' : 'no';
         var cd2Reason = result && result.cd2Reason ? result.cd2Reason : (type === 'url' ? 'cd2_hit' : 'not_attempted');
         var sourceKind = result && result.sourceKind ? result.sourceKind : type;
         var directReason = result && result.directReason ? result.directReason : (sourceKind === 'direct-url' ? 'direct_url_hit' : 'not_attempted');
@@ -134,7 +134,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             details.cd2Reason = cd2Reason;
             details.directReason = directReason;
             details.localExists = result && result.localExists === true;
-            details.fallback = type === 'native';
+            details.fallback = result && result.fallback === true;
+            details.mountReason = result && result.mountReason;
             details.route = routeForResult(result);
             emitClientDiagnostic('info', 'resolver', 'route-selected', details);
         }
@@ -532,7 +533,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             var loaderSettled = false;
             var pending;
 
-            if (!isStrmRequest || !result || route !== 'native' || result.reason !== 'native_fallback' ||
+            if (!isStrmRequest || !result || route !== 'native' || result.reason !== 'native_fallback' || result.fallback !== true ||
                 !isCurrentPlayRequest(request) || request.nativeFallbackToastRequested) return;
 
             request.nativeFallbackToastRequested = true;
@@ -1413,6 +1414,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                     sourceKind: resolverResult && resolverResult.sourceKind,
                     ruleId: resolverResult && resolverResult.ruleId,
                     cd2Reason: resolverResult && resolverResult.cd2Reason,
+                    mountReason: resolverResult && resolverResult.mountReason,
                     directReason: resolverResult && resolverResult.directReason,
                     localExists: resolverResult && resolverResult.localExists === true,
                     fallback: resolverResult && resolverResult.fallback === true
@@ -1423,7 +1425,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 isStrm: isStrmRequest,
                 route: resolverObservation.route,
                 reason: resolverResult && resolverResult.reason,
-                fallback: resolverResult && resolverResult.type === 'native',
+                fallback: resolverResult && resolverResult.fallback === true,
                 sourceKind: resolverResult && resolverResult.sourceKind
             }));
 
