@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-08 — Playback error notice history isolation
+
+Terminal playback notices now use a dedicated local surface with idempotent confirmation, Escape/Back and retirement. It reuses the frozen dialog template/classes and original focus/input owners, adds no history entry, and does not call the router. New Play/Next/Stop retire its request owner; stopped-stream identity is captured before synchronous playbackstop listeners can admit another Play. Ordinary alert/dialog/menu history and application shutdown remain unchanged.
+
+The isolated Chromium probe reproduces the previous race with real asynchronous browser history: OSD Back pending when the frozen alert opens can leave its original URL unreachable, so repeated confirmation traverses underlying pages without closing. The fixed probe passes both OSD return orders and 16 additional dismissal/retirement/ordinary-dialog/exit-adapter checks. The focused generated-manager, material and shutdown group passes 177 tests. This synthetic source/component evidence does not establish all causes of a field shutdown, verify a real media service or replace installed-client acceptance. The public suite attempt stalled in an unchanged batch-download confirmation test; the same individual test times out on the unmodified main baseline. No full-suite PASS is claimed. Reproduction commands and boundaries are in [testing](TESTING.md#playback-error-dialog-history).
+
 ## 2026-11-08 — Native selection semantics
 
 Native selected first by a custom STRM rule now reports `native_selected` with no fallback toast. Statistics and diagnostic exports consume explicit fallback and resolver outcomes, preserving real failure advancement and downloaded-file priority. Regression coverage includes Native-first, Mount/CD2 misses and source-load failures, bypasses, request ownership and diagnostic reporting. No version or release change; no client installation or real-server playback validation is implied.

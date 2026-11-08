@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-11-08 — Playback error notice history isolation
+
+Based on main `825c7c7faad7c7e40490cf77d3244d12e9161d2a`, added a dedicated playback error surface and request-bound retirement in the PlaybackManager generator. The frozen generic dialog does not forward enableHistory, so adding that alert option alone would not fix the race. Generic alert/dialog/helper inputs remain byte-identical. The dedicated notice owns its immediate local close and backdrop cleanup, avoiding the frozen helper's delayed backdrop setup when a notice is retired immediately.
+
+Before the production edit, the isolated browser fixture reproduced the stale originalUrl mechanism using the actual frozen alert/dialog/helper/DOM/input modules, sourced OSD stop/exit functions and real History API. The same script can select the baseline patcher by Git ref and reports source hashes. Current checks cover both OSD return orders, burst confirmation, Escape/Back, backdrop, immediate cleanup, loader/open retirement, ordinary/nested dialogs and normal Back reaching a synthetic root-exit adapter. Full generated-manager tests separately cover actual public Play, Next and Stop admission and synchronous playbackstop reentry. The focused group passes 177 tests; the browser group passes 18 scenarios. New public-Play test cases initially lacked the fixture's getCurrentUser implementation; they now use the existing public-Play fixture and pass. This was a test-input failure, not a product regression.
+
+The attempted public collection was interrupted after stalling at the existing batch-download confirmation test; a 15-second isolated run times out on both current and untouched baseline sources. Source/provenance tests initially fail under the sandbox's temporary Git/junction restrictions; a separately permitted run outside that sandbox passes all 10 tests. Initial failures and the successful rerun are retained separately; no full public-suite, package, installation, actual application exit or real-server playback acceptance is asserted. No helper/libmpv/network diagnostic behavior is changed.
+
 ## 2026-11-08 — Native selection semantics
 
 Native selected first by a custom STRM rule now reports `native_selected` with no fallback toast. Statistics and diagnostic exports consume explicit fallback and resolver outcomes, preserving real failure advancement and downloaded-file priority. Regression coverage includes Native-first, Mount/CD2 misses and source-load failures, bypasses, request ownership and diagnostic reporting. No version or release change; no client installation or real-server playback validation is implied.

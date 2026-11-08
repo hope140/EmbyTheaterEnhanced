@@ -1,5 +1,20 @@
 # 测试与验收
 
+<a id="playback-error-dialog-history"></a>
+## Playback error dialog history
+
+The explicit browser probe requires an already available Playwright module and an absolute Chromium-compatible executable. It launches headless with a fresh temporary profile and synthetic origin; it does not start ETE, connect a media server, install dependencies or touch the current user's foreground app. Supply an existing module search path externally if needed.
+
+```powershell
+node tools/check-playback-error-dialog-renderer.cjs <absolute-Chromium-executable>
+node tools/check-playback-error-dialog-renderer.cjs <absolute-Chromium-executable> --patch-ref=825c7c7faad7c7e40490cf77d3244d12e9161d2a --expect=regression
+node --test tests/playbackmanager-request-session.test.cjs tests/playback-lifecycle-patchers.test.cjs tests/plugin-dialogclose-material-selftest.cjs tests/videoosd-lifecycle-material-selftest.cjs
+```
+
+The baseline expectation asserts the defect, rather than treating it as correct product behavior. The probe checks each frozen component against runtime-manifest, applies the chosen committed/current PlaybackManager generator to the frozen manager, and reports input/output hashes and worktree status. Actual alert/dialog/helper/DOM/input modules run with real browser history; OSD stop/exit and manager error-display functions are sourced excerpts. Router, focus, services, UI dependency loading and root exit are fixture adapters. A source-bound dedicated notice is loaded directly for the fixed path. Animation capability is exercised both ways, while the local notice intentionally closes without a shared helper animation/timer.
+
+Cases cover OSD return before/after notice creation, repeated confirmation and retained close callbacks, Escape, original input-manager Back, backdrop dismissal, immediate owner retirement, late/duplicate loader delivery, a newer notice, ordinary alert confirmation/Back, an error over an ordinary dialog, and normal navigation reaching the synthetic exit adapter. Full generated-manager tests separately verify admission retirement and synchronous stop-listener reentry. The existing shutdown regressions below verify fake app/child cleanup. None of these tests establishes field causality, real media playback, visible native video or an actual installed application exit.
+
 退出收尾的定向回归可运行：
 
 ```powershell
