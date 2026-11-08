@@ -1403,6 +1403,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             // Recompute for every attempt: raw -> native fallback must not
             // inherit the preceding file's container-index contract.
             request.subtitleUsesContainerIndex = usesContainerSubtitleIndex(options.playMethod, resolverResult);
+            request.subtitleUsesOutputOrder = options.playMethod === 'DirectStream' && !request.subtitleUsesContainerIndex;
             if (enhancedRouteState) {
                 enhancedRouteState.commit(request, {
                     requestId: request.requestId,
@@ -1544,7 +1545,9 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             // Register the default's selection owner now, but do not block
             // unpause on native media readiness. A later user choice wins.
             var defaultSubtitle;
-            if (request.subtitleUsesContainerIndex) {
+            var defaultSubtitleStream = (mediaSource.MediaStreams || []).find(function (stream) { return stream.Type === 'Subtitle' && stream.Index === subtitleIndexToSet; });
+            if (request.subtitleUsesContainerIndex || request.subtitleUsesOutputOrder &&
+                (!defaultSubtitleStream || defaultSubtitleStream.Codec !== 'dvb_teletext')) {
                 defaultSubtitle = setSubtitleStream(subtitleIndexToSet, request, corePlaying);
             } else {
                 await setSubtitleStream(subtitleIndexToSet, request);
@@ -2321,19 +2324,25 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
         // Emby Index is a container stream index, not an mpv subtitle track ID.
         // Original-container routes preserve that identity. Server remux and
         // transcode retain their existing output-track selection contract.
-        function enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady) {
+        function enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady, outputOrdinal, outputCount) {
             if (mediaReady) {
                 return mediaReady.then(function () {
-                    if (ownsSelection()) return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest);
+                    if (ownsSelection()) return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, null, outputOrdinal, outputCount);
                 }, function () {});
             }
             var live = true;
+            var observedTracks = false;
+            var lastTrackTable = null;
+            var lastNativeTrackCount = null;
             var deadline;
             function current() { return live && ownsSelection(); }
             function unavailable(reason) {
                 if (!current()) return;
                 emitClientDiagnostic('warn', 'playback', 'subtitle-track-unavailable', Object.assign(
-                    requestDiagnosticDetails(ownerRequest), {reason: reason}));
+                    requestDiagnosticDetails(ownerRequest), {reason: reason, subtitleStreamIndex: stream.Index,
+                        subtitleMapping: outputOrdinal == null ? 'container-index' : 'output-order',
+                        outputOrdinal: outputOrdinal, expectedTrackCount: outputCount,
+                        observedTrackCount: lastNativeTrackCount, tracks: lastTrackTable}));
             }
             var bounded = new Promise(function (resolve) {
                 deadline = setTimeout(function () {
@@ -2346,18 +2355,52 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                 if (!current()) return Promise.resolve();
                 return getProperty('track-list').then(function (tracks) {
                     if (!current()) return;
-                    var matches = Array.isArray(tracks) ? tracks.filter(function (track) {
+                    var nativeTracks = Array.isArray(tracks) ? tracks.filter(function (track) {
                         return track.type === 'sub' && track.external === false &&
                             Number.isInteger(track.id) && track.id > 0 &&
-                            Number.isInteger(track['ff-index']) && track['ff-index'] === stream.Index;
+                            Number.isInteger(track['ff-index']) && track['ff-index'] >= 0;
                     }) : [];
+                    lastNativeTrackCount = nativeTracks.length;
+                    lastTrackTable = Array.isArray(tracks) ? tracks.filter(function (track) { return track.type === 'sub'; }).map(function (track) {
+                        return {id: track.id, containerIndex: track['ff-index'], external: track.external,
+                            selected: track.selected, title: track.title, language: track.lang, codec: track.codec};
+                    }) : null;
+                    if (!observedTracks && nativeTracks.length) {
+                        observedTracks = true;
+                        emitClientDiagnostic('info', 'playback', 'subtitle-track-table', Object.assign(
+                            requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: stream.Index,
+                                subtitleMapping: outputOrdinal == null ? 'container-index' : 'output-order',
+                                tracks: lastTrackTable}));
+                    }
+                    // DirectStream keeps the server's existing output-order contract,
+                    // but an external track may have consumed any native ID. Do not
+                    // interpret the source Index as a remuxed output ff-index.
+                    var matches = outputOrdinal == null ? nativeTracks.filter(function (track) {
+                        return track['ff-index'] === stream.Index;
+                    }) : nativeTracks.length === outputCount && outputOrdinal >= 0 && outputOrdinal < nativeTracks.length
+                        ? [nativeTracks[outputOrdinal]] : [];
                     if (matches.length === 1) {
                         clearTimeout(deadline);
                         emitClientDiagnostic('info', 'playback', 'subtitle-track-submitted', Object.assign(
                             requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: stream.Index,
-                                subtitleTrackId: matches[0].id, subtitleMapping: 'container-index',
+                                subtitleTrackId: matches[0].id, subtitleMapping: outputOrdinal == null ? 'container-index' : 'output-order',
                                 association: 'submission-only'}));
-                        return enableInternalSubtitleStream(stream, matches[0].id, current);
+                        return enableInternalSubtitleStream(stream, matches[0].id, current).then(function () {
+                            if (!current()) return;
+                            // Observation is diagnostic-only and cannot delay selection
+                            // or mutate a newer selection after its asynchronous read.
+                            Promise.resolve().then(function () { return getProperty('track-list'); }).then(function (observed) {
+                                if (!ownsSelection()) return;
+                                var selected = Array.isArray(observed) ? observed.filter(function (track) {
+                                    return track.type === 'sub' && track.selected === true;
+                                }).map(function (track) { return {id: track.id, external: track.external,
+                                    containerIndex: track['ff-index']}; }) : [];
+                                emitClientDiagnostic('info', 'playback', 'subtitle-track-observed', Object.assign(
+                                    requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: stream.Index,
+                                        subtitleTrackId: matches[0].id, selectedTracks: selected,
+                                        selectedTarget: selected.length === 1 && selected[0].id === matches[0].id && selected[0].external === false}));
+                            }, function () {});
+                        });
                     }
                     if (matches.length > 1) { unavailable('ambiguous-container-index'); return; }
                     // loadfile acceptance precedes file-loaded. A bounded retry
@@ -2394,12 +2437,20 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }
             if (!ownsSelection()) return Promise.resolve();
             setProperty({ "sub-delay": 0 })
+            emitClientDiagnostic('info', 'playback', 'subtitle-selection-requested', Object.assign(
+                requestDiagnosticDetails(ownerRequest), {subtitleStreamIndex: index,
+                    subtitleMapping: ownerRequest.subtitleUsesContainerIndex ? 'container-index' :
+                        ownerRequest.subtitleUsesOutputOrder ? 'output-order' : 'legacy'}));
             if (index === null || index < 0) {
                 return setProperty({ "sid": "no" });
             } else {
                 var subIndex = 0;
                 var i, length, stream;
                 var streams = mediaSource.MediaStreams || [];
+                var outputStreams = streams.filter(function (entry) {
+                    return entry.Type === 'Subtitle' && entry.DeliveryMethod !== 'VideoSideData' &&
+                        entry.IsExternal !== true && (entry.IsExternal === false || entry.DeliveryMethod !== 'External');
+                });
                 for (i = 0, length = streams.length; i < length; i++) {
                     stream = streams[i];
                     if (stream.Type == 'Subtitle') {
@@ -2423,6 +2474,10 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                             }
                             if (ownerRequest.subtitleUsesContainerIndex && stream.DeliveryMethod !== 'VideoSideData') {
                                 return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady);
+                            }
+                            if (ownerRequest.subtitleUsesOutputOrder && stream.DeliveryMethod !== 'VideoSideData' && stream.Codec !== 'dvb_teletext') {
+                                return enableContainerSubtitleStream(stream, ownsSelection, ownerRequest, mediaReady,
+                                    outputStreams.indexOf(stream), outputStreams.length);
                             }
                             return enableInternalSubtitleStream(stream, subIndex, ownsSelection);
                         }

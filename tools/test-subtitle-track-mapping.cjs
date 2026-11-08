@@ -14,6 +14,7 @@ if (!args.includes('--mpv') || !args.includes('--ffmpeg')) throw Error('Explicit
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'ete-subtitle-map-'));
 const pipe = process.platform === 'win32' ? `\\\\.\\pipe\\ete-subtitle-${process.pid}` : path.join(temp,'ipc.sock');
 const reportedLayout=args.includes('--reported-layout');
+if(args.includes('--order')&&!['first','middle','last'].includes(arg('--order')))throw Error('Invalid --order');
 const names=reportedLayout?['bilingual-simplified','bilingual-traditional','simplified','traditional','simplified-2','traditional-2','english']:['simplified','traditional'];
 for (const name of [...names,'external']) fs.writeFileSync(path.join(temp,name+'.srt'), `1\n00:00:00,000 --> 00:00:20,000\n${name.toUpperCase()}\n`);
 const media=path.join(temp,'synthetic.mkv');
@@ -44,27 +45,37 @@ function command(command){return new Promise((resolve,reject)=>{const id=++seque
    },2200));
    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   }
-  const source=fs.readFileSync(path.join(__dirname,'../src/electronapp/plugins/libmpv.js'),'utf8');
+  const source=fs.readFileSync(args.includes('--adapter-source')?arg('--adapter-source'):path.join(__dirname,'../src/electronapp/plugins/libmpv.js'),'utf8');
   const code=source.slice(source.indexOf('        function enableInternalSubtitleStream('),source.indexOf('        function setAudioStream('));
-  for(const order of ['first','middle','last']) {
+  for(const order of args.includes('--order')?[arg('--order')]:['first','middle','last']) {
    await command(['loadfile',server?`http://127.0.0.1:${server.address().port}/synthetic.mkv`:media]);
    if(server){await delay(700);await command(['sub-add',path.join(temp,'external.srt'),'cached','EXTERNAL','eng']);}
    let initial;
    for(let i=0;i<200;i++){initial=await command(['get_property','track-list']);if(initial.filter(t=>t.type==='sub'&&!t.external).length===names.length)break;await delay(25);}
    const internal=initial.filter(t=>t.type==='sub'&&!t.external);assert.equal(internal.length,names.length);
    if(server)assert.equal(initial.find(t=>t.type==='sub'&&t.external).id,1,'early external takes the first subtitle ID');
-   const embedded=internal.map(t=>({Type:'Subtitle',Index:t['ff-index'],DeliveryMethod:'Embed'}));
+   const embedded=internal.map(t=>({Type:'Subtitle',Index:t['ff-index'],IsExternal:false,DeliveryMethod:'Embed'}));
    const simple=embedded[reportedLayout?2:0],traditional=embedded[reportedLayout?3:1];
    if(reportedLayout)assert.deepEqual(embedded.map(t=>t.Index),[5,6,7,8,9,10,11]);
-   const external={Type:'Subtitle',Index:reportedLayout?12:77,DeliveryMethod:'External',DeliveryUrl:path.join(temp,'external.srt'),DisplayTitle:'EXTERNAL'};
+   const external={Type:'Subtitle',Index:reportedLayout?12:77,IsExternal:true,DeliveryMethod:'External',DeliveryUrl:path.join(temp,'external.srt'),DisplayTitle:'EXTERNAL'};
    const rows=order==='first'?[external,...embedded]:order==='middle'?[embedded[0],external,...embedded.slice(1)]:[...embedded,external];
-   const request={routeAttempt:1,nativeGenerationId:1,subtitleUsesContainerIndex:true};
+   const request={routeAttempt:1,nativeGenerationId:1,subtitleUsesContainerIndex:!args.includes('--native-output-order'),subtitleUsesOutputOrder:args.includes('--native-output-order')};
    const ops=[];
    const ctx={Promise,setTimeout,clearTimeout,activePlayRequest:request,subtitleSelectionSequence:0,mediaSource:{MediaStreams:rows},
     isCurrentPlayRequest:r=>r===request,requestDiagnosticDetails:()=>({}),emitClientDiagnostic:()=>{},
     setProperty:async values=>{for(const [key,value]of Object.entries(values)){ops.push([key,value]);await command(['set_property',key,value]);}},
     getProperty:name=>command(['get_property',name]),sendCommand:cmd=>command(cmd)};
    vm.createContext(ctx);vm.runInContext(code,ctx);
+   if(args.includes('--observe-only')) {
+    await ctx.setSubtitleStream(external.Index);await delay(850);
+    const observed=[];
+    for(const stream of [embedded[0],simple]) {
+     await ctx.setSubtitleStream(stream.Index);await delay(50);
+     const selected=(await command(['get_property','track-list'])).find(t=>t.type==='sub'&&t.selected);
+     observed.push({requestedIndex:stream.Index,selectedId:selected?.id,selectedIndex:selected?.['ff-index'],external:selected?.external,title:selected?.title});
+    }
+    evidence.push({order,observed});continue;
+   }
    for(let repeat=0;repeat<2;repeat++){
     const before=ops.length;await ctx.setSubtitleStream(external.Index);await delay(850);
     assert.equal(ops.slice(before).some(op=>op[0]==='sid'),false,'no guessed sid before external add');
@@ -96,7 +107,7 @@ function command(command){return new Promise((resolve,reject)=>{const id=++seque
    evidence.push({order,tracks:(await command(['get_property','track-list'])).filter(t=>t.type==='sub').map(t=>({id:t.id,ffIndex:t['ff-index'],external:t.external,title:t.title,selected:t.selected})),operations:ops});
   }
   fs.writeFileSync(path.join(temp,'evidence.json'),JSON.stringify({version,evidence},null,2));
-  console.log(JSON.stringify({status:'passed',version,reportedLayout,earlyExternal:!!server,orders:3,cachedCycles:6,evidence:path.join(temp,'evidence.json')}));
+  console.log(JSON.stringify({status:args.includes('--observe-only')?'observed-not-asserted':'passed',version,reportedLayout,earlyExternal:!!server,nativeOutputOrder:args.includes('--native-output-order'),orders:evidence.length,cachedCycles:args.includes('--observe-only')?0:evidence.length*2,evidence:path.join(temp,'evidence.json')}));
  } finally {
   if(server){server.closeAllConnections();server.close();}
   if(socket){try{await command(['quit']);}catch{} socket.destroy();}

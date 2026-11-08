@@ -359,7 +359,7 @@ test('hanging table is bounded and its late answer cannot select', async()=>{
     assert.equal(h.actions.length,count);
     assert.ok(h.diagnostics.some(row=>row.event==='subtitle-track-unavailable'));
 });
-for (const method of ['DirectStream', 'Transcode']) {
+for (const method of ['Transcode']) {
     test(`${method} retains existing internal contract, does not equate source and output index`, async()=>{
         const h=makeHarness(); await h.play([streams[0],embedded],undefined,method);
         h.setTrackRead(()=>{throw Error('must not read source ff-index for remux');});
@@ -433,8 +433,9 @@ for(const route of [{...originalRoutes[0],fallback:true},{...originalRoutes[0],i
     {...originalRoutes[0],sourceKind:'unknown'},{...originalRoutes[2],localExists:false}]) {
     test(`unproven DirectStream route does not infer container identity: ${JSON.stringify(route)}`,async()=>{
         const h=makeHarness();h.setResolvedSource(route);await h.play([streams[0],embedded],undefined,'DirectStream');
-        h.setTrackRead(()=>{throw Error('not an original-container contract');});
-        h.player.setSubtitleStreamIndex(8);await flushSelection();assert.equal(h.actions.at(-1).value,2);
+        h.setTracks([{type:'sub',external:false,id:17,'ff-index':1},{type:'sub',external:true,id:1,'ff-index':8}]);
+        h.player.setSubtitleStreamIndex(8);await flushSelection();assert.equal(h.actions.at(-1).value,17);
+        assert.ok(h.diagnostics.some(row=>row.event==='subtitle-track-submitted'&&row.details.subtitleMapping==='output-order'));
     });
 }
 test('resolved DirectStream default and manual loading choices do not wait before unpause',async()=>{
@@ -442,4 +443,80 @@ test('resolved DirectStream default and manual loading choices do not wait befor
     const playing=h.play([streams[0],embedded],8,'DirectStream');await h.loadingReached();
     h.player.setSubtitleStreamIndex(8);await h.clock.advanceTo(3000);h.setTracks([mappedTrack]);
     h.ready();await playing;await flushSelection();assert.equal(h.actions.at(-1).value,17);
+});
+
+for(const externalPosition of ['first','middle','last']) test('native DirectStream maps output order past early external id: '+externalPosition,async()=>{
+ const h=makeHarness(); const internal=[5,6,7].map(Index=>({...embedded,Index,IsExternal:false}));
+ const ext={...streams[0],Index:12,IsExternal:true};
+ const rows=externalPosition==='first'?[ext,...internal]:externalPosition==='middle'?[internal[0],ext,...internal.slice(1)]:[...internal,ext];
+ await h.play(rows,12,'DirectStream');await h.clock.advanceTo(700);
+ h.setTracks([{type:'sub',external:true,id:1,'ff-index':0},...internal.map((x,i)=>({type:'sub',external:false,id:i+2,'ff-index':i+1}))]);
+ h.player.setSubtitleStreamIndex(5);await flushSelection();assert.equal(h.actions.at(-1).value,2);
+ h.player.setSubtitleStreamIndex(7);await flushSelection();assert.equal(h.actions.at(-1).value,4);
+});
+test('native DirectStream rejects a remux table with a different embedded count',async()=>{
+ const h=makeHarness();await h.play([{...embedded,Index:5},{...embedded,Index:6}],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:false,id:2,'ff-index':1},{type:'sub',external:true,id:1}]);
+ h.player.setSubtitleStreamIndex(6);await flushSelection();await h.clock.advanceTo(1600);await flushSelection();
+ assert.equal(h.actions.at(-1).value,'no');assert.ok(h.diagnostics.some(r=>r.event==='subtitle-track-unavailable'));
+});
+for(const action of ['off','stop','selection','new-play']) test('native DirectStream delayed mapping cannot undo '+action,async()=>{
+ const h=makeHarness();await h.play([embedded],undefined,'DirectStream');let release;
+ h.setTrackRead(()=>new Promise(r=>release=r));h.player.setSubtitleStreamIndex(8);await flushSelection();
+ h.setTrackRead(null);
+ if(action==='off')h.player.setSubtitleStreamIndex(-1);
+ if(action==='stop')await h.player.stop();
+ if(action==='selection'){h.setTracks([{type:'sub',external:false,id:7,'ff-index':1}]);h.player.setSubtitleStreamIndex(8);}
+ if(action==='new-play')await h.play([embedded],undefined,'DirectStream');
+ await flushSelection();const n=h.actions.length;release([{type:'sub',external:false,id:9,'ff-index':1}]);await flushSelection();assert.equal(h.actions.length,n);
+});
+test('native DirectStream extracted internal subtitle remains in output order',async()=>{
+ const h=makeHarness();await h.play([{...streams[0],IsExternal:false},embedded],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:false,id:2,'ff-index':1},{type:'sub',external:false,id:3,'ff-index':2},{type:'sub',external:true,id:1}]);
+ h.player.setSubtitleStreamIndex(8);await flushSelection();assert.equal(h.actions.at(-1).value,3);
+});
+
+test('native DirectStream slow startup defaults wait without blocking unpause',async()=>{
+ const h=makeHarness();h.holdReady();const playing=h.play([embedded],8,'DirectStream');await h.loadingReached();
+ await h.clock.advanceTo(3000);h.setTracks([{type:'sub',external:false,id:7,'ff-index':1}]);
+ h.ready();await playing;await flushSelection();assert.equal(h.actions.at(-1).value,7);
+});
+test('subtitle table diagnostics survive the production sanitizer without URL fields',async()=>{
+ const h=makeHarness();await h.play([embedded],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:false,id:7,'ff-index':1,title:'Simplified',lang:'chi',codec:'hdmv_pgs_subtitle'},
+ {type:'sub',external:true,id:1,'ff-index':0,externalFilename:'https://invalid.example/?token=synthetic'}]);
+ h.player.setSubtitleStreamIndex(8);await flushSelection();
+ const record=h.diagnostics.find(r=>r.event==='subtitle-track-table');
+ const sanitized=require('../src/electronapp/enhanced/diagnostics').sanitizeRecord(record);
+ assert.equal(sanitized.details.subtitleMapping,'output-order');assert.equal(sanitized.details.subtitleStreamIndex,8);
+ assert.equal(sanitized.details.tracks[0].id,7);assert.equal(sanitized.details.tracks[0].containerIndex,1);
+ assert.equal(sanitized.details.tracks[1].external,true);assert.equal(JSON.stringify(sanitized).includes('invalid.example'),false);
+});
+
+test('submitted subtitle reports observed selection separately from command acceptance',async()=>{
+ const h=makeHarness();await h.play([embedded],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:false,id:7,'ff-index':1,selected:true}]);
+ h.player.setSubtitleStreamIndex(8);await flushSelection();
+ const observed=h.diagnostics.find(r=>r.event==='subtitle-track-observed');
+ assert.equal(observed.details.selectedTarget,true);assert.equal(observed.details.selectedTracks[0].id,7);
+});
+
+test('early external-only table does not consume the embedded table diagnostic',async()=>{
+ const h=makeHarness();await h.play([embedded],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:true,id:1,'ff-index':0}]);h.player.setSubtitleStreamIndex(8);await flushSelection();
+ assert.equal(h.diagnostics.some(r=>r.event==='subtitle-track-table'),false);
+ h.setTracks([{type:'sub',external:false,id:2,'ff-index':1}]);await h.clock.advanceTo(100);await flushSelection();
+ assert.equal(h.diagnostics.find(r=>r.event==='subtitle-track-table').details.tracks[0].id,2);
+});
+test('terminal missing embedded tracks retains the final diagnostic count and table',async()=>{
+ const h=makeHarness();await h.play([embedded],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:true,id:1,'ff-index':0}]);h.player.setSubtitleStreamIndex(8);await flushSelection();
+ await h.clock.advanceTo(1600);await flushSelection();
+ const detail=h.diagnostics.find(r=>r.event==='subtitle-track-unavailable').details;
+ assert.equal(detail.expectedTrackCount,1);assert.equal(detail.observedTrackCount,0);assert.equal(detail.tracks[0].external,true);
+});
+test('generated caption ff-index minus one does not change native output ordinals',async()=>{
+ const h=makeHarness();await h.play([embedded,{...embedded,Index:9,DeliveryMethod:'VideoSideData'}],undefined,'DirectStream');
+ h.setTracks([{type:'sub',external:false,id:6,'ff-index':-1},{type:'sub',external:false,id:7,'ff-index':1}]);
+ h.player.setSubtitleStreamIndex(8);await flushSelection();assert.equal(h.actions.at(-1).value,7);
 });

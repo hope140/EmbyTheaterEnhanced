@@ -516,15 +516,15 @@ test('DirectStream raw to native route rotation clears container mapping eligibi
     const invoke=f.ipc.invoke.bind(f.ipc);let trackReads=0;
     f.ipc.invoke=(channel,request)=>{
         if(request.operation==='get-property'&&request.payload.name==='track-list'){
-            trackReads++;return Promise.resolve({status:'ok',value:[{type:'sub',external:false,id:17,'ff-index':8}]});
+            trackReads++;return Promise.resolve({status:'ok',value:[{type:'sub',external:false,id:17,'ff-index':1}]});
         }
         return invoke(channel,request);
     };
     const playing=f.player.play(f.options);playing.catch(()=>{});
     await waitFor(()=>f.ipc.loadCalls.length===1);f.failure();
     await waitFor(()=>f.ipc.loadCalls.length===2);
-    await waitFor(()=>f.ipc.calls.some(c=>c.request.operation==='set-properties'&&c.request.payload.entries.some(e=>e.name==='sid'&&e.value===2)));
     f.property('core-idle',false);await playing;
-    assert.equal(trackReads,0,'retired raw default cannot query; native retains remux contract');
+    await waitFor(()=>f.ipc.calls.some(c=>c.request.operation==='set-properties'&&c.request.payload.entries.some(e=>e.name==='sid'&&e.value===17)));
+    assert.equal(trackReads,2,'retired raw default cannot query; native maps and observes actual output ID');
     await f.player.stop(true);
 });

@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-08 — DirectStream subtitle ID reconciliation
+
+The acceptance candidate left native/server DirectStream on positional mpv IDs. An external subtitle discovered before embedded tracks can consume ID 1, so source subtitle order no longer equals native ID. DirectStream now resolves the existing output subtitle order through the current generation's non-external track table. It excludes real external metadata rows, retains extracted internal streams, and requires matching embedded counts. This does not infer original source ff-index identity across remux. Original-container mapping remains exact; Transcode, generated captions, and the legacy teletext continuation remain unchanged. Default lookup waits for media readiness without blocking unpause; cancellation and route changes invalidate old results.
+
+Selection requests, bounded track-table observations and submitted IDs are recorded, including the mapping mode. A separate post-command observation records the selected track without blocking selection or mutating playback. Missing or inconsistent tables disable the requested subtitle with a diagnostic rather than guessing. Tests cover early external IDs, external rows at every position, changed remux indexes, count mismatch, extracted internal streams and interrupted selections. A real mpv synthetic probe using the installed baseline adapter reproduced first-embedded staying external and third-embedded selecting the second; the new adapter passed the same three-order sequence. This is not a GUI or real-user-media acceptance claim. No main merge or publication.
+
 ## 2026-11-07 — 首页、播放诊断与字幕身份映射验收候选
 
 将首页／日志整合提交 adbc23b 与字幕提交 10a42d1（含 b6c8bfc）组合，保留双方提交历史。两份维护文档的追加冲突保留全部记录；libmpv 自动合并后复核同时保留配置结果／回退阶段诊断和原始容器字幕轨身份映射。其他生产文件与对应候选一致，不添加新播放路线、重试或版本改动。
