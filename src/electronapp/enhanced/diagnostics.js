@@ -290,6 +290,9 @@ function sanitizeRecord(record) {
         });
     }
     const details = sanitizeValue(rawDetails, 'details', new WeakSet());
+    if (output.category === 'mpv-engine' && rawDetails && typeof rawDetails.message === 'string' && details && typeof details === 'object') {
+        details.message = require('./engine-diagnostics').sanitizeEngineText(rawDetails.message);
+    }
     output.details = details && typeof details === 'object' ? details : {value: details};
     return output;
 }
@@ -425,6 +428,7 @@ function createLogger(logRoot, options) {
     const settings = options || {};
     const fileSystem = settings.fs || fs;
     const paths = getLogPaths(logRoot);
+    const diagnosticSettings = require('./diagnostic-settings').createSettings(paths.root, fileSystem);
     let queue = Promise.resolve();
 
     async function appendLine(line) {
@@ -448,6 +452,8 @@ function createLogger(logRoot, options) {
         return operation.catch(function () { return false; });
     }
 
+    log.getMode = diagnosticSettings.getMode;
+    log.setMode = diagnosticSettings.setMode;
     log.flush = function () { return queue.catch(function () {}); };
     log.getPaths = function () { return Object.assign({}, paths, {rotations: paths.rotations.slice()}); };
     log.status = async function () {
@@ -456,6 +462,7 @@ function createLogger(logRoot, options) {
         try { currentBytes = (await asyncFsCall(fileSystem, 'stat', [paths.file])).size || 0; } catch (_) { }
         return {
             enabled: true,
+            diagnosticMode: log.getMode(),
             logDirectory: DISPLAY_LOG_DIRECTORY,
             fileName: LOG_FILE_NAME,
             rotationFiles: LOG_ROTATION_COUNT,
@@ -648,6 +655,7 @@ function buildDiagnosticReport(input, appInfo, exportTime) {
         '',
         '==================================================',
         'Client Log',
+        'Privacy: engine errors may contain server addresses and local media paths. Credentials and complete remote URLs are removed. Review before sharing.',
         '==================================================',
         'Malformed JSONL lines omitted: ' + String(Number(read.malformedLines) || 0)
     ];

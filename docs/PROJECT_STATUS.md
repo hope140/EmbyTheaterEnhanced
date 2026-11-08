@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-08 — Bounded engine diagnostics
+
+Normal diagnostics now retain native operation failures and actual startup property results. A saved Normal/Detailed preference is sampled at the next Play without interrupting active playback. The native collector scrubs credentials before IPC and retains prioritized errors plus bounded startup context; exports preserve useful fault descriptions and explicitly contextual association. See [engine diagnostics](ENGINE_DIAGNOSTICS.md) for bounds, privacy and verification. This change does not alter playback routes, retry behavior or keep-open.
+
 ## 2026-11-08 — Native selection semantics
 
 Native selected first by a custom STRM rule now reports `native_selected` with no fallback toast. Statistics and diagnostic exports consume explicit fallback and resolver outcomes, preserving real failure advancement and downloaded-file priority. Regression coverage includes Native-first, Mount/CD2 misses and source-load failures, bypasses, request ownership and diagnostic reporting. No version or release change; no client installation or real-server playback validation is implied.

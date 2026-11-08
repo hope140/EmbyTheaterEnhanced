@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-08 — Bounded engine diagnostic collection
+
+Implemented a saved diagnostic level, pre-IPC engine message scrubbing, priority-bounded native collection, actual startup property return evidence, contextual generation association, and JSONL/export integration. Regression probes compile exact C++ collector bytes and exercise credential canaries, floods, timeout, replacement, slow writes and rotation. Runtime provenance and public/material checks remain separate from real-media and visible-client acceptance; see [engine diagnostics](ENGINE_DIAGNOSTICS.md).
+
 ## 2026-11-08 — Native selection semantics
 
 Native selected first by a custom STRM rule now reports `native_selected` with no fallback toast. Statistics and diagnostic exports consume explicit fallback and resolver outcomes, preserving real failure advancement and downloaded-file priority. Regression coverage includes Native-first, Mount/CD2 misses and source-load failures, bypasses, request ownership and diagnostic reporting. No version or release change; no client installation or real-server playback validation is implied.
