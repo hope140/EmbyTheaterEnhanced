@@ -79,7 +79,9 @@ test('settings UI saves only the diagnostic mode and reports the next-playback b
         define(deps,factory){View=factory({show(){},hide(){}},function(){});},window:{ipc:{invoke:async(channel,payload)=>{calls.push([channel,payload]);return channel.endsWith('status')?{status:'ok',enabled:true,diagnosticMode:'normal'}:{status:'saved',diagnosticMode:payload.mode};}}},Promise,Number,Error});
     const v=new View(view);await v.loadStatus();node('.selectDiagnosticMode').value='detailed';await v.saveMode();
     assert.deepEqual(JSON.parse(JSON.stringify(calls.at(-1))),['enhanced-diagnostics-set-mode',{mode:'detailed'}]);
-    assert.match(node('.diagnosticsState').textContent,/后续播放/);assert.equal(node('.btnSaveDiagnosticMode').disabled,false);
+    assert.match(node('.diagnosticsState').textContent,/下一次播放生效/);
+    assert.match(node('.diagnosticsState').textContent,/普通模式仍保留必要错误/);
+    assert.equal(node('.btnSaveDiagnosticMode').disabled,false);
     assert.ok(calls.every(([channel])=>channel.startsWith('enhanced-diagnostics-')));
 });
 

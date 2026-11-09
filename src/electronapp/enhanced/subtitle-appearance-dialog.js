@@ -90,9 +90,9 @@ function (dialogHelper, globalize, userSettings) {
             var note = doc.createElement('div');
             note.className = 'fieldDescription subtitleAppearanceHint';
             note.textContent = useChineseNames ?
-                (localNames === traditionalNames ? '本地播放器對兩種偏移陰影使用相同的近似效果。' :
-                    '本地播放器对两种偏移阴影使用相同的近似效果。') :
-                'The two offset shadows use the same approximation in the local player.';
+                (localNames === traditionalNames ? '本地播放時，兩種偏移陰影效果相同。' :
+                    '本地播放时，两种偏移阴影效果相同。') :
+                'Both offset shadows look the same in the local player.';
             container.appendChild(note);
         }
         return container;

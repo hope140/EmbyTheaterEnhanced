@@ -13,14 +13,14 @@
         </section>
 
         <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-maintenance-title">
-            <div class="ete-settings-section-header"><div><h2 id="ete-about-maintenance-title" class="sectionTitle">维护</h2><p>仅手动检查和下载。点击下载后，校验成功将正常退出客户端并打开安装向导。</p></div></div>
+            <div class="ete-settings-section-header"><div><h2 id="ete-about-maintenance-title" class="sectionTitle">维护</h2><p>手动检查并下载更新，校验通过后将退出客户端并打开安装向导。</p></div></div>
             <div class="ete-settings-card about-maintenance-card">
                 <div class="selectContainer about-update-channel-select">
                     <select is="emby-select" class="selectUpdateChannel" label="更新通道" disabled>
                         <option value="stable" selected>正式通道</option>
                         <option value="testing">测试通道</option>
                     </select>
-                    <div class="fieldDescription">仅手动检查。测试通道包含正式版和测试版；下载期间请先取消或等待完成后再切换。</div>
+                    <div class="fieldDescription">测试通道包含正式版和测试版。下载期间需取消或等待完成后再切换。</div>
                 </div>
                 <div class="ete-settings-actions">
                     <button type="button" is="emby-button" class="raised button-submit ete-settings-button btnCheckUpdates" disabled>检查更新</button>
@@ -45,7 +45,7 @@
 
         <section class="ete-settings-section verticalSection" aria-labelledby="ete-about-kernel-title">
             <div class="ete-settings-section-header">
-                <div><h2 id="ete-about-kernel-title" class="sectionTitle">播放内核</h2><p>导入 ZIP 内核包后选择使用，完全退出并重新打开客户端后生效。</p></div>
+                <div><h2 id="ete-about-kernel-title" class="sectionTitle">播放内核</h2><p>导入 ZIP 内核包并选择后，完全退出并重新打开客户端生效。</p></div>
             </div>
             <div class="ete-settings-card about-kernel-card">
                 <div class="ete-settings-actions">
@@ -71,7 +71,7 @@
                         <div class="ete-settings-info-row"><span>Native Helper（包内）</span><code class="aboutNativeHelper">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>libmpv（包内）</span><code class="aboutLibmpv">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>Package libmpv DLL SHA256</span><code class="aboutPackageLibmpvSha256">UNKNOWN</code></div>
-                        <p>包内文件由 build/provenance manifest 与 SHA256 校验；运行字段仅来自已通过握手校验的 ready Helper。</p>
+                        <p>包内文件按来源清单和 SHA256 校验；运行信息来自已通过启动校验的 Helper。</p>
                         <div class="ete-settings-info-row"><span>预期 libmpv 版本</span><code class="aboutExpectedLibmpvVersion">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>预期 client API</span><code class="aboutExpectedMpvClientApiVersion">UNKNOWN</code></div>
                         <div class="ete-settings-info-row"><span>预期 libmpv DLL SHA256</span><code class="aboutExpectedLibmpvSha256">UNKNOWN</code></div>

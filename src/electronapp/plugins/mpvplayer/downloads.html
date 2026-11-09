@@ -7,7 +7,7 @@
                 <button type="button" is="emby-button" class="raised ete-settings-button btnDownloadDirectory">选择 / 更改目录</button>
                 <button type="button" is="emby-button" class="raised ete-settings-button btnOpenDownloadDirectory">打开文件夹</button>
             </div>
-            <p class="downloadHint">更改目录只影响新任务，已有任务和文件保留原位置。退出客户端会停止传输，下次登录后继续。</p>
+            <p class="downloadHint">更改目录仅影响新任务，已有任务和文件位置不变。退出后停止下载，下次登录后继续。</p>
         </section>
         <section class="ete-settings-card">
             <div class="downloadListHeader"><h2>下载任务 <span class="downloadCount"></span></h2></div>
@@ -22,7 +22,7 @@
                     <label class="downloadSelectAll"><input type="checkbox" class="chkSelectAllDownloads"><span>全选</span></label>
                 </div>
             </div>
-            <p class="downloadHint">删除时默认仅移除记录并保留文件；可在确认窗口选择同时永久删除本任务文件。</p>
+            <p class="downloadHint">默认只删除记录、保留文件；确认时可选择永久删除任务文件。</p>
             <div class="downloadTasks"></div>
         </section>
         <div class="downloadStatus ete-settings-status" role="status" aria-live="polite"></div>

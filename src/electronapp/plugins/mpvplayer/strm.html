@@ -2,8 +2,8 @@
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page settingsContainer ete-settings-page strm-settings-page ete-strm-settings">
         <form class="auto-center" novalidate>
             <header class="ete-settings-header" aria-label="STRM 智能解析说明">
-                <p>为 STRM 媒体设置 CloudDrive2 与本地挂载路径，并决定可用来源的尝试顺序。</p>
-                <p>普通设置和规则需点击底部“保存设置”；Token 使用独立按钮保存。保存后无需重启，下次新播放生效。</p>
+                <p>设置 STRM 的 CloudDrive2、本地挂载路径和播放来源顺序。</p>
+                <p>设置和规则需点击底部“保存设置”；Token 单独保存。无需重启，下次播放生效。</p>
                 <p class="playbackConfigState" role="status" aria-live="polite"></p>
             </header>
 
@@ -51,9 +51,9 @@
                 <div class="checkboxContainer checkboxContainer-withDescription ete-strm-toggle-row">
                     <label>
                         <input type="checkbox" is="emby-checkbox" class="chkDirectUrlEnabled" />
-                        <span>启用 DirectUrl capability</span>
+                        <span>启用 DirectUrl 直链</span>
                     </label>
-                    <div class="fieldDescription checkboxFieldDescription">是否真正优先由下方路径规则的解析策略决定；不安全时自动回退到同源 HTTP。</div>
+                    <div class="fieldDescription checkboxFieldDescription">尝试顺序由下方路径规则决定；直链不安全时改用 CloudDrive2 HTTP 地址。</div>
                 </div>
                 <div class="ete-strm-connection-block">
                     <div class="ete-strm-status-row">
@@ -98,17 +98,17 @@
                         <div class="inputContainer ete-settings-field ete-strm-field">
                             <label for="ete-smart-source-path">STRM 源文件路径</label>
                             <input is="emby-input" type="text" id="ete-smart-source-path" class="txtSmartSourcePath" autocomplete="off" aria-describedby="ete-smart-source-help" />
-                            <div id="ete-smart-source-help" class="fieldDescription">填写 STRM / Emby 中记录的原始媒体文件路径。这不是当前电脑的本地挂载路径。例如 X:\115\电影\Alien\Alien.mkv</div>
+                            <div id="ete-smart-source-help" class="fieldDescription">填写 STRM / Emby 记录的媒体路径，不要填本机挂载路径。例如 X:\115\电影\Alien\Alien.mkv</div>
                         </div>
                         <div class="inputContainer ete-settings-field ete-strm-field">
                             <label for="ete-smart-cloud-path">CloudDrive2 文件路径</label>
                             <input is="emby-input" type="text" id="ete-smart-cloud-path" class="txtSmartCloudPath" autocomplete="off" aria-describedby="ete-smart-cloud-help" />
-                            <div id="ete-smart-cloud-help" class="fieldDescription">填写同一个文件在 CloudDrive2 中的完整逻辑路径。例如 /CloudNAS/CloudDrive/115open/115/电影/Alien/Alien.mkv</div>
+                            <div id="ete-smart-cloud-help" class="fieldDescription">填写同一文件在 CloudDrive2 中的完整路径。例如 /CloudNAS/CloudDrive/115open/115/电影/Alien/Alien.mkv</div>
                         </div>
                         <div class="inputContainer ete-settings-field ete-strm-field">
                             <label for="ete-smart-mount-path">本地挂载文件路径（可选）</label>
                             <input is="emby-input" type="text" id="ete-smart-mount-path" class="txtSmartMountPath" autocomplete="off" aria-describedby="ete-smart-mount-help" />
-                            <div id="ete-smart-mount-help" class="fieldDescription">如果当前电脑还挂载了同一媒体目录，可填写该文件实际可访问的本地路径，用于 Mount fallback。例如 Z:\115\电影\Alien\Alien.mkv</div>
+                            <div id="ete-smart-mount-help" class="fieldDescription">如已在本机挂载该目录，可填写同一文件的本地路径。例如 Z:\115\电影\Alien\Alien.mkv</div>
                         </div>
                         </div>
                       </fieldset>
