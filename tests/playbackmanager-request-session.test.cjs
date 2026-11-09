@@ -319,9 +319,10 @@ function makeFixture(options = {}) {
             disconnect() {}
         },
         require(dependencies, callback) {
-            if (dependencies[0] === 'alert') {
-                const deliver = () => callback(function alert(alertOptions) {
+            if (dependencies[0] === 'alert' || dependencies[0] === '../enhanced/playback-error-dialog.js') {
+                const deliver = () => callback(function alert(alertOptions, owner) {
                     calls.alerts.push(alertOptions);
+                    calls.alertOwners = (calls.alertOwners || []).concat(owner || []);
                     return options.alertResult || Promise.resolve();
                 });
                 if (options.alertLoader) options.alertLoader.push(deliver);
@@ -2262,11 +2263,11 @@ test('slider diagnostics preserve existing metadata duration selection and ordin
     assert.equal(f.posts.at(-1).PositionTicks, 300000000);
 });
 
-for (const retirement of ['new-play', 'stop', 'none']) {
+for (const retirement of ['new-play', 'public-play', 'stop', 'none']) {
     for (const delay of ['loader', 'close']) {
         test(`error dialog ${delay} remains owned across ${retirement}`, async () => {
             const loaders = [], close = deferred();
-            const fixture = makeFixture({alertLoader: loaders, alertResult: close.promise});
+            const fixture = makeStopBoundaryFixture({alertLoader: loaders, alertResult: close.promise});
             const items = [makeItem('error-A'), makeItem('next-B')];
             fixture.queue.items = items;
             fixture.queueControl.nextItem = queue => {
@@ -2281,10 +2282,14 @@ for (const retirement of ['new-play', 'stop', 'none']) {
             await settle();
             assert.equal(loaders.length, 1);
             if (delay === 'close') loaders[0]();
+            let surfaceRetirements = 0;
+            const owner = fixture.calls.alertOwners && fixture.calls.alertOwners[0];
+            if (owner) owner.close = () => surfaceRetirements++;
             if (retirement === 'stop') await fixture.manager.stop();
-            if (retirement === 'new-play') {
+            if (retirement === 'new-play' || retirement === 'public-play') {
                 fixture.queueControl.nextItem = () => ({item: makeItem('new-C'), index: 1});
-                const newer = fixture.manager.nextTrack();
+                const newer = retirement === 'public-play'
+                    ? fixture.manager.play({items: [makeItem('new-C')]}) : fixture.manager.nextTrack();
                 await waitFor(() => fixture.calls.metadata.length === 2);
                 fixture.resolveMetadata(1, 'new-session');
                 await newer;
@@ -2293,10 +2298,31 @@ for (const retirement of ['new-play', 'stop', 'none']) {
             close.resolve();
             await settle();
             assert.equal(fixture.calls.alerts.length, delay === 'loader' && retirement !== 'none' ? 0 : 1);
-            assert.equal(fixture.calls.metadata.length, retirement === 'new-play' ? 2 : 1);
+            assert.equal(fixture.calls.metadata.length, retirement === 'new-play' || retirement === 'public-play' ? 2 : 1);
+            if (delay === 'close') {
+                assert.equal(typeof owner.current, 'function', 'dedicated notice receives the captured owner');
+                assert.equal(surfaceRetirements, retirement === 'none' ? 0 : 1, 'admission/Stop retires the old surface once');
+            }
+            assert.equal(fixture.manager._etePlaybackErrorDialog, null, 'settled owner is released');
         });
     }
 }
+
+test('synchronous playbackstop listener admitting a new Play cannot give the old error its UI owner', async () => {
+    const loaders = [], fixture = makeStopBoundaryFixture({alertLoader: loaders});
+    await startQueueItem(fixture, [makeItem('old-A')], 'old-session');
+    let replacement;
+    fixture.events.on(fixture.manager, 'playbackstop', () => {
+        replacement = fixture.manager.play({items: [makeItem('new-B')]});
+    });
+    fixture.events.trigger(fixture.player, 'stopped', [null, {errorCode: 'NoCompatibleStream'}]);
+    await waitFor(() => fixture.calls.metadata.length === 2);
+    fixture.resolveMetadata(1, 'new-session');
+    await replacement;
+    assert.equal(loaders.length, 0, 'old stop cannot load a dialog after admitting B');
+    assert.equal(fixture.calls.alerts.length, 0);
+    assert.equal(fixture.player.streamInfo.item.Id, 'new-B');
+});
 
 test('maintained API stopped-body deadline releases replacement barrier with old session snapshot', async () => {
     const {harness, storage} = require('./helpers/api-client-amd.cjs');

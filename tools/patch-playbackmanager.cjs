@@ -793,4 +793,49 @@ replaceOnce('error dialog rejection settles without advancing',
     '        return finish();\n      });',
     '        return finish();\n      }, function () {});');
 
+// Only terminal playback notices use this local, idempotent surface. The frozen
+// generic alert/dialog history contract remains unchanged for all other callers.
+replaceOnce('local error dialog retirement helper',
+    '  function showPlaybackInfoErrorMessage(instance, errorCode, fullscreen, playNextTrack, diagnosticControl) {',
+    `  function retireEnhancedPlaybackErrorDialog(instance) {
+    var owner = instance._etePlaybackErrorDialog;
+    instance._etePlaybackErrorDialog = null;
+    if (owner && owner.close) owner.close();
+  }
+  function showPlaybackInfoErrorMessage(instance, errorCode, fullscreen, playNextTrack, diagnosticControl, errorRequestSequence) {
+    if (errorRequestSequence !== undefined && errorRequestSequence !== instance._etePlayRequestSequence) return;`);
+// Capture before synchronous playbackstop listeners can admit another Play.
+// A stream from an older request cannot acquire the newer request's UI owner.
+replaceOnce('local error dialog stopped request capture',
+    '    function onPlaybackStopped(e, playerStopInfo) {\n      var playerData = getPlayerData(this);',
+    '    function onPlaybackStopped(e, playerStopInfo) {\n      var playerData = getPlayerData(this);\n' +
+    '      var errorRequestSequence = playerData.streamInfo && playerData.streamInfo._etePlayRequestId || self._etePlayRequestSequence;');
+replaceOnce('local error dialog stopped request argument',
+    '                playerData, diagnosticStopControl\n',
+    '                playerData, diagnosticStopControl, errorRequestSequence\n');
+replaceOnce('local error dialog ownership',
+    '    function current() { return sequence === instance._etePlayRequestSequence; }',
+    '    function current() { return sequence === instance._etePlayRequestSequence && (!owner || instance._etePlaybackErrorDialog === owner); }');
+replaceOnce('local error dialog completion cleanup',
+    '      completed = true;\n      if (current()) return afterPlaybackErrorMessage(instance, errorCode, playNextTrack, diagnosticControl);',
+    '      completed = true;\n      var active = current();\n      if (instance._etePlaybackErrorDialog === owner) instance._etePlaybackErrorDialog = null;\n      if (active) return afterPlaybackErrorMessage(instance, errorCode, playNextTrack, diagnosticControl);');
+replaceOnce('local error dialog owner admission',
+    '    if (!fullscreen) return finish();\n    var options;',
+    '    if (!fullscreen) return finish();\n    retireEnhancedPlaybackErrorDialog(instance);\n' +
+    '    var owner = {current: current, close: null};\n    instance._etePlaybackErrorDialog = owner;\n    var options;');
+replaceOnce('local error dialog dependency', '        require(["alert"], function (alert) {',
+    '        require(["../enhanced/playback-error-dialog.js"], function (alert) {');
+replaceOnce('local error dialog delivery', '          alert(options).then(resolve, reject);',
+    '          alert(options, owner).then(resolve, reject);');
+replaceOnce('local error dialog cancellation cleanup',
+    '        return finish();\n      }, function () {});',
+    '        return finish();\n      }, function () {\n        completed = true;\n        if (instance._etePlaybackErrorDialog === owner) instance._etePlaybackErrorDialog = null;\n      });');
+for (const [name, anchor, instance] of [
+    ['internal play', '        retireEnhancedVolumeOsd(self);\n      }', 'self'],
+    ['public play', '        retireEnhancedVolumeOsd(self);\n        options._etePlayRequestId', 'self'],
+    ['terminal stop', '      retireEnhancedVolumeOsd(this);\n', 'this']
+]) replaceOnce('local error dialog retirement at ' + name, anchor,
+    anchor.replace('retireEnhancedVolumeOsd(' + instance + ');',
+        'retireEnhancedVolumeOsd(' + instance + ');\n' + (instance === 'self' ? '        ' : '      ') + 'retireEnhancedPlaybackErrorDialog(' + instance + ');'));
+
 fs.writeFileSync(file, source, 'utf8');

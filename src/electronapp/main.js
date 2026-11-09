@@ -1140,6 +1140,7 @@
             getMainWindow: function () { return mainWindow; },
             getWebContents: getWebContents,
             logger: enhancedLog,
+            getDiagnosticMode: function () { return enhancedLog.getMode(); },
             runtimeRoot: path.resolve(__dirname, '..'),
             mode: nativeHelperMode,
             kernelStore: mpvKernelStore,

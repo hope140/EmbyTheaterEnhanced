@@ -5,9 +5,10 @@ const STAGES = new Set(['response', 'pre-response', 'transfer', 'unavailable']);
 const ERRORS = new Set(['none', 'unknown', 'http-status', 'name-resolution', 'connect', 'tls-handshake',
     'tls-verification', 'timeout', 'send', 'receive', 'partial-file', 'empty-response', 'http2', 'range-not-honored']);
 const KEYS = ['kind', 'stage', 'networkError', 'httpStatus', 'sequence'];
+const EXTRA = ['streamOk', 'declaredContentSize', 'seekable', 'mpvLevel'];
 function projectLog(value) {
     try {
-        if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== KEYS.length) return null;
+        if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !KEYS.includes(key) && !EXTRA.includes(key))) return null;
         const clean = {};
         for (const key of KEYS) {
             const descriptor = Object.getOwnPropertyDescriptor(value, key);
@@ -18,6 +19,15 @@ function projectLog(value) {
             !Number.isSafeInteger(clean.sequence) || clean.sequence < 1 || clean.sequence > 2147483647 ||
             !(clean.httpStatus === null || Number.isInteger(clean.httpStatus) && clean.httpStatus >= 100 && clean.httpStatus <= 599)) return null;
         if (clean.httpStatus !== null && (!['response', 'http-error'].includes(clean.kind) || clean.stage !== 'response')) return null;
+        for (const key of EXTRA) {
+            if (!Object.hasOwn(value, key)) continue;
+            const descriptor = Object.getOwnPropertyDescriptor(value, key);
+            if (!descriptor || !Object.hasOwn(descriptor, 'value')) return null;
+            const v = descriptor.value;
+            if (key === 'mpvLevel' ? !['unknown', 'fatal', 'error', 'warn', 'info', 'v', 'debug', 'trace'].includes(v) :
+                key === 'declaredContentSize' ? !(v === null || Number.isSafeInteger(v) && v >= -1) : !(v === null || typeof v === 'boolean')) return null;
+            clean[key] = v;
+        }
         return clean;
     } catch (_) {return null;}
 }

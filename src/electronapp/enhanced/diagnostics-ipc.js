@@ -9,6 +9,7 @@ const rendererBoundary = require('./renderer-boundary');
 const CHANNELS = Object.freeze({
     LOG: 'enhanced-diagnostics-log',
     GET_STATUS: 'enhanced-diagnostics-status',
+    SET_MODE: 'enhanced-diagnostics-set-mode',
     EXPORT: 'enhanced-diagnostics-export',
     OPEN_DIRECTORY: 'enhanced-diagnostics-open-directory',
     CLEAR: 'enhanced-diagnostics-clear'
@@ -72,6 +73,12 @@ function register(options) {
         return Object.assign({status: 'ok'}, await logger.status(), {
             nativeHelper: typeof settings.getNativeHelperStatus === 'function' ? settings.getNativeHelperStatus() : null
         });
+    });
+
+    registerHandler(CHANNELS.SET_MODE, async function (request) {
+        if (!request || !['normal', 'detailed'].includes(request.mode) || !logger || typeof logger.setMode !== 'function') return {status: 'error', reason: 'invalid_diagnostic_mode'};
+        const mode = await logger.setMode(request.mode);
+        return {status: 'saved', diagnosticMode: mode, appliesTo: 'next-playback'};
     });
 
     registerHandler(CHANNELS.EXPORT, async function () {

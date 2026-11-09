@@ -4,7 +4,7 @@ const {createRecorder} = require('./bounded-diagnostics');
 const crypto = require('node:crypto');
 const networkDiagnostics = require('./media-network-diagnostics');
 const EVENTS = new Set(['generation-begin', 'generation-retired', 'start-file', 'file-loaded', 'core-playing', 'end-file',
-    'presentation-prepare', 'presentation-arm', 'presentation-clear', 'surface-hidden', 'media-network-input', 'destroy-requested', 'destroy-completed']);
+    'presentation-prepare', 'presentation-arm', 'presentation-clear', 'surface-hidden', 'media-network-input', 'destroy-requested', 'destroy-completed', 'operation-error', 'startup-property-result']);
 const DISPOSITIONS = new Set(['BEGIN_GENERATION', 'RETIRE_GENERATION', 'ACCEPT', 'DROP_STALE_GENERATION',
     'DROP_STALE_HELPER', 'DROP_TRANSPORT_TERMINAL', 'DROP_UNATTRIBUTED', 'requested', 'completed', 'ready', 'unavailable', 'stale', 'cleared', 'hidden']);
 const REASONS = new Set(['superseded', 'stop', 'destroy', 'renderer-destroy', 'service-destroy', 'retired',
@@ -39,6 +39,14 @@ function createNativeDiagnostics(logger, options) {
     const emit = createRecorder(logger, 'native-helper', 120, options);
     const emitNetwork = createRecorder(logger, 'media-network', 120, options);
     const requests = new Map();
+    const engineSeen = new Map();
+    const severityLogger = row => logger({...row, level: ['fatal', 'error'].includes(row.details.mpvLevel) ? 'error' : row.details.mpvLevel === 'warn' ? 'warn' : 'info'});
+    const lane = name => ({...options, deliveryReceipts: true, lane: name});
+    const emitEngineError = createRecorder(severityLogger, 'mpv-engine', 60, lane('engine-error'));
+    const emitEngineWarning = createRecorder(severityLogger, 'mpv-engine', 60, lane('engine-warning'));
+    const emitEngineContext = createRecorder(severityLogger, 'mpv-engine', 180, lane('engine-context'));
+    const emitOperationError = createRecorder(row => logger({...row, level: 'error'}), 'native-helper', 120, lane('operation-error'));
+    const emitOperation = createRecorder(row => logger({...row, level: 'info'}), 'native-helper', 120, lane('operation-success'));
     // Private, memory-only key: references are comparable only within this service
     // lifetime, never across users/restarts. Do not use the stable path/ID hashes.
     let identityKey;
@@ -56,6 +64,51 @@ function createNativeDiagnostics(logger, options) {
     }
     return function observe(input) {
         try {
+            if (input && input.name === 'mpv-engine') {
+                if (input.disposition !== 'ACCEPT_HELPER_GLOBAL' || !id(input.helperRun)) return;
+                const snapshot = require('./engine-diagnostics').projectEngineSnapshot(input.engine);
+                if (!snapshot) return;
+                const key = input.helperRun + ':' + snapshot.candidateGenerationId;
+                const previousState = engineSeen.get(key) || {written: new Set(), pending: new Set(), retained: new Set(), snapshotSequence: 0};
+                if (snapshot.snapshotSequence < previousState.snapshotSequence) return;
+                const previousSnapshot = previousState.snapshotSequence;
+                previousState.snapshotSequence = snapshot.snapshotSequence;
+                previousState.retained = new Set(snapshot.records.map(record => record.sequence));
+                for (const sequence of previousState.written) if (!previousState.retained.has(sequence)) previousState.written.delete(sequence);
+                engineSeen.set(key, previousState);
+                if (engineSeen.size > 64) engineSeen.delete(engineSeen.keys().next().value);
+                const owner = requests.get(key);
+                let attempted = false;
+                for (const record of snapshot.records) {
+                    if (previousState.written.has(record.sequence) || previousState.pending.has(record.sequence)) continue;
+                    attempted = true;
+                    previousState.pending.add(record.sequence);
+                    const emitRecord = ['fatal', 'error'].includes(record.level) ? emitEngineError : record.level === 'warn' ? emitEngineWarning : emitEngineContext;
+                    const receipt = emitRecord('engine-message', {helperRun: input.helperRun, generationId: null,
+                        requestId: 'UNAVAILABLE', association: 'active-generation-context',
+                        candidateGenerationId: snapshot.candidateGenerationId,
+                        candidateRequestId: owner ? owner.requestId : 'UNAVAILABLE',
+                        diagnosticMode: snapshot.mode, phase: snapshot.phase,
+                        snapshotSequence: snapshot.snapshotSequence, nativeDropped: snapshot.dropped,
+                        nativeSequence: record.sequence, nativeMonotonicMicros: record.monotonicMicros,
+                        module: record.module, mpvLevel: record.level, message: record.message});
+                    const complete = written => {
+                        previousState.pending.delete(record.sequence);
+                        if (written === true && previousState.retained.has(record.sequence)) previousState.written.add(record.sequence);
+                    };
+                    if (receipt && typeof receipt.then === 'function') receipt.then(complete, () => complete(false));
+                    else complete(receipt);
+                }
+                if (snapshot.records.length === 0 || attempted || snapshot.phase !== 'startup') {
+                    emitEngineContext('engine-window', {helperRun: input.helperRun, generationId: null,
+                        association: 'active-generation-context', candidateGenerationId: snapshot.candidateGenerationId,
+                        candidateRequestId: owner ? owner.requestId : 'UNAVAILABLE', diagnosticMode: snapshot.mode,
+                        phase: snapshot.phase, nativeDropped: snapshot.dropped, retainedRecords: snapshot.records.length,
+                        snapshotSequence: snapshot.snapshotSequence,
+                        observerSnapshotGaps: Math.max(0, snapshot.snapshotSequence - previousSnapshot - 1)});
+                }
+                return;
+            }
             if (input && input.name === 'media-network') {
                 if (input.disposition !== 'ACCEPT_HELPER_GLOBAL' || !id(input.helperRun)) return;
                 const projected = networkDiagnostics.projectLog(input.network);
@@ -96,6 +149,25 @@ function createNativeDiagnostics(logger, options) {
             if (input.name === 'end-file') {
                 details.endReason = Number.isInteger(input.endReason) && input.endReason >= 0 && input.endReason <= 5 ? input.endReason : null;
                 details.mpvErrorCode = mpvErrorCode(input.mpvErrorCode);
+            }
+            if (input.name === 'operation-error') {
+                if (!['set-property', 'command'].includes(input.operation) || mpvErrorCode(input.errorCode) === null) return;
+                details.operation = input.operation;
+                details.property = typeof input.property === 'string' && /^[a-z0-9/-]{1,128}$/.test(input.property) ? input.property : null;
+                details.mpvErrorCode = input.errorCode;
+                details.reason = typeof input.error === 'string' ? input.error.slice(0, 256) : 'mpv-operation-failed';
+                emitOperationError(input.name, details);
+                return;
+            }
+            if (input.name === 'startup-property-result') {
+                const result = input.result;
+                if (!result || !['start', 'pause', 'aid', 'sid', 'hwdec', 'keep-open'].includes(result.property) ||
+                    !Number.isInteger(result.errorCode) || !Number.isSafeInteger(result.operationSequence) ||
+                    typeof result.applied !== 'boolean' || typeof result.value !== 'string' || result.value.length > 64 ||
+                    !/^[a-zA-Z0-9_+.,:-]+$/.test(result.value)) return;
+                Object.assign(details, result);
+                (result.applied === false || result.errorCode < 0 ? emitOperationError : emitOperation)(input.name, details);
+                return;
             }
             if (input.name === 'media-network-input') {
                 const projected = networkDiagnostics.projectInput(input.network);

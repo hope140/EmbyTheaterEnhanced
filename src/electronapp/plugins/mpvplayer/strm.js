@@ -128,8 +128,8 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         sample.appendChild(element('legend', null, '样本 ' + index));
         [
             ['source', 'STRM 源文件路径', '填写 STRM / Emby 中记录的原始媒体文件路径。'],
-            ['cloud', 'CloudDrive2 文件路径', '填写同一个文件在 CloudDrive2 中的完整逻辑路径。'],
-            ['mount', '本地挂载文件路径（可选）', '当前电脑实际可访问的路径，用于 Mount fallback。']
+            ['cloud', 'CloudDrive2 文件路径', '填写同一文件在 CloudDrive2 中的完整路径。'],
+            ['mount', '本地挂载文件路径（可选）', '填写本机可访问的路径，用于本地挂载播放。']
         ].forEach(function (field) {
             var wrapper = element('div', 'inputContainer ete-settings-field ete-strm-field');
             var id = 'ete-smart-' + field[0] + '-path-' + index;
@@ -177,7 +177,7 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (preview.fileMatch.status === 'UNSAFE') return '路径未通过安全检查。';
         if (preview.boundary.reason === 'file_match_insufficient') return '文件对应关系证据不足，请核对各组路径是否指向同一文件。';
         if (preview.fileMatch.confidence === 'HIGH' && preview.boundary.status === 'INSUFFICIENT_EVIDENCE') {
-            return '这些路径高度可能对应同一个文件，但仅凭当前样本无法可靠确定可复用路径边界。请再提供一个不同目录下的对应文件。';
+            return '这些路径很可能指向同一文件，但还无法确定通用规则。请再添加一组不同目录的文件路径。';
         }
         if (preview.boundary.status === 'MATCHED' && preview.boundary.confidence === 'HIGH') {
             return preview.mount && preview.mount.status !== 'MATCHED' && preview.mount.reason !== 'mount_samples_required'
@@ -368,14 +368,14 @@ define(['loading', 'baseView', 'emby-select', 'emby-checkbox', 'emby-input', 'em
         if (isDraftRule) heading.appendChild(state);
         card.appendChild(heading);
         grid.appendChild(createLabeledInput(rule.id, 'sourcePrefix', 'STRM 源路径', rule.sourcePrefix, {
-            description: 'STRM / Emby MediaSource.Path 中记录的路径，不要求当前电脑可以访问。'
+            description: 'STRM / Emby 记录的媒体路径，无需本机可访问。'
         }));
         grid.appendChild(createLabeledInput(rule.id, 'cloudPrefix', 'CloudDrive2 路径', rule.cloudPrefix, {
-            description: '同一媒体在 CloudDrive2 中的逻辑路径，用于 DirectUrl / CD2 HTTP。'
+            description: '同一媒体在 CloudDrive2 中的路径，用于直链或 HTTP 播放。'
         }));
         grid.appendChild(createLabeledInput(rule.id, 'mountPrefix', '本地挂载路径', rule.mountPrefix, {
             placeholder: '未配置',
-            description: '当前客户端可通过文件系统访问的路径，用于 Mount fallback；没有挂载时保持未配置。'
+            description: '本机可访问的路径，用于本地挂载播放；未挂载可留空。'
         }));
         grid.appendChild(createLabeledSelect(rule.id, 'storageType', '存储类型', ['cloud-mount', 'local-nas'], rule.storageType, {
             'cloud-mount': '云盘挂载',

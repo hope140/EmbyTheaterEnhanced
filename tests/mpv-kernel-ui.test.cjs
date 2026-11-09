@@ -119,7 +119,7 @@ test('unavailable candidate management keeps baseline playback controls and repo
   assert.equal(view.querySelector('.btnSelectBaseline').disabled, true);
 
   controller.renderKernelStatus({status: 'unavailable', reason: 'package-identity-unavailable'});
-  assert.match(view.querySelector('.aboutKernelState').textContent, /Helper 身份未能通过 provenance\/hash 校验/);
+  assert.match(view.querySelector('.aboutKernelState').textContent, /Helper 来源或文件校验未通过/);
   assert.equal(view.querySelector('.btnImportKernel').disabled, true);
 });
 

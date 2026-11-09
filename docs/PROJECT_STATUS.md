@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-09 — v0.4.20 独立测试版候选准备
+
+整合已核验的 a5287159 弹窗与诊断修复、main f007802f 的九份文档更新，以及基于 a5287159 的客户端文案提交 704c3bb 和 caaedac。文案生产差异仅涉及用户可见字符串与 HTML 文本，不改变标签属性、事件、状态、播放或下载操作。版本更新为 0.4.20，发布说明同步当前范围。
+
+此提交仍是独立分支候选，未合入 main、创建 Tag 或发布。此前候选的测试和构建回执只作为历史证据；最终完整回归、材料自测、真实 helper 重编及新安装包来源核验必须绑定本次最终源码。不会安装或改动现用客户端，不加入 EOF 保护、自动重试或 keep-open 变更；115 并发仍为未证实猜测。当前线上测试版仍为 v0.4.19，正式 Latest 仍为 v0.4.0。
+
 ## 2026-11-09 — 当前发布、验收与范围
 
 GitHub 正式 Latest 仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)，最新公开测试版为 [v0.4.19](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.19)。本次核对的 main 为 `825c7c7faad7c7e40490cf77d3244d12e9161d2a`；原生优先误报回退修复已在 main，待后续版本发布。独立验收包 `a52871590acbe1cae2a19266c661f87436cd587e` 包含弹窗隔离与有界诊断补充，仍待用户验收，未合入 main 或公开发布。
@@ -9,6 +15,20 @@ GitHub 正式 Latest 仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhan
 本轮先完成现有测试与稳定性验收，再准备正式版，不插入新需求，正式版号和日期未定。预载／预加载、播放／缓冲暂存、最近搜索已取消；提前下载保留。飞牛继续独立开发，安排在本轮正式版之后发布，真实认证和播放仍未完成验证。WOL／服务器自动发现列为正式版后精简候选，删除前验证手动地址及既有连接，本轮不删除。当前决定与后续条件集中在[范围页](NEXT_RELEASE_SCOPE.md)，排期入口见[路线图](ROADMAP.md)。
 
 以下日期条目保留当时的准备、候选和验证事实；其“未发布／待合并”等措辞按对应日期、来源和版本理解，不覆盖上述当前状态。本次仅同步公开文档，不改代码、版本、构建输入或验收包，不增加客户端、真实媒体、系统安装或硬件验收结论。
+
+## 2026-11-08 — Dialog and engine diagnostics acceptance integration
+
+Integrates the completed history-isolated playback notice and bounded engine diagnostic candidates on main 825c7c7. Both production changes are retained without additional playback behavior, EOF guards, retries or keep-open changes. Version remains 0.4.19 for a local acceptance package; no main merge or release is requested. Full tests, material checks, actual helper compilation, renderer and diagnostic probes must bind the final integration commit before packaging. Previous candidate evidence remains historical; the cause of concurrent-provider playback failures is not established.
+
+## 2026-11-08 — Playback error notice history isolation
+
+Terminal playback notices now use a dedicated local surface with idempotent confirmation, Escape/Back and retirement. It reuses the frozen dialog template/classes and original focus/input owners, adds no history entry, and does not call the router. New Play/Next/Stop retire its request owner; stopped-stream identity is captured before synchronous playbackstop listeners can admit another Play. Ordinary alert/dialog/menu history and application shutdown remain unchanged.
+
+The isolated Chromium probe reproduces the previous race with real asynchronous browser history: OSD Back pending when the frozen alert opens can leave its original URL unreachable, so repeated confirmation traverses underlying pages without closing. The fixed probe passes both OSD return orders and 16 additional dismissal/retirement/ordinary-dialog/exit-adapter checks. The focused generated-manager, material and shutdown group passes 177 tests. This synthetic source/component evidence does not establish all causes of a field shutdown, verify a real media service or replace installed-client acceptance. The public suite attempt stalled in an unchanged batch-download confirmation test; the same individual test times out on the unmodified main baseline. No full-suite PASS is claimed. Reproduction commands and boundaries are in [testing](TESTING.md#playback-error-dialog-history).
+
+## 2026-11-08 — Bounded engine diagnostics
+
+Normal diagnostics now retain native operation failures and actual startup property results. A saved Normal/Detailed preference is sampled at the next Play without interrupting active playback. The native collector scrubs credentials before IPC and retains prioritized errors plus bounded startup context; exports preserve useful fault descriptions and explicitly contextual association. See [engine diagnostics](ENGINE_DIAGNOSTICS.md) for bounds, privacy and verification. This change does not alter playback routes, retry behavior or keep-open.
 
 ## 2026-11-08 — Native selection semantics
 
@@ -1310,3 +1330,12 @@ GitHub Windows public CI exposed one preload fixture using a nonphysical TEMP al
 
 
 2026-10-23 candidate: manual Windows packaging has a source-built Host recovery/compile/verification entry point, with pinned 55-file source and NuGet acquisition and generated per-run evidence. GitHub execution remains unverified. Work's validated builder argument delta has been synchronized exactly; a portable runner-side Host verification harness is still required; the missing harness fails closed before compilation/packaging. No external Work binary/verification receipt is imported by this path.
+
+
+## 2026-11-08 diagnostic priority correction (acceptance only)
+
+Warning and successful startup-property floods now have separate minute and pending-write budgets from fatal/error and failed operations (including applied:false). Engine identities are marked saved only after the logger completes successfully; in-flight identities are bounded and generation-scoped. A newer snapshot can retry retained unsaved records without a later sequence hiding a failed earlier one. No playback behavior, retries, EOF policy or keep-open changes.
+
+Critical storms remain bounded: engine critical 60/minute, operation critical 120/minute, 32 outstanding writes per lane, plus at most one rate marker per window. Suppression counters count rejected delivery attempts by lane and reason, carry across windows and failed writes, and are exported on the next successful write; saturation is explicit. This is not lossless delivery: native retention/eviction, no later snapshot, process termination, permanently stalled storage and log rotation remain limits. Operation events are not automatically retried. Warning/context pressure cannot consume critical admission capacity, but all lanes ultimately share filesystem throughput.
+
+Added real createNativeDiagnostics -> recorder -> disk logger -> diagnostic report regressions for rate/pending isolation, critical storms, failed writes and snapshot replay, applied:false, generation identities and credential removal. Targeted priority and existing bounded-observer suite: 25 passed. Final full gates, fresh helper compile and installer provenance must be revalidated on the resulting commit; previous acceptance candidate is on HOLD.

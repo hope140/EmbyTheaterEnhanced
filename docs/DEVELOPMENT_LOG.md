@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-09 — v0.4.20 独立测试版候选准备
+
+整合已核验的 a5287159 弹窗与诊断修复、main f007802f 的九份文档更新，以及基于 a5287159 的客户端文案提交 704c3bb 和 caaedac。文案生产差异仅涉及用户可见字符串与 HTML 文本，不改变标签属性、事件、状态、播放或下载操作。版本更新为 0.4.20，发布说明同步当前范围。
+
+此提交仍是独立分支候选，未合入 main、创建 Tag 或发布。此前候选的测试和构建回执只作为历史证据；最终完整回归、材料自测、真实 helper 重编及新安装包来源核验必须绑定本次最终源码。不会安装或改动现用客户端，不加入 EOF 保护、自动重试或 keep-open 变更；115 并发仍为未证实猜测。当前线上测试版仍为 v0.4.19，正式 Latest 仍为 v0.4.0。
+
 ## 2026-11-09 — 当前发布与后续范围文档整理
 
 核对 GitHub main `825c7c7faad7c7e40490cf77d3244d12e9161d2a`、正式 Latest v0.4.0 和公开测试版 v0.4.19，更新 README 下载入口、文档索引、用户指南、已知问题及路线图／后续范围。明确原生优先误报回退修复在 main 待发布，`a5287159` 仅为待用户验收的独立包，未合入 main 或发布。播放成功率退化和提前 EOF 根因继续记为未确认；固定 DLL 的 138 次隔离对照未支持回退 `start` 时序，不写成现场问题已根治。
@@ -7,6 +13,22 @@
 当前顺序为现有测试稳定后准备正式版，版号和日期未定，不插入新需求。预载／预加载、播放／缓冲暂存和最近搜索取消，提前下载保留；飞牛继续开发，在本轮正式版后发布，真实认证／播放仍待验证。WOL／自动发现仅列正式版后精简候选，删除前核对动态调用并验证手动地址和既有连接，本次不删除功能。
 
 保留明确日期的历史记录、来源及许可信息；当前文档互相链接，旧“未发布实验”锚点保留兼容入口，并修正两处已改名的下载筛选标题链接。九份文档的 338 个相对链接和 56 个标题锚点检查通过，既有文档路线辅助回归 47/47 通过。修改限既有文档白名单，不改产品代码、版本、构建输入或验收包；准确提交的轻量门禁结果单独回读。文档检查不替代代码回归、真实媒体、安装或硬件验收。
+
+## 2026-11-08 — Dialog and engine diagnostics acceptance integration
+
+Integrates the completed history-isolated playback notice and bounded engine diagnostic candidates on main 825c7c7. Both production changes are retained without additional playback behavior, EOF guards, retries or keep-open changes. Version remains 0.4.19 for a local acceptance package; no main merge or release is requested. Full tests, material checks, actual helper compilation, renderer and diagnostic probes must bind the final integration commit before packaging. Previous candidate evidence remains historical; the cause of concurrent-provider playback failures is not established.
+
+## 2026-11-08 — Playback error notice history isolation
+
+Based on main `825c7c7faad7c7e40490cf77d3244d12e9161d2a`, added a dedicated playback error surface and request-bound retirement in the PlaybackManager generator. The frozen generic dialog does not forward enableHistory, so adding that alert option alone would not fix the race. Generic alert/dialog/helper inputs remain byte-identical. The dedicated notice owns its immediate local close and backdrop cleanup, avoiding the frozen helper's delayed backdrop setup when a notice is retired immediately.
+
+Before the production edit, the isolated browser fixture reproduced the stale originalUrl mechanism using the actual frozen alert/dialog/helper/DOM/input modules, sourced OSD stop/exit functions and real History API. The same script can select the baseline patcher by Git ref and reports source hashes. Current checks cover both OSD return orders, burst confirmation, Escape/Back, backdrop, immediate cleanup, loader/open retirement, ordinary/nested dialogs and normal Back reaching a synthetic root-exit adapter. Full generated-manager tests separately cover actual public Play, Next and Stop admission and synchronous playbackstop reentry. The focused group passes 177 tests; the browser group passes 18 scenarios. New public-Play test cases initially lacked the fixture's getCurrentUser implementation; they now use the existing public-Play fixture and pass. This was a test-input failure, not a product regression.
+
+The attempted public collection was interrupted after stalling at the existing batch-download confirmation test; a 15-second isolated run times out on both current and untouched baseline sources. Source/provenance tests initially fail under the sandbox's temporary Git/junction restrictions; a separately permitted run outside that sandbox passes all 10 tests. Initial failures and the successful rerun are retained separately; no full public-suite, package, installation, actual application exit or real-server playback acceptance is asserted. No helper/libmpv/network diagnostic behavior is changed.
+
+## 2026-11-08 — Bounded engine diagnostic collection
+
+Implemented a saved diagnostic level, pre-IPC engine message scrubbing, priority-bounded native collection, actual startup property return evidence, contextual generation association, and JSONL/export integration. Regression probes compile exact C++ collector bytes and exercise credential canaries, floods, timeout, replacement, slow writes and rotation. Runtime provenance and public/material checks remain separate from real-media and visible-client acceptance; see [engine diagnostics](ENGINE_DIAGNOSTICS.md).
 
 ## 2026-11-08 — Native selection semantics
 
@@ -1836,3 +1858,12 @@ This is local integration preparation, not a successful GitHub run. Work's exact
 同一源码的新普通验收包[41041631953](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953)已完成success，manual-windows-test-package耗时22m37s，Host编译／验证、整包构建与上传全部通过，无重复派发。API确认产物`12970779372`、名称`ete-test-win-x64-b4f858a06bb6da712d6bf73f9e40c5ee4cefbabb-41041631953-1`、164696855字节、expired=false，所属workflow源码与完整b4f858a一致；[临时下载页](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/41041631953/artifacts/12970779372)保留至`2026-10-31T10:56:11Z`。API给出ZIP摘要`sha256:89eca833a9c6228cd05ed80261a556a411be951bf2444c30dcbe6115120258d2`，不是独立计算的安装器SHA。
 
 新产物正常GET `actions/artifacts/12970779372/zip`仅一次，返回Forbidden、0字节，已停止；没有重试该目标、先前受拒的旧目标或换通道。不是自动审批拒绝，构建／上传本身成功。源码根package.json仍为0.4.6，按构建规则预期文件名为`EmbyTheaterEnhanced-0.4.6-test-b4f858a06bb6-41041631953-1-win-x64-setup.exe`；由于包内字节未回读，实际安装器名／PE版本／SHA和内部模块清单未独立核验。真实来源HTTP错误根因、原生确认／文件夹打开／界面布局及真实应用重开仍待使用者验收。未操作Work前台、删除用户文件、合main或发布。
+
+
+## 2026-11-08 diagnostic priority correction (acceptance only)
+
+Warning and successful startup-property floods now have separate minute and pending-write budgets from fatal/error and failed operations (including applied:false). Engine identities are marked saved only after the logger completes successfully; in-flight identities are bounded and generation-scoped. A newer snapshot can retry retained unsaved records without a later sequence hiding a failed earlier one. No playback behavior, retries, EOF policy or keep-open changes.
+
+Critical storms remain bounded: engine critical 60/minute, operation critical 120/minute, 32 outstanding writes per lane, plus at most one rate marker per window. Suppression counters count rejected delivery attempts by lane and reason, carry across windows and failed writes, and are exported on the next successful write; saturation is explicit. This is not lossless delivery: native retention/eviction, no later snapshot, process termination, permanently stalled storage and log rotation remain limits. Operation events are not automatically retried. Warning/context pressure cannot consume critical admission capacity, but all lanes ultimately share filesystem throughput.
+
+Added real createNativeDiagnostics -> recorder -> disk logger -> diagnostic report regressions for rate/pending isolation, critical storms, failed writes and snapshot replay, applied:false, generation identities and credential removal. Targeted priority and existing bounded-observer suite: 25 passed. Final full gates, fresh helper compile and installer provenance must be revalidated on the resulting commit; previous acceptance candidate is on HOLD.
