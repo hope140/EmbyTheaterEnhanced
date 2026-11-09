@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-09 — Initial embedded subtitle candidate
+
+Based on main b4b70bc7c8873b750ee9375a00c9cca742fcf28b. A generation-bound native on_preloaded hook resolves the actual mpv track table before default track initialization. Container routes use unique internal ff-index (including zero); existing remux routes require the expected internal track count and output ordinal. External IDs, labels and display order are never used as container identity. Missing/ambiguous mappings retain the existing post-load fallback. The adapter skips its initial sid reset only after a current-generation table proves the target is the only selected subtitle. Manual switching remains unchanged.
+
+This is independent of the terminal EOF adapter candidate. Fixed mpv and synthetic HTTP tests establish selection correctness and absence of the extra startup refresh seek in the tested cases; they do not establish the original MKV failure cause or visible stutter removal. Ordinary EOF without authoritative failure evidence remains outside the separate terminal-error fix. No merge, release, installation or real-media acceptance. See [initial subtitle validation](TESTING.md#initial-subtitle-preloaded).
+
 ## 2026-11-09 — v0.4.20 测试版已发布
 
 [v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已发布，Tag 与安装包源码均为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`；正式 Latest 保持 v0.4.0。包含弹窗历史隔离与幂等关闭、有界普通／详细诊断、原生优先误报回退修复及客户端说明文字。

@@ -8,7 +8,8 @@ const vm = require('node:vm');
 
 // Exercise the complete production AMD module through play() and its public
 // setSubtitleStreamIndex() entry point. Only the browser, bridge and clock are fake.
-const source = fs.readFileSync(path.join(__dirname, '../src/electronapp/plugins/libmpv.js'), 'utf8');
+const source = fs.readFileSync(path.join(process.env.ETE_TEST_SOURCE_ROOT || path.join(__dirname, '..'),
+    'src/electronapp/plugins/libmpv.js'), 'utf8');
 
 class Clock {
     constructor() { this.now = 0; this.nextId = 0; this.queue = []; }
@@ -90,6 +91,7 @@ function makeHarness() {
             return trackRead ? trackRead() : Promise.resolve(tracks);
         },
         setProperties(properties) {
+            if (Object.hasOwn(properties, 'initial-subtitle')) actions.push({type: 'initial-subtitle', value: properties['initial-subtitle']});
             if (properties.pause === false) unpaused = true;
             if (rejectSid && Object.hasOwn(properties, 'sid')) { rejectSid = false; return Promise.reject(Error('synthetic sid rejection')); }
             if (Object.hasOwn(properties, 'sid')) actions.push({at: clock.now, type: 'sid', value: properties.sid});
@@ -177,9 +179,80 @@ function makeHarness() {
         },
         rejectNextSid() { rejectSid = true; },
         setResolvedSource(value) { resolvedSource = value; },
-        holdReady() { automaticReady = false; }, ready() { target.dispatchEvent({type: 'core-playing'}); },
+        holdReady() { automaticReady = false; }, automaticReady() { automaticReady = true; },
+        ready() { target.dispatchEvent({type: 'core-playing'}); },
         setTracks(value) { tracks = value; }, setTrackRead(value) { trackRead = value; }};
 }
+
+for (const method of ['DirectPlay', 'DirectStream']) for (const target of [0, 3]) {
+    test(`initial exact native selection survives without a redundant sid reset: ${method} ${target}`, async () => {
+        const h = makeHarness(); h.holdReady();
+        const rows = [{Type:'Subtitle', Index:0, DeliveryMethod:'Embed', Codec:'srt'},
+            {Type:'Subtitle', Index:3, DeliveryMethod:'Embed', Codec:'srt'}];
+        const playing = h.play(rows, target, method);
+        await h.loadingReached();
+        const plan = h.actions.find(row => row.type === 'initial-subtitle');
+        assert.ok(plan, 'arm a generation-bound plan before loadfile');
+        assert.ok(h.actions.indexOf(plan) < h.actions.findIndex(row => row.type === 'loadfile'));
+        assert.equal(JSON.parse(plan.value).index, target);
+        h.setTracks([{type:'sub', external:true, id:1, 'ff-index':0, selected:false},
+            {type:'sub', external:false, id:2, 'ff-index':method==='DirectPlay'?0:4, selected:target===0},
+            {type:'sub', external:false, id:3, 'ff-index':method==='DirectPlay'?3:7, selected:target===3}]);
+        h.ready(); await playing; await flushSelection();
+        assert.equal(h.actions.filter(row => row.type === 'sid').length, 0, 'read back exact identity before skipping');
+    });
+}
+
+for (const selected of ['none', 'external', 'wrong-internal']) test('initial mapping falls back safely when hook selection is '+selected, async () => {
+    const h=makeHarness(); h.holdReady();
+    const rows=[{Type:'Subtitle', Index:0, DeliveryMethod:'Embed', Codec:'srt'},
+        {Type:'Subtitle', Index:3, DeliveryMethod:'Embed', Codec:'srt'}];
+    const playing=h.play(rows,3);await h.loadingReached();
+    h.setTracks([{type:'sub',external:true,id:1,'ff-index':3,selected:selected==='external'},
+        {type:'sub',external:false,id:2,'ff-index':0,selected:selected==='wrong-internal'},
+        {type:'sub',external:false,id:4,'ff-index':3,selected:false}]);
+    h.ready();await playing;await flushSelection();
+    assert.deepEqual(h.actions.filter(r=>r.type==='sid').map(r=>r.value),['no',4]);
+});
+
+test('user Off during startup cancels the native plan and cannot be overwritten by default selection', async()=>{
+    const h=makeHarness();h.holdReady();
+    const playing=h.play([{Type:'Subtitle',Index:0,DeliveryMethod:'Embed',Codec:'srt'}],0);
+    await h.loadingReached();h.player.setSubtitleStreamIndex(-1);await flushSelection();
+    assert.equal(h.actions.filter(r=>r.type==='initial-subtitle').at(-1).value,'none');
+    h.setTracks([{type:'sub',external:false,id:2,'ff-index':0,selected:false}]);h.ready();await playing;await flushSelection();
+    assert.ok(h.actions.filter(r=>r.type==='sid').every(r=>r.value==='no'));
+});
+
+for(const target of [-1,5]) test('initial Off or external subtitles do not arm guessed internal IDs: '+target,async()=>{
+    const h=makeHarness();await h.play([{Type:'Subtitle',Index:5,DeliveryMethod:'External',DeliveryUrl:'opaque:external',Codec:'srt'}],target);
+    assert.equal(h.actions.some(r=>r.type==='initial-subtitle'),false);
+    await h.clock.advanceTo(700);
+    assert.equal(h.actions.some(r=>r.type==='sub-add'),target===5);
+});
+
+for (const action of ['off', 'stop', 'new-play']) test('initial verification delayed across '+action+' cannot select or clear a later owner', async()=>{
+    const h=makeHarness();h.holdReady();let release;
+    const playing=h.play([{Type:'Subtitle',Index:0,DeliveryMethod:'Embed',Codec:'srt'}],0);
+    await h.loadingReached();h.setTrackRead(()=>new Promise(resolve=>release=resolve));
+    playing.catch(()=>{});h.ready();await flushSelection();assert.equal(typeof release,'function');
+    h.setTrackRead(null);
+    if(action==='off')h.player.setSubtitleStreamIndex(-1);
+    if(action==='stop')await h.player.stop();
+    if(action==='new-play') {h.automaticReady();await h.play([],undefined);}
+    await flushSelection();const count=h.actions.length;
+    release([{type:'sub',external:false,id:9,'ff-index':0,selected:false}]);await playing.catch(()=>{});await flushSelection();
+    assert.equal(h.actions.length,count);
+});
+
+for (const failure of ['reject','timeout']) test('initial verification '+failure+' disables unverified selection without guessing',async()=>{
+    const h=makeHarness();h.holdReady();
+    const playing=h.play([{Type:'Subtitle',Index:0,DeliveryMethod:'Embed',Codec:'srt'}],0);
+    await h.loadingReached();h.setTrackRead(()=>failure==='reject'?Promise.reject(Error('synthetic')):new Promise(()=>{}));
+    h.ready();await flushSelection();await h.clock.advanceTo(1600);await playing;await flushSelection();
+    assert.deepEqual(h.actions.filter(row=>row.type==='sid').map(row=>row.value),['no']);
+    assert.ok(h.diagnostics.some(row=>row.event==='subtitle-track-unavailable'));
+});
 
 const streams = [
     {Type: 'Subtitle', Index: 0, DeliveryMethod: 'External', DeliveryUrl: 'opaque:A', Codec: 'srt'},

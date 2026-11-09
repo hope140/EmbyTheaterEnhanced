@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-11-09 — Initial subtitle identity before playback
+
+Added an optional on_preloaded hook to the existing helper, a narrowly named initial-subtitle bridge property, and adapter initial-selection readback. The hook never waits for renderer IPC and always continues after mapping failure. Plans are consumed once and cleared by cancellation, retirement, Stop or generation replacement; a retired generation cannot re-arm one. Media identity must also match the current unique open media. Late/ambiguous hooks can lose the optimization and use the existing fallback, but cannot guess a target in a new generation.
+
+The fixed mpv experiment showed that setting sid at file-loaded still triggers refresh seek. Blind pre-load ordinal selection selects the wrong external track when an external subtitle is inserted first. The actual on_preloaded table provides the safe boundary: exact product mapping code passed six pinned-DLL HTTP cases with no refresh seek. Complete compiled helper/controller tests cover eighteen cases, including two existing mapping modes, three embedded tracks, early external insertion, Index=0, cancellation, replacement, Stop/replay, retired messages and in-flight replacement; the unmodified helper fails thirteen of these expectations and passes five. Manual external → first embedded → third embedded → another embedded/repeated selection is checked against the actual native table.
+
+The adapter suite covers initial Off/external, exact selection, fallback, current user choice and delayed initial readbacks across Stop/Off/new Play. A new fixture initially waited for play completion before releasing the pending subtitle read; corrected the fixture ordering. Full-suite review also updated an old two-read assertion to include initial verification, while strengthening exact new-generation ownership. A sandbox-only local HTTP test failure is retained separately. No stream headers, Range policy, retry policy or normal manual subtitle switch were changed.
+
 ## 2026-11-09 — v0.4.20 测试版已发布
 
 [v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已发布，Tag 与安装包源码均为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`；正式 Latest 保持 v0.4.0。包含弹窗历史隔离与幂等关闭、有界普通／详细诊断、原生优先误报回退修复及客户端说明文字。

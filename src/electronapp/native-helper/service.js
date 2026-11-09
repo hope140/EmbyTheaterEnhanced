@@ -30,6 +30,7 @@ const OBSERVED_PROPERTIES = new Set([
   'sub-delay', 'speed', 'core-idle'
 ]);
 const SET_PROPERTIES = new Set([
+  'initial-subtitle',
   'volume', 'audio-display', 'keep-open', 'speed', 'sub-delay', 'hwdec', 'gpu-api',
   'wid', 'fullscreen',
   'demuxer-max-bytes', 'vo', 'video-output-levels', 'profile', 'video-sync', 'interpolation',
