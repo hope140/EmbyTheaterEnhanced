@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-11-09 — Combined 0.4.21 acceptance candidate
+
+Integrates the independently reviewed initial subtitle selection (f0613c6) and generation-bound terminal error propagation (1856ebb; replayed as 016e471). Product changes compose without conflict; documentation conflicts retain both evidence sections. Version 0.4.21 identifies this private acceptance build, with no tag or public release. Main remains b4b70bc7c8873b750ee9375a00c9cca742fcf28b.
+
+Before integration the EOF branch passed 2806/2812 full-suite tests with six explicit skips and all 136 material tests. The subtitle branch passed 2802/2809 with seven explicit skips, all 136 material tests, 76 adapter ownership tests and eighteen complete native-helper subcases. Same native test on the unchanged helper has thirteen failing expectations and five passing subcases. The final package must be built and validated against this integrated source; those earlier counts do not certify the combined artifact. Remote package CI, packaged helper tests, artifact identity and installed/visible-media acceptance are separate evidence layers.
+
+The kernel experiment eliminates a post-startup refresh seek only where on_preloaded can resolve a unique current target. Uncertain mapping retains the existing fallback, and manual switches retain necessary native operations. This does not establish the initial MKV read failure or visible startup stutter cause. The terminal error fix prevents auto-next/transcode fallback only for reliable current-generation terminal error evidence; plain eof-reached, unknown/incorrect durations and unowned demux logs are not reclassified. Normal end, Stop and manual seek remain unchanged. No automatic retry, real stream, current client, NAS service or production configuration is used by acceptance build preparation.
+
 ## 2026-11-09 — Initial subtitle identity before playback
 
 Added an optional on_preloaded hook to the existing helper, a narrowly named initial-subtitle bridge property, and adapter initial-selection readback. The hook never waits for renderer IPC and always continues after mapping failure. Plans are consumed once and cleared by cancellation, retirement, Stop or generation replacement; a retired generation cannot re-arm one. Media identity must also match the current unique open media. Late/ambiguous hooks can lose the optimization and use the existing fallback, but cannot guess a target in a new generation.
