@@ -1,0 +1,1483 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-09T10:00:56.931Z",
+  "completedAt": "2026-11-09T10:03:04.295048+00:00",
+  "scope": "Documentation-only recovery; independently downloaded v0.4.20 payload and selected official evidence; no product execution, source rebuild or legal clearance",
+  "baseline": "0acd0984d52cfd063c964c570732c07e669cb4c7",
+  "remote": {
+    "observedAt": "2026-11-09T10:00:56.931Z",
+    "main": "b4b70bc7c8873b750ee9375a00c9cca742fcf28b",
+    "release": {
+      "tag": "v0.4.20",
+      "id": 438746891,
+      "commit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0",
+      "prerelease": true,
+      "publishedAt": "2026-11-09T04:36:07Z",
+      "assets": [
+        {
+          "name": "EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe",
+          "size": 161904584,
+          "sha256": "ffc1e2363432af0a14a395b842667b49f332c7b1afe1fdd7a6581b8c367e99ea",
+          "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe"
+        },
+        {
+          "name": "EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.provenance.json",
+          "size": 2156,
+          "sha256": "bfb7739b927ae74e519bfed721cec6532c4fff40fa631b5092f853f8a012482c",
+          "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.provenance.json"
+        },
+        {
+          "name": "EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.sha256",
+          "size": 111,
+          "sha256": "3a3609f741a793c981f30e89eb6a898c28bde531cf352f62e00a38393349d399",
+          "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.sha256"
+        },
+        {
+          "name": "RELEASE_NOTES.md",
+          "size": 2417,
+          "sha256": "8139fb70fdf9057d0a69ce2e4f9542feca20c9b82b8fefad01e45a4af182fd77",
+          "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/RELEASE_NOTES.md"
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "size": 439,
+          "sha256": "694b0f5e7ff50fbd21287f3d70127c545120f3c9993d72c24f61347af46c0d60",
+          "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/SHA256SUMS.txt"
+        }
+      ]
+    },
+    "stable": {
+      "tag": "v0.4.0"
+    },
+    "webCommit": "cc087c2a93e74c3e35bd1cb4935ae472cff41a0e",
+    "electronCommit": "db0f4c814ee1e7d9b5f50010065c5cb64a20357e"
+  },
+  "historicalReceipt": {
+    "path": "docs/evidence/license-provenance-20261109.json",
+    "sha256": "97e88c187d121e743188189a91889247ba6d5c787a49f967138e0615935acf26",
+    "appliesTo": "v0.4.19; 2232 files; Linux 2600 pass is historical, not rerun"
+  },
+  "downloads": [
+    {
+      "name": "EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.provenance.json",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.provenance.json",
+      "bytes": 2156,
+      "sha256": "bfb7739b927ae74e519bfed721cec6532c4fff40fa631b5092f853f8a012482c"
+    },
+    {
+      "name": "EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.sha256",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.sha256",
+      "bytes": 111,
+      "sha256": "3a3609f741a793c981f30e89eb6a898c28bde531cf352f62e00a38393349d399"
+    },
+    {
+      "name": "RELEASE_NOTES.md",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/RELEASE_NOTES.md",
+      "bytes": 2417,
+      "sha256": "8139fb70fdf9057d0a69ce2e4f9542feca20c9b82b8fefad01e45a4af182fd77"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/SHA256SUMS.txt",
+      "bytes": 439,
+      "sha256": "694b0f5e7ff50fbd21287f3d70127c545120f3c9993d72c24f61347af46c0d60"
+    },
+    {
+      "name": "web-LICENSE.md",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/LICENSE.md",
+      "bytes": 18014,
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d"
+    },
+    {
+      "name": "web-mediainfo_fresh.png",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/fresh.png",
+      "bytes": 17006,
+      "sha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5"
+    },
+    {
+      "name": "web-mediainfo_rotten.png",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/rotten.png",
+      "bytes": 13112,
+      "sha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8"
+    },
+    {
+      "name": "web-themes_blueradiance_bg.jpg",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/blueradiance/bg.jpg",
+      "bytes": 1044963,
+      "sha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89"
+    },
+    {
+      "name": "web-themes_logodark.png",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logodark.png",
+      "bytes": 9967,
+      "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5"
+    },
+    {
+      "name": "web-themes_logowhite.png",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113"
+    },
+    {
+      "name": "electron-logowhite.png",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-electron/db0f4c814ee1e7d9b5f50010065c5cb64a20357e/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113"
+    },
+    {
+      "name": "electron-LICENSE.md",
+      "url": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-electron/db0f4c814ee1e7d9b5f50010065c5cb64a20357e/LICENSE.md",
+      "bytes": 18014,
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d"
+    },
+    {
+      "name": "common.nupkg",
+      "url": "https://api.nuget.org/v3-flatcontainer/mediabrowser.common/3.3.10/mediabrowser.common.3.3.10.nupkg",
+      "bytes": 177439,
+      "sha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b"
+    },
+    {
+      "name": "mpv-meson.build",
+      "url": "https://raw.githubusercontent.com/mpv-player/mpv/dd5d17d3285a095a0f712fa9d116e22a076492de/meson.build",
+      "bytes": 66481,
+      "sha256": "9d2bd7524f0d6d05b029d0a946dad3d7645ec9bcb10ee3e48b2fe003d383425a"
+    },
+    {
+      "name": "mpv-Copyright",
+      "url": "https://raw.githubusercontent.com/mpv-player/mpv/dd5d17d3285a095a0f712fa9d116e22a076492de/Copyright",
+      "bytes": 4096,
+      "sha256": "bfe9ee4cceabcb8ecbfadf208d04156f73d801e6a57369a5606bb8341e204a23"
+    },
+    {
+      "name": "setup.exe",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe",
+      "bytes": 161904584,
+      "sha256": "ffc1e2363432af0a14a395b842667b49f332c7b1afe1fdd7a6581b8c367e99ea"
+    },
+    {
+      "name": "innoextract",
+      "url": "https://github.com/crazy-max/innoextract/releases/download/v1.13.0/innoextract-linux-amd64",
+      "bytes": 12324392,
+      "sha256": "c898db2ecc282ff8d943e9868d03dd6f1fc6069ddd40430341b211f93826b360"
+    }
+  ],
+  "componentGitIdentities": [
+    {
+      "path": "vendor/web-snapshot",
+      "auditBaseline": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "v0419": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "v0420": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "observedMain": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot-manifest.json",
+      "auditBaseline": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "v0419": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "v0420": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "observedMain": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/compatibility-resources-manifest.json",
+      "auditBaseline": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "v0419": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "v0420": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "observedMain": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/small-runtime",
+      "auditBaseline": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "v0419": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "v0420": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "observedMain": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/small-runtime-manifest.json",
+      "auditBaseline": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "v0419": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "v0420": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "observedMain": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/model-compatibility",
+      "auditBaseline": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "v0419": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "v0420": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "observedMain": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/model-compatibility-manifest.json",
+      "auditBaseline": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "v0419": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "v0420": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "observedMain": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/windows-host-manifest.json",
+      "auditBaseline": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "v0419": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "v0420": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "observedMain": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/libmpv-input-manifest.json",
+      "auditBaseline": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "v0419": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "v0420": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "observedMain": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/archive/libmpv",
+      "auditBaseline": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "v0419": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "v0420": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "observedMain": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/inherited-npm-manifest.json",
+      "auditBaseline": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "v0419": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "v0420": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "observedMain": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/host-json-manifest.json",
+      "auditBaseline": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "v0419": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "v0420": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "observedMain": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "allEqual": true
+    },
+    {
+      "path": "native/windows-host",
+      "auditBaseline": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "v0419": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "v0420": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "observedMain": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "allEqual": true
+    },
+    {
+      "path": "native/windows-media/registry-input.json",
+      "auditBaseline": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "v0419": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "v0420": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "observedMain": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "allEqual": true
+    },
+    {
+      "path": "native/windows-media/package-lock.json",
+      "auditBaseline": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "v0419": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "v0420": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "observedMain": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "allEqual": true
+    },
+    {
+      "path": "src/web-api/licensed",
+      "auditBaseline": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "v0419": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "v0420": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "observedMain": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "allEqual": true
+    },
+    {
+      "path": "src/web-api/INPUT_MANIFEST.json",
+      "auditBaseline": "f5aefe849d105acce046d1608cac2374b5708699",
+      "v0419": "f5aefe849d105acce046d1608cac2374b5708699",
+      "v0420": "f5aefe849d105acce046d1608cac2374b5708699",
+      "observedMain": "f5aefe849d105acce046d1608cac2374b5708699",
+      "allEqual": true
+    },
+    {
+      "path": "tools/templates/runtime",
+      "auditBaseline": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "v0419": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "v0420": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "observedMain": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "allEqual": true
+    },
+    {
+      "path": "docs/redistribution-notices",
+      "auditBaseline": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "v0419": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "v0420": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "observedMain": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "allEqual": true
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "auditBaseline": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "v0419": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "v0420": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "observedMain": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "allEqual": true
+    },
+    {
+      "path": "LICENSE",
+      "auditBaseline": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "v0419": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "v0420": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "observedMain": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/electron-runtime-manifest.json",
+      "auditBaseline": "707d209a5aada31246b7b607914fc68f22c9d835",
+      "v0419": "707d209a5aada31246b7b607914fc68f22c9d835",
+      "v0420": "707d209a5aada31246b7b607914fc68f22c9d835",
+      "observedMain": "707d209a5aada31246b7b607914fc68f22c9d835",
+      "allEqual": true
+    },
+    {
+      "path": "vendor/toolchain-manifest.json",
+      "auditBaseline": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "v0419": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "v0420": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "observedMain": "b39ba168381a255f6126e0ed2d771b9e3ef632c1",
+      "allEqual": true
+    }
+  ],
+  "sourceChangesSinceOldMain": [
+    "M\tCHANGELOG.md",
+    "M\tREADME.md",
+    "M\tdocs/DEVELOPMENT_LOG.md",
+    "A\tdocs/ENGINE_DIAGNOSTICS.md",
+    "M\tdocs/KNOWN_ISSUES.md",
+    "M\tdocs/NEXT_RELEASE_SCOPE.md",
+    "M\tdocs/PROJECT_STATUS.md",
+    "M\tdocs/RELEASE_NOTES.md",
+    "M\tdocs/TESTING.md",
+    "M\tdocs/USER_GUIDE.md",
+    "M\tnative/mpv-helper/ete-mpv-helper.cpp",
+    "M\tpackage-lock.json",
+    "M\tpackage.json",
+    "M\tsrc/electronapp/enhanced/advance-download/renderer.js",
+    "M\tsrc/electronapp/enhanced/bounded-diagnostics.js",
+    "A\tsrc/electronapp/enhanced/diagnostic-settings.js",
+    "M\tsrc/electronapp/enhanced/diagnostics-ipc.js",
+    "M\tsrc/electronapp/enhanced/diagnostics.js",
+    "A\tsrc/electronapp/enhanced/engine-diagnostics.js",
+    "M\tsrc/electronapp/enhanced/media-network-diagnostics.js",
+    "M\tsrc/electronapp/enhanced/native-diagnostics.js",
+    "A\tsrc/electronapp/enhanced/playback-error-dialog.js",
+    "M\tsrc/electronapp/enhanced/subtitle-appearance-dialog.js",
+    "M\tsrc/electronapp/main.js",
+    "M\tsrc/electronapp/native-helper/controller.js",
+    "M\tsrc/electronapp/native-helper/service.js",
+    "M\tsrc/electronapp/plugins/mpvplayer/about.html",
+    "M\tsrc/electronapp/plugins/mpvplayer/about.js",
+    "M\tsrc/electronapp/plugins/mpvplayer/cache-management.html",
+    "M\tsrc/electronapp/plugins/mpvplayer/diagnostics.html",
+    "M\tsrc/electronapp/plugins/mpvplayer/diagnostics.js",
+    "M\tsrc/electronapp/plugins/mpvplayer/downloads.html",
+    "M\tsrc/electronapp/plugins/mpvplayer/downloads.js",
+    "M\tsrc/electronapp/plugins/mpvplayer/strm.html",
+    "M\tsrc/electronapp/plugins/mpvplayer/strm.js",
+    "M\ttests/cache-management-page.test.cjs",
+    "A\ttests/client-copy-renderer-selftest.cjs",
+    "A\ttests/client-copy.test.cjs",
+    "A\ttests/engine-diagnostics-native.test.cjs",
+    "A\ttests/engine-diagnostics.test.cjs",
+    "A\ttests/helpers/engine-diagnostics-core-probe.cpp",
+    "M\ttests/manual-app-update-ui.test.cjs",
+    "M\ttests/mpv-kernel-ui.test.cjs",
+    "A\ttests/native-diagnostic-priority.test.cjs",
+    "M\ttests/native-helper-service.test.cjs",
+    "M\ttests/playbackmanager-request-session.test.cjs",
+    "M\ttools/check-cache-settings-renderer.cjs",
+    "A\ttools/check-playback-error-dialog-renderer.cjs",
+    "M\ttools/check-subtitle-appearance-renderer.cjs",
+    "M\ttools/patch-playbackmanager.cjs"
+  ],
+  "mainChangesSinceRelease": [
+    "M\tCHANGELOG.md",
+    "M\tREADME.md",
+    "M\tdocs/DEVELOPMENT_LOG.md",
+    "M\tdocs/KNOWN_ISSUES.md",
+    "M\tdocs/NEXT_RELEASE_SCOPE.md",
+    "M\tdocs/PROJECT_STATUS.md",
+    "M\tdocs/USER_GUIDE.md"
+  ],
+  "npmLockUnchangedExceptRootVersion": true,
+  "extraction": {
+    "command": "innoextract --extract --output-dir extracted setup.exe",
+    "toolVersion": "1.13.0",
+    "exitCode": 0,
+    "warnings": [
+      "Warning: Unexpected filetime: 0"
+    ],
+    "manifestFiles": 2235,
+    "actualFiles": 2236,
+    "missing": [],
+    "extra": [],
+    "hashMismatches": [],
+    "buildManifestSha256": "9624ac567880dd3b04b223de2da8ed57c969b33f874b86efe82a76afc9c7f903",
+    "payloadSetSha256": "254d668aed1658045d3441a910782b8b9faec6aee399439125ef4f46cf61f2dd",
+    "sourceCommit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0",
+    "externalManifestEqual": true
+  },
+  "provenanceFiles": [
+    {
+      "path": "windows-native-media-provenance.json",
+      "sha256": "aea0de8bb742d40e467b4b877bb470c2a7476e53696296f1a03f0550e8407df4",
+      "sourceCommit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0"
+    },
+    {
+      "path": "source-provenance.json",
+      "sha256": "b4eaa578eb39ff4ed40d468dbbf1c47567f52c8879efa081967ace42c3ee7fa2",
+      "sourceCommit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0"
+    },
+    {
+      "path": "native-helper-provenance.json",
+      "sha256": "28664e2e81c54fe19b8c708ed157ef2492681c0bc1054050537347df170e1bd9",
+      "sourceCommit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0"
+    },
+    {
+      "path": "build-input-provenance.json",
+      "sha256": "bb6da8507afad2e390cfda8d1855b8f3089668caf1e028b0b8c7fb81f7affaa4",
+      "sourceCommit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0"
+    },
+    {
+      "path": "runtime-provenance.json",
+      "sha256": "e3538c99fe88ab862d38f41c91be3e982c68e125e75e2a2fe5af91d7ac833412",
+      "sourceCommit": "4bf20e067c2a79bf2498943c2d06f955b9f0fcc0"
+    }
+  ],
+  "projectNotices": [
+    {
+      "path": "LICENSE",
+      "sourcePath": "LICENSE",
+      "sha256": "2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sourcePath": "THIRD_PARTY_NOTICES.md",
+      "sha256": "f67b156d35943faf0525f6a9c88e89ac1ab47940485dedf9b28253c5eca1e5ba",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/LICENSE.md",
+      "sourcePath": "src/electronapp/www/modules/emby-apiclient/LICENSE.md",
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "native/windows-host/LICENSE.md",
+      "sourcePath": "native/windows-host/LICENSE.md",
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "native/windows-host/LICENSE-Helpers-MIT.txt",
+      "sourcePath": "native/windows-host/LICENSE-Helpers-MIT.txt",
+      "sha256": "9ea516699794ce62078b3cb39c45e9a94db23c3db23e3b7f03a1e90d83e5152e",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "native/windows-host/LICENSE-Newtonsoft-MIT.md",
+      "sourcePath": "native/windows-host/LICENSE-Newtonsoft-MIT.md",
+      "sha256": "b98a397897ff55f76cddc380041507a95a896b2946e0188703bf0496793d6516",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "native/windows-host/README.md",
+      "sourcePath": "native/windows-host/README.md",
+      "sha256": "c52ceda2fb5d5ebaf7012f47a0d97b651f23987c9a4c7e97d794a79ebc1e0a61",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/LICENSING.md",
+      "sourcePath": "docs/LICENSING.md",
+      "sha256": "170cec5172c6b1f20a467bb3c1dc6c6de6f96bc2d182ee8d509a947bde9502d0",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/SOURCE_MATERIALS.md",
+      "sourcePath": "docs/SOURCE_MATERIALS.md",
+      "sha256": "cbf0545b3450f46ef7cd7901442c10449d8df53d2aed416f7e4fcce52177b4cb",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/WINDOWS_HOST_INPUT.md",
+      "sourcePath": "docs/WINDOWS_HOST_INPUT.md",
+      "sha256": "d6cf0e28245d8e91a9a3e6885f73715cbe708fd4a0406d4dd5e3c09aa28d0971",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/INHERITED_NPM_INPUT.md",
+      "sourcePath": "docs/INHERITED_NPM_INPUT.md",
+      "sha256": "4cc4511e4b240e40c5a51b51f8aa195290c456cbf95035e03bf67b8904ba4b42",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/RUNTIME_TEMPLATES.md",
+      "sourcePath": "docs/RUNTIME_TEMPLATES.md",
+      "sha256": "fb31afa98067aa8022d0797f5de9d73d565b53ab42af9bcdf691e4809e61729b",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/LIBMPV_INPUT.md",
+      "sourcePath": "docs/LIBMPV_INPUT.md",
+      "sha256": "59cc4d218187a7519b0989a3a5b69e4c7f14733d68597db5ccc0ad2bd27c08aa",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/COMPATIBILITY_RESOURCES_INPUT.md",
+      "sourcePath": "docs/COMPATIBILITY_RESOURCES_INPUT.md",
+      "sha256": "8238ef2c175f6ae7482e7eb6e43fa3b8631d6bb0922ea6f845025ec024841294",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/SMALL_RUNTIME_INPUT.md",
+      "sourcePath": "docs/SMALL_RUNTIME_INPUT.md",
+      "sha256": "09f40d6dd887dc7c5dc6381a806c2e06939c4cd286551f9429b74777815a6d41",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    },
+    {
+      "path": "docs/MODEL_COMPATIBILITY_INPUT.md",
+      "sourcePath": "docs/MODEL_COMPATIBILITY_INPUT.md",
+      "sha256": "d82af96da3baa71fe9a5a345732f4b5e3f27f025249ba5529e3c0511a57d139b",
+      "sourceBlobEqual": true,
+      "v0419Equal": true
+    }
+  ],
+  "carriedNoticeChecks": [
+    {
+      "path": "electronapp/node_modules/@grpc/grpc-js/LICENSE",
+      "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@grpc/grpc-js/proto/protoc-gen-validate/LICENSE",
+      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@grpc/grpc-js/proto/xds/LICENSE",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@grpc/proto-loader/LICENSE",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@js-sdsl/ordered-map/LICENSE",
+      "sha256": "787684b2059945f845f404340e20c4c8e3f325f4ab7aaeaf8e985f38c8d84658",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/aspromise/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/base64/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/codegen/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/eventemitter/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/fetch/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/float/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/path/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/pool/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@protobufjs/utf8/LICENSE",
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/@types/node/LICENSE",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/ansi-regex/license",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/ansi-styles/license",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/cliui/LICENSE.txt",
+      "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/color-convert/LICENSE",
+      "sha256": "693866fc419c6f61c8570438ec00659d156ec2b4d4a4d04091711f5f11a365d4",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/color-name/LICENSE",
+      "sha256": "c064f7a3e353bc1bc977f3c897941c75ef763f44f41677e0a15370ca0853d6e2",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/emoji-regex/LICENSE-MIT.txt",
+      "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/escalade/license",
+      "sha256": "9a9edad7baae52622bddf3c15b2ef8a33d2c89f2d25408ad13e8a7481c6b0c97",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/get-caller-file/LICENSE.md",
+      "sha256": "902dbb4154679fb2b8d7c33878183f45b268d01eae5e5033dddaa8852d45f213",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/is-fullwidth-code-point/license",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/lodash.camelcase/LICENSE",
+      "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/long/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/protobufjs/google/LICENSE",
+      "sha256": "4ab87e6e3c0c0b78e47c77d49ec10c048f8a519fb8062e6e3217e3e6e9b0c6e9",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/protobufjs/LICENSE",
+      "sha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/require-directory/LICENSE",
+      "sha256": "a92e52eb1fa7cd746e3827bf01d3a3589bbc8e1e51348b1da042aad165525ad1",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/string-width/license",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/strip-ansi/license",
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/undici-types/LICENSE",
+      "sha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/wrap-ansi/license",
+      "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/y18n/LICENSE",
+      "sha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/yargs/LICENSE",
+      "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/yargs-parser/LICENSE.txt",
+      "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/detect-rpi/LICENSE",
+      "sha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/is-linux/license",
+      "sha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/is-osx/license",
+      "sha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/is-windows/LICENSE",
+      "sha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/power-off/license",
+      "sha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "sha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/node_modules/sleep-mode/license",
+      "sha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/enhanced/native-media/node_modules/koffi/LICENSE.txt",
+      "sha256": "22bcbbbacd739b026a8dc484f62a31484ce4c4e31f3408b60b29b4e41d62b290",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/enhanced/native-media/node_modules/koffi/vendor/node-addon-api/LICENSE.md",
+      "sha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "electronapp/enhanced/native-media/node_modules/koffi/vendor/node-api-headers/LICENSE",
+      "sha256": "a553508f516031c91f3af1148d44970cb81bbae6c4f091be6835d39cc252238c",
+      "equalsFixedHistoricalReceipt": true
+    }
+  ],
+  "electronNotices": [
+    {
+      "path": "x64/electron/LICENSES.chromium.html",
+      "sha256": "7b328b8c7463ac9bfc7dc648c751533517c8441a0b5b21047d6c0b2620e60d70",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/LICENSE",
+      "sha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d",
+      "equalsFixedHistoricalReceipt": true
+    }
+  ],
+  "electronArchiveMembers": [
+    {
+      "path": "x64/electron/snapshot_blob.bin",
+      "sha256": "ba61ab6a3f5b574b28d85d2e9abb82d162b73bb04e86e157013d5cfb294ad67d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/en-US.pak",
+      "sha256": "23b271e8009bfa14783700cd0712b4ecaa5b8f2ea28a4d81ae1d7e05bc0c96b1",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/dxil.dll",
+      "sha256": "77e039c905030a641e53658a008b74e90635a5ea9b6b79eabd0f2003bdfca59a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/id.pak",
+      "sha256": "f567569c42a25bb2dfc5c33e13aac558c0e2a1d5d4b969592bbd0841b36438db",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/th.pak",
+      "sha256": "c1f4235c31bc05153230b0e55b7aabc9020d7460d5b0a025c386885e1e4bda3c",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ur.pak",
+      "sha256": "c218e21744df2ff0669a87d497d65d76333073577360d4c662c592de146bf82a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/zh-TW.pak",
+      "sha256": "7cb5f76e54a548d4e52aa8cdf226a4339bdadc304897abca690f407e95e42f4d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ca.pak",
+      "sha256": "6f28297c1ccb628f534d65dade167ae559f83eace359acf47e48ff890b9409d5",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ml.pak",
+      "sha256": "b5606265910e45098a88e989202a550531f6d00333c6b112ed4c5cbc07b2ff6a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/resources.pak",
+      "sha256": "ee5707e9409e76742e1dacdae0ebbb3c567b8772ce5bbcb9785aa215f5784c22",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/uk.pak",
+      "sha256": "ec5d0b426e289c064e8f2d63636ae2a544ff30fc1e99dde04fe1920971e4d060",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/pt-BR.pak",
+      "sha256": "5546559a56f9ac3191062c3fd42defd190a68e78ac988eb57fa5a6fd2dc5f874",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ro.pak",
+      "sha256": "1e6b5b0dac63a9e951daf523de310f6bd9e5c53e281f37706d41bd35d2a08bb5",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/de.pak",
+      "sha256": "58165025c4252ba8b2ce8203b59362b9968938cb0fef9d7da04941be22f41bb3",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/vk_swiftshader_icd.json",
+      "sha256": "32d83ff113fef532a9f97e0d2831f8656628ab1c99e9060f0332b1532839afd9",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ta.pak",
+      "sha256": "91fb1460711df108d8d435a378c8be1d1e80b0886c0158d8c6ae92f35812681b",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/vi.pak",
+      "sha256": "76a32f8ad5d08a6f9899e12e4aa9b3d9a9023931e2ca0f73e5ced541c922dcfb",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/fil.pak",
+      "sha256": "02e2c70d3d85b0deb677a9ae576ae3cf89e80774532cb3315c14f1e8ce64b310",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/icudtl.dat",
+      "sha256": "9f48c7f9c7c94d516a14870707e910ab94d75ae640ff6842c4af53276cd26ebe",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/kn.pak",
+      "sha256": "af5fed2130102ecc0c878059c88faed9d6db2e8b147fb5ae9e15e3fe69706c8a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/hr.pak",
+      "sha256": "d46c64ae8af3562e37eb80438aa2bee228fafda251d58ba4d0991291f1c72aab",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/da.pak",
+      "sha256": "530fd95daee21d793b99492ca7d0bf9979daffe42944e24414d4b08a3d23b9fe",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/it.pak",
+      "sha256": "aeb1d99a2a09476d9ee0fd133df2d4d987c731b9f91a248ac4e60377ddda1ca5",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/mr.pak",
+      "sha256": "8465d4077ed5414cbcb7d9bdb00d85e515a1a069703cdc1d4d67c9d6e5623fb0",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/fr.pak",
+      "sha256": "8bad7fd88072ac66649dd9307da9163962f8ab00313e627bf1c5ca4450a48b4a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/bg.pak",
+      "sha256": "2eb9c74c67e4b13b45a73061fa978738e335bc245da71bab0ea9b205fe91074e",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/vk_swiftshader.dll",
+      "sha256": "44cf6bb72bb94b99e3acd1030fac57bb4c22f6ebad886c1200b9544c886c2035",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/vulkan-1.dll",
+      "sha256": "e96d215161a34c5da71177a257b9e6146870438db37d65b609eac828a69f5315",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ar.pak",
+      "sha256": "4c47004abd0969cb1174d06eb7429c024872207960986afbf3cae37e339a8d01",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/lv.pak",
+      "sha256": "4455ab7c06172c2c80796a99558e41f452cc3b33be76654d70440cf4ac7a2d34",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/bn.pak",
+      "sha256": "415621a5c0b1546e6e447d43b76414425a8703cc7681d637ec1f283ad0c787e7",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/electron.exe",
+      "sha256": "3e76fb616aa60a850b7f64800dd81b21e06ddee3f1919650183b047f03e7cb9f",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/ffmpeg.dll",
+      "sha256": "08ec7e6c478b7d771b1850c3d1c86febcef01b03857abe8417f2a1f126e87c56",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ko.pak",
+      "sha256": "55a3a8db9c84b1fe9e50b56d68fb069ad7546117cf1f6cb89f36f49cc044ad5e",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/fi.pak",
+      "sha256": "1f3123d7fb5c22a95b5250ea17450b665c3c6cd6a6dfd28bbdde15e1bf684a0e",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/chrome_200_percent.pak",
+      "sha256": "30fa4a6e27c9ff2fb0f939f01158477e621a67d86e9ecb84cf11b3947db8eb9d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/cs.pak",
+      "sha256": "799a789ce531991cb975425730db310f9a8fe74091eee568f3e65fcc7ef0cd57",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/sl.pak",
+      "sha256": "e1371c8df577b979e3a515af34b0aaa3d07153c7a5c55d39a9b49a7ffe62d3d2",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/chrome_100_percent.pak",
+      "sha256": "ab7c4b7b6cb8832a31d44b95ec50ce52294f49422a3bdde4e21968eca2930cbe",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/zh-CN.pak",
+      "sha256": "7887bd3d01e12306e32a11d9a20566ca0e93688a0375e6ff59da04cf782b1681",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/es.pak",
+      "sha256": "fe6fff51ef19db1f4fe0fc602e0bd4bd7fabcfb1ca5d6896d1ce0efcf37e49c4",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/hu.pak",
+      "sha256": "0a46fc8d50f74effd1cfe1979e677df3de6fc47e6b551267303d93d57bd83f50",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/nl.pak",
+      "sha256": "b642c8ab5ce11438e9a8fd4639244fa8f1d55cfd70269565490bc55ee907b048",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ru.pak",
+      "sha256": "a9e76536472c45b39e7ae2af5f3ae1bc0e50a11646efdb6fb3ca373b5f2e2c70",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/sw.pak",
+      "sha256": "bd41ea707a0d90d683ec8d5d0f0c79f3e925747bc4ea1982562dfb75080199b9",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/hi.pak",
+      "sha256": "015b3856dc05e8635a48e749e6970fe43f5d620b8dbd04e5abff586178213f6e",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/nb.pak",
+      "sha256": "d97a2b0cbe6adc99add2ed3ce0d15d0bb124b778086c466c126634d60ea72608",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/te.pak",
+      "sha256": "fc8c2706c5dfd36e7af8e380a240e0f697cc5fe969b512092a2185896512c4af",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/tr.pak",
+      "sha256": "d5648d7eaf1826211fb244fcf8419dabdc16c228d92139bc8b0b73c7a6b7e700",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/resources/default_app.asar",
+      "sha256": "0eb2491b0a9ac94790389d39c09dd5005c6c1f0665842943829bbd0193f6cc4f",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/LICENSES.chromium.html",
+      "sha256": "7b328b8c7463ac9bfc7dc648c751533517c8441a0b5b21047d6c0b2620e60d70",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/v8_context_snapshot.bin",
+      "sha256": "f9fa8a00cf39dc5dee6b15c47d30e7e49bc0c561ae73e0ec2b45571bb6fafcd6",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/LICENSE",
+      "sha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/pt-PT.pak",
+      "sha256": "bdfa7264dddf70f936f1785737969559a577b51d1952c820a468c611d18b17ca",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/dxcompiler.dll",
+      "sha256": "87570f549c6e3763f9f10edce60d9c60a80c84fbbc9cb3b872047d94a594bfcc",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/en-GB.pak",
+      "sha256": "01d9200a5daee1770f7147b166d25baa6a8dd72c138c3c526421e656dec789f5",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ms.pak",
+      "sha256": "af7021a00befa586aa067ae3ccb339079e6f13ee0cab1621836f6abb608b6f2a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/af.pak",
+      "sha256": "3017b141bd16e24190d810f0748612f0fd4352ca8553002b9a63a7f77f7154f8",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/am.pak",
+      "sha256": "67b938d162bc75db067120bb8366b5bafd9a75fa99a0ca9ad4f46b47d1d37634",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/el.pak",
+      "sha256": "37d2e1ef69fea9bdb1e0902cbc61a458baa9009fc3761029bd1c1882a7a0c9b2",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/es-419.pak",
+      "sha256": "2766fd52da83ff679346313e66440f013a7d478b9be946df4ab197505912450b",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/sv.pak",
+      "sha256": "7b0399a206bfbebe77d1a4fc598c8a6636a1bd940d3ab56519cf4af0134b6edb",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/fa.pak",
+      "sha256": "ba33624ccad6d0e4a4339589c56be557b28968bf9422bd12a8f26e2a3d581577",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/gu.pak",
+      "sha256": "e86e8c240d4b6283abb03c49df9e8899607ef9def6d4933c7a541d63b5835271",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/et.pak",
+      "sha256": "dd1205eae606f12510e24ce39f301439c98b3293d766ca5839dc292a14d7973c",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/d3dcompiler_47.dll",
+      "sha256": "a05f99734f7c4822fefc12b367af21fd0976ed6608752fb1e1e80b6ece7ecbbb",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/ja.pak",
+      "sha256": "f6e0d8eda3bc8f1112494bda96b230f3c44f054c47cced50c94c5ee9199f04c6",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/sk.pak",
+      "sha256": "3cdc8bca8696c90a572fb15c865caa5c286df45344c72194c3eea97201cc816a",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/pl.pak",
+      "sha256": "8a0969fc743d3e2f5111387d53c0d79e8c1d9f68256ad6553b87fca2bcaa7e6e",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/lt.pak",
+      "sha256": "af969f4407c190dd01a426fa1244cb1ec7cdf2909d1c3ba5b87ff662ba567303",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/he.pak",
+      "sha256": "ddc1f304ab1f4489d19ae2b31e7f8e3ffb47dae439520159e8975422c65e4115",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/locales/sr.pak",
+      "sha256": "c42a674e3f43aa70cef005931915c8b7ceb34b29566fba3309f8da931dc7861f",
+      "equalsFixedHistoricalReceipt": true
+    },
+    {
+      "path": "x64/electron/version",
+      "sha256": "c79f9f25e9affab9a87ef996c8499b23763b2c082d55a422d5650e2def092a11",
+      "equalsFixedHistoricalReceipt": true
+    }
+  ],
+  "oldInventoryCarryForward": [
+    {
+      "path": "tools/templates/runtime/preload.js",
+      "sha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js",
+      "sha256": "beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/pagejs/page.js",
+      "sha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/common/playback/playbackmanager.js",
+      "sha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/common/appsettings.js",
+      "sha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/webvtt/vtt.js",
+      "sha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/webvtt/vtt.css",
+      "sha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/css/images/supporter/supporterbadge.png",
+      "sha256": "ca50e13f674482e0a6c09e28aba52f664d9da87a236d39468b1f3cb2d84aa15e",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-128x128.png",
+      "sha256": "f04a9339a04fda78afdc1289921d91a3535a29742ac042e1fac99dcb420a9eba",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-144x144.png",
+      "sha256": "b29fce90e8b3459fcd0c2fe1c44052b469788332a60420f3382c113eba727bcb",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-152x152.png",
+      "sha256": "60d7a476e83eb7276ad48d7e58979efe6951cbe4879e44a4a94f4882691802d8",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-192x192.png",
+      "sha256": "605836ab0dafb71bc6f603f51d28c89a0b922ea95ff28cf15ada621af14105d5",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-384x384.png",
+      "sha256": "d23d38c9837a5753a455837d3d5dff80c92437078fae2cdeb202bb952488b29a",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-512x512.png",
+      "sha256": "d4e7e40eec131dd5401407f95ce3614f07168471f4a4da9a28f561938ed8ef1a",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-72x72.png",
+      "sha256": "cc32d8edc79bcbcbe9f2c5a86806231451316975ba9791b01960fba79d06aebd",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-96x96.png",
+      "sha256": "6c3765a151610dd1a8cdcdafa7de831a9d8e99939cf1674b88e9401ab7f6d18e",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/splash.png",
+      "sha256": "b2da3b66570acd5b71a95a188b35f5d3e1b63534de38d0bcfd543a913581f337",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/logoscreensaver/logowhite.png",
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/mediainfo/fresh.png",
+      "sha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/mediainfo/rotten.png",
+      "sha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/darkgradient/blueradiance.jpg",
+      "sha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/logodark.png",
+      "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/logowhite.png",
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "v0420AndMainEqual": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/videoosd/ani_equalizer_white.gif",
+      "sha256": "b0b304f4dce451d8fcffd24ae9ec3c92f0322c9a72d73aa46d80582f4e3268a5",
+      "v0420AndMainEqual": true
+    }
+  ],
+  "officialImages": [
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/fresh.png",
+      "sourcePath": "mediainfo/fresh.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/mediainfo/fresh.png",
+      "runtimePath": "electronapp/www/modules/mediainfo/fresh.png",
+      "sha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5",
+      "bytes": 17006,
+      "gitAndPayloadEqual": true
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/rotten.png",
+      "sourcePath": "mediainfo/rotten.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/mediainfo/rotten.png",
+      "runtimePath": "electronapp/www/modules/mediainfo/rotten.png",
+      "sha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8",
+      "bytes": 13112,
+      "gitAndPayloadEqual": true
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/blueradiance/bg.jpg",
+      "sourcePath": "themes/blueradiance/bg.jpg",
+      "repositoryPath": "vendor/web-snapshot/www/modules/themes/darkgradient/blueradiance.jpg",
+      "runtimePath": "electronapp/www/modules/themes/darkgradient/blueradiance.jpg",
+      "sha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89",
+      "bytes": 1044963,
+      "gitAndPayloadEqual": true
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logodark.png",
+      "sourcePath": "themes/logodark.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/themes/logodark.png",
+      "runtimePath": "electronapp/www/modules/themes/logodark.png",
+      "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
+      "bytes": 9967,
+      "gitAndPayloadEqual": true
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png",
+      "sourcePath": "themes/logowhite.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/themes/logowhite.png",
+      "runtimePath": "electronapp/www/modules/themes/logowhite.png",
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "bytes": 10300,
+      "gitAndPayloadEqual": true
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png",
+      "sourcePath": "themes/logowhite.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/logoscreensaver/logowhite.png",
+      "runtimePath": "electronapp/www/modules/logoscreensaver/logowhite.png",
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "bytes": 10300,
+      "gitAndPayloadEqual": true
+    }
+  ],
+  "electronWhiteLogo": [
+    {
+      "runtimePath": "electronapp/www/modules/themes/logowhite.png",
+      "present": true,
+      "equal": true
+    },
+    {
+      "runtimePath": "electronapp/www/modules/logoscreensaver/logowhite.png",
+      "present": true,
+      "equal": true
+    },
+    {
+      "runtimePath": "electronapp/logowhite.png",
+      "present": true,
+      "equal": true
+    }
+  ],
+  "officialImageLicense": {
+    "path": "LICENSE.md",
+    "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+    "bytes": 18014,
+    "electronSameBytes": true,
+    "text": "GPL version 2 full text including sections 0-12 and application appendix",
+    "scope": "Repository-level official license evidence retained; not a separate trademark grant or proof of all third-party image rights"
+  },
+  "nugetMembers": [
+    {
+      "member": "lib/netstandard1.3/MediaBrowser.Common.dll",
+      "runtimePath": "MediaBrowser.Common.dll",
+      "bytes": 44032,
+      "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+      "payloadEqual": true,
+      "debugStrings": [
+        {
+          "offset": 41940,
+          "value": "C:\\dev\\Emby.Server.NetCore\\src\\MediaBrowser.Common\\obj\\Release\\netstandard1.3\\MediaBrowser.Common.pdb"
+        }
+      ]
+    },
+    {
+      "member": "lib/netstandard1.3/MediaBrowser.Model.dll",
+      "runtimePath": "MediaBrowser.Model.dll",
+      "bytes": 426496,
+      "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+      "payloadEqual": true,
+      "debugStrings": [
+        {
+          "offset": 424688,
+          "value": "C:\\dev\\Emby.Server.NetCore\\src\\MediaBrowser.Model\\obj\\Release\\netstandard1.3\\MediaBrowser.Model.pdb"
+        }
+      ]
+    }
+  ],
+  "nugetSourceMappingLimit": "Debug paths and netstandard target do not identify a source commit, prove the public a304 source was used, or supply corresponding source.",
+  "libmpvEmbedded": {
+    "runtimePath": "electronapp/libmpv/x64/mpv-1.dll",
+    "sha256": "965efde4c8199f942bf9ed9d3e6fbcb7dd9dc961524d5780a9ca67da53f14d0c",
+    "bytes": 119725568,
+    "strings": [
+      {
+        "offset": 97847333,
+        "bytes": 799,
+        "value": "Configuration: -Dprefix=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/x86_64-w64-mingw32 -Dlibdir=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/x86_64-w64-mingw32/lib -Ddefault_library=shared -Dprefer_static=true -Ddebug=true -Db_ndebug=true -Doptimization=3 -Db_lto=true -Db_lto_mode=thin -Dlibmpv=true -Dpdf-build=enabled -Dlua=enabled -Djavascript=enabled -Dsdl2-gamepad=enabled -Dlibarchive=enabled -Dlibbluray=enabled -Ddvdnav=enabled -Duchardet=enabled -Drubberband=enabled -Dlcms2=enabled -Dopenal=enabled -Dspirv-cross=enabled -Dvulkan=enabled -Dvapoursynth=enabled -Dsubrandr=enabled -Dsixel=enabled -Dgl=enabled -Degl-angle=enabled -Dlibcurl=enabled -Dc_args=-Wno-error=int-conversion --cross-file=/__w/mpv-winbuild-cmake/mpv-winbuild-cmake/build_x86_64/meson_cross.txt",
+        "sha256": "a9b655f9a6d29508b0cc9a482d6f60637da4f37ab905bf3e63e36b136e2fdcde",
+        "followingBytesHex": "0a00",
+        "hashScope": "Printable ASCII bytes only, excluding trailing LF and NUL"
+      },
+      {
+        "offset": 97848134,
+        "bytes": 592,
+        "value": "List of enabled features: amf build-date cplugins cuda-hwaccel cuda-interop d3d-hwaccel d3d11 d3d9-hwaccel debug direct3d dos-paths dvdnav dxgi-debug-d3d11 egl-angle egl-angle-win32 ffmpeg ffnvcodec gl gl-dxinterop gl-dxinterop-d3d9 gl-win32 glob glob-win32 gpl iconv javascript jpeg lcms2 libarchive libass libavdevice libbluray libcurl libplacebo luajit openal rubberband rubberband-3 sdl2-gamepad shaderc sixel spirv-cross subrandr uchardet vaapi vaapi-win32 vapoursynth vector vk-khr-display vulkan wasapi win32 win32-desktop win32-executable win32-smtc win32-threads zimg zimg-st428 zlib",
+        "sha256": "1ecd14ed3bae98506935bfd5c26395b6e8d84dfab41e1446be30a16769b7e8fb",
+        "followingBytesHex": "0a00",
+        "hashScope": "Printable ASCII bytes only, excluding trailing LF and NUL"
+      }
+    ],
+    "officialSourceCommit": "dd5d17d3285a095a0f712fa9d116e22a076492de",
+    "corroboration": "meson.build:1762 sets CONFIGURATION from build_options; 1767-1790 creates FULLCONFIG from enabled features; feature gpl at line 50 uses get_option(gpl). Copyright states default GPLv2+ and conditions for LGPL mode.",
+    "limit": "Embedded declarations confirm configured options/features, not a complete dependency version lock, actual static/dynamic link map, FFmpeg configure command, source bundle, or combination-license conclusion."
+  },
+  "validation": {
+    "kind": "read-only hashing and fixed Git object comparisons",
+    "publicTestsRerun": false,
+    "windowsTestsRerun": false,
+    "notPerformed": [
+      "product execution",
+      "installer execution",
+      "source rebuild",
+      "full dependency source audit",
+      "legal clearance"
+    ],
+    "checks": [
+      "Five release asset sizes and SHA256 independently matched API",
+      "2235 manifest members: no missing, extra or hash mismatches; manifest itself separately identified",
+      "23 component Git identities and 24 original inventory hashes match pinned refs",
+      "64 notice paths and 73 Electron members match stated fixed sources",
+      "Six image paths compared with fixed official source and payload",
+      "Two NuGet DLL members match payload; ASCII debug strings recorded at byte offsets",
+      "Two libmpv printable strings match DLL byte offsets and hashes; LF/NUL termination explicitly recorded",
+      "Original v0.4.19 receipt preserved byte-for-byte",
+      "Five changed documents/receipt: UTF-8, final newline, JSON, 17 new links, finite credential patterns and patch whitespace passed"
+    ]
+  },
+  "historicalWindowsCI": {
+    "commit": "0acd0984d52cfd063c964c570732c07e669cb4c7",
+    "runId": 42558826353,
+    "jobId": 128970493640,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42558826353",
+    "conclusion": "success",
+    "tests": 2632,
+    "pass": 2627,
+    "fail": 0,
+    "skipped": 5,
+    "summaryLines": [
+      "2026-11-09T04:07:32.2666481Z ℹ tests 2632",
+      "2026-11-09T04:07:32.2666786Z ℹ suites 0",
+      "2026-11-09T04:07:32.2666995Z ℹ pass 2627",
+      "2026-11-09T04:07:32.2667200Z ℹ fail 0",
+      "2026-11-09T04:07:32.2667396Z ℹ cancelled 0",
+      "2026-11-09T04:07:32.2667604Z ℹ skipped 5",
+      "2026-11-09T04:07:32.2667792Z ℹ todo 0",
+      "2026-11-09T04:07:32.2668024Z ℹ duration_ms 797473.3809"
+    ]
+  }
+}
