@@ -33,6 +33,59 @@ exact Carnival binary-to-source relationship remains unproven. The maintained pr
 GPL-2.0-only; see `LICENSE` and `docs/LICENSING.md`. Preserve upstream notices
 when importing or changing identifiable upstream files.
 
+## Retained images: fixed official sources and repository license evidence
+
+Source publisher: MediaBrowser / Emby. The six Web paths below are byte-identical
+to five original files in [emby-webcomponents at
+cc087c2a93e74c3e35bd1cb4935ae472cff41a0e](https://github.com/MediaBrowser/emby-webcomponents/tree/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e).
+Each runtime path is relative to `electronapp/www/modules/`; the corresponding
+repository path has the prefix `vendor/web-snapshot/www/modules/`.
+
+| Runtime path | Fixed upstream original | SHA256 of the unchanged image bytes |
+| --- | --- | --- |
+| `mediainfo/fresh.png` | [mediainfo/fresh.png](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/fresh.png) | `74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5` |
+| `mediainfo/rotten.png` | [mediainfo/rotten.png](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/rotten.png) | `c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8` |
+| `themes/darkgradient/blueradiance.jpg` | [themes/blueradiance/bg.jpg](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/blueradiance/bg.jpg) | `32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89` |
+| `themes/logodark.png` | [themes/logodark.png](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logodark.png) | `f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5` |
+| `themes/logowhite.png` | [themes/logowhite.png](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png) | `1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113` |
+| `logoscreensaver/logowhite.png` | [themes/logowhite.png](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png) | `1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113` |
+
+The [same-commit LICENSE.md](https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/LICENSE.md)
+supplies the complete GNU GPL version 2 text, including sections 0-12 and the
+application appendix: 18,014 bytes, SHA256
+`f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d`.
+That exact text is already reproduced in this notice under
+[Windows Host reference GPLv2 complete license; target source relation pending](#windows-host-reference-gplv2-complete-license-target-source-relation-pending).
+This cross-reference identifies shared license text, not a Host/image source
+relationship or a change to the project's root license.
+
+The two Web white-logo copies and `electronapp/logowhite.png` also match the
+official [emby-theater-electron logowhite.png at
+db0f4c814ee1e7d9b5f50010065c5cb64a20357e](https://github.com/MediaBrowser/emby-theater-electron/blob/db0f4c814ee1e7d9b5f50010065c5cb64a20357e/logowhite.png)
+(10,300 bytes; the white-logo SHA256 above). The root runtime copy is maintained
+at `src/electronapp/logowhite.png`. That Electron commit's
+[LICENSE.md](https://github.com/MediaBrowser/emby-theater-electron/blob/db0f4c814ee1e7d9b5f50010065c5cb64a20357e/LICENSE.md)
+has the same 18,014 bytes and SHA256. These are source-publisher and repository
+license records; no individual image author, copyright year or separate grant
+is invented from repository ownership.
+
+The [2026-11-09 recovery record](docs/LICENSE_PROVENANCE_RECOVERY.md) and its
+[original receipt](docs/evidence/license-provenance-recovery-20261109.json)
+record official-source, Git and v0.4.20 payload comparisons. The
+[notice reconciliation receipt](docs/evidence/license-image-notices-20261109.json)
+rechecks the current seven repository images and the retained license text.
+It does not repeat the installer extraction or extend that package evidence
+to another release. This notice update has not been packaged in a new release;
+existing releases and the original audit receipts are unchanged.
+
+Known source and repository-level GPL evidence for these paths is retained;
+it is not a separate trademark grant or a verified chain of all third-party
+image rights. It does not establish the source/permission scope of other icons,
+splash images or supporter badges, preferred-form source completeness, or
+whole-distribution compliance. Those questions remain separate from the exact
+byte matches above. Other established component evidence, including the
+equalizer image, is not withdrawn by this limited update.
+
 ## Development tooling
 
 - `node-unrar-js` 2.0.2 is a development dependency, locked in

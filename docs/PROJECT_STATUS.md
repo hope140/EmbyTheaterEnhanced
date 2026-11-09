@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-09 — 已核图像来源补入通知
+
+[第三方通知](../THIRD_PARTY_NOTICES.md#retained-images-fixed-official-sources-and-repository-license-evidence)补齐恢复审计已核的六个 Web 图像路径及 Electron 根白色 logo，逐项列出固定官方来源、文件哈希和同提交 GPLv2 原文依据。七个当前仓库文件重新核对通过；18,014 字节许可全文已经原样存在通知中，仅建立明确引用，不重复或改写许可。未将仓库发布者当作每张图的作者，商标、上游第三方图像权利链、未覆盖图像及整体交付义务保持单独边界。[核对回执](evidence/license-image-notices-20261109.json)保留检查方法和范围。
+
+原通知全部既有字节及四份历史审计回执不变。此项改变后续构建所读取的通知输入，但未构建或发布新包，不能将其视为已交付。项目固定 Node.js 24.18.1 下定向回归 73 项通过；平台 Node.js 24.22.1 首次运行的 27 项夹具初始化失败另行保留。完整 Windows 公开 CI 按推送后的准确 SHA 回读，不以定向测试替代；未改产品、依赖、工作流或根许可证。
+
 ## 2026-11-09 — 许可证溯源有界收尾
 
 [收尾记录](LICENSE_PROVENANCE_CLOSEOUT.md)与[机器回执](evidence/license-provenance-closeout-20261109.json)补充官方 Host 对 Common 3.3.10 两个 DLL 的消费关系，以及 libplacebo 替代输入使用 glad2/main 移动分支的证据。项目构建校验并引用固定 DLL，不生成这些依赖的发布源码映射。原生实际配置/链接记录、dirty diff、Model/Common 生产源码关系仍未闭合；列明已有日志备份、原构建记录及包源码映射的最小补件和用途，无具体新材料则停止重复搜索。保留既有官方许可依据，未修改产品、依赖、流程或前三份回执。

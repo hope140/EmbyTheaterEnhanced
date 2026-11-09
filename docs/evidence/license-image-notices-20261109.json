@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-09T21:43:55.153730+00:00",
+  "scope": "Reconcile known image provenance into the build-input notice without changing images, license selection, package assembly or released artifacts.",
+  "baseline": "70425d8912dfc68cb787ed86ae53f9de2cb79249",
+  "sourceReceipt": "docs/evidence/license-provenance-recovery-20261109.json",
+  "sourceReceiptSha256": "57341690d3261a1bb267ac1dbc36cd339ff38db8514e3bdacc4396001f20f7b1",
+  "images": [
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/fresh.png",
+      "sourcePath": "mediainfo/fresh.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/mediainfo/fresh.png",
+      "runtimePath": "electronapp/www/modules/mediainfo/fresh.png",
+      "sha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5",
+      "bytes": 17006,
+      "gitAndPayloadEqual": true,
+      "gitBlobAtBaseline": "d0f146b3a1779297880d60fa7cdb0dac8801fe10",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from the unchanged v0.4.20 recovery receipt; not repeated in this notice-only update"
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/mediainfo/rotten.png",
+      "sourcePath": "mediainfo/rotten.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/mediainfo/rotten.png",
+      "runtimePath": "electronapp/www/modules/mediainfo/rotten.png",
+      "sha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8",
+      "bytes": 13112,
+      "gitAndPayloadEqual": true,
+      "gitBlobAtBaseline": "807b8c2d1e882f1c722034ed9ec7a0924b11d2ed",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from the unchanged v0.4.20 recovery receipt; not repeated in this notice-only update"
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/blueradiance/bg.jpg",
+      "sourcePath": "themes/blueradiance/bg.jpg",
+      "repositoryPath": "vendor/web-snapshot/www/modules/themes/darkgradient/blueradiance.jpg",
+      "runtimePath": "electronapp/www/modules/themes/darkgradient/blueradiance.jpg",
+      "sha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89",
+      "bytes": 1044963,
+      "gitAndPayloadEqual": true,
+      "gitBlobAtBaseline": "0cbe85caf7ad61f428385372275514b67ffef302",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from the unchanged v0.4.20 recovery receipt; not repeated in this notice-only update"
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logodark.png",
+      "sourcePath": "themes/logodark.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/themes/logodark.png",
+      "runtimePath": "electronapp/www/modules/themes/logodark.png",
+      "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
+      "bytes": 9967,
+      "gitAndPayloadEqual": true,
+      "gitBlobAtBaseline": "a6c51ff23d3ec46000d649775db2ab13ac74cf94",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from the unchanged v0.4.20 recovery receipt; not repeated in this notice-only update"
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png",
+      "sourcePath": "themes/logowhite.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/themes/logowhite.png",
+      "runtimePath": "electronapp/www/modules/themes/logowhite.png",
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "bytes": 10300,
+      "gitAndPayloadEqual": true,
+      "gitBlobAtBaseline": "7e55e0449d30d9a21c777a64a9a814f68caa89f8",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from the unchanged v0.4.20 recovery receipt; not repeated in this notice-only update"
+    },
+    {
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-webcomponents/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/themes/logowhite.png",
+      "sourcePath": "themes/logowhite.png",
+      "repositoryPath": "vendor/web-snapshot/www/modules/logoscreensaver/logowhite.png",
+      "runtimePath": "electronapp/www/modules/logoscreensaver/logowhite.png",
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "bytes": 10300,
+      "gitAndPayloadEqual": true,
+      "gitBlobAtBaseline": "7e55e0449d30d9a21c777a64a9a814f68caa89f8",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from the unchanged v0.4.20 recovery receipt; not repeated in this notice-only update"
+    },
+    {
+      "repositoryPath": "src/electronapp/logowhite.png",
+      "runtimePath": "electronapp/logowhite.png",
+      "sourceUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-electron/db0f4c814ee1e7d9b5f50010065c5cb64a20357e/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "gitBlobAtBaseline": "7e55e0449d30d9a21c777a64a9a814f68caa89f8",
+      "currentRepositoryEqual": true,
+      "officialAndPayloadComparison": "Inherited from electronWhiteLogo and the dated recovery report; not repeated in this notice-only update"
+    }
+  ],
+  "license": {
+    "sourceUrl": "https://github.com/MediaBrowser/emby-webcomponents/blob/cc087c2a93e74c3e35bd1cb4935ae472cff41a0e/LICENSE.md",
+    "officialGitBlob": "4522ba065934f53f9d4b7fde1953d9f332fe1abb",
+    "sourceRead": "Re-read through the GitHub connector at the fixed commit; decoded UTF-8 bytes matched size and SHA256.",
+    "bytes": 18014,
+    "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+    "existingSnapshotPath": "docs/redistribution-notices/host/Windows-Host-708fadc-LICENSE.md",
+    "alreadyIncludedVerbatimInNotice": true,
+    "scope": "Repository-level GPL version 2 text; no invented individual image author, copyright year, trademark permission or verified chain of all third-party image rights."
+  },
+  "priorReceipts": [
+    {
+      "path": "docs/evidence/license-provenance-20261109.json",
+      "sha256": "97e88c187d121e743188189a91889247ba6d5c787a49f967138e0615935acf26",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/evidence/license-provenance-recovery-20261109.json",
+      "sha256": "57341690d3261a1bb267ac1dbc36cd339ff38db8514e3bdacc4396001f20f7b1",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/evidence/license-provenance-linkage-20261109.json",
+      "sha256": "d1f56ede35501eb92c3a23324086562865ef9d036dffcc68945203fd22ca5dc8",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/evidence/license-provenance-closeout-20261109.json",
+      "sha256": "2ccbe0187505196cd500045c0ac76bc7cb92f99b1ee42abb7b12e8a957878ca3",
+      "unchangedFromBaseline": true
+    }
+  ],
+  "originalNoticePreservedVerbatimAroundInsertion": true,
+  "distributionBoundary": "The updated notice has not been built into a new package or release. Existing v0.4.20 package evidence remains scoped to its original receipt. No installer or product executed.",
+  "unresolvedScope": [
+    "Trademark use and any third-party image rights not established by repository-level evidence",
+    "Source and permission scope of uncovered icons, splash images and supporter badges",
+    "Preferred-form source completeness and whole-distribution obligations"
+  ],
+  "verification": {
+    "sevenRepositoryImages": "PASS: size and SHA256 matched prior evidence",
+    "knownLicenseBody": "PASS: exact 18014-byte official text already present in notice and existing snapshot",
+    "historicalRecords": "PASS: four prior receipts and all original notice bytes unchanged",
+    "localPublicRegression": "NOT RUN: full set requires fixed Node and PowerShell environment; remote full-route CI will be checked for the pushed SHA",
+    "packagingAndWindowsPlayback": "NOT RUN",
+    "focusedTests": {
+      "command": "node --test --test-concurrency=1 tests/build-input-contract.test.cjs tests/web-snapshot-input.test.cjs tests/ci-change-scope.test.cjs",
+      "final": {
+        "node": "24.18.1",
+        "tests": 73,
+        "passed": 73,
+        "failed": 0,
+        "skipped": 0,
+        "logSha256": "0d80e685bf601d6eff2e5750baa7b9a8c94a96b5edad0cad7ca8370cf169bfac"
+      },
+      "initial": {
+        "node": "24.22.1",
+        "testConcurrency": "default",
+        "tests": 73,
+        "passed": 46,
+        "failed": 27,
+        "skipped": 0,
+        "failure": "build-input-contract fixture initialization failed with ERR_FS_CP_EEXIST at fs.cpSync; test assertions and product files were not changed",
+        "logSha256": "840b245f41e1e4238df1791332485bf4315a445396142a14de90ca8726e7781d"
+      }
+    },
+    "unchangedComponentChecks": "PASS: all four repository snapshots matched manifests and the committed original libmpv archive passed size, SHA256 and Git blob checks",
+    "documentChecks": "PASS: UTF-8, final newline, JSON, added relative link targets, notice anchor headings, finite credential patterns and patch whitespace"
+  }
+}

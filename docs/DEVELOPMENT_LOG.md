@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-09 — 图像通知与恢复证据对齐
+
+在 `70425d89` 的恢复分支上，仅将既有已核图像来源整理到 [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md#retained-images-fixed-official-sources-and-repository-license-evidence)：六个 Web 路径对应五个官方原件，Electron 根白色 logo 另复用已核的官方 Electron 来源。重新计算七个仓库文件的大小与 SHA256，复读官方固定提交的 GPLv2 原文，并确认同一 18,014 字节全文已完整包含在通知和既有许可快照中。新增[回执](evidence/license-image-notices-20261109.json)；四份旧回执与原通知全部既有字节保持，未重做安装器提取或扩展 v0.4.20 的包验证范围。
+
+首次定向测试在 Node.js 24.22.1 下为 73 项、46 通过、27 失败、0 跳过，失败发生于 build-input fixture 的 `fs.cpSync` 初始化（`ERR_FS_CP_EEXIST`）。不改测试或产品，改用项目固定 Node.js 24.18.1 独立复验，同一三文件集合 73 项全通过。完整公开回归未在缺少 PowerShell 的本地环境执行；本改动保持完整 CI 路线，推送后必须按准确 SHA 核对 Windows 结果。没有新包、合并或发布，不作整体许可、商标或未知图像权利链已闭合的结论。
+
 ## 2026-11-09 — 许可证溯源有界收尾
 
 在 7e419402 的固定链接线索上，核对 7 个新取官方文件、源码树及指定路径历史，并固定 10 个已有项目材料。确认官方 Host 消费 Common 3.3.10 的 netstandard1.3 Common/Model；libplacebo 两个替代目录的配方使用移动分支，基础树 gitlink 不能代填实际 revision。两个公开 Updater 历史版本仍未补出既有目标实现映射。新增[收尾文档](LICENSE_PROVENANCE_CLOSEOUT.md)及[回执](evidence/license-provenance-closeout-20261109.json)，明确原生配置/链接、dirty diff、包生产源码关系的最小材料与停止条件。只做轻量证据/文档检查，保留前三份回执和官方许可依据；无 403 重试、旧工作区访问、产品/依赖/流程修改、合并或发布。
