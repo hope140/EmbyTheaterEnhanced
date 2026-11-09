@@ -1,5 +1,15 @@
 # 项目状态
 
+## 2026-11-09 — 当前发布、验收与范围
+
+GitHub 正式 Latest 仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)，最新公开测试版为 [v0.4.19](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.19)。本次核对的 main 为 `825c7c7faad7c7e40490cf77d3244d12e9161d2a`；原生优先误报回退修复已在 main，待后续版本发布。独立验收包 `a52871590acbe1cae2a19266c661f87436cd587e` 包含弹窗隔离与有界诊断补充，仍待用户验收，未合入 main 或公开发布。
+
+播放成功率退化和提前 EOF 的现场根因仍未确认。固定产品 DLL 的 138 次隔离对照未支持回退 `start` 时序，不能据此宣称已根治，也不能把诊断和弹窗改动等同于播放稳定性修复。既有合成／组件／包体验证与用户实际播放验收分别记录，见[已知问题](KNOWN_ISSUES.md)。
+
+本轮先完成现有测试与稳定性验收，再准备正式版，不插入新需求，正式版号和日期未定。预载／预加载、播放／缓冲暂存、最近搜索已取消；提前下载保留。飞牛继续独立开发，安排在本轮正式版之后发布，真实认证和播放仍未完成验证。WOL／服务器自动发现列为正式版后精简候选，删除前验证手动地址及既有连接，本轮不删除。当前决定与后续条件集中在[范围页](NEXT_RELEASE_SCOPE.md)，排期入口见[路线图](ROADMAP.md)。
+
+以下日期条目保留当时的准备、候选和验证事实；其“未发布／待合并”等措辞按对应日期、来源和版本理解，不覆盖上述当前状态。本次仅同步公开文档，不改代码、版本、构建输入或验收包，不增加客户端、真实媒体、系统安装或硬件验收结论。
+
 ## 2026-11-08 — Dialog and engine diagnostics acceptance integration
 
 Integrates the completed history-isolated playback notice and bounded engine diagnostic candidates on main 825c7c7. Both production changes are retained without additional playback behavior, EOF guards, retries or keep-open changes. Version remains 0.4.19 for a local acceptance package; no main merge or release is requested. Full tests, material checks, actual helper compilation, renderer and diagnostic probes must bind the final integration commit before packaging. Previous candidate evidence remains historical; the cause of concurrent-provider playback failures is not established.
@@ -305,7 +315,7 @@ main已从cd39dd1正常快进至准确发行来源`52288ab3f3d6a9fb51f0f205c38df
 
 ## 2026-10-31 — 整季／全剧已看筛选候选
 
-独立非保护分支在原确认框默认勾选跳过已看完，列出筛选及全部各可添加数量；只按当前账户严格布尔UserData.Played判断，部分观看保留。已有任务先去重，状态不全明确默认取消、仅明确选择仍下载全部才入队；返回后再去重并按实际选择检查容量。任务schema／文件／播放归属保持，合入静态自动更新文字移除。当前定向40/40，JS语法通过；完整公开及Windows结果待追加，未执行真实服务器／原生可见确认框验收，不合main、不单独构建或发布。见[设计](ADVANCE_DOWNLOAD_DESIGN.md#已看集数筛选候选未发布)及[验收](ADVANCE_DOWNLOAD_ACCEPTANCE.md#已看筛选候选未发布)。
+独立非保护分支在原确认框默认勾选跳过已看完，列出筛选及全部各可添加数量；只按当前账户严格布尔UserData.Played判断，部分观看保留。已有任务先去重，状态不全明确默认取消、仅明确选择仍下载全部才入队；返回后再去重并按实际选择检查容量。任务schema／文件／播放归属保持，合入静态自动更新文字移除。当前定向40/40，JS语法通过；完整公开及Windows结果待追加，未执行真实服务器／原生可见确认框验收，不合main、不单独构建或发布。见[设计](ADVANCE_DOWNLOAD_DESIGN.md#已看集数筛选v048测试版)及[验收](ADVANCE_DOWNLOAD_ACCEPTANCE.md#已看筛选v048测试版)。
 
 ## 2026-10-31 — 下载管理提示精简候选，待合并发布
 
