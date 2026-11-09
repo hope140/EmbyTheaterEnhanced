@@ -1,5 +1,9 @@
 # 维护记录
 
+## 2026-11-09 — 许可证溯源有界收尾
+
+在 7e419402 的固定链接线索上，核对 7 个新取官方文件、源码树及指定路径历史，并固定 10 个已有项目材料。确认官方 Host 消费 Common 3.3.10 的 netstandard1.3 Common/Model；libplacebo 两个替代目录的配方使用移动分支，基础树 gitlink 不能代填实际 revision。两个公开 Updater 历史版本仍未补出既有目标实现映射。新增[收尾文档](LICENSE_PROVENANCE_CLOSEOUT.md)及[回执](evidence/license-provenance-closeout-20261109.json)，明确原生配置/链接、dirty diff、包生产源码关系的最小材料与停止条件。只做轻量证据/文档检查，保留前三份回执和官方许可依据；无 403 重试、旧工作区访问、产品/依赖/流程修改、合并或发布。
+
 ## 2026-11-09 — 固定 DLL 链接与发布源码映射续查
 
 回读 `1fbb2179` 准确CI成功结果（Windows2632项、2627通过、0失败、5跳过），不重跑安装器提取或本地全量回归。两种PE读取方式核对固定libmpv的47项普通导入；从实际内嵌版本定位libass完整官方revision和libplacebo带dirty的基础revision，独立取得17个选定官方源文件并核Git blob及SHA256。有限64通知路径未检出两组件的指定署名/名称，记录交付映射待补而非无许可结论。

@@ -1,5 +1,7 @@
 # 固定 DLL 的源码与链接线索（2026-11-09）
 
+后续有限检查及可执行补证路径见[有界收尾](LICENSE_PROVENANCE_CLOSEOUT.md)；本页保留该阶段的观察与停止点。
+
 本阶段在 [`1fbb2179868c15c9d6f609608c030cc0bee059cc`](https://github.com/hope140/EmbyTheaterEnhanced/tree/1fbb2179868c15c9d6f609608c030cc0bee059cc) 的[续核成果](LICENSE_PROVENANCE_RECOVERY.md)上，仅进一步检查已验证的固定 DLL、选定官方源码和精确元数据入口。没有重复下载/解包安装器，也没有运行 DLL、产品或重建源码。[新回执](evidence/license-provenance-linkage-20261109.json)记录来源 URL、固定 revision、Git blob ID、SHA256、静态检查和停止点；前两份回执保持原字节。
 
 前一提交的 [CI 42598547980](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42598547980)已完成且成功：Windows 2632 项，2627 通过、0 失败、5 跳过。这是 `1fbb2179…` 的实际结果，未移作 v0.4.20 发布或本阶段后续提交的测试证据。未更改 CI 分类或门禁。

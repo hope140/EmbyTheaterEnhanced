@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 1,
+  "priorCommitCi": {
+    "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+    "runId": 42600271780,
+    "jobId": 129102707106,
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42600271780",
+    "status": "completed",
+    "conclusion": "success",
+    "updatedAt": "2026-11-09T10:31:19Z",
+    "testSummary": {
+      "tests": 2632,
+      "pass": 2627,
+      "fail": 0,
+      "skipped": 5,
+      "cancelled": 0
+    },
+    "summaryLines": [
+      "2026-11-09T10:30:53.0311694Z ℹ tests 2632",
+      "2026-11-09T10:30:53.0312167Z ℹ pass 2627",
+      "2026-11-09T10:30:53.0312328Z ℹ fail 0",
+      "2026-11-09T10:30:53.0312498Z ℹ cancelled 0",
+      "2026-11-09T10:30:53.0312666Z ℹ skipped 5",
+      "2026-11-09T10:30:53.0313020Z ℹ duration_ms 547912.4372"
+    ]
+  },
+  "documentationChecks": {
+    "files": 5,
+    "newLinkTargets": 23,
+    "utf8FinalNewline": true,
+    "json": true,
+    "finiteCredentialPatterns": true,
+    "patchWhitespace": true
+  },
+  "observedAt": "2026-11-09T10:28:07.818890+00:00",
+  "baselineCommit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+  "scope": "Final bounded source-mapping pass; no denied endpoint retry, new installer extraction, product/source build or product/dependency/workflow changes.",
+  "officialSources": [
+    {
+      "name": "glad-recipe",
+      "url": "https://github.com/shinchiro/mpv-winbuild-cmake/blob/cd1edc11dc6887a50f705717619d879f5a93a488/packages/glad.cmake",
+      "gitBlobSha": "75d2756072fe8929fd9a9125cf527d17de460ea4",
+      "rawUrl": "https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/cd1edc11dc6887a50f705717619d879f5a93a488/packages/glad.cmake",
+      "bytes": 369,
+      "sha256": "ee80b01e4fce4561f1d9dfa9f51474cc4b48ef7ef739227db6099aed36016468",
+      "gitBlobVerified": true
+    },
+    {
+      "name": "fast-float-recipe",
+      "url": "https://github.com/shinchiro/mpv-winbuild-cmake/blob/cd1edc11dc6887a50f705717619d879f5a93a488/packages/fast_float.cmake",
+      "gitBlobSha": "7bafdef160fde9a5a331a676e170897d0f0fe507",
+      "rawUrl": "https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/cd1edc11dc6887a50f705717619d879f5a93a488/packages/fast_float.cmake",
+      "bytes": 394,
+      "sha256": "3781c52eb992b862eed0df9ea3b03884e9d7330b39cbe5be24858b732b85c2aa",
+      "gitBlobVerified": true
+    },
+    {
+      "name": "placebo-gitmodules",
+      "url": "https://github.com/haasn/libplacebo/blob/4d82c6898551068d4ae6a6b5538efcddc2c7cf64/.gitmodules",
+      "gitBlobSha": "3245c2120aa6339799e1eb5cabdd2885ecbbbf1c",
+      "rawUrl": "https://raw.githubusercontent.com/haasn/libplacebo/4d82c6898551068d4ae6a6b5538efcddc2c7cf64/.gitmodules",
+      "bytes": 649,
+      "sha256": "f11ce63173c8901db8518e73ea2515ddb1002a00397de98f981eaa0adf3b8f12",
+      "gitBlobVerified": true
+    },
+    {
+      "name": "host-project",
+      "url": "https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Emby.Theater.csproj",
+      "gitBlobSha": "0f74faffe411e560f4be216812bae696606c12d7",
+      "rawUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-windows/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/Emby.Theater.csproj",
+      "bytes": 15965,
+      "sha256": "288bf2623eeb6280bf932d64ddde3b3f4afaadfad916964767cdc47ce75c4855",
+      "gitBlobVerified": true
+    },
+    {
+      "name": "host-packages",
+      "url": "https://github.com/MediaBrowser/emby-theater-windows/blob/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/packages.config",
+      "gitBlobSha": "3b9ad3b0c69c7c2c892eb5856294d8441af3aa20",
+      "rawUrl": "https://raw.githubusercontent.com/MediaBrowser/emby-theater-windows/708fadc068cbf66ced6aece4a32f3e12bb2c4e13/Emby.Theater/packages.config",
+      "bytes": 300,
+      "sha256": "5775a0e475005542180b1e7de6c9251b961b9a3733013f8a809482a3e0b81f17",
+      "gitBlobVerified": true
+    },
+    {
+      "name": "updater-f3de5bb7216ab271248fe6db3d1c81e31935c7dc",
+      "url": "https://github.com/MediaBrowser/Emby/blob/f3de5bb7216ab271248fe6db3d1c81e31935c7dc/MediaBrowser.Common/Updates/GithubUpdater.cs",
+      "gitBlobSha": "cc83e7c6e0da87c02fac8750e49248b8d0d0c918",
+      "rawUrl": "https://raw.githubusercontent.com/MediaBrowser/Emby/f3de5bb7216ab271248fe6db3d1c81e31935c7dc/MediaBrowser.Common/Updates/GithubUpdater.cs",
+      "bytes": 11327,
+      "sha256": "51ed464542c9598c1af7b434e35f93f33596d8dc48ed140d85bf712e8e40ebaa",
+      "gitBlobVerified": true
+    },
+    {
+      "name": "updater-5809536066de6e97578b746e0233723f5fcf2e5d",
+      "url": "https://github.com/MediaBrowser/Emby/blob/5809536066de6e97578b746e0233723f5fcf2e5d/MediaBrowser.Common/Updates/GithubUpdater.cs",
+      "gitBlobSha": "c5000391d8acfc9f6d3e727af9a3fa330b160c37",
+      "rawUrl": "https://raw.githubusercontent.com/MediaBrowser/Emby/5809536066de6e97578b746e0233723f5fcf2e5d/MediaBrowser.Common/Updates/GithubUpdater.cs",
+      "bytes": 11329,
+      "sha256": "9fc6f51db1e455bb36d3b43cc1566dbb8227cde6c40a81d177fd8876478299e9",
+      "gitBlobVerified": true
+    }
+  ],
+  "libplaceboTree": {
+    "url": "https://api.github.com/repos/haasn/libplacebo/git/trees/4d82c6898551068d4ae6a6b5538efcddc2c7cf64?recursive=1",
+    "truncated": false,
+    "gitlinks": [
+      {
+        "path": "3rdparty/Vulkan-Headers",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "74d8a6cb930c68ef617b202c3ff3c59d919e086b"
+      },
+      {
+        "path": "3rdparty/fast_float",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "97b54ca9e75f5303507699d27c6b4f4efe4641a1"
+      },
+      {
+        "path": "3rdparty/glad",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "73db193f853e2ee079bf3ca8a64aa2eaf6459043"
+      },
+      {
+        "path": "3rdparty/jinja",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "15206881c006c79667fe5154fe80c01c65410679"
+      },
+      {
+        "path": "3rdparty/markupsafe",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "297fc8e356e6836a62087949245d09a28e9f1b13"
+      },
+      {
+        "path": "demos/3rdparty/nuklear",
+        "mode": "160000",
+        "type": "commit",
+        "sha": "242f35efa067a46c595645eeda7b1771ea1f83b1"
+      }
+    ]
+  },
+  "hostTree": {
+    "url": "https://api.github.com/repos/MediaBrowser/emby-theater-windows/git/trees/708fadc068cbf66ced6aece4a32f3e12bb2c4e13?recursive=1",
+    "truncated": false,
+    "sourceBuildProjects": [
+      {
+        "path": "Emby.Theater.RefreshRate/Emby.Theater.RefreshRate.csproj",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "dc1cd380630086a9835f0fbf63f765b44bc99460",
+        "size": 2342,
+        "url": "https://api.github.com/repos/MediaBrowser/emby-theater-windows/git/blobs/dc1cd380630086a9835f0fbf63f765b44bc99460"
+      },
+      {
+        "path": "Emby.Theater/Emby.Theater.csproj",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "0f74faffe411e560f4be216812bae696606c12d7",
+        "size": 15965,
+        "url": "https://api.github.com/repos/MediaBrowser/emby-theater-windows/git/blobs/0f74faffe411e560f4be216812bae696606c12d7"
+      },
+      {
+        "path": "Emby.Theater/packages.config",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "3b9ad3b0c69c7c2c892eb5856294d8441af3aa20",
+        "size": 300,
+        "url": "https://api.github.com/repos/MediaBrowser/emby-theater-windows/git/blobs/3b9ad3b0c69c7c2c892eb5856294d8441af3aa20"
+      }
+    ]
+  },
+  "commonUpdaterHistory": {
+    "url": "https://api.github.com/repos/MediaBrowser/Emby/commits?sha=a304b3cd0a330bb34fd3606a6afb9cd3d80176e4&path=MediaBrowser.Common/Updates/GithubUpdater.cs&per_page=10",
+    "results": [
+      {
+        "sha": "f3de5bb7216ab271248fe6db3d1c81e31935c7dc",
+        "date": "2017-06-10T16:38:18Z",
+        "message": "update the updater"
+      },
+      {
+        "sha": "5809536066de6e97578b746e0233723f5fcf2e5d",
+        "date": "2016-11-19T05:52:49Z",
+        "message": "move sync repository to portable project"
+      }
+    ],
+    "limit": "Two returned commits under fixed a304 ancestry and one exact path; not a search of all branches or repositories."
+  },
+  "repositoryEvidence": [
+    {
+      "path": "vendor/libmpv-input-manifest.json",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 1817,
+      "sha256": "5cbe0657c1ef99e61bfb9bc6732140a6a414fa83d2c8209059c94de4a988e955",
+      "gitBlobSha": "4eb1bc9baf48c610505b67e0ceee257e5bed6158"
+    },
+    {
+      "path": "vendor/model-compatibility-manifest.json",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 2200,
+      "sha256": "87a47d8bfb3e82cf61ff8b6da3fc79df7684504940ce2188784a73777bc83114",
+      "gitBlobSha": "dd12e188d97819e63522bbbe0225e49eac75a898"
+    },
+    {
+      "path": "tools/prepare-libmpv.cjs",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 5155,
+      "sha256": "466b5ba44c364dcfe083e52b5295950ce3bbc0de87c9480017639b29d25f6655",
+      "gitBlobSha": "3b5351d73bf9ba116004773d61075e2fdec0dc49"
+    },
+    {
+      "path": "tools/prepare-model-compatibility.ps1",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 2965,
+      "sha256": "60b3460a1968518fdef11e088c42a1b4d8d69bf5cd081dadfcf26f50703f9f78",
+      "gitBlobSha": "4b27a434b6a87ab96af98a910a97863285535c16"
+    },
+    {
+      "path": "tools/windows-host-build/REFERENCES.json",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 1398,
+      "sha256": "4eaeb14db70ceb6fee6f1114bad00bcedc9c42ef20666300dcd22de087adb569",
+      "gitBlobSha": "fdf0bcf9acf428127958491b0452979a78c0df37"
+    },
+    {
+      "path": "tools/windows-host-build/Build-UnifiedHost.ps1",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 16941,
+      "sha256": "ad98235870d72c4e5ce48227fcae6b8f01d8a0500dadc3e69cd55ae2deb926ed",
+      "gitBlobSha": "814ca784a64f4a35118c7d462196b7690a5f702b"
+    },
+    {
+      "path": "docs/evidence/v030-mpv-unblock.json",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 18005,
+      "sha256": "718a80dc96bfb02dfd15a2702a8fcc4df9e3696496c76a24ba4ec75249519eb1",
+      "gitBlobSha": "6487eeb5bb0449a53f374ab00b0254eb02ee2743"
+    },
+    {
+      "path": "docs/dependency-research/evidence/license-closure-20261023.json",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 8025,
+      "sha256": "382bb40944dc9b70c2813f8390a1ca146ace465fc3997336de3779b185c6c457",
+      "gitBlobSha": "49308e10f42baa5a6a26a913ee9a09fbab7ef28b"
+    },
+    {
+      "path": "docs/dependency-research/evidence/licensed-callable-mapping-20261022.json",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 214780,
+      "sha256": "1f909af313dc523d99e4ade31ccdf2e1416db2cd7e19fdbf915c5c911b914c8e",
+      "gitBlobSha": "a125f55e16e7f54e69581b12a5348532cc05cd98"
+    },
+    {
+      "path": "docs/dependency-research/LICENSE_DECISIONS.md",
+      "commit": "7e419402391d0eda1de2d15dbe8601bb60c3e798",
+      "bytes": 13170,
+      "sha256": "070cb1835694d1543aa2f3d5d2ddc3246ea980fb16a27002d6dbafff318c9ace",
+      "gitBlobSha": "d36205bc9add7dccc673f17ee122cecc884e6176"
+    }
+  ],
+  "priorReceipts": [
+    {
+      "path": "docs/evidence/license-provenance-20261109.json",
+      "sha256": "97e88c187d121e743188189a91889247ba6d5c787a49f967138e0615935acf26"
+    },
+    {
+      "path": "docs/evidence/license-provenance-recovery-20261109.json",
+      "sha256": "57341690d3261a1bb267ac1dbc36cd339ff38db8514e3bdacc4396001f20f7b1"
+    },
+    {
+      "path": "docs/evidence/license-provenance-linkage-20261109.json",
+      "sha256": "d1f56ede35501eb92c3a23324086562865ef9d036dffcc68945203fd22ca5dc8"
+    }
+  ],
+  "newBoundedFindings": {
+    "libplacebo": {
+      "sourceGitlinks": {
+        "3rdparty/glad": "73db193f853e2ee079bf3ca8a64aa2eaf6459043",
+        "3rdparty/fast_float": "97b54ca9e75f5303507699d27c6b4f4efe4641a1"
+      },
+      "builderSourceRefs": {
+        "glad": "glad2",
+        "fast_float": "main"
+      },
+      "relation": "Fixed source gitlinks are not the resolved revisions of independent source folders substituted by the fixed builder. Branch names do not pin their historic state.",
+      "dirtyDiffRecovered": false
+    },
+    "officialHostConsumption": {
+      "hostCommit": "708fadc068cbf66ced6aece4a32f3e12bb2c4e13",
+      "package": "MediaBrowser.Common",
+      "version": "3.3.10",
+      "dllHintPaths": [
+        "../packages/MediaBrowser.Common.3.3.10/lib/netstandard1.3/MediaBrowser.Common.dll",
+        "../packages/MediaBrowser.Common.3.3.10/lib/netstandard1.3/MediaBrowser.Model.dll"
+      ],
+      "relation": "Official Host project references both packaged DLLs; packages.config selects 3.3.10. This binds consumer/package selection, not package production source revision."
+    },
+    "commonUpdaterHistory": {
+      "versionsRead": 2,
+      "observedPolicy": "Path.GetFileName; IndexOf(assetFilename, OrdinalIgnoreCase) != -1; fallback string.Equals. Neither selected historic version supplies the previously recorded prefix-or-exact target implementation.",
+      "comparisonBasis": "Target policy and 297 matching/10 different/4 unmatched-generated records are inherited from fixed license-closure-20261023.json, not newly rerun IL comparison.",
+      "sourceRevisionMapped": false
+    },
+    "eteBuildBoundary": {
+      "libmpv": "prepare-libmpv.cjs validates fixed archive, extracts and renames DLL without compilation. source-provenance declares upstream-fixed-archive.",
+      "model": "prepare-model-compatibility.ps1 validates/extracts exact official Windows ZIP member, without compiling Model.",
+      "commonModel": "Build-UnifiedHost.ps1 validates the two fixed referenced DLLs from REFERENCES.json; rebuilding Host does not rebuild these references."
+    }
+  },
+  "existingMaterialRecoveryRoute": {
+    "historicalLogArchive": {
+      "path": ".work/mpv-unblock/target-run-logs-auth.zip",
+      "bytes": 82245,
+      "sha256": "9c66d17745ef7592dad1721cf86f9edee0227f1b2950fa4e353724d2a9475ff4",
+      "url": "https://api.github.com/repos/shinchiro/mpv-winbuild-cmake/actions/runs/31285220366/logs",
+      "relation": "Official job logs; authenticated read-only gh API download"
+    },
+    "existsInThisWorkspace": false,
+    "historicalExtractedLogPath": ".work/mpv-unblock/run-logs/3_Building mpv (x86_64).txt",
+    "extractedLogExistsInThisWorkspace": false,
+    "historicalFullConfigureLogScope": "NOT_ACQUIRED; workflow retention-days 1; job transcript is acquired",
+    "nextActionIfOwnerBackupExists": "Owner may recover an already-held copy into a new evidence directory; verify 82245 bytes and recorded SHA256 before read-only inspection of source update/build lines. Do not retry the denied remote logs or inspect the older task workspace.",
+    "limit": "Existing transcript may refine individual updates, but old receipt already says full configure logs were not acquired. Recovery alone does not close the entire dependency/link map."
+  },
+  "nextPaths": [
+    {
+      "priority": 1,
+      "action": "Preserve already verified official identities and license texts; prepare a named source/notice-to-payload mapping for libass/libplacebo if a future distribution change is authorized.",
+      "requiredMaterial": "Already available fixed official ISC/LGPL texts; actual delivered paths must be verified after any future packaging change.",
+      "status": "Evidence available; no product notice integration performed."
+    },
+    {
+      "priority": 2,
+      "action": "Recover exact already-held old job transcript or detailed research outputs from an owner-selected backup, if available.",
+      "requiredMaterial": "Recorded exact archive SHA/size; source update lines and matching analysis identifiers.",
+      "status": "No such raw log file in this isolated workspace; no old workspace accessed."
+    },
+    {
+      "priority": 3,
+      "action": "Bind the old fixed native binary to original source/cache/build metadata.",
+      "requiredMaterial": "Resolved source SHAs and patches; libplacebo dirty diff; actual glad/fast_float SHAs; FFmpeg config.h/config.mak/config.log and build.ninja/link response or equivalent records.",
+      "status": "Not acquired; recipe or current branch HEAD cannot substitute."
+    },
+    {
+      "priority": 4,
+      "action": "Bind Model/Common 3.3.10 to producer source.",
+      "requiredMaterial": "Matching netstandard1.3 csproj/package build revision, plus localized Updater difference mapping; matching PDB/document checksums/SourceLink are optional useful corroboration.",
+      "status": "Consumer project, versions, MVIDs, and existing partial IL evidence do not supply producer revision."
+    },
+    {
+      "priority": 5,
+      "action": "If old build metadata cannot be recovered, decide separately whether to design and validate a new source-controlled component build for future use.",
+      "requiredMaterial": "New explicit scope, accepted source/licence set, behavior/ABI/packaging validation plan and approval before replacement.",
+      "status": "Option only; does not prove old binary provenance, change current DLLs or authorize release."
+    }
+  ],
+  "stopDecision": "This bounded pass adds consumer/build-boundary and moving-ref evidence, but does not recover a complete dependency/config/link lock, dirty diff, or Model/Common producer-source mapping. No more speculative searches without a new concrete source or owner-supplied existing material.",
+  "validation": {
+    "performed": [
+      "Seven selected official files matched Git blob IDs and SHA256",
+      "Ten fixed repository evidence files read and hashed",
+      "Two exact historic GithubUpdater files inspected; no renewed IL/full-build test",
+      "Three prior receipts preserved"
+    ],
+    "notPerformed": [
+      "any previously denied network request",
+      "old workspace access",
+      "product execution",
+      "dependency change",
+      "source build",
+      "installer extraction",
+      "external contact",
+      "merge or release"
+    ]
+  }
+}
