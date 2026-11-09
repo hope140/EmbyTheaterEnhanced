@@ -1,5 +1,16 @@
 # 测试与验收
 
+<a id="terminal-media-error"></a>
+## 当前代次终止性媒体错误
+
+```powershell
+node --test tests/terminal-read-error.test.cjs tests/native-helper-diagnostics-playback.test.cjs tests/native-helper-client.test.cjs tests/native-helper-service.test.cjs tests/playbackmanager-request-session.test.cjs tests/seek-eof-diagnostics.test.cjs
+```
+
+新增回归加载真实 adapter AMD 和 renderer bridge；IPC、浏览器及服务为夹具。生成 PlaybackManager 联合回归验证终止错误无转码/媒体重试、无下一集且仅一次退出；普通 EOF 用真实首项 adapter 驱动队列，后续媒体传输由夹具承接。`ETE_TEST_SOURCE_ROOT` 可给启动夹具指定另一份准确源码中的 adapter，保持断言不变做修前对照，默认读取当前工作树。
+
+覆盖当前/旧 generation、同媒体重开、同步错误监听器接纳新 Play、重复错误/EOF、缺少归属或类型证据、可恢复诊断、正常片尾、短视频、未知/错误时长、直播和近尾 Seek。普通 EOF 先于可靠错误时不回滚已发生的队列决定；上下文日志及显著剩余时长不当作终止证明。该限制意味着只有 `eof-reached` 的现场仍可能误跳。测试不证明原始读流根因已修好，也不代替 Native Helper、实际客户端、真实媒体、显示或安装验收。
+
 <a id="playback-error-dialog-history"></a>
 ## Playback error dialog history
 
@@ -68,3 +79,5 @@ node --test tests/initial-subtitle-native.test.cjs
 Without explicit inputs this gate is reported as skipped, not passed. It executes the actual controller and complete helper against mpv and checks selected identity, cancellation, stale messages and mid-play switches. The test parent is hidden and each owned child is drained even on failure. Kernel refresh-seek experiments and complete helper tests are separate evidence layers: production diagnostic collection is bounded and cannot prove absence of every kernel log. The pinned-DLL experiment using the exact production mapping function observed on_preloaded selection before file-loaded/core-playing with no refresh seek in six cases; post-core and file-loaded selection controls do refresh. Synthetic correct HTTP Range responses did not reproduce MKV corruption. Null/hidden output and preview capture are not first visible frame or user stutter measurements.
 
 Mappings with incomplete tables, missing hooks, count mismatch, stale identity or failed readback retain the post-load operation; this optimization does not promise to remove every initial refresh seek. Ordinary external and manual internal switching retain their required native operation. No original-media acceptance, package provenance build, remote CI or released repair is implied by these checks.
+
+Final local validation: 2812 full-suite tests, 2806 passed, 6 explicitly skipped, zero failed; all 136 material self-tests passed. JavaScript syntax (596 tracked files), PowerShell syntax (53 files), secret scan (693 tracked files) and diff checks passed. The skipped full-suite gates require the separately acquired official55 Host sources (3), explicit hosted Windows exit/relay validation (2), or Unix transport (1). No remote CI, installer build, actual application exit or real-media acceptance was run. Initial missing material/toolchain failures and successful reruns are recorded separately; pinned public inputs were acquired into this isolated task only.

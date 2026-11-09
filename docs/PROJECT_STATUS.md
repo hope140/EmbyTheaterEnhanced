@@ -6,6 +6,14 @@ Based on main b4b70bc7c8873b750ee9375a00c9cca742fcf28b. A generation-bound nativ
 
 This is independent of the terminal EOF adapter candidate. Fixed mpv and synthetic HTTP tests establish selection correctness and absence of the extra startup refresh seek in the tested cases; they do not establish the original MKV failure cause or visible stutter removal. Ordinary EOF without authoritative failure evidence remains outside the separate terminal-error fix. No merge, release, installation or real-media acceptance. See [initial subtitle validation](TESTING.md#initial-subtitle-preloaded).
 
+## 2026-11-09 — 当前代次终止性媒体错误候选
+
+已起播请求收到归属明确的 Native `end-file reason=4` 后，adapter 保留类型化 `unexpectedEof`，沿 PlaybackManager 既有终局分支退出，禁止自动下一集与同集转码回退。错误通知同步回调若接纳新播放，旧错误不得写入新请求；重复错误与 EOF 不重复终止。起播前既有线路处理保持。
+
+普通 `eof-reached`、剩余时长和上下文关联的解复用日志不构成该分类依据。只有普通 EOF 的提前结束仍是已知缺口；本候选不声称修复原始读流异常，不改变字幕选轨、keep-open、正常连播、短视频、未知/错误时长、直播或近尾手动定位。未合并、发布、部署或做真实流验收。验证方法与限制见 [测试说明](TESTING.md#terminal-media-error).
+
+Final local validation: 2812 full-suite tests, 2806 passed, 6 explicitly skipped, zero failed; all 136 material self-tests passed. JavaScript syntax (596 tracked files), PowerShell syntax (53 files), secret scan (693 tracked files) and diff checks passed. The skipped full-suite gates require the separately acquired official55 Host sources (3), explicit hosted Windows exit/relay validation (2), or Unix transport (1). No remote CI, installer build, actual application exit or real-media acceptance was run. Initial missing material/toolchain failures and successful reruns are recorded separately; pinned public inputs were acquired into this isolated task only.
+
 ## 2026-11-09 — v0.4.20 测试版已发布
 
 [v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已发布，Tag 与安装包源码均为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`；正式 Latest 保持 v0.4.0。包含弹窗历史隔离与幂等关闭、有界普通／详细诊断、原生优先误报回退修复及客户端说明文字。

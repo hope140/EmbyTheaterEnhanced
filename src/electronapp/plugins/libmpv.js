@@ -1075,7 +1075,7 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
                         request.startupFailure.name = 'NativeHelperError';
                         if (request.rejectStartup) request.rejectStartup(request.startupFailure);
                     }
-                    self._onError(recv.data.data);
+                    self._onError(recv.data.data, recv.generationId, request);
                 }
                 return;
             }
@@ -1962,9 +1962,19 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             noteCacheDiagnostic(activePlayRequest, generationId, false);
         };
 
-        self._onError = function (error) {
-            if (activePlayRequest && activePlayRequest.terminalError) return;
-            if (activePlayRequest) activePlayRequest.terminalError = true;
+        self._onError = function (error, generationId, ownerRequest) {
+            var request = ownerRequest || activePlayRequest;
+            // Dispatching the bridge notification can synchronously admit a new
+            // Play. Never transfer the old failure to that replacement owner.
+            if (!isCurrentPlayRequest(request) || request.terminalError ||
+                (generationId != null && diagnosticOwnerMatches(request, generationId) !== true)) return;
+            request.terminalError = true;
+            // Only attributed terminal media errors establish this classification.
+            // Plain EOF, durations and contextual demux logs are not failure proof.
+            var unexpectedEof = !!(error && error.unexpectedEof === true) ||
+                !!(request.corePlayingLogged && generationId != null &&
+                    diagnosticOwnerMatches(request, generationId) === true && error &&
+                    error.failureKind === 'media-load' && error.endReason === 4);
 
             emitClientDiagnostic('error', 'playback', 'playback-error', Object.assign(requestDiagnosticDetails(activePlayRequest), {
                 stage: 'player-event',
@@ -1980,8 +1990,8 @@ define(['globalize', 'playbackManager', 'pluginManager', 'events', 'embyRouter',
             }));
             // During loading the rejected play promise owns manager cleanup.
             // After startup the event owns it; never submit both paths at once.
-            if (activePlayRequest && activePlayRequest.corePlayingLogged) {
-                events.trigger(self, 'error', [{type: 'NativeHelperError'}]);
+            if (request.corePlayingLogged && !request.terminalEof) {
+                events.trigger(self, 'error', [{type: 'NativeHelperError', unexpectedEof: unexpectedEof}]);
             }
         };
 

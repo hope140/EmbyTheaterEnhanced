@@ -8,6 +8,16 @@ The fixed mpv experiment showed that setting sid at file-loaded still triggers r
 
 The adapter suite covers initial Off/external, exact selection, fallback, current user choice and delayed initial readbacks across Stop/Off/new Play. A new fixture initially waited for play completion before releasing the pending subtitle read; corrected the fixture ordering. Full-suite review also updated an old two-read assertion to include initial verification, while strengthening exact new-generation ownership. A sandbox-only local HTTP test failure is retained separately. No stream headers, Range policy, retry policy or normal manual subtitle switch were changed.
 
+## 2026-11-09 — 当前代次终止错误的无重试传递
+
+基于 main `b4b70bc7c8873b750ee9375a00c9cca742fcf28b`，只修改 libmpv adapter 的终止错误归属与类型传递。服务和 renderer bridge 已通过媒体身份/generation 传递终止原因；adapter 在起播后将明确媒体终止错误送入现有 `unexpectedEof` 分支，避免退化为可重试的通用错误。同步错误监听器接纳新 Play 后重核旧 owner；普通 EOF 已上报时仍保留后续错误诊断，但不再发第二次终止事件。
+
+同一真实 AMD/renderer bridge 回归在基线 17 项中 6 项失败、候选 17 项通过；实际生成 PlaybackManager 的 2 项联合回归基线 1 失败、候选 2 通过。早期测试夹具错误（主动 Stop 计数、公开定位方法及下一项传输收尾）已修正后重跑同一组红绿断言，不计作产品修复。完整测试首轮还发现 EOF 后诊断丢失，已保留诊断并限制第二次生命周期事件；历史 Host 源 blob 缺失由固定远端身份补齐，未改变测试断言。
+
+可恢复的 demux 日志不触发退出；普通 EOF 的真假无法仅由时长可靠区分，仍可能自动下一集。该边界明确测试保留，不以固定时长阈值扩大拦截。无 native 内核、远控、服务器、版本或重试策略扩展。真实读流异常根因仍未确定，未合并或发布。
+
+Final local validation: 2812 full-suite tests, 2806 passed, 6 explicitly skipped, zero failed; all 136 material self-tests passed. JavaScript syntax (596 tracked files), PowerShell syntax (53 files), secret scan (693 tracked files) and diff checks passed. The skipped full-suite gates require the separately acquired official55 Host sources (3), explicit hosted Windows exit/relay validation (2), or Unix transport (1). No remote CI, installer build, actual application exit or real-media acceptance was run. Initial missing material/toolchain failures and successful reruns are recorded separately; pinned public inputs were acquired into this isolated task only.
+
 ## 2026-11-09 — v0.4.20 测试版已发布
 
 [v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已发布，Tag 与安装包源码均为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`；正式 Latest 保持 v0.4.0。包含弹窗历史隔离与幂等关闭、有界普通／详细诊断、原生优先误报回退修复及客户端说明文字。
