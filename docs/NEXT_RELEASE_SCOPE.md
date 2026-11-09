@@ -2,13 +2,13 @@
 
 ## 当前发布边界（2026-11-09）
 
-[v0.4.0 正式版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0) 仍为 Latest；[v0.4.19 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.19) 已公开发布。当前 main 为 `825c7c7faad7c7e40490cf77d3244d12e9161d2a`，其中原生优先误报回退的修复尚待后续版本发布。独立验收包 `a5287159` 待用户验收，尚未合入 main 或发布，不能作为线上版本或本轮正式版已完成的证据。下载见[README](../README.md#下载安装)，已发布范围见[变更记录](../CHANGELOG.md)。
+[v0.4.0 正式版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0) 仍为 Latest；[v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已公开发布，源码为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`。包含原生优先误报回退修复、此前独立验收包中的弹窗隔离与有界诊断，以及客户端说明文字整理。此测试版发布不等于现场播放根因已解决或正式版验收完成。下载见[README](../README.md#下载安装)，已发布范围见[变更记录](../CHANGELOG.md)。
 
 ## 本轮正式版与验收边界
 
 本轮安排为现有测试与播放稳定性验收通过后准备正式版，不插入新需求。正式版号及日期未确定；main 已合入修复、独立验收包和已发布安装包分别记录身份与结果。当前状态集中在[项目状态](PROJECT_STATUS.md)。
 
-播放成功率退化和提前 EOF 的现场根因仍未确认。固定产品 DLL 的 138 次隔离对照未支持回退 `start` 时序；该有限结果不能证明现场问题已根治，也不能外推所有媒体、服务器与设备均稳定。验收包中的弹窗隔离和诊断补充也不等于已修复这些未知根因，反馈与限制见[已知问题](KNOWN_ISSUES.md)。
+播放成功率退化和提前 EOF 的现场根因仍未确认。固定产品 DLL 的 138 次隔离对照未支持回退 `start` 时序；该有限结果不能证明现场问题已根治，也不能外推所有媒体、服务器与设备均稳定。v0.4.20 中的弹窗隔离和诊断补充也不等于已修复这些未知根因，反馈与限制见[已知问题](KNOWN_ISSUES.md)。
 
 ## 功能取舍与后续范围
 
