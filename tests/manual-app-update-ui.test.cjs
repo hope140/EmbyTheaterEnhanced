@@ -89,7 +89,8 @@ test('download displays progress and actual source in details, cancels only on e
 test('verified handoff explains normal quit and wizard, with all update controls locked', async () => {
     const h = harness(), work = h.controller.downloadUpdate();
     h.pending[0].resolve({status: 'installing', source: 'github', directory: '/test', fileName: 'fixture.exe', sha256: 'a'.repeat(64)}); await work;
-    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /清理退出.*清理完成后才打开安装向导/);
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /正在退出客户端，随后打开安装向导/);
+    assert.match(h.view.querySelector('.aboutUpdateState').textContent, /确认新版本启动后将清理安装包/);
     assert.match(h.view.querySelector('.aboutUpdateState').textContent, /Windows 安全检查/);
     for (const selector of ['.selectUpdateChannel', '.btnCheckUpdates', '.btnDownloadUpdate']) assert.equal(h.view.querySelector(selector).disabled, true);
     await h.controller.downloadUpdate(); await h.controller.checkUpdates(); await h.controller.changeChannel();
