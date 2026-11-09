@@ -5,9 +5,9 @@ define(['baseView', '../../enhanced/advance-download/renderer.js', 'emby-button'
         'file-changed': '文件已变化', 'file-unavailable': '文件暂不可用', checking: '正在检查文件位置'};
     var fileNotes = {'file-missing': '未找到文件，可能已被移动或删除。记录保留，可删除记录或重新下载。',
         'directory-unavailable': '目录暂不可用，请检查磁盘连接。记录保留，磁盘恢复后会重新检查。',
-        'directory-changed': '目录身份已变化，原文件索引保留，未接管其他文件。',
-        'file-changed': '本地文件已变化，ETE 不会接管或自动删除它。',
-        'file-unavailable': '暂时无法读取文件，请检查权限或稍后刷新。', checking: '正在检查本地文件位置，暂不改变任务记录。'};
+        'directory-changed': '目录已变化，原记录保留，不会操作其他文件。',
+        'file-changed': '本地文件已变化，不会自动使用或删除。',
+        'file-unavailable': '暂时无法读取文件，请检查权限或稍后刷新。', checking: '正在检查文件位置，任务记录保持不变。'};
     function button(label) {
         var result = document.createElement('button', {is: 'emby-button'});
         result.type = 'button'; result.classList.add('raised', 'emby-button'); result.textContent = label;

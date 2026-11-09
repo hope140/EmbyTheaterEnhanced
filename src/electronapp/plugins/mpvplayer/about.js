@@ -270,7 +270,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
                 this.installing = true;
                 view.querySelector('.aboutDownloadProgress').value = 1;
                 view.querySelector('.aboutDownloadDetails').textContent = '来源：' + result.source + '\n目录：' + result.directory + '\n文件：' + result.fileName + '\nSHA-256：' + result.sha256;
-                setStatus(state, (result.replacedInvalidCache ? '旧缓存校验未通过，已重新下载并校验。' : '') + '校验成功，正在清理退出；清理完成后才打开安装向导。下次启动确认新版本后清理安装包。请保留 Windows 安全检查。', false);
+                setStatus(state, (result.replacedInvalidCache ? '旧缓存校验未通过，已重新下载并校验。' : '') + '校验通过，正在退出客户端，随后打开安装向导。确认新版本启动后将清理安装包。请保留 Windows 安全检查。', false);
             } else if (result && result.status === 'cancelled') {
                 setStatus(state, '已取消下载。', false);
             } else {
@@ -347,7 +347,7 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
         if (!result || result.status === 'unavailable') {
             var unavailableText = result && result.reason === 'store-unavailable'
                 ? '候选存储不可用；现有播放链保持不变。'
-                : '候选导入不可用：当前包内 Helper 身份未能通过 provenance/hash 校验；候选功能已停用。';
+                : '包内 Helper 来源或文件校验未通过，已停用内核导入。';
             setStatus(state, unavailableText, true);
             importButton.disabled = true;
             baselineButton.disabled = true;
@@ -413,13 +413,13 @@ define(['loading', 'baseView', '../../enhanced/release-note-links.js', 'emby-but
             var identity = document.createElement('code');
             identity.textContent = candidate.candidateId || 'UNKNOWN';
             var details = document.createElement('p');
-            details.textContent = '包 SHA 与 PE 静态合同已验证；来源声明未独立核验；notice 已随包提供；可发行状态：NOT_ASSESSED。DLL 大小：' + String(candidate.sizeBytes || 'UNKNOWN') + ' bytes。';
+            details.textContent = '文件哈希与格式检查通过；来源声明未独立核验，许可说明已随包提供；是否可发行：NOT_ASSESSED。DLL 大小：' + String(candidate.sizeBytes || 'UNKNOWN') + ' bytes。';
             var evidence = document.createElement('p');
             evidence.textContent = '文件 SHA256';
             evidence.appendChild(document.createElement('br'));
             evidence.appendChild(identity);
             var runtimeEvidence = document.createElement('p');
-            runtimeEvidence.textContent = '已加载 DLL 映像 SHA256：UNKNOWN。包文件校验与启动握手不代表映像哈希、来源许可或可发行性结论。';
+            runtimeEvidence.textContent = '已加载 DLL 的 SHA256：UNKNOWN。文件和启动校验不能确认已加载文件的哈希、来源许可或是否可发行。';
             var select = document.createElement('button', {is: 'emby-button'});
             select.type = 'button';
             // Preserve theme/focus classes installed by the native button constructor.

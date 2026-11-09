@@ -12,8 +12,8 @@
                         <option value="normal">普通</option><option value="detailed">详细</option>
                     </select>
                 </div>
-                <p id="diagnosticModeDescription" class="fieldDescription">普通模式保留必要错误。详细模式另保留每次播放启动时最多 15 秒的有界上下文。保存后对后续播放生效，不中断当前播放。</p>
-                <p class="fieldDescription">日志可能包含服务器地址、媒体文件路径和错误说明；令牌、Cookie、Authorization 和完整远程地址会移除。导出分享前请检查内容。</p>
+                <p id="diagnosticModeDescription" class="fieldDescription">普通模式保留必要错误；详细模式额外记录每次播放开始时最多 15 秒的信息。保存后下一次播放生效，不影响当前播放。</p>
+                <p class="fieldDescription">日志会自动脱敏，但仍可能包含服务器地址、媒体文件路径和错误信息。分享前请检查内容。</p>
                 <button type="button" is="emby-button" class="raised button-submit ete-settings-button ete-settings-button--primary btnSaveDiagnosticMode" disabled>保存诊断级别</button>
             </div>
         </section>
@@ -26,7 +26,7 @@
                 <div class="ete-settings-info-row ete-diagnostics-row"><span>诊断日志</span><strong class="diagnosticsEnabled">已启用</strong></div>
                 <div class="ete-settings-info-row ete-diagnostics-row"><span>日志目录</span><code class="diagnosticsDirectory">%APPDATA%\EmbyTheaterEnhanced\logs</code></div>
                 <div class="ete-settings-info-row ete-diagnostics-row"><span>当前日志大小</span><span class="diagnosticsSize">未知</span></div>
-                <p class="fieldDescription">日志默认自动脱敏，只保留路由、阶段、错误和必要的运行环境摘要。</p>
+                <p class="fieldDescription">日志记录播放来源、错误和必要的运行环境信息。</p>
             </div>
         </section>
 

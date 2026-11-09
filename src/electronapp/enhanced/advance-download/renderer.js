@@ -8,21 +8,21 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
     var reasons = {
         'collection-unavailable': '只能从剧集或季详情添加整部剧／整季下载。',
         'collection-empty': '此项目当前没有可加入的剧集。',
-        'collection-invalid': '服务器返回的剧集列表不完整或归属不明确，未继续添加，请重试。',
+        'collection-invalid': '剧集列表不完整或无法确认所属剧集，已停止添加，请重试。',
         'collection-changed': '读取期间剧集列表发生变化，请重新添加。',
         'collection-too-large': '一次最多添加 512 集，请改为逐季添加。',
-        'collection-user-data-unavailable': '已看状态不完整，本次未添加；请重新读取，或在确认窗口明确选择下载全部。',
+        'collection-user-data-unavailable': '无法完整读取已看状态，本次未添加。请重试，或在确认时选择下载全部。',
         'task-limit': '下载任务记录已达上限，请先移除不需要的记录。',
         'task-store-unavailable': '无法保存下载任务，请检查客户端配置目录的空间或权限。',
-        'user-paused': '已手动暂停，点击继续可恢复；重开客户端也会保持暂停。',
-        'directory-changed': '下载目录的身份已变化，原记录已保留。',
+        'user-paused': '已手动暂停，重开客户端后仍保持暂停。点击“继续”可恢复。',
+        'directory-changed': '下载目录已变化，原记录已保留。',
         'file-missing': '未找到文件，可能已被移动或删除；可选择仅删除记录。',
-        'file-changed': '文件已变化，未删除或接管此文件；可选择仅删除记录。',
+        'file-changed': '文件已变化，未使用或删除此文件；可选择仅删除记录。',
         'file-unavailable': '暂时无法读取文件，记录已保留，请检查磁盘和权限。',
         'file-delete-unavailable': '此处暂时无法安全删除文件，记录已保留；可选择仅删除记录。',
         'file-delete-unconfirmed': '文件正被使用、校验未通过或删除结果未确认，记录已保留；请检查后重试或仅删除记录。',
         'request-pending': '已有操作正在等待处理，请稍后重试。',
-        'invalid-metadata': '服务器返回的资料不是有效 JSON，无法核对下载权限和来源。',
+        'invalid-metadata': '服务器返回的资料格式无效，无法核对下载权限和来源。',
         'metadata-redirect': '服务器资料接口发生跳转，请检查服务器地址或代理配置。',
         'network-failed': '连接下载来源失败，请检查网络、证书和服务器地址。',
         'timeout': '核对下载来源超时，请稍后重试。',
@@ -39,11 +39,11 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         'pointer-response': '服务器返回的是 STRM 地址文本，未取得影片本体。', 'segmented-source': '此来源是分段流，暂不支持完整文件下载。',
         'container-unrecognized': '无法确认响应是受支持的视频文件，未保存为完成下载。', 'length-unavailable': '来源未提供可核验的文件长度。',
         'directory-unavailable': '下载目录不可用，请在下载管理中重新选择。', 'directory-unwritable': '下载目录不可写。',
-        'temporary-changed': '未完成文件的归属已变化，已停止操作，未覆盖或删除该文件。',
+        'temporary-changed': '无法确认未完成文件属于此任务，已停止操作，未覆盖或删除文件。',
         'disk-full': '下载空间不足，任务已保留。', 'representation-changed': '来源版本发生变化，请继续任务以重新下载。',
         'file-too-large': '文件超出此目录文件系统的单文件大小限制，请为新任务选择支持大文件的目录。',
-        'publication-unconfirmed': '文件提交结果尚未确认，任务和文件已保留，请继续任务以核验。',
-        'publication-unavailable': '此目录无法安全提交文件，任务已保留。',
+        'publication-unconfirmed': '尚未确认文件是否保存完成，任务和文件已保留。请点击“继续”核验。',
+        'publication-unavailable': '无法在此目录安全保存文件，任务已保留。',
         'task-store-unsafe': '下载任务记录无法安全读取，已保留原文件。'
     };
     var stages = {'collection-list': '读取剧集列表', 'server-check': '服务器核验', 'permission-check': '账户权限', 'item-check': '视频资料',
@@ -79,8 +79,8 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         if (!value || typeof value.id !== 'string') return;
         if (value.reason && /-restarting$/.test(value.reason) && restarts[value.id] !== value.reason) {
             restarts[value.id] = value.reason;
-            toast(value.reason === 'source-changed-restarting' ? '下载源版本发生变化，正在安全地从头下载。' :
-                value.reason === 'partial-corrupt-restarting' ? '已下载部分校验不通过，正在从头下载。' : '无法安全续传本次未完成文件，正在从头下载。');
+            toast(value.reason === 'source-changed-restarting' ? '下载来源已变化，正在从头下载。' :
+                value.reason === 'partial-corrupt-restarting' ? '已下载部分校验不通过，正在从头下载。' : '无法安全续传，正在从头下载。');
         }
         if (lastStates[value.id] !== value.state) {
             if (value.state === 'complete') {
@@ -116,7 +116,7 @@ define(['connectionManager', 'events', 'toast'], function (connectionManager, ev
         toast('正在准备下载…');
         var result = await invoke('start', {context: value, itemId: item.Id, mediaSourceId: mediaSourceId, title: item.Name});
         if (JSON.stringify(context(current())) !== JSON.stringify(value) || JSON.stringify(context(api)) !== JSON.stringify(value)) return {status: 'cancelled'};
-        if (result.status === 'queued') toast('已加入下载任务，可在设置中的“下载管理”查看进度。');
+        if (result.status === 'queued') toast('已加入下载，可在设置的“下载管理”查看进度。');
         else if (result.status === 'downloaded') toast('已有完整下载，可在下载管理中查看位置。');
         else if (result.status === 'error') toast(detail(result));
         return result;

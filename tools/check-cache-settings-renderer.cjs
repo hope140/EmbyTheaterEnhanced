@@ -123,7 +123,8 @@ async function main(args = process.argv.slice(2)) {
             await p.evaluate(async () => {await t.addOwner();t.user(null);t.config.busy=true;await t.controller.cacheManagement.resume();});
             const detail = await p.evaluate(() => t.detail.snapshot());
             assert.equal(detail.status,'ok');assert.ok(detail.serializedBytes > 0);assert.match(await p.locator('.cachePageValue').textContent(),new RegExp(detail.serializedBytes+' bytes'));assert.equal(await p.locator('.cacheHttpValue').textContent(),'操作进行中');
-            assert.match(await p.locator('.cacheManagementPage').textContent(), /资源为 HTTP 总量，页面为数据大小。不清登录和设置/);
+            assert.match(await p.locator('.cacheManagementPage').textContent(), /页面缓存仅统计数据/);
+            assert.match(await p.locator('.cacheManagementPage').textContent(), /清理不会退出登录或删除设置/);
         });
         await scenario('real detail transaction failure remains partial and does not block layout or HTTP clear', async p => {
             await p.evaluate(async () => {await t.addOwner();await t.controller.onResume({});IDBDatabase.prototype.transaction=function(){throw Error('PRIVATE synthetic transaction');};document.querySelector('.btnClearAllCaches').click();});

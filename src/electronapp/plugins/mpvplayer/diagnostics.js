@@ -63,7 +63,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-select', 'emby-scroller', 'c
         view.querySelector('.selectDiagnosticMode').disabled = true;
         return request(CHANNELS.setMode, {mode: view.querySelector('.selectDiagnosticMode').value}).then(function (response) {
             if (!response || response.status !== 'saved') throw new Error('save-failed');
-            setStatus(view.querySelector('.diagnosticsState'), '已保存，将对后续播放生效。普通模式也会保留必要错误。', false);
+            setStatus(view.querySelector('.diagnosticsState'), '已保存，下一次播放生效。普通模式仍保留必要错误。', false);
         }).catch(function () {
             setStatus(view.querySelector('.diagnosticsState'), '保存失败，诊断级别未更改，请重试。', true);
         }).then(function () { button.disabled = false; view.querySelector('.selectDiagnosticMode').disabled = false; });
@@ -101,7 +101,7 @@ define(['loading', 'baseView', 'emby-button', 'emby-select', 'emby-scroller', 'c
     DiagnosticsView.prototype.clearLogs = function () {
         var state = this.view.querySelector('.diagnosticsState');
         if (!window.confirm('确定清空诊断日志？')) return;
-        if (!window.confirm('再次确认：当前日志和轮转日志都将被删除。')) return;
+        if (!window.confirm('再次确认：当前日志和备份日志都将删除。')) return;
         request(CHANNELS.clear, {confirmed: true}).then(function (response) {
             if (response && response.status === 'cleared') {
                 setStatus(state, '日志已清空。', false);

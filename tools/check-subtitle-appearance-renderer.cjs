@@ -105,7 +105,7 @@ async function main(executable = process.argv[2]) {
         assert.equal(await dlg.locator('[data-setting="textBackground"] option:checked').textContent(), '透明');
         assert.equal(await dlg.locator('[data-setting="dropShadow"] option:checked').textContent(), '标准描边');
         assert.equal(await dlg.locator('.selectLabelText').count(), 5);
-        assert.match(await dlg.locator('.subtitleAppearanceHint').textContent(), /相同的近似效果/);
+        assert.match(await dlg.locator('.subtitleAppearanceHint').textContent(), /本地播放时，两种偏移阴影效果相同/);
         await page.evaluate(() => document.fonts.ready);
         if (process.env.ETE_SCREENSHOT_PATH) await page.screenshot({path: process.env.ETE_SCREENSHOT_PATH});
         await dlg.locator('[data-setting="textColor"]').selectOption('#FF0000');
