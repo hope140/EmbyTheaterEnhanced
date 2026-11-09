@@ -6,18 +6,20 @@
 
 ## 下载安装
 
-截至 2026-11-04，正式版与最新测试版如下。只需使用客户端时，下载安装包即可，无需准备源码和构建工具。
+截至 2026-11-09，正式版与最新测试版如下。只需使用客户端时，下载安装包即可，无需准备源码和构建工具。
 
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.4.13（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.13/EmbyTheaterEnhanced-0.4.13-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.13/EmbyTheaterEnhanced-0.4.13-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.4.19（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.19) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe.sha256) |
 
 从同一 Release 下载安装包和校验文件，核对 SHA-256 后，正常退出客户端再安装。`Source code` 压缩包不是安装包。安装程序未签名，Windows 可能提示未知发布者；校验值用于核对下载字节。
 
 **v0.4.2 起**可在“关于 Enhanced”主动选择正式／测试通道、检查并下载安装包。v0.4.2–v0.4.4 下载后需自行退出并安装；**v0.4.5 起**，主动下载并完成校验后会正常退出客户端，再打开安装向导，由用户完成安装。应用不在后台自动检查，不静默安装，也不提供降级下载；详见[更新指南](docs/USER_GUIDE.md#手动检查更新与通道)。
 
 **v0.4.12** 改进运行中客户端的更新退出与安装交接；从旧客户端升级到它的当次交接仍由旧客户端执行。另增加提前 EOF 的脱敏定位日志，尚未确定现场根因，也没有自动恢复。
+
+**v0.4.19** 修复外挂字幕先加载后的内嵌选轨、改善首页刷新与返回位置，并补充配置／CD2 诊断。当前播放成功率退化和提前 EOF 的根因仍未确认。独立验收包 `a5287159` 尚待用户验收，未合入 main 或公开发布；main 中的原生优先误报回退修复也待后续版本发布。本轮先完成现有测试与稳定性验收，再准备正式版，版本号和日期未定，见[当前范围](docs/NEXT_RELEASE_SCOPE.md#本轮正式版与验收边界)。
 
 ## 开始使用
 
@@ -51,7 +53,7 @@
 - **v0.4.12 更新交接与 EOF 定位**：改进更新退出和安装器交接，加入低频、脱敏的缓存 EOF 观察日志；未加入自动恢复或切线路。
 - **v0.4.13 语言偏好排序**：首选音轨语言可多选，音轨与字幕的已选语言可在原选择弹窗中调整顺序；实际播放轨道仍由服务器决定。
 
-各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预加载、缓冲暂存和飞牛认证仍是[独立实验](docs/NEXT_RELEASE_SCOPE.md#未发布实验)，不属于上述已发布功能。
+各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预载／预加载、播放／缓冲暂存及最近搜索已取消；提前下载继续保留。飞牛认证继续独立开发，安排在本轮正式版之后发布，真实认证和播放仍待验证，详见[功能取舍](docs/NEXT_RELEASE_SCOPE.md#功能取舍与后续范围)。
 
 ## 开发与构建
 

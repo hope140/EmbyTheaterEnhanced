@@ -1,5 +1,13 @@
 # 维护记录
 
+## 2026-11-09 — 当前发布与后续范围文档整理
+
+核对 GitHub main `825c7c7faad7c7e40490cf77d3244d12e9161d2a`、正式 Latest v0.4.0 和公开测试版 v0.4.19，更新 README 下载入口、文档索引、用户指南、已知问题及路线图／后续范围。明确原生优先误报回退修复在 main 待发布，`a5287159` 仅为待用户验收的独立包，未合入 main 或发布。播放成功率退化和提前 EOF 根因继续记为未确认；固定 DLL 的 138 次隔离对照未支持回退 `start` 时序，不写成现场问题已根治。
+
+当前顺序为现有测试稳定后准备正式版，版号和日期未定，不插入新需求。预载／预加载、播放／缓冲暂存和最近搜索取消，提前下载保留；飞牛继续开发，在本轮正式版后发布，真实认证／播放仍待验证。WOL／自动发现仅列正式版后精简候选，删除前核对动态调用并验证手动地址和既有连接，本次不删除功能。
+
+保留明确日期的历史记录、来源及许可信息；当前文档互相链接，旧“未发布实验”锚点保留兼容入口，并修正两处已改名的下载筛选标题链接。九份文档的 338 个相对链接和 56 个标题锚点检查通过，既有文档路线辅助回归 47/47 通过。修改限既有文档白名单，不改产品代码、版本、构建输入或验收包；准确提交的轻量门禁结果单独回读。文档检查不替代代码回归、真实媒体、安装或硬件验收。
+
 ## 2026-11-08 — Native selection semantics
 
 Native selected first by a custom STRM rule now reports `native_selected` with no fallback toast. Statistics and diagnostic exports consume explicit fallback and resolver outcomes, preserving real failure advancement and downloaded-file priority. Regression coverage includes Native-first, Mount/CD2 misses and source-load failures, bypasses, request ownership and diagnostic reporting. No version or release change; no client installation or real-server playback validation is implied.
