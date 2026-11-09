@@ -1,0 +1,3003 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-09",
+  "scope": "Read-only source and extracted-payload comparison; no installer/product execution, full legal clearance or corresponding-source completeness claim",
+  "refs": {
+    "main": "f007802f3dcb0457091322644094981cdf5783ac",
+    "release": {
+      "tag": "v0.4.19",
+      "commit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a",
+      "prerelease": true,
+      "publishedAt": "2026-11-08T10:03:03Z"
+    },
+    "previousRelease": {
+      "tag": "v0.4.7",
+      "commit": "5190a7020d0d00ea06776676921469736859bfbd"
+    },
+    "previousAudit": "8ffa74754783308172775f3ef8e64e738ce31c2d"
+  },
+  "downloads": [
+    {
+      "name": "EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe",
+      "sha256": "26a25bc30bd3750882bdd3d4f9ee27a1b97ff492ea2882867cc1e72a78aed2eb",
+      "size": 161879672
+    },
+    {
+      "name": "EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe.provenance.json",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe.provenance.json",
+      "sha256": "934551021cf2467ff5cb1f808178310b1eb1d4b5201856cb9e48b0c84aeba786",
+      "size": 2156
+    },
+    {
+      "name": "EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe.sha256",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/EmbyTheaterEnhanced-0.4.19-win-x64-setup.exe.sha256",
+      "sha256": "d1134248665e40094e6dd3549f08db91bd96b84dde11bedb6a20d8c9cdc9317f",
+      "size": 111
+    },
+    {
+      "name": "RELEASE_NOTES.md",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/RELEASE_NOTES.md",
+      "sha256": "b90211a1a03b5df1950e600e9c470c23179a433b2b043716879ef92ec41e2d6a",
+      "size": 1794
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.19/SHA256SUMS.txt",
+      "sha256": "6de606237b94b4f79fb45cec2cfe5612aaf5855218c74fb71d5109687c3d1c09",
+      "size": 439
+    },
+    {
+      "name": "innoextract-linux-amd64",
+      "url": "https://github.com/crazy-max/innoextract/releases/download/v1.13.0/innoextract-linux-amd64",
+      "sha256": "c898db2ecc282ff8d943e9868d03dd6f1fc6069ddd40430341b211f93826b360",
+      "size": 12324392
+    },
+    {
+      "name": "electron.zip",
+      "url": "https://github.com/electron/electron/releases/download/v44.5.0/electron-v44.5.0-win32-x64.zip",
+      "sha256": "b3405d8847bc5054cd16272f538d22ba5b73032945e85cef26241f7135035278",
+      "size": 157966405
+    }
+  ],
+  "sourceChangesSinceV047": [
+    {
+      "status": "M",
+      "path": ".github/workflows/managed-update-validation.yml"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/public-ci.yml"
+    },
+    {
+      "status": "M",
+      "path": "CHANGELOG.md"
+    },
+    {
+      "status": "M",
+      "path": "README.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/ACTIONS_TEST_PACKAGE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/ADVANCE_DOWNLOAD_ACCEPTANCE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/ADVANCE_DOWNLOAD_DESIGN.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/ARCHITECTURE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/CLIENT_DIAGNOSTICS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/DEVELOPMENT_LOG.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/ELECTRON_4450_FOCUS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/KNOWN_ISSUES.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/LIBMPV_RUNTIME.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/LOCAL_DOWNLOAD_PRIORITY.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/MANUAL_APP_UPDATE.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/MEDIA_NETWORK_DIAGNOSTICS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/NEXT_RELEASE_SCOPE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/PACKAGING.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/PROJECT_STATUS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/README.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/RELEASE_NOTES.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/REPOSITORY_INPUTS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/ROADMAP.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/SEEK_EOF_DIAGNOSTICS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/SERVER_HOME_SECTIONS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/SOURCE_MATERIALS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/STRM_RESOLVER.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/SUBTITLE_TRACK_MAPPING.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/UPDATE_HANDOFF_SAFETY.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/USER_GUIDE.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V0410_RELEASE_VERIFICATION.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V0411_RELEASE_VERIFICATION.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V0412_RELEASE_VERIFICATION.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V0413_LANGUAGE_PREFERENCES.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V0415_SUBTITLE_APPEARANCE.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V0416_REPAIR_TESTING.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/V047_RELEASE_VERIFICATION.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V048_RELEASE_VERIFICATION.md"
+    },
+    {
+      "status": "A",
+      "path": "docs/V049_RELEASE_VERIFICATION.md"
+    },
+    {
+      "status": "M",
+      "path": "native/mpv-helper/ete-mpv-helper.cpp"
+    },
+    {
+      "status": "M",
+      "path": "native/windows-media/loader-input.json"
+    },
+    {
+      "status": "M",
+      "path": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "path": "package.json"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/advance-download/collection.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/advance-download/ipc.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/advance-download/manager.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/advance-download/renderer.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/cd2-ipc.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/cd2-service.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/diagnostics.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/home/home-tab.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/home/server-sections.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/maintenance-ipc.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/manual-app-update-selftest.js"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/media-network-diagnostics.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/native-diagnostics.js"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/navigation-diagnostics.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/page-cache/test-session.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/playback-route-stats.js"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/shutdown-drain.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/strm-config-ipc.js"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/strm-playback-config.js"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/subtitle-appearance-dialog.css"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/subtitle-appearance-dialog.js"
+    },
+    {
+      "status": "A",
+      "path": "src/electronapp/enhanced/update-handoff-outcome.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/update-install-cache.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/update-install-guard.cs"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/update-install-handoff.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/update-install-handoff.ps1"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/windows-media-renderer.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/main.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/native-helper/client.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/native-helper/controller.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/native-helper/service.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/libmpv.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/mpvplayer/about.html"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/mpvplayer/about.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/mpvplayer/downloads.css"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/mpvplayer/downloads.html"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/mpvplayer/strm.html"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/mpvplayer/strm.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/resolvers/cd2-resolver.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/resolvers/strm-config-client.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/resolvers/strm-resolver.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/www/modules/emby-apiclient/transport.js"
+    },
+    {
+      "status": "M",
+      "path": "src/web-api/selection.json"
+    },
+    {
+      "status": "M",
+      "path": "src/web-api/src/apiclient.js"
+    },
+    {
+      "status": "M",
+      "path": "src/web-api/src/transport.js"
+    },
+    {
+      "status": "A",
+      "path": "tests/actionsheet-reordering.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/advance-download-collection.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/advance-download-ipc.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/advance-download-local-first.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/advance-download-persistence.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/advance-download-renderer.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/app-shutdown-drain.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/audio-language-preference.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/build-input-contract.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/cache-management-page.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/cache-management.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/cd2-service.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/ci-full-tests.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/client-diagnostics.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/electron-runtime-input.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/electron-version-probe.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/fixtures/managed-update-client.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/fixtures/managed-update-no-exec-client.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/helpers/home-flow-renderer.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/helpers/home-native-renderer.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/helpers/media-network-native-probe.cpp"
+    },
+    {
+      "status": "A",
+      "path": "tests/helpers/media-network-test-process.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/helpers/startup-route-fixture.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/home-server-rendering.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/home-server-sections.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/manual-app-update-channels.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/manual-app-update-package.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/manual-app-update-ui.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/manual-windows-workflow.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/media-network-diagnostics.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/media-network-material-selftest.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/media-network-test-process.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/mpv-settings-assembly.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-diagnostics-context.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-fallback-toast.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-helper-client.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-helper-diagnostics-playback.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-helper-service.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/native-route-semantics.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/navigation-diagnostics.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/page-cache-test-entry.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/playback-api-deadlines.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/playback-input-diagnostics.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/playback-power-main.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/playback-route-stats.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/playbackmanager-request-session.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/preload-preparation.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/refresh-rate-play.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/runtime-provenance.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/seek-eof-diagnostics.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/shutdown-drain-owner.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/strm-playback-config.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/strm-resolver-settings.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/strm-resolver.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/strm-settings-races.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/subtitle-appearance-osd.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/subtitle-language-preference.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/subtitle-selection-ownership.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/update-handoff-outcome.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/update-handoff-stages.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/update-install-cache.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/update-install-exit-order.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/update-install-handoff.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/update-install-relay.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/update-install-windows.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/videoosd-seek-diagnostics.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/windows-native-exit-accept.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/windows-native-media-package.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/build-input-contract.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/check-home-fallback-refresh.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/check-home-refresh-stability.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/check-home-responsive-renderer.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/check-subtitle-appearance-renderer.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/ci-build-input-plan.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/ci-full-tests.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/ci-windows-test-package.ps1"
+    },
+    {
+      "status": "M",
+      "path": "tools/electron-runtime-input.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/media-network-helper-smoke.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/patch-actionsheet-layout.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/patch-actionsheet-reordering.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/patch-playback-input-diagnostics.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/patch-playbackmanager.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/patch-subtitle-appearance.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tools/patch-subtitle-language-preference.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/patch-videoosd-lifecycle.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/prepare-electron-runtime.ps1"
+    },
+    {
+      "status": "M",
+      "path": "tools/prepare-preload.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/prepare-web-overlays.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/run-subtitle-race-probe.ps1"
+    },
+    {
+      "status": "A",
+      "path": "tools/test-subtitle-track-mapping.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/verify-managed-update-windows.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/windows-native-exit-probe.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tools/windows-native-media-input.cjs"
+    },
+    {
+      "status": "M",
+      "path": "vendor/README.md"
+    },
+    {
+      "status": "M",
+      "path": "vendor/electron-runtime-manifest.json"
+    }
+  ],
+  "mainChangesSinceRelease": [
+    {
+      "status": "M",
+      "path": "CHANGELOG.md"
+    },
+    {
+      "status": "M",
+      "path": "README.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/DEVELOPMENT_LOG.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/KNOWN_ISSUES.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/MEDIA_NETWORK_DIAGNOSTICS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/NEXT_RELEASE_SCOPE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/PROJECT_STATUS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/README.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/ROADMAP.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/USER_GUIDE.md"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/diagnostics.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/enhanced/playback-route-stats.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/plugins/libmpv.js"
+    },
+    {
+      "status": "M",
+      "path": "src/electronapp/resolvers/strm-resolver.js"
+    },
+    {
+      "status": "M",
+      "path": "tests/client-diagnostics.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-fallback-toast.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/native-helper-diagnostics-playback.test.cjs"
+    },
+    {
+      "status": "A",
+      "path": "tests/native-route-semantics.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/playback-route-stats.test.cjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/strm-resolver.test.cjs"
+    }
+  ],
+  "componentGitIdentities": [
+    {
+      "path": "vendor/web-snapshot",
+      "v047": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "v0419": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "main": "5a92c4a6325e0a1e3b3f2bce14699463ec0875af",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot-manifest.json",
+      "v047": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "v0419": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "main": "1f1831866eebaf056fa367e5d6914ccbf75a7c7d",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/compatibility-resources-manifest.json",
+      "v047": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "v0419": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "main": "c5f22556c54d35de04a6a056288898b19313b2e1",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/small-runtime",
+      "v047": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "v0419": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "main": "d17e51518342c77b07067f9cefa7a4999830faf2",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/small-runtime-manifest.json",
+      "v047": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "v0419": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "main": "d39f9d749e2a22767fe5d0ee5c3ae82e87cb4e92",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/model-compatibility",
+      "v047": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "v0419": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "main": "7f2f86eb726715287b84246f0062663e87e6d9df",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/model-compatibility-manifest.json",
+      "v047": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "v0419": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "main": "dd12e188d97819e63522bbbe0225e49eac75a898",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/windows-host-manifest.json",
+      "v047": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "v0419": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "main": "c5d4368b865c439646111178d7d5442fc33d3019",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/libmpv-input-manifest.json",
+      "v047": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "v0419": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "main": "4eb1bc9baf48c610505b67e0ceee257e5bed6158",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/archive/libmpv",
+      "v047": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "v0419": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "main": "9582e1be88e98ff675514aa651bb79d3206e8f6e",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/inherited-npm-manifest.json",
+      "v047": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "v0419": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "main": "a5dd2f9bc3a52ba0d4a24531d0aed06e2a187adb",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/host-json-manifest.json",
+      "v047": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "v0419": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "main": "430da843cf3b64f5236c852544cb1b4463bbecd7",
+      "unchanged": true
+    },
+    {
+      "path": "native/windows-host",
+      "v047": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "v0419": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "main": "394c33b2d7eabc86f62b438c132d42d10318f79d",
+      "unchanged": true
+    },
+    {
+      "path": "native/windows-media/registry-input.json",
+      "v047": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "v0419": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "main": "14ef982ab49cef3b5ca43814142d6645d1bdd89c",
+      "unchanged": true
+    },
+    {
+      "path": "native/windows-media/package-lock.json",
+      "v047": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "v0419": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "main": "d76acdcc1e2335289bd21aa23559aace0e69c29d",
+      "unchanged": true
+    },
+    {
+      "path": "src/web-api/licensed",
+      "v047": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "v0419": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "main": "aa4ae9be006c4f0b96f3984fa3726bea3019dfc4",
+      "unchanged": true
+    },
+    {
+      "path": "src/web-api/INPUT_MANIFEST.json",
+      "v047": "f5aefe849d105acce046d1608cac2374b5708699",
+      "v0419": "f5aefe849d105acce046d1608cac2374b5708699",
+      "main": "f5aefe849d105acce046d1608cac2374b5708699",
+      "unchanged": true
+    },
+    {
+      "path": "tools/templates/runtime",
+      "v047": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "v0419": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "main": "91f692f3d0d8e16578e645fbb941add47f1642a5",
+      "unchanged": true
+    },
+    {
+      "path": "docs/redistribution-notices",
+      "v047": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "v0419": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "main": "63475529e14dfd59cd14f85e23afdb2a9247cfc4",
+      "unchanged": true
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "v047": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "v0419": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "main": "948a5cfdd676eef7e9902b94d12443b6229b2af1",
+      "unchanged": true
+    },
+    {
+      "path": "LICENSE",
+      "v047": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "v0419": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "main": "6cd7f14ff8d0bc728af9dea506c14807c705c3df",
+      "unchanged": true
+    }
+  ],
+  "oldInventoryCarryForward": [
+    {
+      "path": "tools/templates/runtime/preload.js",
+      "bytes": 207,
+      "sha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38",
+      "currentSha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/emby-apiclient/connectionmanager.js",
+      "bytes": 52838,
+      "sha256": "beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09",
+      "currentSha256": "beae6ad4a2d386fb6d3553974c0aa3ba7c7e1bc25c1098944f508fe497a08f09",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/pagejs/page.js",
+      "bytes": 6028,
+      "sha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+      "currentSha256": "bfdcf96ec474538e14b7e57495e8e0d5c607a20252d7110d57ad6323653425a9",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/common/playback/playbackmanager.js",
+      "bytes": 125181,
+      "sha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd",
+      "currentSha256": "8df9ea6f1be13f355925b2fd1b9bf7539c5a624d8731be484959a4ec861a1ebd",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/common/appsettings.js",
+      "bytes": 5007,
+      "sha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582",
+      "currentSha256": "5c5f0e9d4ae508d9f4157d26ebbfd71885f91eaaa16ff6c40388c161feb06582",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/webvtt/vtt.js",
+      "bytes": 28470,
+      "sha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+      "currentSha256": "97bda9c48cf440809d6453c8e36229f2384ca706dc46fe562d73963fb02c6aee",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/webvtt/vtt.css",
+      "bytes": 428,
+      "sha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317",
+      "currentSha256": "8c5c30ea886110fde45511a37f9435fc2355b7c812e6dceb3cf98fa67f6b8317",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/css/images/supporter/supporterbadge.png",
+      "bytes": 9438,
+      "sha256": "ca50e13f674482e0a6c09e28aba52f664d9da87a236d39468b1f3cb2d84aa15e",
+      "currentSha256": "ca50e13f674482e0a6c09e28aba52f664d9da87a236d39468b1f3cb2d84aa15e",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-128x128.png",
+      "bytes": 2453,
+      "sha256": "f04a9339a04fda78afdc1289921d91a3535a29742ac042e1fac99dcb420a9eba",
+      "currentSha256": "f04a9339a04fda78afdc1289921d91a3535a29742ac042e1fac99dcb420a9eba",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-144x144.png",
+      "bytes": 3250,
+      "sha256": "b29fce90e8b3459fcd0c2fe1c44052b469788332a60420f3382c113eba727bcb",
+      "currentSha256": "b29fce90e8b3459fcd0c2fe1c44052b469788332a60420f3382c113eba727bcb",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-152x152.png",
+      "bytes": 3572,
+      "sha256": "60d7a476e83eb7276ad48d7e58979efe6951cbe4879e44a4a94f4882691802d8",
+      "currentSha256": "60d7a476e83eb7276ad48d7e58979efe6951cbe4879e44a4a94f4882691802d8",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-192x192.png",
+      "bytes": 3909,
+      "sha256": "605836ab0dafb71bc6f603f51d28c89a0b922ea95ff28cf15ada621af14105d5",
+      "currentSha256": "605836ab0dafb71bc6f603f51d28c89a0b922ea95ff28cf15ada621af14105d5",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-384x384.png",
+      "bytes": 7264,
+      "sha256": "d23d38c9837a5753a455837d3d5dff80c92437078fae2cdeb202bb952488b29a",
+      "currentSha256": "d23d38c9837a5753a455837d3d5dff80c92437078fae2cdeb202bb952488b29a",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-512x512.png",
+      "bytes": 11654,
+      "sha256": "d4e7e40eec131dd5401407f95ce3614f07168471f4a4da9a28f561938ed8ef1a",
+      "currentSha256": "d4e7e40eec131dd5401407f95ce3614f07168471f4a4da9a28f561938ed8ef1a",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-72x72.png",
+      "bytes": 1886,
+      "sha256": "cc32d8edc79bcbcbe9f2c5a86806231451316975ba9791b01960fba79d06aebd",
+      "currentSha256": "cc32d8edc79bcbcbe9f2c5a86806231451316975ba9791b01960fba79d06aebd",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/icon-96x96.png",
+      "bytes": 2158,
+      "sha256": "6c3765a151610dd1a8cdcdafa7de831a9d8e99939cf1674b88e9401ab7f6d18e",
+      "currentSha256": "6c3765a151610dd1a8cdcdafa7de831a9d8e99939cf1674b88e9401ab7f6d18e",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/images/splash.png",
+      "bytes": 7990,
+      "sha256": "b2da3b66570acd5b71a95a188b35f5d3e1b63534de38d0bcfd543a913581f337",
+      "currentSha256": "b2da3b66570acd5b71a95a188b35f5d3e1b63534de38d0bcfd543a913581f337",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/logoscreensaver/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "currentSha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/mediainfo/fresh.png",
+      "bytes": 17006,
+      "sha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5",
+      "currentSha256": "74a661b405833c907a9e5f07633394faff10dd54ac847f00beb1f7096577adf5",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/mediainfo/rotten.png",
+      "bytes": 13112,
+      "sha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8",
+      "currentSha256": "c5b05526ce7a8d880f31be34e618a7376db4ab1207bf92a9a53a6c848c7d02f8",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/darkgradient/blueradiance.jpg",
+      "bytes": 1044963,
+      "sha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89",
+      "currentSha256": "32f5331a64000d73f6033a6f67e8c2d4b8395a090d972aabce289a9f81240d89",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/logodark.png",
+      "bytes": 9967,
+      "sha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
+      "currentSha256": "f1b49f8a22a10f1fa16a1b447bd3ed9034bd391f40e26b11d6ec94213eeb95c5",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/modules/themes/logowhite.png",
+      "bytes": 10300,
+      "sha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "currentSha256": "1bb70b932f1055b7f0fb5c7423539c4a7824126623ac725e1101c9691e6dc113",
+      "unchanged": true
+    },
+    {
+      "path": "vendor/web-snapshot/www/videoosd/ani_equalizer_white.gif",
+      "bytes": 2621,
+      "sha256": "b0b304f4dce451d8fcffd24ae9ec3c92f0322c9a72d73aa46d80582f4e3268a5",
+      "currentSha256": "b0b304f4dce451d8fcffd24ae9ec3c92f0322c9a72d73aa46d80582f4e3268a5",
+      "unchanged": true
+    }
+  ],
+  "npmLockUnchangedExceptRootVersion": true,
+  "extraction": {
+    "toolVersion": "innoextract 1.13.0",
+    "exitCode": 0,
+    "warning": "Unexpected filetime: 0; timestamps not used as evidence",
+    "manifestFiles": 2232,
+    "actualFiles": 2233,
+    "missing": [],
+    "extra": [
+      "build-manifest.json"
+    ],
+    "hashMismatches": [],
+    "buildManifestSha256": "bf15d8e738a34ac6ca2d738fae64ce2a23a74a858451a85f3a9d358f25ea80ab",
+    "payloadSetSha256": "3d5b520a9d61ca02ea1b7e9cab3a14f9906de19d92a9397be77fcbe0971f5ccf",
+    "sourceCommit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a"
+  },
+  "externalProvenanceMatches": true,
+  "provenanceFiles": [
+    {
+      "path": "windows-native-media-provenance.json",
+      "bytes": 30544,
+      "sha256": "a22463734e6f9b27bbbb0e9957d1862c5b822a711abffc52266e0aa8954a2e0a",
+      "sourceCommit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a"
+    },
+    {
+      "path": "source-provenance.json",
+      "bytes": 120699,
+      "sha256": "733b6af9903ad2bbe0cb42a65213949e367fb600a7d682d667dff7dd99b53052",
+      "sourceCommit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a"
+    },
+    {
+      "path": "native-helper-provenance.json",
+      "bytes": 3992,
+      "sha256": "bf6edb642674e9f04a6abb8951f2840c1fd50e40ed1a20e5f3be44fd95393fb7",
+      "sourceCommit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a"
+    },
+    {
+      "path": "build-input-provenance.json",
+      "bytes": 47653,
+      "sha256": "8ebaab387ba4556682712bd81c450c9f2b2b0ded36f614fffe40f907454be7d9",
+      "sourceCommit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a"
+    },
+    {
+      "path": "runtime-provenance.json",
+      "bytes": 96722,
+      "sha256": "a91d875ba92b5e28a18d0c0ab1cb16e3f8ba20092c7bf307cee8d319daaa2cd8",
+      "sourceCommit": "f07bf1f575741fe9f33e7345a96c8f61e5e8bc9a"
+    }
+  ],
+  "projectNotices": [
+    {
+      "path": "LICENSE",
+      "runtimePath": "LICENSE",
+      "bytes": 14873,
+      "sha256": "2bdb13b91b9440dcfdf51b2f72e04e566c92eb50d48350ada10b30a1d37c3c05",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "runtimePath": "THIRD_PARTY_NOTICES.md",
+      "bytes": 301002,
+      "sha256": "f67b156d35943faf0525f6a9c88e89ac1ab47940485dedf9b28253c5eca1e5ba",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/LICENSE.md",
+      "runtimePath": "src/electronapp/www/modules/emby-apiclient/LICENSE.md",
+      "bytes": 1080,
+      "sha256": "bb34faf1413f7a795a10303545f433e04c95cd7b4de04311d45a72634424e4db",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "native/windows-host/LICENSE.md",
+      "runtimePath": "native/windows-host/LICENSE.md",
+      "bytes": 18014,
+      "sha256": "f371b80469fb235bc500ec29e0e85b682d4a6157a158567d828ff0be544d4f1d",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "native/windows-host/LICENSE-Helpers-MIT.txt",
+      "runtimePath": "native/windows-host/LICENSE-Helpers-MIT.txt",
+      "bytes": 1095,
+      "sha256": "9ea516699794ce62078b3cb39c45e9a94db23c3db23e3b7f03a1e90d83e5152e",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "native/windows-host/LICENSE-Newtonsoft-MIT.md",
+      "runtimePath": "native/windows-host/LICENSE-Newtonsoft-MIT.md",
+      "bytes": 1104,
+      "sha256": "b98a397897ff55f76cddc380041507a95a896b2946e0188703bf0496793d6516",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "native/windows-host/README.md",
+      "runtimePath": "native/windows-host/README.md",
+      "bytes": 4513,
+      "sha256": "c52ceda2fb5d5ebaf7012f47a0d97b651f23987c9a4c7e97d794a79ebc1e0a61",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/LICENSING.md",
+      "runtimePath": "docs/LICENSING.md",
+      "bytes": 3122,
+      "sha256": "170cec5172c6b1f20a467bb3c1dc6c6de6f96bc2d182ee8d509a947bde9502d0",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/SOURCE_MATERIALS.md",
+      "runtimePath": "docs/SOURCE_MATERIALS.md",
+      "bytes": 26672,
+      "sha256": "cbf0545b3450f46ef7cd7901442c10449d8df53d2aed416f7e4fcce52177b4cb",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": false
+    },
+    {
+      "path": "docs/WINDOWS_HOST_INPUT.md",
+      "runtimePath": "docs/WINDOWS_HOST_INPUT.md",
+      "bytes": 5094,
+      "sha256": "d6cf0e28245d8e91a9a3e6885f73715cbe708fd4a0406d4dd5e3c09aa28d0971",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/INHERITED_NPM_INPUT.md",
+      "runtimePath": "docs/INHERITED_NPM_INPUT.md",
+      "bytes": 3659,
+      "sha256": "4cc4511e4b240e40c5a51b51f8aa195290c456cbf95035e03bf67b8904ba4b42",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/RUNTIME_TEMPLATES.md",
+      "runtimePath": "docs/RUNTIME_TEMPLATES.md",
+      "bytes": 5069,
+      "sha256": "fb31afa98067aa8022d0797f5de9d73d565b53ab42af9bcdf691e4809e61729b",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/LIBMPV_INPUT.md",
+      "runtimePath": "docs/LIBMPV_INPUT.md",
+      "bytes": 4433,
+      "sha256": "59cc4d218187a7519b0989a3a5b69e4c7f14733d68597db5ccc0ad2bd27c08aa",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/COMPATIBILITY_RESOURCES_INPUT.md",
+      "runtimePath": "docs/COMPATIBILITY_RESOURCES_INPUT.md",
+      "bytes": 8226,
+      "sha256": "8238ef2c175f6ae7482e7eb6e43fa3b8631d6bb0922ea6f845025ec024841294",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/SMALL_RUNTIME_INPUT.md",
+      "runtimePath": "docs/SMALL_RUNTIME_INPUT.md",
+      "bytes": 6797,
+      "sha256": "09f40d6dd887dc7c5dc6381a806c2e06939c4cd286551f9429b74777815a6d41",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    },
+    {
+      "path": "docs/MODEL_COMPATIBILITY_INPUT.md",
+      "runtimePath": "docs/MODEL_COMPATIBILITY_INPUT.md",
+      "bytes": 8345,
+      "sha256": "d82af96da3baa71fe9a5a345732f4b5e3f27f025249ba5529e3c0511a57d139b",
+      "sourceBlobBytesEqual": true,
+      "previousAuditBytesEqual": true
+    }
+  ],
+  "carriedNoticeChecks": [
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@grpc/grpc-js/LICENSE",
+      "previousAuditSha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363",
+      "bytes": 11558,
+      "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@grpc/grpc-js/proto/protoc-gen-validate/LICENSE",
+      "previousAuditSha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+      "bytes": 11560,
+      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@grpc/grpc-js/proto/xds/LICENSE",
+      "previousAuditSha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "bytes": 11558,
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@grpc/proto-loader/LICENSE",
+      "previousAuditSha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357,
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@js-sdsl/ordered-map/LICENSE",
+      "previousAuditSha256": "787684b2059945f845f404340e20c4c8e3f325f4ab7aaeaf8e985f38c8d84658",
+      "bytes": 1067,
+      "sha256": "787684b2059945f845f404340e20c4c8e3f325f4ab7aaeaf8e985f38c8d84658",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/aspromise/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/base64/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/codegen/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/eventemitter/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/fetch/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/float/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/path/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/pool/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@protobufjs/utf8/LICENSE",
+      "previousAuditSha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "bytes": 1505,
+      "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/@types/node/LICENSE",
+      "previousAuditSha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141,
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/ansi-regex/license",
+      "previousAuditSha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/ansi-styles/license",
+      "previousAuditSha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/cliui/LICENSE.txt",
+      "previousAuditSha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149",
+      "bytes": 731,
+      "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/color-convert/LICENSE",
+      "previousAuditSha256": "693866fc419c6f61c8570438ec00659d156ec2b4d4a4d04091711f5f11a365d4",
+      "bytes": 1087,
+      "sha256": "693866fc419c6f61c8570438ec00659d156ec2b4d4a4d04091711f5f11a365d4",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/color-name/LICENSE",
+      "previousAuditSha256": "c064f7a3e353bc1bc977f3c897941c75ef763f44f41677e0a15370ca0853d6e2",
+      "bytes": 1085,
+      "sha256": "c064f7a3e353bc1bc977f3c897941c75ef763f44f41677e0a15370ca0853d6e2",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/emoji-regex/LICENSE-MIT.txt",
+      "previousAuditSha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a",
+      "bytes": 1077,
+      "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/escalade/license",
+      "previousAuditSha256": "9a9edad7baae52622bddf3c15b2ef8a33d2c89f2d25408ad13e8a7481c6b0c97",
+      "bytes": 1104,
+      "sha256": "9a9edad7baae52622bddf3c15b2ef8a33d2c89f2d25408ad13e8a7481c6b0c97",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/get-caller-file/LICENSE.md",
+      "previousAuditSha256": "902dbb4154679fb2b8d7c33878183f45b268d01eae5e5033dddaa8852d45f213",
+      "bytes": 745,
+      "sha256": "902dbb4154679fb2b8d7c33878183f45b268d01eae5e5033dddaa8852d45f213",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/is-fullwidth-code-point/license",
+      "previousAuditSha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/lodash.camelcase/LICENSE",
+      "previousAuditSha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272",
+      "bytes": 1951,
+      "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/long/LICENSE",
+      "previousAuditSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/protobufjs/google/LICENSE",
+      "previousAuditSha256": "4ab87e6e3c0c0b78e47c77d49ec10c048f8a519fb8062e6e3217e3e6e9b0c6e9",
+      "bytes": 1476,
+      "sha256": "4ab87e6e3c0c0b78e47c77d49ec10c048f8a519fb8062e6e3217e3e6e9b0c6e9",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/protobufjs/LICENSE",
+      "previousAuditSha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c",
+      "bytes": 1937,
+      "sha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/require-directory/LICENSE",
+      "previousAuditSha256": "a92e52eb1fa7cd746e3827bf01d3a3589bbc8e1e51348b1da042aad165525ad1",
+      "bytes": 1099,
+      "sha256": "a92e52eb1fa7cd746e3827bf01d3a3589bbc8e1e51348b1da042aad165525ad1",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/string-width/license",
+      "previousAuditSha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/strip-ansi/license",
+      "previousAuditSha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "bytes": 1109,
+      "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/undici-types/LICENSE",
+      "previousAuditSha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27",
+      "bytes": 1090,
+      "sha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/wrap-ansi/license",
+      "previousAuditSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+      "bytes": 1117,
+      "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/y18n/LICENSE",
+      "previousAuditSha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469",
+      "bytes": 731,
+      "sha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/yargs/LICENSE",
+      "previousAuditSha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4",
+      "bytes": 1146,
+      "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4",
+      "equal": true
+    },
+    {
+      "group": "productionNpm",
+      "path": "electronapp/node_modules/yargs-parser/LICENSE.txt",
+      "previousAuditSha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d",
+      "bytes": 731,
+      "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/detect-rpi/LICENSE",
+      "previousAuditSha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "bytes": 1058,
+      "sha256": "84f17b9d90932c99e3e8bd565580c6671b4d6f3fc91263b6afaafd6874f21f50",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/is-linux/license",
+      "previousAuditSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "bytes": 1132,
+      "sha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/is-osx/license",
+      "previousAuditSha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "bytes": 1132,
+      "sha256": "5e3fba3a85435d4d1612eb6226e7d502c52fdb7580dffa2e46891fa7a00d847d",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/is-windows/LICENSE",
+      "previousAuditSha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "bytes": 1109,
+      "sha256": "125be8338d6dc0e6da9d2cfbf0e2355e2090f0ddb9e09d43d7c16092b028bbca",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/power-off/license",
+      "previousAuditSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "bytes": 1130,
+      "sha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/sleep-mode/node_modules/is-windows/LICENSE",
+      "previousAuditSha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "bytes": 1104,
+      "sha256": "022cda75198d62af2554a7fd1813c7b2a77fd25352ed491db0e56dfaf0ff2c59",
+      "equal": true
+    },
+    {
+      "group": "inheritedNpm",
+      "path": "electronapp/node_modules/sleep-mode/license",
+      "previousAuditSha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "bytes": 1130,
+      "sha256": "27e2b1effad56afb98dcd16f4a539cd229da291c86fb40bd6352751f34069cd2",
+      "equal": true
+    },
+    {
+      "group": "nativeMedia",
+      "path": "electronapp/enhanced/native-media/node_modules/koffi/LICENSE.txt",
+      "previousAuditSha256": "22bcbbbacd739b026a8dc484f62a31484ce4c4e31f3408b60b29b4e41d62b290",
+      "bytes": 1117,
+      "sha256": "22bcbbbacd739b026a8dc484f62a31484ce4c4e31f3408b60b29b4e41d62b290",
+      "equal": true
+    },
+    {
+      "group": "nativeMedia",
+      "path": "electronapp/enhanced/native-media/node_modules/koffi/vendor/node-addon-api/LICENSE.md",
+      "previousAuditSha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c",
+      "bytes": 1150,
+      "sha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c",
+      "equal": true
+    },
+    {
+      "group": "nativeMedia",
+      "path": "electronapp/enhanced/native-media/node_modules/koffi/vendor/node-api-headers/LICENSE",
+      "previousAuditSha256": "a553508f516031c91f3af1148d44970cb81bbae6c4f091be6835d39cc252238c",
+      "bytes": 1064,
+      "sha256": "a553508f516031c91f3af1148d44970cb81bbae6c4f091be6835d39cc252238c",
+      "equal": true
+    }
+  ],
+  "carriedNoticeBasis": {
+    "auditCommit": "8ffa74754783308172775f3ef8e64e738ce31c2d",
+    "receiptPath": "docs/evidence/signpath-v047-payload-notices.json",
+    "receiptSha256": "3d3c5b154455a124bc93095a3a71517da9d7b0994fce20b0263442122b859b1d",
+    "method": "Current payload bytes compared with previously independently verified upstream notice hashes; npm lock and inherited/native component inputs checked unchanged. Upstream tarballs not re-downloaded this round."
+  },
+  "electronArchiveMembers": [
+    {
+      "path": "x64/electron/snapshot_blob.bin",
+      "sourceMember": "snapshot_blob.bin",
+      "bytes": 368768,
+      "sha256": "ba61ab6a3f5b574b28d85d2e9abb82d162b73bb04e86e157013d5cfb294ad67d",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/en-US.pak",
+      "sourceMember": "locales/en-US.pak",
+      "bytes": 586582,
+      "sha256": "23b271e8009bfa14783700cd0712b4ecaa5b8f2ea28a4d81ae1d7e05bc0c96b1",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/dxil.dll",
+      "sourceMember": "dxil.dll",
+      "bytes": 1509760,
+      "sha256": "77e039c905030a641e53658a008b74e90635a5ea9b6b79eabd0f2003bdfca59a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/id.pak",
+      "sourceMember": "locales/id.pak",
+      "bytes": 635080,
+      "sha256": "f567569c42a25bb2dfc5c33e13aac558c0e2a1d5d4b969592bbd0841b36438db",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/th.pak",
+      "sourceMember": "locales/th.pak",
+      "bytes": 1368866,
+      "sha256": "c1f4235c31bc05153230b0e55b7aabc9020d7460d5b0a025c386885e1e4bda3c",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ur.pak",
+      "sourceMember": "locales/ur.pak",
+      "bytes": 1047994,
+      "sha256": "c218e21744df2ff0669a87d497d65d76333073577360d4c662c592de146bf82a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/zh-TW.pak",
+      "sourceMember": "locales/zh-TW.pak",
+      "bytes": 583887,
+      "sha256": "7cb5f76e54a548d4e52aa8cdf226a4339bdadc304897abca690f407e95e42f4d",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ca.pak",
+      "sourceMember": "locales/ca.pak",
+      "bytes": 716908,
+      "sha256": "6f28297c1ccb628f534d65dade167ae559f83eace359acf47e48ff890b9409d5",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ml.pak",
+      "sourceMember": "locales/ml.pak",
+      "bytes": 1767850,
+      "sha256": "b5606265910e45098a88e989202a550531f6d00333c6b112ed4c5cbc07b2ff6a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/resources.pak",
+      "sourceMember": "resources.pak",
+      "bytes": 12435875,
+      "sha256": "ee5707e9409e76742e1dacdae0ebbb3c567b8772ce5bbcb9785aa215f5784c22",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/uk.pak",
+      "sourceMember": "locales/uk.pak",
+      "bytes": 1211563,
+      "sha256": "ec5d0b426e289c064e8f2d63636ae2a544ff30fc1e99dde04fe1920971e4d060",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/pt-BR.pak",
+      "sourceMember": "locales/pt-BR.pak",
+      "bytes": 697019,
+      "sha256": "5546559a56f9ac3191062c3fd42defd190a68e78ac988eb57fa5a6fd2dc5f874",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ro.pak",
+      "sourceMember": "locales/ro.pak",
+      "bytes": 728144,
+      "sha256": "1e6b5b0dac63a9e951daf523de310f6bd9e5c53e281f37706d41bd35d2a08bb5",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/de.pak",
+      "sourceMember": "locales/de.pak",
+      "bytes": 717862,
+      "sha256": "58165025c4252ba8b2ce8203b59362b9968938cb0fef9d7da04941be22f41bb3",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/vk_swiftshader_icd.json",
+      "sourceMember": "vk_swiftshader_icd.json",
+      "bytes": 106,
+      "sha256": "32d83ff113fef532a9f97e0d2831f8656628ab1c99e9060f0332b1532839afd9",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ta.pak",
+      "sourceMember": "locales/ta.pak",
+      "bytes": 1758067,
+      "sha256": "91fb1460711df108d8d435a378c8be1d1e80b0886c0158d8c6ae92f35812681b",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/vi.pak",
+      "sourceMember": "locales/vi.pak",
+      "bytes": 830014,
+      "sha256": "76a32f8ad5d08a6f9899e12e4aa9b3d9a9023931e2ca0f73e5ced541c922dcfb",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/fil.pak",
+      "sourceMember": "locales/fil.pak",
+      "bytes": 741385,
+      "sha256": "02e2c70d3d85b0deb677a9ae576ae3cf89e80774532cb3315c14f1e8ce64b310",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/icudtl.dat",
+      "sourceMember": "icudtl.dat",
+      "bytes": 10876560,
+      "sha256": "9f48c7f9c7c94d516a14870707e910ab94d75ae640ff6842c4af53276cd26ebe",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/kn.pak",
+      "sourceMember": "locales/kn.pak",
+      "bytes": 1720240,
+      "sha256": "af5fed2130102ecc0c878059c88faed9d6db2e8b147fb5ae9e15e3fe69706c8a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/hr.pak",
+      "sourceMember": "locales/hr.pak",
+      "bytes": 715279,
+      "sha256": "d46c64ae8af3562e37eb80438aa2bee228fafda251d58ba4d0991291f1c72aab",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/da.pak",
+      "sourceMember": "locales/da.pak",
+      "bytes": 666471,
+      "sha256": "530fd95daee21d793b99492ca7d0bf9979daffe42944e24414d4b08a3d23b9fe",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/it.pak",
+      "sourceMember": "locales/it.pak",
+      "bytes": 693991,
+      "sha256": "aeb1d99a2a09476d9ee0fd133df2d4d987c731b9f91a248ac4e60377ddda1ca5",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/mr.pak",
+      "sourceMember": "locales/mr.pak",
+      "bytes": 1467313,
+      "sha256": "8465d4077ed5414cbcb7d9bdb00d85e515a1a069703cdc1d4d67c9d6e5623fb0",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/fr.pak",
+      "sourceMember": "locales/fr.pak",
+      "bytes": 763461,
+      "sha256": "8bad7fd88072ac66649dd9307da9163962f8ab00313e627bf1c5ca4450a48b4a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/bg.pak",
+      "sourceMember": "locales/bg.pak",
+      "bytes": 1178203,
+      "sha256": "2eb9c74c67e4b13b45a73061fa978738e335bc245da71bab0ea9b205fe91074e",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/vk_swiftshader.dll",
+      "sourceMember": "vk_swiftshader.dll",
+      "bytes": 5520384,
+      "sha256": "44cf6bb72bb94b99e3acd1030fac57bb4c22f6ebad886c1200b9544c886c2035",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/vulkan-1.dll",
+      "sourceMember": "vulkan-1.dll",
+      "bytes": 939520,
+      "sha256": "e96d215161a34c5da71177a257b9e6146870438db37d65b609eac828a69f5315",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ar.pak",
+      "sourceMember": "locales/ar.pak",
+      "bytes": 1130919,
+      "sha256": "4c47004abd0969cb1174d06eb7429c024872207960986afbf3cae37e339a8d01",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/lv.pak",
+      "sourceMember": "locales/lv.pak",
+      "bytes": 774733,
+      "sha256": "4455ab7c06172c2c80796a99558e41f452cc3b33be76654d70440cf4ac7a2d34",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/bn.pak",
+      "sourceMember": "locales/bn.pak",
+      "bytes": 1513545,
+      "sha256": "415621a5c0b1546e6e447d43b76414425a8703cc7681d637ec1f283ad0c787e7",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/electron.exe",
+      "sourceMember": "electron.exe",
+      "bytes": 245625856,
+      "sha256": "3e76fb616aa60a850b7f64800dd81b21e06ddee3f1919650183b047f03e7cb9f",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/ffmpeg.dll",
+      "sourceMember": "ffmpeg.dll",
+      "bytes": 3113472,
+      "sha256": "08ec7e6c478b7d771b1850c3d1c86febcef01b03857abe8417f2a1f126e87c56",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ko.pak",
+      "sourceMember": "locales/ko.pak",
+      "bytes": 718705,
+      "sha256": "55a3a8db9c84b1fe9e50b56d68fb069ad7546117cf1f6cb89f36f49cc044ad5e",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/fi.pak",
+      "sourceMember": "locales/fi.pak",
+      "bytes": 655113,
+      "sha256": "1f3123d7fb5c22a95b5250ea17450b665c3c6cd6a6dfd28bbdde15e1bf684a0e",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/chrome_200_percent.pak",
+      "sourceMember": "chrome_200_percent.pak",
+      "bytes": 1269017,
+      "sha256": "30fa4a6e27c9ff2fb0f939f01158477e621a67d86e9ecb84cf11b3947db8eb9d",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/cs.pak",
+      "sourceMember": "locales/cs.pak",
+      "bytes": 743351,
+      "sha256": "799a789ce531991cb975425730db310f9a8fe74091eee568f3e65fcc7ef0cd57",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/sl.pak",
+      "sourceMember": "locales/sl.pak",
+      "bytes": 722720,
+      "sha256": "e1371c8df577b979e3a515af34b0aaa3d07153c7a5c55d39a9b49a7ffe62d3d2",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/chrome_100_percent.pak",
+      "sourceMember": "chrome_100_percent.pak",
+      "bytes": 719654,
+      "sha256": "ab7c4b7b6cb8832a31d44b95ec50ce52294f49422a3bdde4e21968eca2930cbe",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/zh-CN.pak",
+      "sourceMember": "locales/zh-CN.pak",
+      "bytes": 592081,
+      "sha256": "7887bd3d01e12306e32a11d9a20566ca0e93688a0375e6ff59da04cf782b1681",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/es.pak",
+      "sourceMember": "locales/es.pak",
+      "bytes": 703941,
+      "sha256": "fe6fff51ef19db1f4fe0fc602e0bd4bd7fabcfb1ca5d6896d1ce0efcf37e49c4",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/hu.pak",
+      "sourceMember": "locales/hu.pak",
+      "bytes": 765640,
+      "sha256": "0a46fc8d50f74effd1cfe1979e677df3de6fc47e6b551267303d93d57bd83f50",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/nl.pak",
+      "sourceMember": "locales/nl.pak",
+      "bytes": 664759,
+      "sha256": "b642c8ab5ce11438e9a8fd4639244fa8f1d55cfd70269565490bc55ee907b048",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ru.pak",
+      "sourceMember": "locales/ru.pak",
+      "bytes": 1200985,
+      "sha256": "a9e76536472c45b39e7ae2af5f3ae1bc0e50a11646efdb6fb3ca373b5f2e2c70",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/sw.pak",
+      "sourceMember": "locales/sw.pak",
+      "bytes": 685127,
+      "sha256": "bd41ea707a0d90d683ec8d5d0f0c79f3e925747bc4ea1982562dfb75080199b9",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/hi.pak",
+      "sourceMember": "locales/hi.pak",
+      "bytes": 1586602,
+      "sha256": "015b3856dc05e8635a48e749e6970fe43f5d620b8dbd04e5abff586178213f6e",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/nb.pak",
+      "sourceMember": "locales/nb.pak",
+      "bytes": 638121,
+      "sha256": "d97a2b0cbe6adc99add2ed3ce0d15d0bb124b778086c466c126634d60ea72608",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/te.pak",
+      "sourceMember": "locales/te.pak",
+      "bytes": 1629379,
+      "sha256": "fc8c2706c5dfd36e7af8e380a240e0f697cc5fe969b512092a2185896512c4af",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/tr.pak",
+      "sourceMember": "locales/tr.pak",
+      "bytes": 697394,
+      "sha256": "d5648d7eaf1826211fb244fcf8419dabdc16c228d92139bc8b0b73c7a6b7e700",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/resources/default_app.asar",
+      "sourceMember": "resources/default_app.asar",
+      "bytes": 110862,
+      "sha256": "0eb2491b0a9ac94790389d39c09dd5005c6c1f0665842943829bbd0193f6cc4f",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/LICENSES.chromium.html",
+      "sourceMember": "LICENSES.chromium.html",
+      "bytes": 20472830,
+      "sha256": "7b328b8c7463ac9bfc7dc648c751533517c8441a0b5b21047d6c0b2620e60d70",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/v8_context_snapshot.bin",
+      "sourceMember": "v8_context_snapshot.bin",
+      "bytes": 742200,
+      "sha256": "f9fa8a00cf39dc5dee6b15c47d30e7e49bc0c561ae73e0ec2b45571bb6fafcd6",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/LICENSE",
+      "sourceMember": "LICENSE",
+      "bytes": 1096,
+      "sha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/pt-PT.pak",
+      "sourceMember": "locales/pt-PT.pak",
+      "bytes": 701056,
+      "sha256": "bdfa7264dddf70f936f1785737969559a577b51d1952c820a468c611d18b17ca",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/dxcompiler.dll",
+      "sourceMember": "dxcompiler.dll",
+      "bytes": 25745408,
+      "sha256": "87570f549c6e3763f9f10edce60d9c60a80c84fbbc9cb3b872047d94a594bfcc",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/en-GB.pak",
+      "sourceMember": "locales/en-GB.pak",
+      "bytes": 580030,
+      "sha256": "01d9200a5daee1770f7147b166d25baa6a8dd72c138c3c526421e656dec789f5",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ms.pak",
+      "sourceMember": "locales/ms.pak",
+      "bytes": 668356,
+      "sha256": "af7021a00befa586aa067ae3ccb339079e6f13ee0cab1621836f6abb608b6f2a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/af.pak",
+      "sourceMember": "locales/af.pak",
+      "bytes": 636155,
+      "sha256": "3017b141bd16e24190d810f0748612f0fd4352ca8553002b9a63a7f77f7154f8",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/am.pak",
+      "sourceMember": "locales/am.pak",
+      "bytes": 1029450,
+      "sha256": "67b938d162bc75db067120bb8366b5bafd9a75fa99a0ca9ad4f46b47d1d37634",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/el.pak",
+      "sourceMember": "locales/el.pak",
+      "bytes": 1295538,
+      "sha256": "37d2e1ef69fea9bdb1e0902cbc61a458baa9009fc3761029bd1c1882a7a0c9b2",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/es-419.pak",
+      "sourceMember": "locales/es-419.pak",
+      "bytes": 707627,
+      "sha256": "2766fd52da83ff679346313e66440f013a7d478b9be946df4ab197505912450b",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/sv.pak",
+      "sourceMember": "locales/sv.pak",
+      "bytes": 646543,
+      "sha256": "7b0399a206bfbebe77d1a4fc598c8a6636a1bd940d3ab56519cf4af0134b6edb",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/fa.pak",
+      "sourceMember": "locales/fa.pak",
+      "bytes": 1063069,
+      "sha256": "ba33624ccad6d0e4a4339589c56be557b28968bf9422bd12a8f26e2a3d581577",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/gu.pak",
+      "sourceMember": "locales/gu.pak",
+      "bytes": 1495625,
+      "sha256": "e86e8c240d4b6283abb03c49df9e8899607ef9def6d4933c7a541d63b5835271",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/et.pak",
+      "sourceMember": "locales/et.pak",
+      "bytes": 642216,
+      "sha256": "dd1205eae606f12510e24ce39f301439c98b3293d766ca5839dc292a14d7973c",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/d3dcompiler_47.dll",
+      "sourceMember": "d3dcompiler_47.dll",
+      "bytes": 4741488,
+      "sha256": "a05f99734f7c4822fefc12b367af21fd0976ed6608752fb1e1e80b6ece7ecbbb",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/ja.pak",
+      "sourceMember": "locales/ja.pak",
+      "bytes": 842053,
+      "sha256": "f6e0d8eda3bc8f1112494bda96b230f3c44f054c47cced50c94c5ee9199f04c6",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/sk.pak",
+      "sourceMember": "locales/sk.pak",
+      "bytes": 755481,
+      "sha256": "3cdc8bca8696c90a572fb15c865caa5c286df45344c72194c3eea97201cc816a",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/pl.pak",
+      "sourceMember": "locales/pl.pak",
+      "bytes": 742064,
+      "sha256": "8a0969fc743d3e2f5111387d53c0d79e8c1d9f68256ad6553b87fca2bcaa7e6e",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/lt.pak",
+      "sourceMember": "locales/lt.pak",
+      "bytes": 777281,
+      "sha256": "af969f4407c190dd01a426fa1244cb1ec7cdf2909d1c3ba5b87ff662ba567303",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/he.pak",
+      "sourceMember": "locales/he.pak",
+      "bytes": 928748,
+      "sha256": "ddc1f304ab1f4489d19ae2b31e7f8e3ffb47dae439520159e8975422c65e4115",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/locales/sr.pak",
+      "sourceMember": "locales/sr.pak",
+      "bytes": 1112909,
+      "sha256": "c42a674e3f43aa70cef005931915c8b7ceb34b29566fba3309f8da931dc7861f",
+      "payloadEqual": true
+    },
+    {
+      "path": "x64/electron/version",
+      "sourceMember": "version",
+      "bytes": 6,
+      "sha256": "c79f9f25e9affab9a87ef996c8499b23763b2c082d55a422d5650e2def092a11",
+      "payloadEqual": true
+    }
+  ],
+  "vulkanLoader": {
+    "sourceMember": "vulkan-1.dll",
+    "runtimePath": "electronapp/libmpv/x64/vulkan-1.dll",
+    "sha256": "e96d215161a34c5da71177a257b9e6146870438db37d65b609eac828a69f5315",
+    "payloadEqual": true
+  },
+  "electronNotices": [
+    {
+      "path": "x64/electron/LICENSES.chromium.html",
+      "sourceMember": "LICENSES.chromium.html",
+      "bytes": 20472830,
+      "sha256": "7b328b8c7463ac9bfc7dc648c751533517c8441a0b5b21047d6c0b2620e60d70",
+      "payloadEqual": true,
+      "previousAuditSha256": "7b328b8c7463ac9bfc7dc648c751533517c8441a0b5b21047d6c0b2620e60d70"
+    },
+    {
+      "path": "x64/electron/LICENSE",
+      "sourceMember": "LICENSE",
+      "bytes": 1096,
+      "sha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d",
+      "payloadEqual": true,
+      "previousAuditSha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d"
+    }
+  ],
+  "nuget": {
+    "url": "https://api.nuget.org/v3-flatcontainer/mediabrowser.common/3.3.10/mediabrowser.common.3.3.10.nupkg",
+    "bytes": 177439,
+    "sha256": "4d9bd3ed99e9b2b6cd22622018af5667246d8b866041f540afdb973b30d30d0b",
+    "members": [
+      {
+        "path": "MediaBrowser.Model.dll",
+        "member": "lib/netstandard1.3/MediaBrowser.Model.dll",
+        "bytes": 426496,
+        "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+        "payloadEqual": true
+      },
+      {
+        "path": "MediaBrowser.Common.dll",
+        "member": "lib/netstandard1.3/MediaBrowser.Common.dll",
+        "bytes": 44032,
+        "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+        "payloadEqual": true
+      }
+    ],
+    "nuspecSha256": "4f773b8c1a85e1582e6ab931f20e712ea74e98052f3caf743ebbdd2f6cfd3549",
+    "licenseNamedMembers": []
+  },
+  "selectedApi": [
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/apiclient.js",
+      "size": 28373,
+      "sha256": "ee94aa4731b0a26ca852ff2dea0d008eb619f4f42f9ca0bd8df761da4233f329",
+      "gitBlobEqual": true,
+      "payloadEqual": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/mit-apiclient.js",
+      "size": 105167,
+      "sha256": "a0c63654081723be24a9baed406c4d0ea1f6bc4ef409cd1aabfe758948899526",
+      "gitBlobEqual": true,
+      "payloadEqual": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/transport.js",
+      "size": 6370,
+      "sha256": "9d5d42f3055b2a2245729296346298dd06448a6c099985f8f1c3391822465613",
+      "gitBlobEqual": true,
+      "payloadEqual": true
+    },
+    {
+      "path": "src/electronapp/www/modules/emby-apiclient/events.js",
+      "size": 1598,
+      "sha256": "48c702010cbfd0f7aba927b589a15c0e50725ddc35d59a4158fc7a4c24618119",
+      "gitBlobEqual": true,
+      "payloadEqual": true
+    }
+  ],
+  "retiredPaths": {
+    "ServiceStack.Text.dll": false,
+    "SharpCompress.dll": false,
+    "System.Configuration.dll": false,
+    "cec/cec-client.exe": false,
+    "cec/cec-client.x64.exe": false,
+    "cec/cec.dll": false,
+    "cec/cec.x64.dll": false,
+    "cec/p8-usbcec-driver-installer.exe": false,
+    "external/Presets/fonts/Source Han Serif SC-Bold.ttf": false,
+    "electronapp/www/themes/logo.png": false
+  },
+  "retiredAnime4KPayloadPaths": [],
+  "preparedArtifacts": [
+    {
+      "preparedPath": "src/electronapp/preload.js",
+      "basePath": "tools/templates/runtime/preload.js",
+      "runtimePath": "electronapp/preload.js",
+      "generatorPath": "tools/prepare-preload.cjs",
+      "category": "prepared-workspace-artifact",
+      "baseSha256": "D84006412B38A7EEEAFEFC9FE94AF63D9F0AED3EFF3C6CEB83D37AA400515575",
+      "sourceTemplateSha256": "2d1f39a8771dfe6f4bfa03c13a98bc6a19e50f5b2e814721d33f56183fabea38",
+      "baseRelation": "locked template transform",
+      "generatorSha256": "1F01F5FDA52CD8F9685F1626A96FC5E41C2300757C4DF72594F1E61E03CE13B3",
+      "expectedPreparedSha256": "5B0D51E1D73A52A793325811A068BE8CC0EE6AE9ABD4DD839F4BE1127942D01E",
+      "preparedSha256": "5B0D51E1D73A52A793325811A068BE8CC0EE6AE9ABD4DD839F4BE1127942D01E",
+      "runtimeSha256": "5B0D51E1D73A52A793325811A068BE8CC0EE6AE9ABD4DD839F4BE1127942D01E"
+    }
+  ],
+  "webOverlays": [
+    {
+      "runtimePath": "electronapp/www/modules/common/playback/playbackmanager.js",
+      "sourcePath": "vendor/web-snapshot/www/modules/common/playback/playbackmanager.js",
+      "generatorPath": "tools/patch-playbackmanager.cjs",
+      "sourcePresent": true,
+      "sourceSha256": "8DF9EA6F1BE13F355925B2FD1B9BF7539C5A624D8731BE484959A4EC861A1EBD",
+      "generatorSha256": "568290C426F9D57492DE384DECAFA6F329F01357EB116F13BA7625DD18E67075",
+      "runtimeSha256": "71E62ACF59705EA4EA7B8B96B7C8F3FC95831BD8BEF22229F319CBD6480F983F"
+    },
+    {
+      "runtimePath": "electronapp/package.json",
+      "sourcePath": "tools/templates/runtime/package.json",
+      "generatorPath": "tools/build.ps1",
+      "sourcePresent": true,
+      "sourceSha256": "A4A3B715E426DFE58E05F7BBCF95124E0A90BA865022290DE71D239317775F20",
+      "generatorSha256": "4171EDF93A7B16FC716CE5599D649E72DABE9CC31BAB2EF55830AAEF13A6874D",
+      "runtimeSha256": "D334601D91978F903FA9910B0B51A1FCEABD61546B9214535E9DAA2E3DF60A39"
+    }
+  ],
+  "officialWindowsArchive": {
+    "name": "emby-theater-x64.zip",
+    "sourceUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/download/3.0.20/emby-theater-x64.zip",
+    "releaseUrl": "https://github.com/MediaBrowser/emby-theater-windows/releases/tag/3.0.20",
+    "size": 111318728,
+    "sha256": "3bc01d288d64046483ef12a8e5a70cc31b6d8b65ed9ee1837554ab7eba797c4c",
+    "members": [
+      {
+        "path": "cec/cec-client.exe",
+        "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519",
+        "bytes": 89536,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "cec/cec-client.x64.exe",
+        "sha256": "42f601278f82c37d0cc26460d4ac80e62f6cec5b84b2efb0ee8ed75c1cbc4519",
+        "bytes": 89536,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "cec/cec.dll",
+        "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04",
+        "bytes": 325568,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "cec/cec.x64.dll",
+        "sha256": "6e2932ab53f4d05d5f815499786a48c3ccb8a60c527aa2f34e4abbf14dc66d04",
+        "bytes": 325568,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "cec/p8-usbcec-driver-installer.exe",
+        "sha256": "6e4d5a091720cf5ad727896bbf3766e5529468e24849183439506130bde3546a",
+        "bytes": 619536,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "electronapp/libmpv/x64/RefreshRate.exe",
+        "sha256": "c3ac38b3345d804afc4ba97f34f059d0c4294ac5f55f62a25948ee62975eaa81",
+        "bytes": 7168,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/strings/en-US.json",
+        "sha256": "334269d998de3bbc6ff28ca2d45330b03670486d2e3e157aedab4e7be3ba60bf",
+        "bytes": 2187,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "electronapp/scripts/windowsync.js",
+        "sha256": "f6744461fe3c0ab7daa533e6f0d41280de621bb3e8c4ee9c9134262fe5e29fe9",
+        "bytes": 589,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "Emby.Theater.exe",
+        "sha256": "11abf75c8f77ddb0078e7dd62a2eaae60dba244c113bc7893a7e56bc6527163e",
+        "bytes": 202240,
+        "payloadPresent": true,
+        "payloadEqual": false
+      },
+      {
+        "path": "Emby.Theater.pdb",
+        "sha256": "512f7c1354ac8914a6cd7b724b75a3c584ab48f88a4ce9a40ae3620de9062f5f",
+        "bytes": 400896,
+        "payloadPresent": true,
+        "payloadEqual": false
+      },
+      {
+        "path": "MediaBrowser.Common.dll",
+        "sha256": "8fc955a5215e862f5bde882cedbe2be52e6a242d89d03406844993595d72657f",
+        "bytes": 44032,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "ServiceStack.Text.dll",
+        "sha256": "2cc4fc93be82d4818dc81beb9f5cd0e4f995c77e1725c129e4918e8aeaeb39c1",
+        "bytes": 411648,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "ServiceStack.Text.xml",
+        "sha256": "19b2a3730eb32f402888a58df9c6704cde19c0e38138dbad4fef000750669c0d",
+        "bytes": 88835,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "SharpCompress.dll",
+        "sha256": "3c34138417974ce215e5d1b5bdbb7abd578ce77420073ea9de3f46ccebe42b55",
+        "bytes": 420864,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "SimpleInjector.dll",
+        "sha256": "6a8e55d1f114fb579f4b92169af71dc197d86dd13a79199a4f047dc4b22bf0bc",
+        "bytes": 382464,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "SimpleInjector.xml",
+        "sha256": "80e185fed9322f1cccf8d4cd3c695ed717530d2b9f180961e07f62c83ceba5c2",
+        "bytes": 348670,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "SocketHttpListener.dll",
+        "sha256": "7d1e347f1cb6ff10b011547665bcf13bb734306e8977e572021161f52a43f852",
+        "bytes": 115200,
+        "payloadPresent": true,
+        "payloadEqual": true
+      },
+      {
+        "path": "System.Configuration.dll",
+        "sha256": "3dba0c61e075728780723d7e517f6276674e29f6e9d5942c0b95a240f1e8f1bf",
+        "bytes": 93200,
+        "payloadPresent": false,
+        "payloadEqual": false
+      },
+      {
+        "path": "System.Configuration.xml",
+        "sha256": "a2c2e6ad32d2641462a700eee6b107966544f35fc8150359fae8c648151c2802",
+        "bytes": 162,
+        "payloadPresent": true,
+        "payloadEqual": true
+      }
+    ],
+    "model": {
+      "sha256": "db22f8ea6cb6afdfab184f80d8b85a10d8a9f148ff4cae167db87ce9cd245153",
+      "payloadEqual": true
+    }
+  },
+  "previousInstallerRecheck": {
+    "url": "https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.7/EmbyTheaterEnhanced-0.4.7-win-x64-setup.exe",
+    "bytes": 162030104,
+    "sha256": "8157ed8b38d075bba080992933dce04d8c813729b11895745455be127b814d42",
+    "manifestFiles": 2225,
+    "allHashesEqual": true,
+    "buildManifestSha256": "ea000b7ef9fa474d80b2f97396ef7c1764a7695b624bba0885c4c669d4b9e187"
+  },
+  "payloadDelta": {
+    "added": [
+      {
+        "path": "electronapp/enhanced/media-network-diagnostics.js",
+        "sha256": "50dadc11c855d4333c2a8f657bfc05e1d88e9dff1e3fe06ec92275462d4d2994"
+      },
+      {
+        "path": "electronapp/enhanced/navigation-diagnostics.js",
+        "sha256": "95923b30d330ba9df9caabff6d74104cc6d933a2b8910ea6fe01b3ed78bfc4aa"
+      },
+      {
+        "path": "electronapp/enhanced/shutdown-drain.js",
+        "sha256": "39fdd55e0a1b1828500e739dfc44bfc2c304c5d181c8b1f73a848068748c050c"
+      },
+      {
+        "path": "electronapp/enhanced/strm-playback-config.js",
+        "sha256": "37b8e3695a9cbf6633ecc79165de4112134fb7f1254b1aa45278cd4278efad24"
+      },
+      {
+        "path": "electronapp/enhanced/subtitle-appearance-dialog.css",
+        "sha256": "4e91d1a56eeb6bb01596bf65c559026f7b7bf30a58330ab6cbec837507f7e0ed"
+      },
+      {
+        "path": "electronapp/enhanced/subtitle-appearance-dialog.js",
+        "sha256": "d5a79735b48b556bf5245434af13db15370c8ef9e5233d81fa0df5ead6c3e777"
+      },
+      {
+        "path": "electronapp/enhanced/update-handoff-outcome.js",
+        "sha256": "563da17666b05fc8e69c82081e6d899bc6a3e20b5aac09b3e4effa5838a0496d"
+      }
+    ],
+    "removed": [],
+    "changed": [
+      {
+        "path": "build-input-provenance.json",
+        "oldSha256": "43362dd1b5cae17cb528412321bb582c001770952c32c1598a1f651c1f7cfa6a",
+        "newSha256": "8ebaab387ba4556682712bd81c450c9f2b2b0ded36f614fffe40f907454be7d9"
+      },
+      {
+        "path": "docs/SOURCE_MATERIALS.md",
+        "oldSha256": "b532ef1f329613c420f279e7e272893eb1c153e37ca7c58a11e9ce5b626cc909",
+        "newSha256": "cbf0545b3450f46ef7cd7901442c10449d8df53d2aed416f7e4fcce52177b4cb"
+      },
+      {
+        "path": "electronapp/enhanced/advance-download/collection.js",
+        "oldSha256": "e3285c03131ddfa56ca010de534e43584e216333470fac0eeffe975a5ea57f2c",
+        "newSha256": "caaabef1aa0e358d9557b210a82914a24a6740412843bb2913bcdcbf3d34c8c1"
+      },
+      {
+        "path": "electronapp/enhanced/advance-download/ipc.js",
+        "oldSha256": "c30174fd5969d4bc84bf2a25cc9333c39c48b22294a6033efd283fcc3c2d86e4",
+        "newSha256": "3c1a5f57f1a3a1f5c0e122983d4c5a123a276ebfd25e918fbd8f68ca4d00bcc2"
+      },
+      {
+        "path": "electronapp/enhanced/advance-download/manager.js",
+        "oldSha256": "51fb6b1e86a541b6908900449c26fe67186adfea870998cfd3ec785e9c5bc015",
+        "newSha256": "48b5fcb2610303aae3e01e525b570f8375e7d3b64cbdcc0547dced85da1d3163"
+      },
+      {
+        "path": "electronapp/enhanced/advance-download/renderer.js",
+        "oldSha256": "4aa6eedf2278a546b55381085e8c7bb0faa0d7dd4c9925ee4547c422e3334fec",
+        "newSha256": "bd9676876505347d369a6b9b0375057ddfb57bec6e92191bd2782e987dd2d3c4"
+      },
+      {
+        "path": "electronapp/enhanced/cd2-ipc.js",
+        "oldSha256": "a622cc8da71b3da3bf576852db75dd44e31efb0c6c682a4956e653c66141da38",
+        "newSha256": "d42d27ec8e8b99190517bbaf4a09ab7aa6df0f0874a4d273bbf9a401bd1c6a7a"
+      },
+      {
+        "path": "electronapp/enhanced/cd2-service.js",
+        "oldSha256": "d96a02208d466a9e8982b012296622cc86e3506302e5fc02ca0ca0f375549316",
+        "newSha256": "bd6115bd191d1790340344fd1ecbeb9724e1c0d1d40cc65974198f40d3940b26"
+      },
+      {
+        "path": "electronapp/enhanced/home/home-tab.js",
+        "oldSha256": "052368c69e824ae86907832cae521719d5378a92e000f52144850ed156b6e7ed",
+        "newSha256": "2345e6cb21be992853641f69d918999fdde12b23401091d4fde363c0341aa47d"
+      },
+      {
+        "path": "electronapp/enhanced/home/server-sections.js",
+        "oldSha256": "e3bbad909556c18f1a098c9b305296a1d97c9c0ef469dd837a79028dbbdcb4f4",
+        "newSha256": "09ad264b17c3ab6a91013b9eace3fa7d22e1d1a1620b204c25ecb81722c9d260"
+      },
+      {
+        "path": "electronapp/enhanced/maintenance-ipc.js",
+        "oldSha256": "ccd0b1de606670a9d762c35de7d9a75d407602569259bb3e3ae38b6b1023ed69",
+        "newSha256": "570f94633bad8c0229f31284c010b336f82505b8eaa487a7c4c511fa96ecead2"
+      },
+      {
+        "path": "electronapp/enhanced/manual-app-update-selftest.js",
+        "oldSha256": "941327b83b1e0afe4cb80bd5ba184df5c0bad02edb8cdbe0e938b5e09daca89e",
+        "newSha256": "d0a02840e842caca264e6c278239067ddce3a29007f22cf69538b8ac545b46ac"
+      },
+      {
+        "path": "electronapp/enhanced/native-diagnostics.js",
+        "oldSha256": "11c9beb83227298ff99698f6615ff0ece0514ddbedb49048b08af2dbd9ad4db4",
+        "newSha256": "a9dfe79eac67386e81da485d2e05e7ddcf77f1b55c5f8e56bacde3d98d1c3799"
+      },
+      {
+        "path": "electronapp/enhanced/page-cache/test-session.js",
+        "oldSha256": "4d7fe250f3c730500b10905ad4449b4525ec68d8b15375910312a1dee5dd7a38",
+        "newSha256": "e1993ec59ccce31f47bc61e0f00c9a2162ff7123f97f1a37c5a53def4d2ccd07"
+      },
+      {
+        "path": "electronapp/enhanced/strm-config-ipc.js",
+        "oldSha256": "0f25a9e22ef39688871fa94e3c64713152031b117b50bc2c7206e22b4353fe64",
+        "newSha256": "c09cb6021b5e9e91d473e71b75c451bf703b3ccfea52df6d1a6bdac00b1aae84"
+      },
+      {
+        "path": "electronapp/enhanced/update-install-cache.js",
+        "oldSha256": "b456867a901479bd12a792dc0bb2233b3579015a76b8b91cff9eaaec132b9025",
+        "newSha256": "b984b4fb6e62f0d5e5ed208c8678308d81162c9be8d5997c57ee0988d0417e02"
+      },
+      {
+        "path": "electronapp/enhanced/update-install-guard.cs",
+        "oldSha256": "df0a50be2324f998c0636cdb142a922fd747a4c5a3016d51c7755e65249c96f6",
+        "newSha256": "28e7513ff91f8e8b696e7b023bbcc1ca38104d939fa57c9d1b1ce4812617c529"
+      },
+      {
+        "path": "electronapp/enhanced/update-install-handoff.js",
+        "oldSha256": "539afa0cc5ec900058bec89cb6e88727181f866be3e9aed3de2390d4887749bc",
+        "newSha256": "1f31801e5fde03ab18b2c6acbd523000882b2684f3c22923a9814b8a2e011710"
+      },
+      {
+        "path": "electronapp/enhanced/update-install-handoff.ps1",
+        "oldSha256": "090ef3fc860284576a22c7ef2707bde85ca9b2c652825b4cf362f4940b674a82",
+        "newSha256": "1b2583df7d74130ef949bd3c618a6d58501309a9d6c2e16cb6953cdd5439340d"
+      },
+      {
+        "path": "electronapp/enhanced/windows-media-renderer.js",
+        "oldSha256": "0637b3a87f4950b3bceaa9e9573a88ee713d0f19eb6cb057cdc0be30278598b5",
+        "newSha256": "58cd1dcc37d17d75cdbe653370de487ff07a47d0cfa2f2a8a70a46f4bbd2068f"
+      },
+      {
+        "path": "electronapp/libmpv/x64/vulkan-1.dll",
+        "oldSha256": "7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1",
+        "newSha256": "e96d215161a34c5da71177a257b9e6146870438db37d65b609eac828a69f5315"
+      },
+      {
+        "path": "electronapp/main.js",
+        "oldSha256": "47567a2b74a79c7590cdcda6856833fe4cd90e8f93a906f269b94f1ebd1c4190",
+        "newSha256": "9d515056069c4cdc5743b71ae88ea4ccc4c76b3aa93e4978b0e962b734a185d0"
+      },
+      {
+        "path": "electronapp/native-helper/client.js",
+        "oldSha256": "be7a329ce1f5abdae0c24937c9f1310ff50770833d516052aa30a08099be90a7",
+        "newSha256": "dae38bf74a8ba0b96725b0dd865aefe91d5ae8f5b38d057392f6270bfb0daaf3"
+      },
+      {
+        "path": "electronapp/native-helper/controller.js",
+        "oldSha256": "4424523d75829952f0cada0f24a16e0f090ad0cdfc17775555c03d600b0d1ab8",
+        "newSha256": "f921b13594e52122550155a2592cf33712ac893a8add97adbe4094c6b58faca2"
+      },
+      {
+        "path": "electronapp/native-helper/ete-mpv-helper.exe",
+        "oldSha256": "df03f3dd4b77e16a7122911b403d7183f943e9ea56e79326ca40b4d52701bc78",
+        "newSha256": "7d2921b66e369c2047e818b98ffb117383457d837f2f19140891ec7e358210f8"
+      },
+      {
+        "path": "electronapp/native-helper/service.js",
+        "oldSha256": "5d4a125cceed705ea343bda4a27b3dd0ad6883f6cc5409330073ecb9c447f7c5",
+        "newSha256": "c084540946949f7059ec7a660a3b7a390ef585717219cd3070739333bbd31e59"
+      },
+      {
+        "path": "electronapp/package.json",
+        "oldSha256": "616ee186caad2dee95b7bcdaad5a5c43e7f77b4feb852bae21357cd50b53c8dd",
+        "newSha256": "d334601d91978f903fa9910b0b51a1fceabd61546b9214535e9daa2e3df60a39"
+      },
+      {
+        "path": "electronapp/plugins/libmpv.js",
+        "oldSha256": "5927a27079525c4901358eca7590eb119797b958dda2a7d749f27858a0f88a9b",
+        "newSha256": "9744951e1023bd524bc909c8840b020e8d49d8e6e4796479c579b9b0576e89b2"
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/about.html",
+        "oldSha256": "9e0d95d02c8c427d29667fb0487c9f3efa2bb36a44e8b50f799961412a49ac0c",
+        "newSha256": "902f24bceb691de06d519272d73828d2cc142983d38b3cc5b13537c10c4cbb01"
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/about.js",
+        "oldSha256": "443004a661ac954b8ff6359e6d26aa57afa303eff7b093387ec481f98e273351",
+        "newSha256": "d5b4aa9dee4d07ca6a82788d7735d973234eff5cc508aedbcd0f18fe8345122f"
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/downloads.css",
+        "oldSha256": "a364abb97f460fe1f47a9ca3c87b1638b2dafcf7a208a218f5603c48789d6884",
+        "newSha256": "f519406b69c00bdb32dd58a8c040a9555b9613b5690e085ed02c910443ec1a69"
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/downloads.html",
+        "oldSha256": "9bdcf91eb8df9f3d0e076957738e1ca1732caffe42f8b3167b8e65a8dda66015",
+        "newSha256": "25b3289287531ea7144bc120c0ffbf89c529224537cde7d5518cb27958aca91b"
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/strm.html",
+        "oldSha256": "7c474223f86cec79fee386e25436b512d08595b96d0ba7def933d1f1b3c889ac",
+        "newSha256": "f6369f228eadddbdc9ccccceb3f8a433ef1373d619c9c589b8d7e885456c49f7"
+      },
+      {
+        "path": "electronapp/plugins/mpvplayer/strm.js",
+        "oldSha256": "6be8c4e79f97a5f1f3fea65d3b3f490cccd2e5977d88c631dff49a78f53b275f",
+        "newSha256": "8ad42d34fe97a4b32325dfb83780cee047895ea1e4cd4564837b11fdb966145d"
+      },
+      {
+        "path": "electronapp/preload.js",
+        "oldSha256": "28a3459614ba21f8ba3afab309086631cdfbaf87b868767605602eae2152df25",
+        "newSha256": "5b0d51e1d73a52a793325811a068be8cc0ee6ae9abd4dd839f4be1127942d01e"
+      },
+      {
+        "path": "electronapp/resolvers/cd2-resolver.js",
+        "oldSha256": "e619c26e667509857a3bb3f53ecafdb16eefdc73cac3fed47141815bfd996e11",
+        "newSha256": "183f8d164215e431596835ce60c5775311054721506f9599ec9d56179631a6ca"
+      },
+      {
+        "path": "electronapp/resolvers/strm-config-client.js",
+        "oldSha256": "5d4db8a7a1789264ba34fdda04443ead58fe95d1a9eada7eac06994c1679883c",
+        "newSha256": "dec2e19cc598caa800be9fa8153e22316302c359d42f3ac1fb4e155037f54fa6"
+      },
+      {
+        "path": "electronapp/resolvers/strm-resolver.js",
+        "oldSha256": "80517db2f9a73382c38f8c05d72886aa9fa125670bbb72c8896ecc2051ba9cda",
+        "newSha256": "644df6fc3a97ea4a9f3f499ad8149ec8ae4f383964d907382377f4f87dbe9158"
+      },
+      {
+        "path": "electronapp/www/modules/actionsheet/actionsheet.css",
+        "oldSha256": "77e5268334aba94f29c7c34f792be92a94e7ec321451abb1f9e80c1015e888e0",
+        "newSha256": "771e26e3bc3db08d4e19ef502c382a2c3ff0119edb8e4e51f5488555ff7b4c9d"
+      },
+      {
+        "path": "electronapp/www/modules/actionsheet/actionsheet.js",
+        "oldSha256": "948f67d423647cc5d354dccc2707d06c43e34cb42965d69a41c5a3c436d2511e",
+        "newSha256": "5d507730dbcad1cf1a516ad6ee42eb9bff79a7060ac901753044693eaf6ebe26"
+      },
+      {
+        "path": "electronapp/www/modules/approuter.js",
+        "oldSha256": "364cf6818ba4d92d237943ffd1d59fdb8b533e944be7e4ab06588f203a1e66c5",
+        "newSha256": "12c9bc738abf46a6148bd59a289fe9357204a069659ea9d7be3f07234710a9aa"
+      },
+      {
+        "path": "electronapp/www/modules/common/input/api.js",
+        "oldSha256": "f6b2c1d59cff4b7f9c9fa30e28e74d162a627cee53f4cdfb179602ead6776888",
+        "newSha256": "f834f6a1f3d39ab36cec18d7394b5ffbf606a7c7320a8240307f304934895db3"
+      },
+      {
+        "path": "electronapp/www/modules/common/inputmanager.js",
+        "oldSha256": "aedc007222d868585d4c4b4afe729a17cda34b97fea54e67353bd29eada84cb5",
+        "newSha256": "4c804274b7d2942a9e409b7f019f68cbe44b9bebe33c77b3720b70bfc8eb576f"
+      },
+      {
+        "path": "electronapp/www/modules/common/playback/playbackmanager.js",
+        "oldSha256": "be2102dffea63a2a2e87ded41d0bda4015206e447c55e90d0b10dcb40498528e",
+        "newSha256": "71e62acf59705ea4ea7b8b96b7c8f3fc95831bd8bef22229f319cbd6480f983f"
+      },
+      {
+        "path": "electronapp/www/modules/emby-apiclient/apiclient.js",
+        "oldSha256": "1581f870f8c93988afe067d1b36193f8cd1aa4ed08e690f410df0f663f9ef938",
+        "newSha256": "ee94aa4731b0a26ca852ff2dea0d008eb619f4f42f9ca0bd8df761da4233f329"
+      },
+      {
+        "path": "electronapp/www/modules/emby-apiclient/transport.js",
+        "oldSha256": "78b9f7ee229b78a27ca1c8175c8a47105b2867dc72ee94d201f6442043b638d9",
+        "newSha256": "9d5d42f3055b2a2245729296346298dd06448a6c099985f8f1c3391822465613"
+      },
+      {
+        "path": "electronapp/www/modules/emby-elements/emby-select/emby-select.js",
+        "oldSha256": "5c10c056ff8e075e6a7d54f1558ee51ee402463755b960678f4681a6c69e0cab",
+        "newSha256": "09bbffb34e46454b80b5c34dce7d485241aace062f9a0e123c9f5b80a4cd1f06"
+      },
+      {
+        "path": "electronapp/www/modules/viewmanager/viewmanager.js",
+        "oldSha256": "4f35a1f33e3540bd95caaeaecf1b361a077e2a6fc0e566b655e2b603e35e6f83",
+        "newSha256": "23f9348020e6c02b475aec3d2dffbd8866ddb1cbef4af7a70b51dd949f14f022"
+      },
+      {
+        "path": "electronapp/www/settings/playback.html",
+        "oldSha256": "53a2d7e8f55ee35c42f7c9f1f16033f8d3a8472e3e9aa51cf149d3f859c562fe",
+        "newSha256": "fb205faa55211d8b5abd56aa5cd0edb5a2b548e34e5eee58219aeddd2688a03f"
+      },
+      {
+        "path": "electronapp/www/settings/playback.js",
+        "oldSha256": "b7f2cadcd158b2956b4e6997a010ac9a193bfda7597e79dbbb8b575c43b1d75b",
+        "newSha256": "2b30206a7b72d646eff5765e76f0a70509e0b21c7a93bd8564839292dd707b77"
+      },
+      {
+        "path": "electronapp/www/settings/subtitles.html",
+        "oldSha256": "70018e65b8fbfdef3128f93683cb2bf424dbe4ba38a7f0b7577f529002ebe536",
+        "newSha256": "65226a06ecda727a80bf8851babdc268244fb1c0dc1981a63ec67f822b1b2ba7"
+      },
+      {
+        "path": "electronapp/www/settings/subtitles.js",
+        "oldSha256": "6d087c280019fc13d5b5062f760e1757fd203afdc2a8207cc28f6b4cc38a1b15",
+        "newSha256": "731d13fda408848607d5810893a0853aab59c190c8ee8218fc553afa4a2bafa2"
+      },
+      {
+        "path": "electronapp/www/videoosd/videoosd.js",
+        "oldSha256": "e8936a29ebdba5dca24514531fe1c25ad70e56f8ba572bd022c1ba16a786d5ff",
+        "newSha256": "3b94a874a149a8c9fcce5351747d53de68893a893b3e126c038e168d912f96f7"
+      },
+      {
+        "path": "native-helper-provenance.json",
+        "oldSha256": "55e9b46866597457092b1ed4a9dd8ea1784fb50704eb5f15863e7cd49d67c411",
+        "newSha256": "bf6edb642674e9f04a6abb8951f2840c1fd50e40ed1a20e5f3be44fd95393fb7"
+      },
+      {
+        "path": "runtime-dependencies.json",
+        "oldSha256": "a25a8dabcbea496862786e98914e68ea5529d2a174e1e83262dd7b853bc15642",
+        "newSha256": "b0085393665b21f65b1eb932673e64d6de48e920fdaeab15e06226baf6b9dc1f"
+      },
+      {
+        "path": "runtime-provenance.json",
+        "oldSha256": "d6605ec8aab679aeb2d8a9091a0576cbe2d65244d7986077de92e331920c6ff1",
+        "newSha256": "a91d875ba92b5e28a18d0c0ab1cb16e3f8ba20092c7bf307cee8d319daaa2cd8"
+      },
+      {
+        "path": "source-provenance.json",
+        "oldSha256": "745fe9bc9f1d7b8f12f954dde3f5bdf6621b176180430caadd36c79e5d37707c",
+        "newSha256": "733b6af9903ad2bbe0cb42a65213949e367fb600a7d682d667dff7dd99b53052"
+      },
+      {
+        "path": "windows-native-media-provenance.json",
+        "oldSha256": "8acf50a357bdac4485e1bcb8c89068a43b761e4288c4e81f4ac7a4c3854b4816",
+        "newSha256": "a22463734e6f9b27bbbb0e9957d1862c5b822a711abffc52266e0aa8954a2e0a"
+      },
+      {
+        "path": "x64/electron/dxcompiler.dll",
+        "oldSha256": "50107537790259639a223455a6e77bf08371407ad9b8b6e8cd7135ec69b8f70e",
+        "newSha256": "87570f549c6e3763f9f10edce60d9c60a80c84fbbc9cb3b872047d94a594bfcc"
+      },
+      {
+        "path": "x64/electron/electron.exe",
+        "oldSha256": "0446040f3c63eb75d5b1e1663d5ef27f07730a82df3e4fa47ff77c1a33cef07c",
+        "newSha256": "3e76fb616aa60a850b7f64800dd81b21e06ddee3f1919650183b047f03e7cb9f"
+      },
+      {
+        "path": "x64/electron/ffmpeg.dll",
+        "oldSha256": "8dcba81eb8c59fb3d38441423d518fba8067b69682767df524af5c79f261dbea",
+        "newSha256": "08ec7e6c478b7d771b1850c3d1c86febcef01b03857abe8417f2a1f126e87c56"
+      },
+      {
+        "path": "x64/electron/resources.pak",
+        "oldSha256": "af662ae4ced464da2ba661c98644ff1e2cf88c49af12337921f2a645cd4d5314",
+        "newSha256": "ee5707e9409e76742e1dacdae0ebbb3c567b8772ce5bbcb9785aa215f5784c22"
+      },
+      {
+        "path": "x64/electron/snapshot_blob.bin",
+        "oldSha256": "941da72183c734efa3e4120b2721befdd0e618dbd593226b4cd5730afc5edb53",
+        "newSha256": "ba61ab6a3f5b574b28d85d2e9abb82d162b73bb04e86e157013d5cfb294ad67d"
+      },
+      {
+        "path": "x64/electron/v8_context_snapshot.bin",
+        "oldSha256": "332fd5ea0a894e96846679467a68cb492cb0736c1d70eda24802b94c1cfd3ec6",
+        "newSha256": "f9fa8a00cf39dc5dee6b15c47d30e7e49bc0c561ae73e0ec2b45571bb6fafcd6"
+      },
+      {
+        "path": "x64/electron/version",
+        "oldSha256": "e1cf04b8246962a85cc9ea574ff820a51955f5278887ee01f4fe7786263230e2",
+        "newSha256": "c79f9f25e9affab9a87ef996c8499b23763b2c082d55a422d5650e2def092a11"
+      },
+      {
+        "path": "x64/electron/vk_swiftshader.dll",
+        "oldSha256": "c025005e861623088bfc980bd978261548610564235d6f8c818ca76287c2e35f",
+        "newSha256": "44cf6bb72bb94b99e3acd1030fac57bb4c22f6ebad886c1200b9544c886c2035"
+      },
+      {
+        "path": "x64/electron/vulkan-1.dll",
+        "oldSha256": "7611034fc1bc24fa103b4c6bf923974cdec46fa506952d6f82cfef836db99fd1",
+        "newSha256": "e96d215161a34c5da71177a257b9e6146870438db37d65b609eac828a69f5315"
+      }
+    ],
+    "unchangedCount": 2158
+  },
+  "electronSourceTag": {
+    "observedAt": "2026-11-09",
+    "refUrl": "https://api.github.com/repos/electron/electron/git/ref/tags/v44.5.0",
+    "tagObjectUrl": "https://api.github.com/repos/electron/electron/git/tags/a90a2ea4e13e472661368164fb1606cc5b9cae6c",
+    "tagObject": "a90a2ea4e13e472661368164fb1606cc5b9cae6c",
+    "commit": "435b189742416c5a05019b72baf6313b328cdcd6",
+    "scope": "Official tag resolution, not source rebuild proof"
+  },
+  "newMaintainedPayloadFiles": [
+    {
+      "runtimePath": "electronapp/enhanced/media-network-diagnostics.js",
+      "sourcePath": "src/electronapp/enhanced/media-network-diagnostics.js",
+      "sha256": "50dadc11c855d4333c2a8f657bfc05e1d88e9dff1e3fe06ec92275462d4d2994",
+      "sourceBlobEqual": true
+    },
+    {
+      "runtimePath": "electronapp/enhanced/navigation-diagnostics.js",
+      "sourcePath": "src/electronapp/enhanced/navigation-diagnostics.js",
+      "sha256": "95923b30d330ba9df9caabff6d74104cc6d933a2b8910ea6fe01b3ed78bfc4aa",
+      "sourceBlobEqual": true
+    },
+    {
+      "runtimePath": "electronapp/enhanced/shutdown-drain.js",
+      "sourcePath": "src/electronapp/enhanced/shutdown-drain.js",
+      "sha256": "39fdd55e0a1b1828500e739dfc44bfc2c304c5d181c8b1f73a848068748c050c",
+      "sourceBlobEqual": true
+    },
+    {
+      "runtimePath": "electronapp/enhanced/strm-playback-config.js",
+      "sourcePath": "src/electronapp/enhanced/strm-playback-config.js",
+      "sha256": "37b8e3695a9cbf6633ecc79165de4112134fb7f1254b1aa45278cd4278efad24",
+      "sourceBlobEqual": true
+    },
+    {
+      "runtimePath": "electronapp/enhanced/subtitle-appearance-dialog.css",
+      "sourcePath": "src/electronapp/enhanced/subtitle-appearance-dialog.css",
+      "sha256": "4e91d1a56eeb6bb01596bf65c559026f7b7bf30a58330ab6cbec837507f7e0ed",
+      "sourceBlobEqual": true
+    },
+    {
+      "runtimePath": "electronapp/enhanced/subtitle-appearance-dialog.js",
+      "sourcePath": "src/electronapp/enhanced/subtitle-appearance-dialog.js",
+      "sha256": "d5a79735b48b556bf5245434af13db15370c8ef9e5233d81fa0df5ead6c3e777",
+      "sourceBlobEqual": true
+    },
+    {
+      "runtimePath": "electronapp/enhanced/update-handoff-outcome.js",
+      "sourcePath": "src/electronapp/enhanced/update-handoff-outcome.js",
+      "sha256": "563da17666b05fc8e69c82081e6d899bc6a3e20b5aac09b3e4effa5838a0496d",
+      "sourceBlobEqual": true
+    }
+  ],
+  "validation": {
+    "platform": "Linux",
+    "node": "24.18.1",
+    "publicTests": {
+      "command": "node tools/ci-public-tests.cjs",
+      "tests": 2632,
+      "pass": 2600,
+      "fail": 0,
+      "skipped": 32,
+      "skipScope": "Platform and explicit material/environment conditions; six material-required test files excluded by existing public selection",
+      "logSha256": "5ee80afada6d5e6ec707d794a48543b7c6f5381530293629111ece03835b89fa"
+    },
+    "repositorySnapshots": {
+      "count": 4,
+      "result": "passed"
+    },
+    "libmpvArchiveValidation": "passed",
+    "runtimeTemplatesValidation": "passed",
+    "javascriptSyntaxFiles": 586,
+    "powershellSyntaxFiles": 53,
+    "maintainedTextFiniteScanFiles": 683,
+    "changedDocsAndReceiptChecks": "UTF-8, final newline, new relative links, JSON, finite credential patterns and summary consistency passed",
+    "notPerformed": [
+      "Windows source rebuild",
+      "installer execution",
+      "product playback",
+      "formal license assessment"
+    ],
+    "scope": "Local audit worktree validation; remote CI must be bound to its exact eventual commit separately"
+  }
+}

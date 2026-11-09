@@ -1,5 +1,11 @@
 # 项目状态
 
+## 2026-11-09 — 当前来源与通知证据快照
+
+以 main `f007802`、v0.4.19 `f07bf1f` 和 v0.4.7 `5190a70` 为固定基线，独立核对旧审计 `8ffa747`。两版安装器重新只读提取：当前 2232、旧版 2225 个清单文件全部匹配；差异为新增7、改变67、不变2158、删除0。当前64个明确通知路径符合对应来源；官方 Electron44.5.0 的73成员、Windows3.0.20白名单和 NuGet3.3.10 Model/Common 实测匹配。详见[当前证据与最小下一步](LICENSE_PROVENANCE_CURRENT.md)及其机器回执。
+
+原有官方 GPL/MIT/Apache 依据继续适用其明确范围；preload、部分Web/字幕/图像增量、Model/Common发布源码关系、libmpv依赖/源码/notices及具体组合边界仍未闭合。已退役CEC、旧私有依赖及修改版思源字体不重列当前活动补件。此次仅文档和证据，不改产品、依赖、流程或版本，不将审计当作签名获批。Linux固定Node公开回归2600通过、0失败、32平台/材料条件跳过；4快照、原始libmpv归档、runtime模板及586JS/53PowerShell语法通过。Windows成品未重建，未运行安装器或实际播放。
+
 ## 2026-11-09 — 当前发布、验收与范围
 
 GitHub 正式 Latest 仍为 [v0.4.0](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0)，最新公开测试版为 [v0.4.19](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.19)。本次核对的 main 为 `825c7c7faad7c7e40490cf77d3244d12e9161d2a`；原生优先误报回退修复已在 main，待后续版本发布。独立验收包 `a52871590acbe1cae2a19266c661f87436cd587e` 包含弹窗隔离与有界诊断补充，仍待用户验收，未合入 main 或公开发布。
