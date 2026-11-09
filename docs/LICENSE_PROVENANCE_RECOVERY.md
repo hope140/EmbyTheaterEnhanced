@@ -2,6 +2,8 @@
 
 本次文档基线为已推送审计提交 [`0acd0984d52cfd063c964c570732c07e669cb4c7`](https://github.com/hope140/EmbyTheaterEnhanced/tree/0acd0984d52cfd063c964c570732c07e669cb4c7)。原[审计正文](LICENSE_PROVENANCE_CURRENT.md)与[旧回执](evidence/license-provenance-20261109.json)描述的是 v0.4.19，不是 v0.4.20。本次独立取得新版安装器及选定官方材料；新增[机器回执](evidence/license-provenance-recovery-20261109.json)，保留旧回执原字节。本次没有运行安装器或产品、重建 Windows 二进制，也不作整体许可已闭合的结论。
 
+后续阶段已完成本提交 CI 回读，并补充 libass/libplacebo revision、PE 导入、Model/Common 元数据及精确符号查询；见[源码与链接线索](LICENSE_PROVENANCE_LINKAGE.md)。以下保留第一阶段范围，新的停止点以续篇明确列项为准。
+
 ## 本次远端身份与可继承范围
 
 | 对象 | 固定身份与解释 |

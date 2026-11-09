@@ -1,5 +1,9 @@
 # 项目状态
 
+## 2026-11-09 — 固定 DLL 源码映射的有界续查
+
+`1fbb2179` 的 Windows CI 已成功：2632项、2627通过、0失败、5跳过。新增[源码与链接线索](LICENSE_PROVENANCE_LINKAGE.md)及[机器回执](evidence/license-provenance-linkage-20261109.json)：libass内嵌完整revision对应官方ISC原文；libplacebo基础revision和LGPL2.1+依据已固定，但dirty差异未取得。47项PE普通导入交叉核对，Model/Common程序集及Portable CodeView元数据只读提取；两次精确NuGet符号请求403，未取得PDB，不重复查询或推定无源码。仅补文档证据，未改产品/依赖/流程；剩余实际配置、依赖映射、dirty diff与发布源码关系保持明确停止点。
+
 ## 2026-11-09 — v0.4.20 来源与许可证据续核
 
 文档工作以固定审计 `0acd0984` 为基线，实际远端 main 单独固定为 `b4b70bc7`，最新测试版 v0.4.20 为 `4bf20e06`。新版安装器独立只读提取后 2235/2235 文件与清单匹配，64 明确通知路径通过；旧 2232 文件及 Linux 2600/Windows 2627 测试结果保持原版本、原提交范围。23 项固定组件对象与24项库存保持，官方六图像路径、同提交 GPLv2 文本、mpv 内嵌配置和 NuGet 调试路径已重新验证，边界及最小缺件见[续核记录](LICENSE_PROVENANCE_RECOVERY.md)与[新回执](evidence/license-provenance-recovery-20261109.json)。仅来源、许可文档和证据；未修改产品、依赖或发布流程，未执行产品、安装器或重建。

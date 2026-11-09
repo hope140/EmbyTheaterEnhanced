@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-09 — 固定 DLL 链接与发布源码映射续查
+
+回读 `1fbb2179` 准确CI成功结果（Windows2632项、2627通过、0失败、5跳过），不重跑安装器提取或本地全量回归。两种PE读取方式核对固定libmpv的47项普通导入；从实际内嵌版本定位libass完整官方revision和libplacebo带dirty的基础revision，独立取得17个选定官方源文件并核Git blob及SHA256。有限64通知路径未检出两组件的指定署名/名称，记录交付映射待补而非无许可结论。
+
+Model/Common只读元数据提供MVID、Portable CodeView GUID和netstandard1.3身份，没有源码revision；精确NuGet符号请求两次403，准确Emby.Server.NetCore仓库查询404，原builder artifact查询0条，均保留访问范围和解释限制。源码/补丁/config/link材料及停止点见[续查](LICENSE_PROVENANCE_LINKAGE.md)，不猜发布日期对应commit，不重复被拒入口，不改代码、依赖、发布流程或既有许可。
+
 ## 2026-11-09 — 固定审计基线的来源续核
 
 保留 `0acd0984` 旧审计回执原字节，直接核对远端 main `b4b70bc7`、v0.4.20 tag `4bf20e06` 和正式 Latest v0.4.0。独立重取 v0.4.20 五附件并只读解包，2235/2235 文件、内外 manifest/sourceCommit 与64明确通知路径匹配；23固定对象及24库存保持，Electron73成员沿旧已核上游哈希比较。重新取得官方六保留图像路径对应原件、同提交GPLv2全文、官方Electron白色logo、NuGet3.3.10及固定mpv源码说明，记录字节比较、实际内嵌构建配置和调试路径的有限含义。详见[续核与停止点](LICENSE_PROVENANCE_RECOVERY.md)。
