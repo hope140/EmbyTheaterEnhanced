@@ -519,10 +519,10 @@ test('DirectStream raw to native route rotation clears container mapping eligibi
     f.options.mediaSource.DefaultSubtitleStreamIndex=8;
     let results=0;
     f.controls.transformResult=result=>++results===1?result:{...result,type:'native',sourceKind:'native',fallback:true};
-    const invoke=f.ipc.invoke.bind(f.ipc);let trackReads=0;
+    const invoke=f.ipc.invoke.bind(f.ipc);const trackReads=[];
     f.ipc.invoke=(channel,request)=>{
         if(request.operation==='get-property'&&request.payload.name==='track-list'){
-            trackReads++;return Promise.resolve({status:'ok',value:[{type:'sub',external:false,id:17,'ff-index':1}]});
+            trackReads.push(request.payload.generationId);return Promise.resolve({status:'ok',value:[{type:'sub',external:false,id:17,'ff-index':1}]});
         }
         return invoke(channel,request);
     };
@@ -531,6 +531,10 @@ test('DirectStream raw to native route rotation clears container mapping eligibi
     await waitFor(()=>f.ipc.loadCalls.length===2);
     f.property('core-idle',false);await playing;
     await waitFor(()=>f.ipc.calls.some(c=>c.request.operation==='set-properties'&&c.request.payload.entries.some(e=>e.name==='sid'&&e.value===17)));
-    assert.equal(trackReads,2,'retired raw default cannot query; native maps and observes actual output ID');
+    assert.equal(trackReads.length,3,'native verifies initial selection, then maps and observes actual output ID');
+    const plans=f.ipc.calls.filter(c=>c.request.operation==='set-properties'&&c.request.payload.entries.some(e=>e.name==='initial-subtitle'));
+    assert.equal(plans.length,2);
+    assert.notEqual(plans[0].request.payload.generationId,plans[1].request.payload.generationId);
+    assert.ok(trackReads.every(id=>id===plans[1].request.payload.generationId),'retired raw default cannot query the new media');
     await f.player.stop(true);
 });

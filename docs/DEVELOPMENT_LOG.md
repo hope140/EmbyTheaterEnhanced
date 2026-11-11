@@ -1,5 +1,37 @@
 # 维护记录
 
+## 2026-11-11 — v0.4.21 发行文档准备
+
+以已交付的 a83f9fa81702 验收源码为基础，仅整理 README、用户指南、版本记录、已知限制与测试版说明，不引入后续内核研究代码。验收包最终完整回归 2821 通过／7 跳过／0 失败，材料 136、Host 源码链 12、完整 helper 19、打包字幕链路 15 通过；2236 项安装器解包文件与 runtime 逐项一致。字幕起播、本地播放和被控 CD2 直链有有限用户通过反馈，其他稳定性继续观察。
+
+明确记录普通无错误 EOF 仍可能自动下一集；保留正常结束及必要字幕切换，不将优化视为原始 MKV 读流根因修复。准确来源、公开 CI、发行包构建和线上资产仍按本次提交分别核验，既有验收安装器保持原字节。当前阶段见[发行记录](V0421_RELEASE_VERIFICATION.md)。
+
+## 2026-11-09 — Combined 0.4.21 acceptance candidate
+
+Integrates the independently reviewed initial subtitle selection (f0613c6) and generation-bound terminal error propagation (1856ebb; replayed as 016e471). Product changes compose without conflict; documentation conflicts retain both evidence sections. Version 0.4.21 identifies this private acceptance build, with no tag or public release. Main remains b4b70bc7c8873b750ee9375a00c9cca742fcf28b.
+
+Before integration the EOF branch passed 2806/2812 full-suite tests with six explicit skips and all 136 material tests. The subtitle branch passed 2802/2809 with seven explicit skips, all 136 material tests, 76 adapter ownership tests and eighteen complete native-helper subcases. Same native test on the unchanged helper has thirteen failing expectations and five passing subcases. The final package must be built and validated against this integrated source; those earlier counts do not certify the combined artifact. Remote package CI, packaged helper tests, artifact identity and installed/visible-media acceptance are separate evidence layers.
+
+The kernel experiment eliminates a post-startup refresh seek only where on_preloaded can resolve a unique current target. Uncertain mapping retains the existing fallback, and manual switches retain necessary native operations. This does not establish the initial MKV read failure or visible startup stutter cause. The terminal error fix prevents auto-next/transcode fallback only for reliable current-generation terminal error evidence; plain eof-reached, unknown/incorrect durations and unowned demux logs are not reclassified. Normal end, Stop and manual seek remain unchanged. No automatic retry, real stream, current client, NAS service or production configuration is used by acceptance build preparation.
+
+## 2026-11-09 — Initial subtitle identity before playback
+
+Added an optional on_preloaded hook to the existing helper, a narrowly named initial-subtitle bridge property, and adapter initial-selection readback. The hook never waits for renderer IPC and always continues after mapping failure. Plans are consumed once and cleared by cancellation, retirement, Stop or generation replacement; a retired generation cannot re-arm one. Media identity must also match the current unique open media. Late/ambiguous hooks can lose the optimization and use the existing fallback, but cannot guess a target in a new generation.
+
+The fixed mpv experiment showed that setting sid at file-loaded still triggers refresh seek. Blind pre-load ordinal selection selects the wrong external track when an external subtitle is inserted first. The actual on_preloaded table provides the safe boundary: exact product mapping code passed six pinned-DLL HTTP cases with no refresh seek. Complete compiled helper/controller tests cover eighteen cases, including two existing mapping modes, three embedded tracks, early external insertion, Index=0, cancellation, replacement, Stop/replay, retired messages and in-flight replacement; the unmodified helper fails thirteen of these expectations and passes five. Manual external → first embedded → third embedded → another embedded/repeated selection is checked against the actual native table.
+
+The adapter suite covers initial Off/external, exact selection, fallback, current user choice and delayed initial readbacks across Stop/Off/new Play. A new fixture initially waited for play completion before releasing the pending subtitle read; corrected the fixture ordering. Full-suite review also updated an old two-read assertion to include initial verification, while strengthening exact new-generation ownership. A sandbox-only local HTTP test failure is retained separately. No stream headers, Range policy, retry policy or normal manual subtitle switch were changed.
+
+## 2026-11-09 — 当前代次终止错误的无重试传递
+
+基于 main `b4b70bc7c8873b750ee9375a00c9cca742fcf28b`，只修改 libmpv adapter 的终止错误归属与类型传递。服务和 renderer bridge 已通过媒体身份/generation 传递终止原因；adapter 在起播后将明确媒体终止错误送入现有 `unexpectedEof` 分支，避免退化为可重试的通用错误。同步错误监听器接纳新 Play 后重核旧 owner；普通 EOF 已上报时仍保留后续错误诊断，但不再发第二次终止事件。
+
+同一真实 AMD/renderer bridge 回归在基线 17 项中 6 项失败、候选 17 项通过；实际生成 PlaybackManager 的 2 项联合回归基线 1 失败、候选 2 通过。早期测试夹具错误（主动 Stop 计数、公开定位方法及下一项传输收尾）已修正后重跑同一组红绿断言，不计作产品修复。完整测试首轮还发现 EOF 后诊断丢失，已保留诊断并限制第二次生命周期事件；历史 Host 源 blob 缺失由固定远端身份补齐，未改变测试断言。
+
+可恢复的 demux 日志不触发退出；普通 EOF 的真假无法仅由时长可靠区分，仍可能自动下一集。该边界明确测试保留，不以固定时长阈值扩大拦截。无 native 内核、远控、服务器、版本或重试策略扩展。真实读流异常根因仍未确定，未合并或发布。
+
+Final local validation: 2812 full-suite tests, 2806 passed, 6 explicitly skipped, zero failed; all 136 material self-tests passed. JavaScript syntax (596 tracked files), PowerShell syntax (53 files), secret scan (693 tracked files) and diff checks passed. The skipped full-suite gates require the separately acquired official55 Host sources (3), explicit hosted Windows exit/relay validation (2), or Unix transport (1). No remote CI, installer build, actual application exit or real-media acceptance was run. Initial missing material/toolchain failures and successful reruns are recorded separately; pinned public inputs were acquired into this isolated task only.
+
 ## 2026-11-09 — v0.4.20 测试版已发布
 
 [v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已发布，Tag 与安装包源码均为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`；正式 Latest 保持 v0.4.0。包含弹窗历史隔离与幂等关闭、有界普通／详细诊断、原生优先误报回退修复及客户端说明文字。

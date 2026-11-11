@@ -2563,6 +2563,63 @@ test('all existing compatibility stages remain before terminal exit, with no nex
     assert.equal(f.queue._playlist.length, 0);
 });
 
+for (const terminal of ['typed-read-error', 'ordinary-eof']) {
+    test('real adapter and generated manager preserve queue policy for ' + terminal, async t => {
+        const native = require('./helpers/startup-route-fixture.cjs').startupFixture();
+        const f = makeFixture({decoratePlayer(player, events) {
+            const play = player.play;
+            let admitted = false;
+            player.play = info => {
+                if (admitted) return play(info); // The next item's transport is outside this EOF decision test.
+                admitted = true;
+                return native.player.play(info);
+            };
+            if (terminal === 'typed-read-error') {
+                player.stop = (...args) => native.player.stop(...args);
+                const destroy = player.destroy;
+                player.destroy = (...args) => { destroy(); return native.player.destroy(...args); };
+            }
+            native.eventCalls.push = function (...rows) {
+                for (const row of rows) events.trigger(player, row[1], [null, ...(row[2] || [])]);
+                return Array.prototype.push.apply(this, rows);
+            };
+        }});
+        t.after(async () => { await native.player.stop(true); await f.manager.stop(); });
+        installFailureQueue(f);
+        f.apiClient.getCurrentUser = async () => ({Configuration: {}});
+        const first = f.manager.nextTrack();
+        await waitFor(() => f.calls.metadata.length === 1);
+        const source = makeMediaSource('failure-A', 'session-A');
+        source.SupportsTranscoding = true;
+        f.calls.metadata[0].pending.resolve({MediaSources: [source], PlaySessionId: 'session-A'});
+        await waitFor(() => native.ipc.loadCalls.length === 1);
+        native.property('core-idle', false); await first;
+        native.property('duration', 1425.057); native.property('time-pos', 481.181);
+        const generation = native.ipc.generationId;
+        if (terminal === 'typed-read-error') native.failure();
+        native.property('eof-reached', true, generation);
+        if (terminal === 'typed-read-error') native.failure(generation);
+        await settle();
+        if (terminal === 'typed-read-error') {
+            assert.equal(f.calls.metadata.length, 1, 'no transcode retry or next-item lookup');
+            assert.equal(native.ipc.loadCalls.length, 1, 'no media retry');
+            assert.equal(f.manager.getCurrentPlayer(), null);
+            assert.equal(f.queue._playlist.length, 0);
+            assert.equal(f.calls.destroyed, 1);
+            assert.equal(f.calls.playbackStops.length, 1);
+            assert.equal(reportsFor(f.calls, 'reportPlaybackStopped').length, 1);
+            const decision = f.calls.diagnostics.find(row => row.event === 'queue-decision');
+            assert.equal(decision.details.nextAllowed, false);
+            assert.equal(decision.details.hasError, true);
+        } else {
+            await waitFor(() => f.calls.metadata.length === 2);
+            assert.equal(f.calls.metadata[1].itemId, 'next-B', 'plain EOF remains ordinary completion, even with inaccurate duration');
+            f.calls.metadata[1].pending.resolve({MediaSources: [makeMediaSource('next-B', 'session-B')], PlaySessionId: 'session-B'});
+            await waitFor(() => f.calls.playbackStarts.length === 2);
+        }
+    });
+}
+
 test('production generated manager keeps one request/session across real adapter startup route rotation', async () => {
     const native = require('./helpers/startup-route-fixture.cjs').startupFixture();
     let streamInfo;

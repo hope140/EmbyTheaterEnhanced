@@ -433,6 +433,43 @@ struct LoadCommand {
 struct AsyncCommand { uint64_t generationId; uint64_t requestId; std::string method; };
 struct NativeRecord { int eventId; std::string eventName; int64_t mediaIdentity; std::string name; std::string valueJson; uint64_t replyUserdata; uint64_t timestamp; };
 
+// INITIAL_SUBTITLE_CORE_BEGIN
+struct InitialSubtitlePlan {
+    uint64_t generation = 0;
+    int index = -1, ordinal = -1, count = -1;
+    bool outputOrder = false;
+};
+int initialSubtitleTrack(const mpv_node& table, const InitialSubtitlePlan& plan) {
+    if (table.format != MPV_FORMAT_NODE_ARRAY || !table.u.list || table.u.list->num > 256) return -1;
+    std::vector<std::pair<int, int>> tracks;
+    std::set<int> ids;
+    for (int i = 0; i < table.u.list->num; ++i) {
+        const auto& row = table.u.list->values[i];
+        if (row.format != MPV_FORMAT_NODE_MAP || !row.u.list) continue;
+        bool sub = false, internal = false; int id = -1, index = -1;
+        for (int j = 0; j < row.u.list->num; ++j) {
+            const std::string name = row.u.list->keys[j]; const auto& value = row.u.list->values[j];
+            if (name == "type" && value.format == MPV_FORMAT_STRING) sub = std::string(value.u.string) == "sub";
+            if (name == "external" && value.format == MPV_FORMAT_FLAG) internal = value.u.flag == 0;
+            if (name == "id" && value.format == MPV_FORMAT_INT64 && value.u.int64 > 0 && value.u.int64 <= INT32_MAX) id = int(value.u.int64);
+            if (name == "ff-index" && value.format == MPV_FORMAT_INT64 && value.u.int64 >= 0 && value.u.int64 <= INT32_MAX) index = int(value.u.int64);
+        }
+        if (sub && internal && id > 0 && index >= 0) {
+            if (!ids.insert(id).second) return -1;
+            tracks.emplace_back(id, index);
+        }
+    }
+    if (plan.outputOrder) return int(tracks.size()) == plan.count && plan.ordinal >= 0 && plan.ordinal < plan.count
+        ? tracks[plan.ordinal].first : -1;
+    int result = -1;
+    for (const auto& track : tracks) if (track.second == plan.index) {
+        if (result >= 0) return -1;
+        result = track.first;
+    }
+    return result;
+}
+// INITIAL_SUBTITLE_CORE_END
+
 // BEGIN NETWORK_LOG_CORE (same bytes compiled by the projection/real-libmpv tests)
 // libmpv log messages have no media identity. Never assign them to a generation.
 bool isolateNetworkStderr() {
@@ -779,6 +816,9 @@ class Helper {
     std::string rejectNextOperation;
 #endif
     decltype(&mpv_command_ret) p_frame_mpv_command_ret = nullptr;
+    decltype(&mpv_hook_add) p_initial_hook_add = nullptr;
+    decltype(&mpv_hook_continue) p_initial_hook_continue = nullptr;
+    InitialSubtitlePlan initialSubtitle;
     struct HeldFrame {
         uint64_t holdId = 0;
         uint64_t generationId = 0;
@@ -1667,6 +1707,33 @@ class Helper {
     }
     std::string eventName(int id) { const char* name = p_mpv_event_name(static_cast<mpv_event_id>(id)); return name ? name : "unknown"; }
     void handleEvent(mpv_event* event) {
+        if (event->event_id == MPV_EVENT_HOOK) {
+            auto* hook = static_cast<mpv_event_hook*>(event->data);
+            if (!hook || !p_initial_hook_continue) return;
+            // Never wait for renderer IPC while holding the mpv hook. Consume
+            // only a plan belonging to this exact open media and release even
+            // when the mapping/property read fails or the generation retired.
+            auto plan = initialSubtitle;
+            initialSubtitle = {};
+            try {
+                int64_t media = uniqueOpenMedia();
+                auto owner = mediaToGeneration.find(media);
+                if (hook->name && std::string(hook->name) == "on_preloaded" &&
+                    plan.generation && plan.generation == latestActivatedGeneration &&
+                    plan.generation > retiredThroughGeneration && owner != mediaToGeneration.end() && owner->second == plan.generation) {
+                    mpv_node table{};
+                    if (p_mpv_get_property(mpv, "track-list", MPV_FORMAT_NODE, &table) >= 0) {
+                        int target = -1;
+                        try { target = initialSubtitleTrack(table, plan); }
+                        catch (...) { p_mpv_free_node_contents(&table); throw; }
+                        p_mpv_free_node_contents(&table);
+                        if (target > 0) p_mpv_set_property_string(mpv, "sid", std::to_string(target).c_str());
+                    }
+                }
+            } catch (...) { /* Original post-load mapping remains the fallback. */ }
+            p_initial_hook_continue(mpv, hook->id);
+            return;
+        }
         if (event->event_id == MPV_EVENT_COMMAND_REPLY) { handleCommandReply(event); return; }
         if (event->event_id == MPV_EVENT_START_FILE) {
             previewOwner.end(-1); finishPreview("preview-start-file");
@@ -1816,6 +1883,9 @@ public:
         std::string windowId = std::to_string(reinterpret_cast<uintptr_t>(attachedSurface));
         option("wid", windowId.c_str());
         if (p_mpv_initialize(mpv) < 0) throw std::runtime_error("mpv-initialize-failed");
+        p_initial_hook_add = reinterpret_cast<decltype(p_initial_hook_add)>(GetProcAddress(library, "mpv_hook_add"));
+        p_initial_hook_continue = reinterpret_cast<decltype(p_initial_hook_continue)>(GetProcAddress(library, "mpv_hook_continue"));
+        if (p_initial_hook_add && p_initial_hook_continue) p_initial_hook_add(mpv, 1, "on_preloaded", 0);
         p_network_create_client = reinterpret_cast<decltype(p_network_create_client)>(GetProcAddress(library, "mpv_create_client"));
         p_network_request_logs = reinterpret_cast<decltype(p_network_request_logs)>(GetProcAddress(library, "mpv_request_log_messages"));
         p_network_destroy = reinterpret_cast<decltype(p_network_destroy)>(GetProcAddress(library, "mpv_destroy"));
@@ -1875,6 +1945,7 @@ public:
             auto diagnosticMode = parameters.object.find("diagnosticMode");
             engineLogWindow.begin(generation, diagnosticMode != parameters.object.end() && diagnosticMode->second.string == "detailed", monotonicMicros());
             latestActivatedGeneration = generation;
+            if (initialSubtitle.generation != generation) initialSubtitle = {};
             return;
         }
         if (method == "load") {
@@ -1888,6 +1959,7 @@ public:
             if (type != "command") throw std::runtime_error("retire-generation-requires-command");
             if (engineLogWindow.generation == generation) {engineLogWindow.finish("retired"); flushEngineLogs(true);}
             retiredThroughGeneration = std::max(retiredThroughGeneration, generation);
+            if (initialSubtitle.generation <= retiredThroughGeneration) initialSubtitle = {};
             previewOwner.retire(retiredThroughGeneration);
             if (!ownsPreview(previewCapture.generation, previewCapture.media)) finishPreview("preview-generation-retired");
             if (autoTargetGeneration && autoTargetGeneration <= retiredThroughGeneration) cancelAutoLease();
@@ -1899,6 +1971,7 @@ public:
         if (method == "stop") {
             if (type != "request") throw std::runtime_error("stop-requires-request");
             previewOwner.retire(generation); finishPreview("preview-stopped");
+            initialSubtitle = {};
             uint64_t userdata = nextReplyUserdata++;
             int rc = commandAsync(userdata, {"stop"}); if (rc < 0) { emitError(generation, request, "stop-queue-failed"); return; }
             commandReplies.emplace(userdata, AsyncCommand{generation, request, method}); return;
@@ -1921,6 +1994,26 @@ public:
             std::string name = params.text("name");
             if (name.empty() || name.size() > 128) throw std::runtime_error("invalid-property-name");
             std::string value = scalarText(params.at("value"));
+            if (name == "initial-subtitle") {
+                if (generation != latestActivatedGeneration || generation <= retiredThroughGeneration) return;
+                initialSubtitle = {};
+                if (value == "none" || value.size() > 256) return;
+                try {
+                    const auto plan = JsonParser(value).parse();
+                    const auto mapping = plan.text("mapping");
+                    const auto index = plan.integer("index");
+                    if (index < 0 || index > INT32_MAX || (mapping != "container-index" && mapping != "output-order")) return;
+                    InitialSubtitlePlan candidate; candidate.generation = generation; candidate.index = int(index);
+                    candidate.outputOrder = mapping == "output-order";
+                    if (candidate.outputOrder) {
+                        const auto ordinal = plan.integer("ordinal"), count = plan.integer("count");
+                        if (ordinal < 0 || count < 1 || count > 256 || ordinal >= count) return;
+                        candidate.ordinal = int(ordinal); candidate.count = int(count);
+                    }
+                    initialSubtitle = candidate;
+                } catch (...) { /* Invalid plans cannot guess a track. */ }
+                return;
+            }
             int result;
 #ifdef ETE_HELPER_TESTING
             if (rejectNextOperation == "set-property") { rejectNextOperation.clear(); result = MPV_ERROR_PROPERTY_ERROR; }

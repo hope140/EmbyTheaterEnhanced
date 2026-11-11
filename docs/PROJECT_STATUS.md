@@ -1,5 +1,37 @@
 # 项目状态
 
+## 2026-11-11 — v0.4.21 测试版发行准备
+
+截至 2026-11-11，正式 Latest 仍为 v0.4.0，最新公开测试版仍为 v0.4.20；v0.4.21 已完成独立验收包的有限使用验收，正在准备测试版发行。尚未创建 v0.4.21 Release，以下候选内容不表示已有公开下载。
+
+功能来源固定为验收提交 a83f9fa81702c09294dc8810e0595b2d60017561：初始内嵌字幕安全选轨与当前代次明确终止错误传递。本轮不再调整产品代码、内核、远控或重试策略，只补充发行文档。用户反馈字幕起播不卡，本地播放和被控端 CD2 直链暂时正常；其他稳定性继续观察。
+
+准确验收源码的完整测试为 2821 通过、7 跳过、0 失败，材料自测 136 通过；独立 Host 检查 12 通过、真实 helper 门禁 19 通过、打包字幕链路 15 通过。部分跳过项随后独立验证，剩余边界与安装器身份见[本版记录](V0421_RELEASE_VERIFICATION.md)。这些是验收源码证据，不冒充当前发布提交的远端 CI 或发行构建。
+
+无明确错误的 EOF 重放仍允许下一集，原始读取根因未知。发布须通过准确源码 CI／发行构建及 main 包含关系检查，测试渠道不得替换正式 Latest；新发行来源与旧验收包分别记录。下方条目保留各自编写时的状态。
+
+## 2026-11-09 — Combined 0.4.21 acceptance candidate
+
+Integrates the independently reviewed initial subtitle selection (f0613c6) and generation-bound terminal error propagation (1856ebb; replayed as 016e471). Product changes compose without conflict; documentation conflicts retain both evidence sections. Version 0.4.21 identifies this private acceptance build, with no tag or public release. Main remains b4b70bc7c8873b750ee9375a00c9cca742fcf28b.
+
+Before integration the EOF branch passed 2806/2812 full-suite tests with six explicit skips and all 136 material tests. The subtitle branch passed 2802/2809 with seven explicit skips, all 136 material tests, 76 adapter ownership tests and eighteen complete native-helper subcases. Same native test on the unchanged helper has thirteen failing expectations and five passing subcases. The final package must be built and validated against this integrated source; those earlier counts do not certify the combined artifact. Remote package CI, packaged helper tests, artifact identity and installed/visible-media acceptance are separate evidence layers.
+
+The kernel experiment eliminates a post-startup refresh seek only where on_preloaded can resolve a unique current target. Uncertain mapping retains the existing fallback, and manual switches retain necessary native operations. This does not establish the initial MKV read failure or visible startup stutter cause. The terminal error fix prevents auto-next/transcode fallback only for reliable current-generation terminal error evidence; plain eof-reached, unknown/incorrect durations and unowned demux logs are not reclassified. Normal end, Stop and manual seek remain unchanged. No automatic retry, real stream, current client, NAS service or production configuration is used by acceptance build preparation.
+
+## 2026-11-09 — Initial embedded subtitle candidate
+
+Based on main b4b70bc7c8873b750ee9375a00c9cca742fcf28b. A generation-bound native on_preloaded hook resolves the actual mpv track table before default track initialization. Container routes use unique internal ff-index (including zero); existing remux routes require the expected internal track count and output ordinal. External IDs, labels and display order are never used as container identity. Missing/ambiguous mappings retain the existing post-load fallback. The adapter skips its initial sid reset only after a current-generation table proves the target is the only selected subtitle. Manual switching remains unchanged.
+
+This is independent of the terminal EOF adapter candidate. Fixed mpv and synthetic HTTP tests establish selection correctness and absence of the extra startup refresh seek in the tested cases; they do not establish the original MKV failure cause or visible stutter removal. Ordinary EOF without authoritative failure evidence remains outside the separate terminal-error fix. No merge, release, installation or real-media acceptance. See [initial subtitle validation](TESTING.md#initial-subtitle-preloaded).
+
+## 2026-11-09 — 当前代次终止性媒体错误候选
+
+已起播请求收到归属明确的 Native `end-file reason=4` 后，adapter 保留类型化 `unexpectedEof`，沿 PlaybackManager 既有终局分支退出，禁止自动下一集与同集转码回退。错误通知同步回调若接纳新播放，旧错误不得写入新请求；重复错误与 EOF 不重复终止。起播前既有线路处理保持。
+
+普通 `eof-reached`、剩余时长和上下文关联的解复用日志不构成该分类依据。只有普通 EOF 的提前结束仍是已知缺口；本候选不声称修复原始读流异常，不改变字幕选轨、keep-open、正常连播、短视频、未知/错误时长、直播或近尾手动定位。未合并、发布、部署或做真实流验收。验证方法与限制见 [测试说明](TESTING.md#terminal-media-error).
+
+Final local validation: 2812 full-suite tests, 2806 passed, 6 explicitly skipped, zero failed; all 136 material self-tests passed. JavaScript syntax (596 tracked files), PowerShell syntax (53 files), secret scan (693 tracked files) and diff checks passed. The skipped full-suite gates require the separately acquired official55 Host sources (3), explicit hosted Windows exit/relay validation (2), or Unix transport (1). No remote CI, installer build, actual application exit or real-media acceptance was run. Initial missing material/toolchain failures and successful reruns are recorded separately; pinned public inputs were acquired into this isolated task only.
+
 ## 2026-11-09 — v0.4.20 测试版已发布
 
 [v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已发布，Tag 与安装包源码均为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`；正式 Latest 保持 v0.4.0。包含弹窗历史隔离与幂等关闭、有界普通／详细诊断、原生优先误报回退修复及客户端说明文字。

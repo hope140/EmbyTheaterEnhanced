@@ -6,7 +6,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const libmpvSource = fs.readFileSync(path.join(__dirname, '../../src/electronapp/plugins/libmpv.js'), 'utf8');
+const libmpvSource = fs.readFileSync(path.join(process.env.ETE_TEST_SOURCE_ROOT || path.join(__dirname, '../..'),
+    'src/electronapp/plugins/libmpv.js'), 'utf8');
 const nativeHelperClient = require('../../src/electronapp/native-helper/client');
 
 function makeDeferred() {
