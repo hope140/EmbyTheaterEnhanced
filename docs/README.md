@@ -1,6 +1,6 @@
 # 文档索引
 
-截至 2026-11-11，正式 Latest 仍为 v0.4.0，最新公开测试版仍为 v0.4.20；v0.4.21 已完成独立验收包的有限使用验收，正在准备测试版发行。尚未创建 v0.4.21 Release，以下候选内容不表示已有公开下载。 [v0.4.21 准备与核验](V0421_RELEASE_VERIFICATION.md)。
+截至 2026-11-11，[v0.4.21 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.21) 已公开发布，正式 Latest 仍为 v0.4.0。发行源码为 bd3b32e69b7ac6a2243ebf831ac60f58d4aff0d9，产品代码与已验收的 a83f9fa81702 一致；公开标准包和旧验收包分别记录来源与哈希。 [v0.4.21 发行核验](V0421_RELEASE_VERIFICATION.md)。
 
 ## 使用客户端
 

@@ -1,8 +1,12 @@
 # 项目状态
 
-## 2026-11-11 — v0.4.21 测试版发行准备
+## 2026-11-11 — v0.4.21 测试版已发布
 
-截至 2026-11-11，正式 Latest 仍为 v0.4.0，最新公开测试版仍为 v0.4.20；v0.4.21 已完成独立验收包的有限使用验收，正在准备测试版发行。尚未创建 v0.4.21 Release，以下候选内容不表示已有公开下载。
+截至 2026-11-11，[v0.4.21 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.21) 已公开发布，正式 Latest 仍为 v0.4.0。发行源码为 bd3b32e69b7ac6a2243ebf831ac60f58d4aff0d9，产品代码与已验收的 a83f9fa81702 一致；公开标准包和旧验收包分别记录来源与哈希。
+
+本次 [PR #105](https://github.com/hope140/EmbyTheaterEnhanced/pull/105) 已合并，合并提交 d5f3f98766d70ead9d81fa67dc3fd4dd8bc26ca6。Tag 固定 bd3b32e；[push CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42965234412) 和 [PR CI](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42965279107) 通过，后者为临时合并快照、2683 通过／7 跳过。准确发行源码的[标准构建](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42965291149) attempt 1 全量 2825 通过／3 跳过／0 失败，发行材料 136 通过。三项跳过为显式原生字幕隔离门禁、显式 Windows 自然退出探针及 Unix transport；不计作本次远端通过。
+
+[发行工作流](https://github.com/hope140/EmbyTheaterEnhanced/actions/runs/42968837982) 复用该构建并核对五附件。安装器 161905570 字节，SHA-256 `c46c09ea39015e51dfa92120c5221b585def3c693b4ed165a5bbc5867fc62476`。本地下载的 Actions ZIP 摘要及解包五附件均已独立核对；公开附件身份另经发布回读核验。未安装新标准包，真实使用反馈仍属于旧验收包。
 
 功能来源固定为验收提交 a83f9fa81702c09294dc8810e0595b2d60017561：初始内嵌字幕安全选轨与当前代次明确终止错误传递。本轮不再调整产品代码、内核、远控或重试策略，只补充发行文档。用户反馈字幕起播不卡，本地播放和被控端 CD2 直链暂时正常；其他稳定性继续观察。
 

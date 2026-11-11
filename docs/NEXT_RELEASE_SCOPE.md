@@ -4,7 +4,7 @@
 
 [v0.4.0 正式版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.0) 仍为 Latest；[v0.4.20 测试版](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) 已公开发布，源码为 `4bf20e067c2a79bf2498943c2d06f955b9f0fcc0`。包含原生优先误报回退修复、此前独立验收包中的弹窗隔离与有界诊断，以及客户端说明文字整理。此测试版发布不等于现场播放根因已解决或正式版验收完成。下载见[README](../README.md#下载安装)，已发布范围见[变更记录](../CHANGELOG.md)。
 
-v0.4.21 已完成独立验收包的有限使用验收，正在准备测试版；功能仅为安全初始字幕选轨和明确终止错误传递。本轮不加入结构化内核读取错误研究方案，不承诺无错误 EOF 已拦截。详见[本版记录](V0421_RELEASE_VERIFICATION.md)。
+最新测试版 [v0.4.21](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.21) 已公开发布；独立验收包有有限使用通过反馈，新增功能仅为安全初始字幕选轨和明确终止错误传递。本轮不加入结构化内核读取错误研究方案，不承诺无错误 EOF 已拦截。详见[本版记录](V0421_RELEASE_VERIFICATION.md)。
 
 ## 本轮正式版与验收边界
 
