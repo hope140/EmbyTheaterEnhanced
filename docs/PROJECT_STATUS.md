@@ -1,5 +1,15 @@
 # 项目状态
 
+## 2026-11-11 — v0.4.21 测试版发行准备
+
+截至 2026-11-11，正式 Latest 仍为 v0.4.0，最新公开测试版仍为 v0.4.20；v0.4.21 已完成独立验收包的有限使用验收，正在准备测试版发行。尚未创建 v0.4.21 Release，以下候选内容不表示已有公开下载。
+
+功能来源固定为验收提交 a83f9fa81702c09294dc8810e0595b2d60017561：初始内嵌字幕安全选轨与当前代次明确终止错误传递。本轮不再调整产品代码、内核、远控或重试策略，只补充发行文档。用户反馈字幕起播不卡，本地播放和被控端 CD2 直链暂时正常；其他稳定性继续观察。
+
+准确验收源码的完整测试为 2821 通过、7 跳过、0 失败，材料自测 136 通过；独立 Host 检查 12 通过、真实 helper 门禁 19 通过、打包字幕链路 15 通过。部分跳过项随后独立验证，剩余边界与安装器身份见[本版记录](V0421_RELEASE_VERIFICATION.md)。这些是验收源码证据，不冒充当前发布提交的远端 CI 或发行构建。
+
+无明确错误的 EOF 重放仍允许下一集，原始读取根因未知。发布须通过准确源码 CI／发行构建及 main 包含关系检查，测试渠道不得替换正式 Latest；新发行来源与旧验收包分别记录。下方条目保留各自编写时的状态。
+
 ## 2026-11-09 — Combined 0.4.21 acceptance candidate
 
 Integrates the independently reviewed initial subtitle selection (f0613c6) and generation-bound terminal error propagation (1856ebb; replayed as 016e471). Product changes compose without conflict; documentation conflicts retain both evidence sections. Version 0.4.21 identifies this private acceptance build, with no tag or public release. Main remains b4b70bc7c8873b750ee9375a00c9cca742fcf28b.

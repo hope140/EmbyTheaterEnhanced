@@ -1,5 +1,11 @@
 # 维护记录
 
+## 2026-11-11 — v0.4.21 发行文档准备
+
+以已交付的 a83f9fa81702 验收源码为基础，仅整理 README、用户指南、版本记录、已知限制与测试版说明，不引入后续内核研究代码。验收包最终完整回归 2821 通过／7 跳过／0 失败，材料 136、Host 源码链 12、完整 helper 19、打包字幕链路 15 通过；2236 项安装器解包文件与 runtime 逐项一致。字幕起播、本地播放和被控 CD2 直链有有限用户通过反馈，其他稳定性继续观察。
+
+明确记录普通无错误 EOF 仍可能自动下一集；保留正常结束及必要字幕切换，不将优化视为原始 MKV 读流根因修复。准确来源、公开 CI、发行包构建和线上资产仍按本次提交分别核验，既有验收安装器保持原字节。当前阶段见[发行记录](V0421_RELEASE_VERIFICATION.md)。
+
 ## 2026-11-09 — Combined 0.4.21 acceptance candidate
 
 Integrates the independently reviewed initial subtitle selection (f0613c6) and generation-bound terminal error propagation (1856ebb; replayed as 016e471). Product changes compose without conflict; documentation conflicts retain both evidence sections. Version 0.4.21 identifies this private acceptance build, with no tag or public release. Main remains b4b70bc7c8873b750ee9375a00c9cca742fcf28b.
