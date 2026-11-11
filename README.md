@@ -11,7 +11,7 @@
 | 渠道 | 下载 | 校验 |
 | --- | --- | --- |
 | 正式版 · [v0.4.0（Latest）](https://github.com/hope140/EmbyTheaterEnhanced/releases/latest) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.0/EmbyTheaterEnhanced-0.4.0-win-x64-setup.exe.sha256) |
-| 测试版 · [v0.4.20（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.20) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.20/EmbyTheaterEnhanced-0.4.20-win-x64-setup.exe.sha256) |
+| 测试版 · [v0.4.21（Pre-release）](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.21) | [Windows x64 安装包](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.21/EmbyTheaterEnhanced-0.4.21-win-x64-setup.exe) | [SHA-256](https://github.com/hope140/EmbyTheaterEnhanced/releases/download/v0.4.21/EmbyTheaterEnhanced-0.4.21-win-x64-setup.exe.sha256) |
 
 从同一 Release 下载安装包和校验文件，核对 SHA-256 后，正常退出客户端再安装。`Source code` 压缩包不是安装包。安装程序未签名，Windows 可能提示未知发布者；校验值用于核对下载字节。
 
@@ -21,7 +21,7 @@
 
 **v0.4.19** 修复外挂字幕先加载后的内嵌选轨、改善首页刷新与返回位置，并补充配置／CD2 诊断。**v0.4.20 测试版** 已发布，包含播放错误提示的历史隔离与幂等关闭、普通／详细有界诊断、原生优先误报回退修复及客户端说明文字整理。当前播放成功率退化和提前 EOF 的现场根因仍未确认，115 并发原因也未证实；没有新增 EOF 保护、自动重试或 keep-open 改动。本轮继续边使用边验证，后续正式版号及日期未定，见[当前范围](docs/NEXT_RELEASE_SCOPE.md#本轮正式版与验收边界)。
 
-**v0.4.21 测试版发行准备**：在准确映射可用时提前选择默认内嵌字幕，保留外挂／内嵌切换；补齐明确终止错误的无重试传递。验收反馈为字幕起播不再卡顿，本地播放和被控端 CD2 直链暂时正常，其他稳定性继续观察。没有明确错误的提前 EOF 仍可能自动下一集，原始读流根因未确认。发行与核验进展见[本版记录](docs/V0421_RELEASE_VERIFICATION.md)；当前公开下载仍以上表为准。
+**v0.4.21 测试版已发布**：在准确映射可用时提前选择默认内嵌字幕，保留外挂／内嵌切换；补齐明确终止错误的无重试传递。验收反馈为字幕起播不再卡顿，本地播放和被控端 CD2 直链暂时正常，其他稳定性继续观察。没有明确错误的提前 EOF 仍可能自动下一集，原始读流根因未确认。发行来源、检查结果与安装包哈希见[本版记录](docs/V0421_RELEASE_VERIFICATION.md)，下载见上表。
 
 ## 开始使用
 
