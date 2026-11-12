@@ -28,25 +28,15 @@
 | 构建与材料 | [构建合同与历史记录](PACKAGING.md) · [Actions 测试包合同](ACTIONS_TEST_PACKAGE.md) · [源码材料索引](SOURCE_MATERIALS.md) · [依赖来源研究](DEPENDENCY_RESEARCH.md) |
 | 测试与发行 | [测试分层与材料用例](TESTING.md) · [Release 规范](RELEASE_CONVENTIONS.md) · [发行说明模板](templates/RELEASE_TEMPLATE.md) |
 
-**阅读阶段记录时**：技术文档保留早期分支、候选和当时的待验收说明。已发布版本准备记录中的“未合并／未发布”按其日期和准确源码理解；不据此把历史候选状态当作当前待办。Windows 媒体实验“尚未纳入发行”、手动更新“独立候选”、构建合同“尚无干净 runner 成功”也描述其编写阶段，已发布状态以页首和对应 Release 为准。首页布局／流畅度的显式测试参数不等同于 v0.4.2 已发布的详情持久缓存；普通用户无需按实验启动脚本开启已发布功能。当前开发操作入口为贡献指南，具体材料身份仍按各组件合同核验。
+历史候选与编写阶段的说明见[历史索引](HISTORY.md)，当前开发命令以贡献指南为准。
 
 公开离线检查、完整固定材料测试、实际客户端、真实服务器、安装与硬件验收各有范围，通过其中一层不能替代其他层。
 
-## 发布记录与后续范围
+## 当前计划与历史记录
 
-- [v0.4.21 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.21)：安全初始字幕选轨及明确终止错误传递；[发行核验](V0421_RELEASE_VERIFICATION.md)。
-- [v0.4.19 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.19)：字幕选轨、首页刷新和配置／CD2 诊断；[变更记录](../CHANGELOG.md)。当前状态见[项目状态](PROJECT_STATUS.md)。
-- [v0.4.13 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.13)：音轨语言多选与音轨／字幕语言排序；[发布后核验与候选历史](V0413_LANGUAGE_PREFERENCES.md)。
-- [v0.4.12 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.12)：更新退出与安装交接修复、提前 EOF 定位日志；[发布后核验与候选历史](V0412_RELEASE_VERIFICATION.md)。
-- [v0.4.11 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.11)：字幕首选语言多选；[发布后核验与候选历史](V0411_RELEASE_VERIFICATION.md)。
-- [v0.4.10 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.10)：片头归属修复及定位诊断；[发行核验](V0410_RELEASE_VERIFICATION.md)。
-- [v0.4.9 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.9)、[v0.4.8 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.8)、[v0.4.7 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.7)：焦点修复、下载筛选与提前下载；核验见 [v0.4.9](V049_RELEASE_VERIFICATION.md)、[v0.4.8](V048_RELEASE_VERIFICATION.md)、[v0.4.7](V047_RELEASE_VERIFICATION.md)。
-- [v0.4.6 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.6)：配置持久化修复和文档维护；[实际发布与五附件核验](V046_RELEASE_VERIFICATION.md)。
-- [v0.4.5 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.5)：首页导航／滚动、单条删除、透明字幕及更新交接修正；[发行记录与验证边界](V045_RELEASE_VERIFICATION.md)。
-- [v0.4.4 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.4)：详情／首页交接修复、诊断补充与旧 shader 退役；[发行核验](V044_RELEASE_VERIFICATION.md)。
-- [v0.4.3 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases/tag/v0.4.3)：系统媒体卡片、一秒预览及退出修复；[接入记录](V043_NATIVE_PREVIEW.md)。
-- [v0.4.2 核验记录](V042_RELEASE_VERIFICATION.md)、[v0.4.1 核验记录](V041_RELEASE_VERIFICATION.md)、[v0.4.0 核验记录](V040_RELEASE_VERIFICATION.md)：保留准备阶段、来源及验证范围，最终附件以各版 Release 为准。
-- [当前范围与功能取舍](NEXT_RELEASE_SCOPE.md)、[项目方向与历史计划](ROADMAP.md)。
-- [项目状态](PROJECT_STATUS.md)、[开发记录](DEVELOPMENT_LOG.md)：页首概述当前情况，其余日期条目保留当时事实。
+- [项目状态](PROJECT_STATUS.md)：当前发行、观察项和阻塞。
+- [后续范围](NEXT_RELEASE_SCOPE.md)：唯一待办入口、取消项与启动条件。
+- [项目方向](ROADMAP.md)：中长期取舍；[维护记录](DEVELOPMENT_LOG.md)：近期变化。
+- [历史记录索引](HISTORY.md)：旧排期、发行核验、调查和原始阶段记录。
 
-按版本命名的合同、核验和历史计划不是当前待办清单，也不表示所有环境通过。第三方来源、版权、许可及未决义务继续以原材料为依据，不因用户选择保留、入库或发布而改为已核验授权。
+来源、许可与验证边界继续按各组件合同核验；历史候选不是当前待办。

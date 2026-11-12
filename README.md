@@ -55,7 +55,7 @@
 - **v0.4.12 更新交接与 EOF 定位**：改进更新退出和安装器交接，加入低频、脱敏的缓存 EOF 观察日志；未加入自动恢复或切线路。
 - **v0.4.13 语言偏好排序**：首选音轨语言可多选，音轨与字幕的已选语言可在原选择弹窗中调整顺序；实际播放轨道仍由服务器决定。
 
-各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预载／预加载、播放／缓冲暂存及最近搜索已取消；提前下载继续保留。飞牛认证继续独立开发，安排在本轮正式版之后发布，真实认证和播放仍待验证，详见[功能取舍](docs/NEXT_RELEASE_SCOPE.md#功能取舍与后续范围)。
+各版范围见[变更记录](CHANGELOG.md)与[实际 Release](https://github.com/hope140/EmbyTheaterEnhanced/releases)。下一集预载／预加载、播放／缓冲暂存及最近搜索已取消；提前下载继续保留。飞牛认证暂缓，安排在本轮正式版之后再推进，真实认证和播放仍待验证，详见[功能取舍](docs/NEXT_RELEASE_SCOPE.md#功能取舍与后续范围)。
 
 ## 开发与构建
 
